@@ -77,7 +77,7 @@ struct CameraView: View {
                 AnnotationView(capImage: photoProcessor.capturedImage ?? UIImage(),
                 capSeg: photoProcessor.capturedImage ?? UIImage(), classes: classes, selection: selection)
             } else {
-                CameraPreview(session: session)
+                HostedViewController()
                     .edgesIgnoringSafeArea(.all)
                 //let session: AVCaptureSession
                 
@@ -131,11 +131,11 @@ struct CameraView: View {
             }
         }
         .onAppear {
-            self.setupCaptureSession()
-            self.session.startRunning()
+//            self.setupCaptureSession()
+//            self.session.startRunning()
         }
         .onDisappear {
-            self.session.stopRunning()
+//            self.session.stopRunning()
         }
     }
     .navigationBarTitle("Camera View", displayMode: .inline)
@@ -180,23 +180,175 @@ struct CameraView: View {
     }
 }
 
-struct CameraPreview: UIViewRepresentable {
-    let session: AVCaptureSession
+class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+    private var permissionGranted = false
     
-    func makeUIView(context: Context) -> some UIView {
-        let view = UIView()
+    private let session = AVCaptureSession()
+    private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
+    private var previewLayer: AVCaptureVideoPreviewLayer! = nil
+//    var detectionLayer: CALayer! = nil
+    var detectionView: UIImageView! = nil
+    var screenRect: CGRect! = nil
+    
+//    private var requests = [VNRequest]()
+    
+    //For semantic segmentation
+    private let videoDataOutput = AVCaptureVideoDataOutput()
+    
+//    //define the filter that will convert the grayscale prediction to color image
+//    let masker = ColorMasker()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        checkPermission()
         
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = view.layer.bounds
-        view.layer.addSublayer(previewLayer)
-        
-        return view
+        videoDataOutputQueue.async { [unowned self] in
+            guard permissionGranted else { return }
+            // Do any additional setup after loading the view, typically from a nib.
+            self.setupAVCapture()
+            
+//            //setup vision parts
+//            self.setupVisionModel()
+            
+            //start the capture
+            self.session.startRunning()
+        }
     }
     
-    func updateUIView(_ uiView: UIViewType, context: Context) {
-        guard let previewLayer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer else { return }
-        previewLayer.frame = uiView.layer.bounds
+    func checkPermission() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            permissionGranted = true
+            
+        case .notDetermined:
+            requestPermission()
+            
+        default:
+            permissionGranted = false
+        }
+    }
+    
+    func requestPermission() {
+        videoDataOutputQueue.suspend()
+        AVCaptureDevice.requestAccess(for: .video, completionHandler: { [unowned self] granted in
+            self.permissionGranted = granted
+            self.videoDataOutputQueue.resume()
+        })
+    }
+    
+    func setupAVCapture() {
+        //select a video device
+        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+        guard let deviceInput = try? AVCaptureDeviceInput(device: videoDevice) else { return }
+        
+        session.beginConfiguration()
+        //video format
+        session.sessionPreset = .vga640x480
+        
+        //add video input
+        guard session.canAddInput(deviceInput) else {
+            print("Could not add video device input to the session")
+            session.commitConfiguration()
+            return
+        }
+        
+        session.addInput(deviceInput)
+        
+        //add video output
+        guard session.canAddOutput(videoDataOutput) else {
+            print("Could not add video data output to the session")
+            session.commitConfiguration()
+            return
+        }
+        
+        session.addOutput(videoDataOutput)
+        videoDataOutput.alwaysDiscardsLateVideoFrames = true
+        
+        videoDataOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
+        
+        let captureConnection = videoDataOutput.connection(with: .video)
+        //always process the frames
+        captureConnection?.isEnabled = true
+        
+        session.commitConfiguration()
+        
+        // Preview layer
+        screenRect = UIScreen.main.bounds
+        
+        previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill // Fill screen
+        previewLayer.frame = CGRect(x: 59, y: 83, width: 256, height: 256)
+        previewLayer.borderWidth = 2.0
+        previewLayer.borderColor = UIColor.blue.cgColor
+        
+        detectionView = UIImageView()
+        detectionView.frame = CGRect(x: 59, y: 366, width: 256, height: 256)
+        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
+        detectionView.layer.borderWidth = 2.0
+        detectionView.layer.borderColor = UIColor.blue.cgColor
+        
+        DispatchQueue.main.async { [weak self] in
+            self!.view.layer.addSublayer(self!.previewLayer)
+            self!.view.addSubview(self!.detectionView)
+        }
+    }
+    
+//    func setupVisionModel() {
+//        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+//        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
+//            fatalError("Can not load CNN model")
+//        }
+//
+//        let segmentationRequest = VNCoreMLRequest(model: visionModel, completionHandler: {request, error in
+//            DispatchQueue.main.async(execute: {
+//                if let results = request.results {
+//                    self.processSegmentationRequest(results)
+//                }
+//            })
+//        })
+//        segmentationRequest.imageCropAndScaleOption = .scaleFill
+//        self.requests = [segmentationRequest]
+//    }
+//
+//    func processSegmentationRequest(_ observations: [Any]){
+//        let obs = observations as! [VNPixelBufferObservation]
+//
+//        if obs.isEmpty{
+//            print("Empty")
+//        }
+//
+//        let outPixelBuffer = (obs.first)!
+//
+//        let segMaskGray = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+//
+//        //pass through the filter that converts grayscale image to different shades of red
+//        self.masker.inputGrayImage = segMaskGray
+//
+//        self.view.addSubview(detectionView)
+//        self.detectionView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .right)
+////        }
+//    }
+    
+//    // this function notifies AVCatpreuDelegate everytime a new frame is received
+//    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+//        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {return}
+//
+//        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+//
+//        do {
+//            try imageRequestHandler.perform(self.requests)
+//        } catch{
+//            print(error)
+//        }
+//    }
+}
+
+struct HostedViewController: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> some UIViewController {
+        return ViewController()
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
     }
 }
 
@@ -301,17 +453,17 @@ struct ProgressBar: View {
 //struct AnnotationView: View {
 //    @State private var index = 0
 //    @State private var responses = [Int]()
-//    
+//
 //    let capImage: UIImage
 //    let capSeg: UIImage
 //    let classes: [String]
 //    let selection: [Int]
-//    
+//
 //    var body: some View {
 //        VStack {
 //            VStack {
 //                HStack {
-//                    
+//
 //                    Image(uiImage: capImage)
 //                        .resizable()
 //                        .aspectRatio(contentMode: .fit)
@@ -322,7 +474,7 @@ struct ProgressBar: View {
 //                        .frame(height: 200)
 //                }
 //                .padding()
-//                
+//
 //                HStack {
 //                    ForEach(0..<3) { responseIndex in
 //                        Button(action: {
@@ -335,7 +487,7 @@ struct ProgressBar: View {
 //                    }
 //                }
 //                .padding()
-//                
+//
 //                Button(action: {
 //                    self.onClickNext()
 //                }) {
@@ -346,19 +498,19 @@ struct ProgressBar: View {
 //                        .cornerRadius(8)
 //                }
 //                .padding(.top)
-//                
+//
 //                ProgressBar(progress: Double(index + 1) / Double(selection.count))
 //                    .padding()
 //            }
 //        }
 //        .navigationBarTitle("Annotation View", displayMode: .inline)
 //    }
-//    
+//
 //    private func selectionClicked(_ index: Int) {
 //        responses.append(index)
 //        self.index += 1
 //    }
-//    
+//
 //    private func onClickNext() {
 //        if index == selection.count {
 //            // Handle moving to the next view or action
@@ -372,14 +524,14 @@ struct ProgressBar: View {
 //
 //struct ProgressBar: View {
 //    var progress: Double
-//    
+//
 //    var body: some View {
 //        GeometryReader { geometry in
 //            ZStack(alignment: .leading) {
 //                Rectangle()
 //                    .foregroundColor(Color.secondary)
 //                    .frame(width: geometry.size.width, height: 10)
-//                
+//
 //                Rectangle()
 //                    .foregroundColor(Color.blue)
 //                    .frame(width: CGFloat(self.progress) * geometry.size.width, height: 10)
