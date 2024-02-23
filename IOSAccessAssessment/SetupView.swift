@@ -277,19 +277,19 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill // Fill screen
-        previewLayer.frame = CGRect(x: 59, y: 83, width: 256, height: 256)
-        previewLayer.borderWidth = 2.0
-        previewLayer.borderColor = UIColor.blue.cgColor
+        previewLayer.frame = CGRect(x: 0, y: 0, width: 400, height: 850)
+//        previewLayer.borderWidth = 2.0
+//        previewLayer.borderColor = UIColor.blue.cgColor
         
-        detectionView = UIImageView()
-        detectionView.frame = CGRect(x: 59, y: 366, width: 256, height: 256)
-        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
-        detectionView.layer.borderWidth = 2.0
-        detectionView.layer.borderColor = UIColor.blue.cgColor
+//        detectionView = UIImageView()
+//        detectionView.frame = CGRect(x: 59, y: 366, width: 256, height: 256)
+//        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
+//        detectionView.layer.borderWidth = 2.0
+//        detectionView.layer.borderColor = UIColor.blue.cgColor
         
         DispatchQueue.main.async { [weak self] in
             self!.view.layer.addSublayer(self!.previewLayer)
-            self!.view.addSubview(self!.detectionView)
+//            self!.view.addSubview(self!.detectionView)
         }
     }
     
