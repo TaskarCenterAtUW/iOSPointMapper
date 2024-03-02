@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import UIKit
+import Vision
 
 struct SetupView: View {
     let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable", "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"]
@@ -71,30 +72,24 @@ struct CameraView: View {
     
     let session = AVCaptureSession()
     var body: some View {
-    NavigationView {
-        ZStack {
-            if (isShowingAnnotationView) {
-                AnnotationView(capImage: photoProcessor.capturedImage ?? UIImage(),
-                capSeg: photoProcessor.capturedImage ?? UIImage(), classes: classes, selection: selection)
-            } else {
+        if (isShowingAnnotationView) {
+            AnnotationView(capImage: photoProcessor.capturedImage ?? UIImage(),
+            capSeg: photoProcessor.capturedImage ?? UIImage(), classes: classes, selection: selection)
+        } else {
+            ZStack {
                 HostedViewController()
                     .edgesIgnoringSafeArea(.all)
-                //let session: AVCaptureSession
-                
+                    .padding(.top, 5)
                 
                 VStack {
                     Spacer()
                     
                     HStack {
                         Spacer()
-                        VStack{
-                            List {
-                                Text("Selected:")
-                                ForEach(selection, id: \.self) { index in
-                                    Text("\(self.classes[index])")
-                                }
-                        } }
-                        Spacer()
+//                        NavigationLink(destination: AnnotationView(capImage: photoProcessor.capturedImage ?? UIImage(), capSeg: photoProcessor.capturedImage ?? UIImage(), classes: classes, selection: selection), isActive: $isShowingAnnotationView) {
+//                                        EmptyView()
+//                                    }
+                        
                         Button(action: {
                             self.toggleCamera()
                         }) {
@@ -104,17 +99,21 @@ struct CameraView: View {
                                 .foregroundColor(.white)
                         }
                         .padding(.trailing, 20)
-                        Button(action: {
-                            self.capturePhoto()
-                            isShowingAnnotationView = true
-                        }) {
-                            Image(systemName: "camera.circle.fill")
-                                .resizable()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(.white)
+                        NavigationLink(destination: AnnotationView(capImage: photoProcessor.capturedImage ?? UIImage(), capSeg: photoProcessor.capturedImage ?? UIImage(), classes: classes, selection: selection)) {
+                            Button(action: {
+                                self.capturePhoto()
+                                isShowingAnnotationView = true
+                            }) {
+                                Image(systemName: "camera.circle.fill")
+                                    .resizable()
+                                    .frame(width: 60, height: 60)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.trailing, 20)
+                            .disabled(photoProcessor.isCaptureButtonDisabled)
                         }
-                        .padding(.trailing, 20)
-                        .disabled(photoProcessor.isCaptureButtonDisabled)
+
+                        Spacer()
                     }
                 }
                 
@@ -129,20 +128,14 @@ struct CameraView: View {
                         }
                 }
             }
-        }
-        .onAppear {
-//            self.setupCaptureSession()
-//            self.session.startRunning()
-        }
-        .onDisappear {
-//            self.session.stopRunning()
+            .navigationBarTitle("Camera View", displayMode: .inline)
         }
     }
-    .navigationBarTitle("Camera View", displayMode: .inline)
+    
 //    .navigationBarItems(trailing: NavigationLink(destination: CameraView(selection: Array(selection), classes: classes)) {
 //        Text("Next").foregroundStyle(Color.white).font(.headline)
-//    }) fix navigation bar to go to annotation view
-}
+//    }) 
+        //fix navigation bar to go to annotation view
     
     
     func setupCaptureSession() {
@@ -186,17 +179,17 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     private let session = AVCaptureSession()
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     private var previewLayer: AVCaptureVideoPreviewLayer! = nil
-//    var detectionLayer: CALayer! = nil
+    var detectionLayer: CALayer! = nil
     var detectionView: UIImageView! = nil
     var screenRect: CGRect! = nil
     
-//    private var requests = [VNRequest]()
+    private var requests = [VNRequest]()
     
     //For semantic segmentation
     private let videoDataOutput = AVCaptureVideoDataOutput()
     
 //    //define the filter that will convert the grayscale prediction to color image
-//    let masker = ColorMasker()
+    let masker = ColorMasker()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -208,7 +201,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             self.setupAVCapture()
             
 //            //setup vision parts
-//            self.setupVisionModel()
+            self.setupVisionModel()
             
             //start the capture
             self.session.startRunning()
@@ -277,12 +270,12 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill // Fill screen
-        previewLayer.frame = CGRect(x: 59, y: 83, width: 256, height: 256)
+        previewLayer.frame = CGRect(x: 59, y: 83, width: 280, height: 280)
         previewLayer.borderWidth = 2.0
         previewLayer.borderColor = UIColor.blue.cgColor
         
         detectionView = UIImageView()
-        detectionView.frame = CGRect(x: 59, y: 366, width: 256, height: 256)
+        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
         detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
         detectionView.layer.borderWidth = 2.0
         detectionView.layer.borderColor = UIColor.blue.cgColor
@@ -293,54 +286,54 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         }
     }
     
-//    func setupVisionModel() {
-//        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
-//        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
-//            fatalError("Can not load CNN model")
+    func setupVisionModel() {
+        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
+            fatalError("Can not load CNN model")
+        }
+
+        let segmentationRequest = VNCoreMLRequest(model: visionModel, completionHandler: {request, error in
+            DispatchQueue.main.async(execute: {
+                if let results = request.results {
+                    self.processSegmentationRequest(results)
+                }
+            })
+        })
+        segmentationRequest.imageCropAndScaleOption = .scaleFill
+        self.requests = [segmentationRequest]
+    }
+
+    func processSegmentationRequest(_ observations: [Any]){
+        let obs = observations as! [VNPixelBufferObservation]
+
+        if obs.isEmpty{
+            print("Empty")
+        }
+
+        let outPixelBuffer = (obs.first)!
+
+        let segMaskGray = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+
+        //pass through the filter that converts grayscale image to different shades of red
+        self.masker.inputGrayImage = segMaskGray
+
+        self.view.addSubview(detectionView)
+        self.detectionView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .right)
 //        }
-//
-//        let segmentationRequest = VNCoreMLRequest(model: visionModel, completionHandler: {request, error in
-//            DispatchQueue.main.async(execute: {
-//                if let results = request.results {
-//                    self.processSegmentationRequest(results)
-//                }
-//            })
-//        })
-//        segmentationRequest.imageCropAndScaleOption = .scaleFill
-//        self.requests = [segmentationRequest]
-//    }
-//
-//    func processSegmentationRequest(_ observations: [Any]){
-//        let obs = observations as! [VNPixelBufferObservation]
-//
-//        if obs.isEmpty{
-//            print("Empty")
-//        }
-//
-//        let outPixelBuffer = (obs.first)!
-//
-//        let segMaskGray = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
-//
-//        //pass through the filter that converts grayscale image to different shades of red
-//        self.masker.inputGrayImage = segMaskGray
-//
-//        self.view.addSubview(detectionView)
-//        self.detectionView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .right)
-////        }
-//    }
+    }
     
-//    // this function notifies AVCatpreuDelegate everytime a new frame is received
-//    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-//        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {return}
-//
-//        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
-//
-//        do {
-//            try imageRequestHandler.perform(self.requests)
-//        } catch{
-//            print(error)
-//        }
-//    }
+    // this function notifies AVCaptureDelegate everytime a new frame is received
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {return}
+
+        let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+
+        do {
+            try imageRequestHandler.perform(self.requests)
+        } catch{
+            print(error)
+        }
+    }
 }
 
 struct HostedViewController: UIViewControllerRepresentable {
@@ -353,12 +346,57 @@ struct HostedViewController: UIViewControllerRepresentable {
 }
 
 
+//converts the Grayscale image to RGB
+// provides different shades of red based on pixel values
+class ColorMasker: CIFilter
+{
+    var inputGrayImage : CIImage?
+    
+    let colormapKernel = CIColorKernel(source:
+                                        "kernel vec4 colorMasker(__sample gray)" +
+                                       "{" +
+                                       " if (gray.r == 0.0f) {return vec4(0.0, 0.0, 0.0, 1.0);}" +
+                                       "   return vec4(1.0, gray.r, gray.r, 1.0);" +
+                                       "}"
+    )
+    
+    override var attributes: [String : Any]
+    {
+        return [
+            kCIAttributeFilterDisplayName: "Color masker",
+            
+            "inputGrayImage": [kCIAttributeIdentity: 0,
+                                  kCIAttributeClass: "CIImage",
+                            kCIAttributeDisplayName: "Grayscale Image",
+                                   kCIAttributeType: kCIAttributeTypeImage
+                              ]
+        ]
+    }
+    
+    override var outputImage: CIImage!
+    {
+        guard let inputGrayImage = inputGrayImage,
+              let colormapKernel = colormapKernel else
+        {
+            return nil
+        }
+        
+        let extent = inputGrayImage.extent
+        let arguments = [inputGrayImage]
+        
+        return colormapKernel.apply(extent: extent, arguments: arguments)
+    }
+}
+
+
 
 struct AnnotationView: View {
     @State private var index = 0
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @State private var selectedIndex: Int? = nil
     @State private var responses = [Int]()
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
+    @State private var isShowingCameraView = false
     
     var capImage: UIImage
     var capSeg: UIImage
@@ -366,57 +404,73 @@ struct AnnotationView: View {
     var selection: [Int]
     
     var body: some View {
-    NavigationView {
-        VStack {
-            HStack {
-                Spacer()
-                Image(uiImage: capImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 200, height: 200)
-                Spacer()
-            }
-            
-            HStack {
-                Spacer()
-                Text("Selected class: \(classes[selection[index]])")
-                Spacer()
-            }
-            
-            ProgressBar(value: calculateProgress(), total: selection.count)
-            
-            HStack {
-                Spacer()
+        if (isShowingCameraView == true) {
+            CameraView(selection: Array(selection), classes: classes)
+        } else {
+            ZStack {
                 VStack {
-                    ForEach(0..<options.count) { index in
-                        Button(action: {
-                            // Toggle selection
-                            if selectedIndex == index {
-                                selectedIndex = nil
-                            } else {
-                                selectedIndex = index
-                            }
-                        }) {
-                            Text(options[index])
-                                .padding()
-                                .foregroundColor(selectedIndex == index ? .red : .blue) // Change color based on selection
-                        }
+                    HStack {
+                        Spacer()
+                        Image(uiImage: capImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 200, height: 200)
+                        Spacer()
                     }
+                    
+                    HStack {
+                        Spacer()
+                        Text("Selected class: \(classes[selection[index]])")
+                        Spacer()
+                    }
+                    
+                    ProgressBar(value: calculateProgress(), total: selection.count)
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            ForEach(0..<options.count) { index in
+                                Button(action: {
+                                    // Toggle selection
+                                    if selectedIndex == index {
+                                        selectedIndex = nil
+                                    } else {
+                                        selectedIndex = index
+                                    }
+                                }) {
+                                    Text(options[index])
+                                        .padding()
+                                        .foregroundColor(selectedIndex == index ? .red : .blue) // Change color based on selection
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    
+                    Button(action: {
+                        self.nextSegment()
+                        selectedIndex = nil
+                    }) {
+                        Text("Next")
+                    }
+                    .padding()
                 }
-                Spacer()
             }
-            
-            Button(action: {
-                self.nextSegment()
-                selectedIndex = nil
+            .navigationBarTitle("Annotation View", displayMode: .inline)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: Button(action: {
+                // This action depends on how you manage navigation
+                // For demonstration, this simply dismisses the view, but you need a different mechanism to navigate to CameraView
+                self.isShowingCameraView = true;
             }) {
-                Text("Next")
-            }
-            .padding()
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.blue)
+                Text("Camera View")
+            })
+            
         }
+        
     }
-    .navigationBarTitle("Annotation View", displayMode: .inline)
-  }
     
     func selectOption(option: Int) {
         responses.append(option)
@@ -444,105 +498,6 @@ struct ProgressBar: View {
             .padding()
     }
 }
-
-
-
-
-
-
-//struct AnnotationView: View {
-//    @State private var index = 0
-//    @State private var responses = [Int]()
-//
-//    let capImage: UIImage
-//    let capSeg: UIImage
-//    let classes: [String]
-//    let selection: [Int]
-//
-//    var body: some View {
-//        VStack {
-//            VStack {
-//                HStack {
-//
-//                    Image(uiImage: capImage)
-//                        .resizable()
-//                        .aspectRatio(contentMode: .fit)
-//                        .frame(height: 200)
-//                    Image(uiImage: capSeg)
-//                        .resizable()
-//                        .aspectRatio(contentMode: .fit)
-//                        .frame(height: 200)
-//                }
-//                .padding()
-//
-//                HStack {
-//                    ForEach(0..<3) { responseIndex in
-//                        Button(action: {
-//                            self.selectionClicked(responseIndex)
-//                        }) {
-//                            Text(self.classes[self.selection[responseIndex]])
-//                                .padding()
-//                                .foregroundColor(responses[index] == responseIndex ? .red : .blue)
-//                        }
-//                    }
-//                }
-//                .padding()
-//
-//                Button(action: {
-//                    self.onClickNext()
-//                }) {
-//                    Text("Next")
-//                        .padding()
-//                        .background(Color.blue)
-//                        .foregroundColor(.white)
-//                        .cornerRadius(8)
-//                }
-//                .padding(.top)
-//
-//                ProgressBar(progress: Double(index + 1) / Double(selection.count))
-//                    .padding()
-//            }
-//        }
-//        .navigationBarTitle("Annotation View", displayMode: .inline)
-//    }
-//
-//    private func selectionClicked(_ index: Int) {
-//        responses.append(index)
-//        self.index += 1
-//    }
-//
-//    private func onClickNext() {
-//        if index == selection.count {
-//            // Handle moving to the next view or action
-//        } else {
-//            // Reset buttons
-//            responses.append(-1)
-//            index += 1
-//        }
-//    }
-//}
-//
-//struct ProgressBar: View {
-//    var progress: Double
-//
-//    var body: some View {
-//        GeometryReader { geometry in
-//            ZStack(alignment: .leading) {
-//                Rectangle()
-//                    .foregroundColor(Color.secondary)
-//                    .frame(width: geometry.size.width, height: 10)
-//
-//                Rectangle()
-//                    .foregroundColor(Color.blue)
-//                    .frame(width: CGFloat(self.progress) * geometry.size.width, height: 10)
-//                    .animation(.linear)
-//            }
-//        }
-//    }
-//}
-
-
-
 
 
 #Preview {
