@@ -282,7 +282,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         
         DispatchQueue.main.async { [weak self] in
             self!.view.layer.addSublayer(self!.previewLayer)
-            self!.view.addSubview(self!.detectionView)
+//            self!.view.addSubview(self!.detectionView)
         }
     }
     
