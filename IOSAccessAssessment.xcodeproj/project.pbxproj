@@ -15,6 +15,7 @@
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
 		3222F9482B62E7CB0019A079 /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9472B62E7CB0019A079 /* CollectionView.swift */; };
 		322E73882B6C5DF300F88D94 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322E73872B6C5DF200F88D94 /* SetupView.swift */; };
+		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -236,6 +237,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */,
 				3222F9212B622E090019A079 /* Preview Assets.xcassets in Resources */,
 				3222F91E2B622E090019A079 /* Assets.xcassets in Resources */,
 			);
