@@ -14,7 +14,6 @@
 		3222F9352B622E0A0019A079 /* IOSAccessAssessmentUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */; };
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
 		3222F9482B62E7CB0019A079 /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9472B62E7CB0019A079 /* CollectionView.swift */; };
-		3222F94A2B62F2A50019A079 /* model in Resources */ = {isa = PBXBuildFile; fileRef = 3222F9492B62F2A50019A079 /* model */; };
 		322E73882B6C5DF300F88D94 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322E73872B6C5DF200F88D94 /* SetupView.swift */; };
 /* End PBXBuildFile section */
 
@@ -46,7 +45,6 @@
 		3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITests.swift; sourceTree = "<group>"; };
 		3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3222F9472B62E7CB0019A079 /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
-		3222F9492B62F2A50019A079 /* model */ = {isa = PBXFileReference; lastKnownFileType = folder; path = model; sourceTree = "<group>"; };
 		3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = espnetv2_pascal_256.mlmodel; sourceTree = "<group>"; };
 		322E73872B6C5DF200F88D94 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -99,7 +97,6 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
-				3222F9492B62F2A50019A079 /* model */,
 				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 				322E73872B6C5DF200F88D94 /* SetupView.swift */,
@@ -239,7 +236,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3222F94A2B62F2A50019A079 /* model in Resources */,
 				3222F9212B622E090019A079 /* Preview Assets.xcassets in Resources */,
 				3222F91E2B622E090019A079 /* Assets.xcassets in Resources */,
 			);
