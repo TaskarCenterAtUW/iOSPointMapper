@@ -1,0 +1,9 @@
+# .gitignore
+
+## MAC Files
+.DS_Store
+
+
+## User settings
+xcuserdata/
+
