@@ -13,8 +13,11 @@
 		3222F92B2B622E0A0019A079 /* IOSAccessAssessmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F92A2B622E0A0019A079 /* IOSAccessAssessmentTests.swift */; };
 		3222F9352B622E0A0019A079 /* IOSAccessAssessmentUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */; };
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
-		3222F9482B62E7CB0019A079 /* CollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9472B62E7CB0019A079 /* CollectionView.swift */; };
-		322E73882B6C5DF300F88D94 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322E73872B6C5DF200F88D94 /* SetupView.swift */; };
+		55659C082BB785CB0094DF01 /* CameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C072BB785CB0094DF01 /* CameraController.swift */; };
+		55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0C2BB786100094DF01 /* CameraManager.swift */; };
+		55659C102BB7863F0094DF01 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0F2BB7863F0094DF01 /* SetupView.swift */; };
+		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
+		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 /* End PBXBuildFile section */
 
@@ -45,9 +48,12 @@
 		3222F9302B622E0A0019A079 /* IOSAccessAssessmentUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IOSAccessAssessmentUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITests.swift; sourceTree = "<group>"; };
 		3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		3222F9472B62E7CB0019A079 /* CollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionView.swift; sourceTree = "<group>"; };
 		3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = espnetv2_pascal_256.mlmodel; sourceTree = "<group>"; };
-		322E73872B6C5DF200F88D94 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		55659C072BB785CB0094DF01 /* CameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
+		55659C0C2BB786100094DF01 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		55659C0F2BB7863F0094DF01 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,10 +105,11 @@
 			isa = PBXGroup;
 			children = (
 				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
-				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
-				322E73872B6C5DF200F88D94 /* SetupView.swift */,
-				3222F9472B62E7CB0019A079 /* CollectionView.swift */,
+				55659C072BB785CB0094DF01 /* CameraController.swift */,
+				55659C092BB785EA0094DF01 /* VisionModel */,
 				3222F91D2B622E090019A079 /* Assets.xcassets */,
+				55659C0E2BB786240094DF01 /* Views */,
+				55659C0B2BB786050094DF01 /* Model */,
 				3222F91F2B622E090019A079 /* Preview Content */,
 			);
 			path = IOSAccessAssessment;
@@ -131,6 +138,32 @@
 				3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */,
 			);
 			path = IOSAccessAssessmentUITests;
+			sourceTree = "<group>";
+		};
+		55659C092BB785EA0094DF01 /* VisionModel */ = {
+			isa = PBXGroup;
+			children = (
+				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
+			);
+			path = VisionModel;
+			sourceTree = "<group>";
+		};
+		55659C0B2BB786050094DF01 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				55659C0C2BB786100094DF01 /* CameraManager.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		55659C0E2BB786240094DF01 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				55659C0F2BB7863F0094DF01 /* SetupView.swift */,
+				55659C112BB786580094DF01 /* ContentView.swift */,
+				55659C132BB786700094DF01 /* AnnotationView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -264,8 +297,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3222F9482B62E7CB0019A079 /* CollectionView.swift in Sources */,
-				322E73882B6C5DF300F88D94 /* SetupView.swift in Sources */,
+				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
+				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
+				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
+				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
+				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -430,7 +466,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = Q8PMZJLMHG;
+				DEVELOPMENT_TEAM = 5NH269AX3J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
@@ -444,7 +480,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = TASKAR.IOSAccessAssessment;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -460,7 +496,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = Q8PMZJLMHG;
+				DEVELOPMENT_TEAM = 5NH269AX3J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
@@ -474,7 +510,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = TASKAR.IOSAccessAssessment;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
