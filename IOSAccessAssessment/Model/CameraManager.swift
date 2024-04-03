@@ -20,7 +20,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         }
     }
     @Published var orientation = UIDevice.current.orientation
-    @Published var waitingForCapture = false
+//    @Published var waitingForCapture = false
     @Published var processingCapturedResult = false
     @Published var dataAvailable = false
     @Published var sharedImageData: SharedImageData?
@@ -46,13 +46,13 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     func startPhotoCapture() {
         controller.capturePhoto()
-        waitingForCapture = true
+//        waitingForCapture = true
     }
     
     func resumeStream() {
         controller.startStream()
         processingCapturedResult = false
-        waitingForCapture = false
+//        waitingForCapture = false
     }
     
     func onNewPhotoData() {
@@ -62,7 +62,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
 //        self.capturedData.colorCbCr = capturedData.colorCbCr
 //        self.capturedData.cameraIntrinsics = capturedData.cameraIntrinsics
 //        self.capturedData.cameraReferenceDimensions = capturedData.cameraReferenceDimensions
-        waitingForCapture = false
+//        waitingForCapture = false
         processingCapturedResult = true
     }
     
