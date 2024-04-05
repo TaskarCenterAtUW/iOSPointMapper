@@ -19,7 +19,7 @@ struct ContentView: View {
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData)
+            AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
@@ -29,7 +29,7 @@ struct ContentView: View {
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData),
+                        destination: AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
@@ -87,6 +87,8 @@ class CameraViewController: UIViewController {
     var session: AVCaptureSession?
     var rootLayer: CALayer! = nil
     private var previewLayer: AVCaptureVideoPreviewLayer! = nil
+//    var detectionLayer: CALayer! = nil
+//    var detectionView: UIImageView! = nil
     
     init(session: AVCaptureSession) {
         self.session = session
@@ -105,11 +107,19 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 652.0)
+        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 325.0)
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
+//        
+//        detectionView = UIImageView()
+//        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
+//        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
+//        detectionView.layer.borderWidth = 2.0
+//        detectionView.layer.borderColor = UIColor.blue.cgColor
+        
         DispatchQueue.main.async { [weak self] in
             self!.view.layer.addSublayer(self!.previewLayer)
+            //self!.view.layer.addSublayer(self!.detectionLayer)
         }
     }
 }
@@ -146,7 +156,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 652.0)
+        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 393.0, height: 325.0)
 //        segmentationView.layer.borderWidth = 2.0
 //        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill

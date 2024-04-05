@@ -8,13 +8,101 @@
 import SwiftUI
 struct AnnotationView: View {
     @ObservedObject var sharedImageData: SharedImageData
+    @State private var index = 0
+    @State private var selectedIndex: Int? = nil
+    @State private var isShowingCameraView = false
+    var selection: [Int]
+    var classes: [String]
+    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     
     var body: some View {
-        ZStack {
-            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
+        if (isShowingCameraView == true || index >= selection.count) {
+            ContentView(selection: Array(selection), classes: classes)
+        } else {
+            ZStack {
+                VStack {
+                    HStack {
+                        Spacer()
+                        HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
+                        Spacer()
+                    }
+                    HStack {
+                        Spacer()
+                        Text("Selected class: \(classes[selection[index]])")
+                        Spacer()
+                    }
+                    
+                    ProgressBar(value: calculateProgress())
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            ForEach(0..<options.count) { index in
+                                Button(action: {
+                                    // Toggle selection
+                                    if selectedIndex == index {
+                                        selectedIndex = nil
+                                    } else {
+                                        selectedIndex = index
+                                    }
+                                }) {
+                                    Text(options[index])
+                                        .padding()
+                                        .foregroundColor(selectedIndex == index ? .red : .blue) // Change color based on selection
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    
+                    Button(action: {
+                        self.nextSegment()
+                        selectedIndex = nil
+                    }) {
+                        Text("Next")
+                    }
+                    .padding()
+                }
+            }
+            .navigationBarTitle("Annotation View", displayMode: .inline)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: Button(action: {
+                // This action depends on how you manage navigation
+                // For demonstration, this simply dismisses the view, but you need a different mechanism to navigate to CameraView
+                self.isShowingCameraView = true;
+            }) {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(.blue)
+                Text("Camera View")
+            })
+            .padding()
         }
     }
+    
+    func nextSegment() {
+        index += 1
+        if index >= (selection.count) {
+            // Handle completion, save responses, or navigate to the next screen
+            ContentView(selection: Array(selection), classes: classes)
+        }
+    }
+
+    func calculateProgress() -> Float {
+        return Float(index) / Float(selection.count)
+    }
 }
+
+struct ProgressBar: View {
+    var value: Float
+
+
+    var body: some View {
+        ProgressView(value: value)
+            .progressViewStyle(LinearProgressViewStyle())
+            .padding()
+    }
+}
+
 
 class AnnotationCameraViewController: UIViewController {
     var cameraImage: UIImage?
@@ -35,12 +123,13 @@ class AnnotationCameraViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         cameraView = UIImageView(image: cameraImage)
-        cameraView!.frame = CGRect(x: 0.0, y: 23.0, width: 393.0, height: 652.0)
+        let centerX = (view.bounds.width - 250.0) / 2.0;
+        cameraView!.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
         cameraView!.contentMode = .scaleAspectFill
         view.addSubview(cameraView!)
         
         segmentationView = UIImageView(image: segmentationImage)
-        segmentationView!.frame = CGRect(x: 0.0, y: 23.0, width: 393.0, height: 652.0)
+        segmentationView!.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
         segmentationView!.contentMode = .scaleAspectFill
         view.addSubview(segmentationView!)
         cameraView!.bringSubviewToFront(segmentationView!)
