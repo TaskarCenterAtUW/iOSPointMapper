@@ -9,6 +9,23 @@ import SwiftUI
 import AVFoundation
 import Vision
 
+let grayscaleToClassMap: [UInt8: String] = [
+    12: "Background",
+    36: "Aeroplane",
+    48: "Bicycle",
+    84: "Bird",
+    96: "Boat",
+    108: "Bottle",
+    132: "Bus",
+    144: "Car",
+    180: "Cat",
+    216: "Chair",
+    228: "Cow",
+    240: "Diningtable"
+]
+
+
+
 struct ContentView: View {
     var selection: [Int]
     var classes: [String]
@@ -25,7 +42,7 @@ struct ContentView: View {
                 if manager?.dataAvailable ?? false{
                     ZStack {
                         HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData)
+                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
                     }
                     
                     NavigationLink(
@@ -138,6 +155,8 @@ struct HostedCameraViewController: UIViewControllerRepresentable{
 class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var segmentationView: UIImageView! = nil
     var sharedImageData: SharedImageData?
+    var selection:[Int] = []
+    var classes: [String] = []
     
     static var requests = [VNRequest]()
     
@@ -182,6 +201,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     func processSegmentationRequest(_ observations: [Any]){
+        
         let obs = observations as! [VNPixelBufferObservation]
 
         if obs.isEmpty{
@@ -189,17 +209,92 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
+        
+//        let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+//            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
 
-        let segMaskGray = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
-
+        let segMaskGray = outPixelBuffer.pixelBuffer
+        //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
+        let selectedGrayscaleValues = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap)
+        preprocessPixelBuffer(segMaskGray, withSelectedGrayscaleValues: selectedGrayscaleValues)
+        let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        
         //pass through the filter that converts grayscale image to different shades of red
-        self.masker.inputGrayImage = segMaskGray
+        self.masker.inputGrayImage = ciImage
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .up)
         print("b")
         DispatchQueue.main.async {
             self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .up)
         }
     }
+    
+    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleMap: [UInt8: String]) -> [UInt8] {
+        let selectedClasses = selection.map { classes[$0] }
+        let selectedGrayscaleValues = grayscaleMap.compactMap { (key, value) -> UInt8? in
+            selectedClasses.contains(value) ? key : nil
+        }
+        return selectedGrayscaleValues
+    }
+    
+    func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
+        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let buffer = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+        let pixelBufferFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        
+        guard pixelBufferFormat == kCVPixelFormatType_OneComponent8 else {
+            print("Pixel buffer format is not 8-bit grayscale.")
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+            return
+        }
+
+        let selectedValuesSet = Set(selectedValues) // Improve lookup performance
+        
+        for row in 0..<height {
+            let rowBase = buffer!.advanced(by: row * bytesPerRow)
+            for column in 0..<width {
+                let pixel = rowBase.advanced(by: column)
+                let pixelValue = pixel.load(as: UInt8.self)
+                if !selectedValuesSet.contains(pixelValue) {
+                    pixel.storeBytes(of: 0, as: UInt8.self) // Setting unselected values to 0
+                }
+            }
+        }
+
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+    }
+
+    
+    
+    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
+        var uniqueValues = Set<UInt8>()
+        
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
+        
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let bitDepth = 8 // Assuming 8 bits per component in a grayscale image.
+        
+        let byteBuffer = baseAddress!.assumingMemoryBound(to: UInt8.self)
+        
+        for row in 0..<height {
+            for col in 0..<width {
+                let offset = row * bytesPerRow + col * (bitDepth / 8)
+                let value = byteBuffer[offset]
+                uniqueValues.insert(value)
+            }
+        }
+        
+        return uniqueValues
+    }
+
     
     //converts the Grayscale image to RGB
     // provides different shades of red based on pixel values
@@ -251,8 +346,14 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
     var sharedImageData: SharedImageData
+    var selection:[Int]
+    var classes: [String]
+    
     func makeUIViewController(context: Context) -> SegmentationViewController {
-        return SegmentationViewController(sharedImageData: sharedImageData)
+        let viewController = SegmentationViewController(sharedImageData: sharedImageData)
+        viewController.selection = selection
+        viewController.classes = classes
+        return viewController
     }
     
     func updateUIViewController(_ uiView: SegmentationViewController, context: Context) {

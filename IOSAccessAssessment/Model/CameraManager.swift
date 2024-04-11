@@ -86,6 +86,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
             }
         }
     }
+
    
 }
 
