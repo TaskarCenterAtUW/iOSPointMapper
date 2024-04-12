@@ -24,6 +24,21 @@ let grayscaleToClassMap: [UInt8: String] = [
     240: "Diningtable"
 ]
 
+let grayscaleMap: [UInt8: Color] = [
+    12: .blue,
+    36: .red,
+    48: .purple,
+    84: .orange,
+    96: .brown,
+    108: .cyan,
+    132: .white,
+    144: .teal,
+    180: .black,
+    216: .green,
+    228: .red,
+    240: .yellow
+]
+
 
 
 struct ContentView: View {
@@ -210,13 +225,14 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
         let outPixelBuffer = (obs.first)!
         
-//        let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
-//            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
 
         let segMaskGray = outPixelBuffer.pixelBuffer
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
         let selectedGrayscaleValues = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap)
         preprocessPixelBuffer(segMaskGray, withSelectedGrayscaleValues: selectedGrayscaleValues)
+        
+        let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         
         //pass through the filter that converts grayscale image to different shades of red
@@ -301,6 +317,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     class ColorMasker: CIFilter
     {
         var inputGrayImage : CIImage?
+        
+        let arguments = ["grayscaleMap" : grayscaleMap]
         
         let colormapKernel = CIColorKernel(source:
             "kernel vec4 colorMasker(__sample gray)" +
