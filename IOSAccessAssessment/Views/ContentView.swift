@@ -348,61 +348,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
 
     
-    //converts the Grayscale image to RGB
-    // provides different shades of red based on pixel values
-//    class ColorMasker: CIFilter
-//    {
-//        @objc dynamic var inputImage: CIImage?
-//        var grayValues: [Float]?
-//        var colors: [CIColor]?
-//        private var kernel: CIKernel?
-//
-//        private var device: MTLDevice? = MTLCreateSystemDefaultDevice()
-//        private var commandQueue: MTLCommandQueue?
-//
-//        override init() {
-//            super.init()
-//            commandQueue = device?.makeCommandQueue()
-//            if let url = Bundle.main.url(forResource: "default", withExtension: "metallib"),
-//               let data = try? Data(contentsOf: url),
-//               let kernel = try? CIKernel(functionName: "colorMasker", fromMetalLibraryData: data) {
-//                self.kernel = kernel
-//            }
-//        }
-//
-//        required init?(coder aDecoder: NSCoder) {
-//            fatalError("init(coder:) has not been implemented")
-//        }
-//
-//        override var outputImage: CIImage? {
-//            guard let inputImage = inputImage,
-//                  let grayValues = grayValues,
-//                  let colors = colors,
-//                  let device = device,
-//                  let commandQueue = commandQueue,
-//                  let commandBuffer = commandQueue.makeCommandBuffer(),
-//                  let kernel = kernel else {
-//                return nil
-//            }
-//
-//            let colorInfos = zip(grayValues, colors).map { ColorInfo(color: SIMD4<Float>(Float($1.red), Float($1.green), Float($1.blue), Float($1.alpha)), grayscale: $0) }
-//            var params = Params(width: UInt32(inputImage.extent.width), count: UInt32(colorInfos.count))
-//            
-//            let colorInfoBuffer = device.makeBuffer(bytes: colorInfos, length: MemoryLayout<ColorInfo>.stride * colorInfos.count, options: .storageModeShared)
-//            let paramsBuffer = device.makeBuffer(bytes: &params, length: MemoryLayout<Params>.stride, options: .storageModeShared)
-//
-//            let args = [inputImage as Any, colorInfoBuffer!, paramsBuffer!]
-//
-//            guard let outputImage = kernel.apply(extent: inputImage.extent, roiCallback: { _, rect in rect }, arguments: args) else {
-//                return nil
-//            }
-//
-//            commandBuffer.commit()
-//            return outputImage
-//        }
-//
-//    }
-    
     class CustomCIFilter: CIFilter {
         var inputImage: CIImage?
         var grayscaleValues: [Float] = []

@@ -23,15 +23,15 @@ extern "C" kernel void colorMatchingKernel(
     float4 pixelColor = inputTexture.read(gid);
     float grayscale = pixelColor.r;
 
-//    for (uint i = 0; i < 12; i++) {
-//        if (grayscale == grayscaleValues[i]) {
-//            pixelColor.rgb = colorValues[i];
-//            pixelColor.a = 0.9;
-//            outputTexture.write(pixelColor, gid);
-//            return;
-//        }
-//    }
+    for (uint i = 0; i < 12; i++) {
+        if (grayscale == grayscaleValues[i]) {
+            pixelColor.rgb = colorValues[i];
+            pixelColor.a = 0.9;
+            outputTexture.write(pixelColor, gid);
+            return;
+        }
+    }
 
-    pixelColor = float4(1.0, 0.5, 0.5, 0.0);
+    pixelColor = float4(0.0, 0.0, 0.0, 0.0);
     outputTexture.write(pixelColor, gid);
 }
