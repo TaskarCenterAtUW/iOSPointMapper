@@ -8,6 +8,20 @@
 import SwiftUI
 import AVFoundation
 import Vision
+import Metal
+import CoreImage
+import MetalKit
+
+struct ColorInfo {
+    var color: SIMD4<Float> // Corresponds to the float4 in Metal
+    var grayscale: Float    // Corresponds to the float in Metal
+}
+
+struct Params {
+    var width: UInt32       // Corresponds to the uint in Metal
+    var count: UInt32       // Corresponds to the uint in Metal
+}
+
 
 let grayscaleToClassMap: [UInt8: String] = [
     12: "Background",
@@ -23,6 +37,25 @@ let grayscaleToClassMap: [UInt8: String] = [
     228: "Cow",
     240: "Diningtable"
 ]
+
+let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
+
+let colors: [CIColor] = [
+    CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
+    CIColor(red: 0.0, green: 1.0, blue: 0.0),      // Green
+    CIColor(red: 0.0, green: 0.0, blue: 1.0),      // Blue
+    CIColor(red: 0.5, green: 0.0, blue: 0.5),      // Purple
+    CIColor(red: 1.0, green: 0.65, blue: 0.0),     // Orange
+    CIColor(red: 1.0, green: 1.0, blue: 0.0),      // Yellow
+    CIColor(red: 0.65, green: 0.16, blue: 0.16),   // Brown
+    CIColor(red: 0.0, green: 1.0, blue: 1.0),      // Cyan
+    CIColor(red: 0.0, green: 0.5, blue: 0.5),      // Teal
+    CIColor(red: 1.0, green: 0.75, blue: 0.8),     // Pink
+    CIColor(red: 1.0, green: 1.0, blue: 1.0),      // White
+    CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
+    CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
+]
+
 
 let grayscaleMap: [UInt8: Color] = [
     12: .blue,
@@ -176,7 +209,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     static var requests = [VNRequest]()
     
     // define the filter that will convert the grayscale prediction to color image
-    let masker = ColorMasker()
+    //let masker = ColorMasker()
+    let masker = CustomCIFilter()
     
     init(sharedImageData: SharedImageData) {
         self.segmentationView = UIImageView()
@@ -228,15 +262,17 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
         let segMaskGray = outPixelBuffer.pixelBuffer
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-        let selectedGrayscaleValues = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap)
-        preprocessPixelBuffer(segMaskGray, withSelectedGrayscaleValues: selectedGrayscaleValues)
-        
+//        let selectedGrayscaleValues = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap)
+//        
         let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
             print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         
         //pass through the filter that converts grayscale image to different shades of red
-        self.masker.inputGrayImage = ciImage
+        self.masker.inputImage = ciImage
+        self.masker.grayscaleValues = grayValues
+        self.masker.colorValues = colors
+        //self.masker.count = 12
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .up)
         print("b")
         DispatchQueue.main.async {
@@ -314,50 +350,127 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     //converts the Grayscale image to RGB
     // provides different shades of red based on pixel values
-    class ColorMasker: CIFilter
-    {
-        var inputGrayImage : CIImage?
-        
-        let arguments = ["grayscaleMap" : grayscaleMap]
-        
-        let colormapKernel = CIColorKernel(source:
-            "kernel vec4 colorMasker(__sample gray)" +
-                "{" +
-                " if (gray.r == 0.0f) {return vec4(0.0, 0.0, 0.0, 0.0);} else {" +
-                "vec4 result;" +
-                "result.r = 1;" +
-                "result.g = gray.r;" +
-                "result.b = gray.r;" +
-                "result.a = 0.9;" +
-                "return result;" +
-            "}}"
-        )
-        
-        override var attributes: [String : Any]
-        {
-            return [
-                kCIAttributeFilterDisplayName: "Color masker",
-                
-                "inputGrayImage": [kCIAttributeIdentity: 0,
-                                      kCIAttributeClass: "CIImage",
-                                kCIAttributeDisplayName: "Grayscale Image",
-                                       kCIAttributeType: kCIAttributeTypeImage
-                                  ]
-            ]
+//    class ColorMasker: CIFilter
+//    {
+//        @objc dynamic var inputImage: CIImage?
+//        var grayValues: [Float]?
+//        var colors: [CIColor]?
+//        private var kernel: CIKernel?
+//
+//        private var device: MTLDevice? = MTLCreateSystemDefaultDevice()
+//        private var commandQueue: MTLCommandQueue?
+//
+//        override init() {
+//            super.init()
+//            commandQueue = device?.makeCommandQueue()
+//            if let url = Bundle.main.url(forResource: "default", withExtension: "metallib"),
+//               let data = try? Data(contentsOf: url),
+//               let kernel = try? CIKernel(functionName: "colorMasker", fromMetalLibraryData: data) {
+//                self.kernel = kernel
+//            }
+//        }
+//
+//        required init?(coder aDecoder: NSCoder) {
+//            fatalError("init(coder:) has not been implemented")
+//        }
+//
+//        override var outputImage: CIImage? {
+//            guard let inputImage = inputImage,
+//                  let grayValues = grayValues,
+//                  let colors = colors,
+//                  let device = device,
+//                  let commandQueue = commandQueue,
+//                  let commandBuffer = commandQueue.makeCommandBuffer(),
+//                  let kernel = kernel else {
+//                return nil
+//            }
+//
+//            let colorInfos = zip(grayValues, colors).map { ColorInfo(color: SIMD4<Float>(Float($1.red), Float($1.green), Float($1.blue), Float($1.alpha)), grayscale: $0) }
+//            var params = Params(width: UInt32(inputImage.extent.width), count: UInt32(colorInfos.count))
+//            
+//            let colorInfoBuffer = device.makeBuffer(bytes: colorInfos, length: MemoryLayout<ColorInfo>.stride * colorInfos.count, options: .storageModeShared)
+//            let paramsBuffer = device.makeBuffer(bytes: &params, length: MemoryLayout<Params>.stride, options: .storageModeShared)
+//
+//            let args = [inputImage as Any, colorInfoBuffer!, paramsBuffer!]
+//
+//            guard let outputImage = kernel.apply(extent: inputImage.extent, roiCallback: { _, rect in rect }, arguments: args) else {
+//                return nil
+//            }
+//
+//            commandBuffer.commit()
+//            return outputImage
+//        }
+//
+//    }
+    
+    class CustomCIFilter: CIFilter {
+        var inputImage: CIImage?
+        var grayscaleValues: [Float] = []
+        var colorValues: [CIColor] = []
+
+
+        override var outputImage: CIImage? {
+            guard let inputImage = inputImage else { return nil }
+            return applyFilter(to: inputImage)
         }
-        
-        override var outputImage: CIImage!
-        {
-            guard let inputGrayImage = inputGrayImage,
-                  let colormapKernel = colormapKernel else
-            {
+
+        private func applyFilter(to inputImage: CIImage) -> CIImage? {
+            guard let device = MTLCreateSystemDefaultDevice(),
+                  let commandQueue = device.makeCommandQueue() else {
                 return nil
             }
             
-            let extent = inputGrayImage.extent
-            let arguments = [inputGrayImage]
+            let textureLoader = MTKTextureLoader(device: device)
+           
+            let ciContext = CIContext(mtlDevice: device)
+
+            guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernel"),
+                  let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+                return nil
+            }
+
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+            descriptor.usage = [.shaderRead, .shaderWrite]
             
-            return colormapKernel.apply(extent: extent, arguments: arguments)
+            let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+            
+            guard let cgImage = ciContext.createCGImage(inputImage, from: inputImage.extent) else {
+                print("Error: inputImage does not have a valid CGImage")
+                return nil
+            }
+                    
+            
+            guard let inputTexture = try? textureLoader.newTexture(cgImage: cgImage, options: options) else {
+                return nil
+            }
+
+            guard let outputTexture = device.makeTexture(descriptor: descriptor),
+                  let commandBuffer = commandQueue.makeCommandBuffer(),
+                  let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+                return nil
+            }
+
+            let grayscaleBuffer = device.makeBuffer(bytes: grayscaleValues, length: grayscaleValues.count * MemoryLayout<Float>.size, options: [])
+            let colorBuffer = device.makeBuffer(bytes: colorValues.map { SIMD3<Float>(Float($0.red), Float($0.green), Float($0.blue)) }, length: colorValues.count * MemoryLayout<SIMD3<Float>>.size, options: [])
+
+            commandEncoder.setComputePipelineState(pipeline)
+            commandEncoder.setTexture(inputTexture, index: 0)
+            commandEncoder.setTexture(outputTexture, index: 1)
+            commandEncoder.setBuffer(grayscaleBuffer, offset: 0, index: 0)
+            commandEncoder.setBuffer(colorBuffer, offset: 0, index: 1)
+            commandEncoder.setBytes([UInt32(grayscaleValues.count)], length: MemoryLayout<UInt32>.size, index: 2)
+            
+            let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
+            let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
+                                       height: (Int(inputImage.extent.height) + threadgroupSize.height - 1) / threadgroupSize.height,
+                                       depth: 1)
+            commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
+            commandEncoder.endEncoding()
+
+            commandBuffer.commit()
+            commandBuffer.waitUntilCompleted()
+
+            return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])?.oriented(.downMirrored)
         }
     }
 }
