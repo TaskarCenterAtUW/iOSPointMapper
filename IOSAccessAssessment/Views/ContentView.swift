@@ -197,6 +197,7 @@ struct HostedCameraViewController: UIViewControllerRepresentable{
     var session: AVCaptureSession!
     
     func makeUIViewController(context: Context) -> CameraViewController {
+        annotationView = false
         return CameraViewController(session: session)
     }
     
@@ -281,14 +282,13 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.grayscaleValues = [grayscaleValue]
             self.masker.colorValues = [singleColor]
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            print("b")
-            annotationView = false
+            print("c")
             DispatchQueue.main.async {
                 self.sharedImageData?.objectSegmentation = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             }
         } else {
             self.masker.grayscaleValues = grayValues
-            self.masker.colorValues = colors
+            self.masker.colorValues =  colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             print("b")
             annotationView = false
