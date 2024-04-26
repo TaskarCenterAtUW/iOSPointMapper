@@ -23,7 +23,7 @@ extern "C" kernel void colorMatchingKernel(
     float4 pixelColor = inputTexture.read(gid);
     float grayscale = pixelColor.r;
 
-    for (uint i = 0; i < 12; i++) {
+    for (uint i = 0; i < grayscaleCount; i++) {
         if (grayscale == grayscaleValues[i]) {
             pixelColor.rgb = colorValues[i];
             pixelColor.a = 0.9;

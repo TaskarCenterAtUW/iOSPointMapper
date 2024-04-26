@@ -72,6 +72,7 @@ let grayscaleMap: [UInt8: Color] = [
     240: .yellow
 ]
 
+var annotationView:Bool = false
 
 
 struct ContentView: View {
@@ -98,6 +99,7 @@ struct ContentView: View {
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
+                            annotationView = true
                             manager!.processingCapturedResult ? manager!.resumeStream() : manager!.startPhotoCapture()
                             navigateToAnnotationView = true
                         } label: {
@@ -145,7 +147,9 @@ struct SpinnerView: View {
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
+    @Published var objectSegmentation: UIImage?
     @Published var segmentationImage: UIImage?
+    @Published var pixelBuffer: CIImage?
 }
 
 class CameraViewController: UIViewController {
@@ -205,6 +209,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     var sharedImageData: SharedImageData?
     var selection:[Int] = []
     var classes: [String] = []
+    var grayscaleValue:Float = 180 / 255.0
+    var singleColor:CIColor = CIColor(red: 0.0, green: 0.5, blue: 0.5)
     
     static var requests = [VNRequest]()
     
@@ -262,31 +268,55 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
         let segMaskGray = outPixelBuffer.pixelBuffer
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let selectedGrayscaleValues = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap)
-//        
+        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap, grayValues: grayValues)
+        
         let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
             print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
-        
+        self.sharedImageData?.pixelBuffer = ciImage
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
-        self.masker.grayscaleValues = grayValues
-        self.masker.colorValues = colors
-        //self.masker.count = 12
-        self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .up)
-        print("b")
-        DispatchQueue.main.async {
-            self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .up)
+        
+        if (annotationView) {
+            self.masker.grayscaleValues = [grayscaleValue]
+            self.masker.colorValues = [singleColor]
+            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            print("b")
+            annotationView = false
+            DispatchQueue.main.async {
+                self.sharedImageData?.objectSegmentation = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            }
+        } else {
+            self.masker.grayscaleValues = grayValues
+            self.masker.colorValues = colors
+            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            print("b")
+            annotationView = false
+            DispatchQueue.main.async {
+                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            }
         }
+        //self.masker.count = 12
     }
     
-    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleMap: [UInt8: String]) -> [UInt8] {
+    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
-        let selectedGrayscaleValues = grayscaleMap.compactMap { (key, value) -> UInt8? in
-            selectedClasses.contains(value) ? key : nil
+        var selectedGrayscaleValues: [UInt8] = []
+        var selectedColors: [CIColor] = []
+
+        for (key, value) in grayscaleMap {
+            if selectedClasses.contains(value) {
+                selectedGrayscaleValues.append(key)
+                // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
+                if let index = grayValues.firstIndex(of: Float(key)) {
+                    selectedColors.append(colors[index])  // Fetch corresponding color using the same index
+                }
+            }
         }
-        return selectedGrayscaleValues
+
+        return (selectedGrayscaleValues, selectedColors)
     }
+
     
     func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
         CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
@@ -347,6 +377,61 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         return uniqueValues
     }
 
+    
+    //converts the Grayscale image to RGB
+    // provides different shades of red based on pixel values
+//    class ColorMasker: CIFilter
+//    {
+//        @objc dynamic var inputImage: CIImage?
+//        var grayValues: [Float]?
+//        var colors: [CIColor]?
+//        private var kernel: CIKernel?
+//
+//        private var device: MTLDevice? = MTLCreateSystemDefaultDevice()
+//        private var commandQueue: MTLCommandQueue?
+//
+//        override init() {
+//            super.init()
+//            commandQueue = device?.makeCommandQueue()
+//            if let url = Bundle.main.url(forResource: "default", withExtension: "metallib"),
+//               let data = try? Data(contentsOf: url),
+//               let kernel = try? CIKernel(functionName: "colorMasker", fromMetalLibraryData: data) {
+//                self.kernel = kernel
+//            }
+//        }
+//
+//        required init?(coder aDecoder: NSCoder) {
+//            fatalError("init(coder:) has not been implemented")
+//        }
+//
+//        override var outputImage: CIImage? {
+//            guard let inputImage = inputImage,
+//                  let grayValues = grayValues,
+//                  let colors = colors,
+//                  let device = device,
+//                  let commandQueue = commandQueue,
+//                  let commandBuffer = commandQueue.makeCommandBuffer(),
+//                  let kernel = kernel else {
+//                return nil
+//            }
+//
+//            let colorInfos = zip(grayValues, colors).map { ColorInfo(color: SIMD4<Float>(Float($1.red), Float($1.green), Float($1.blue), Float($1.alpha)), grayscale: $0) }
+//            var params = Params(width: UInt32(inputImage.extent.width), count: UInt32(colorInfos.count))
+//            
+//            let colorInfoBuffer = device.makeBuffer(bytes: colorInfos, length: MemoryLayout<ColorInfo>.stride * colorInfos.count, options: .storageModeShared)
+//            let paramsBuffer = device.makeBuffer(bytes: &params, length: MemoryLayout<Params>.stride, options: .storageModeShared)
+//
+//            let args = [inputImage as Any, colorInfoBuffer!, paramsBuffer!]
+//
+//            guard let outputImage = kernel.apply(extent: inputImage.extent, roiCallback: { _, rect in rect }, arguments: args) else {
+//                return nil
+//            }
+//
+//            commandBuffer.commit()
+//            return outputImage
+//        }
+//
+//    }
     
     class CustomCIFilter: CIFilter {
         var inputImage: CIImage?
@@ -427,6 +512,7 @@ struct HostedSegmentationViewController: UIViewControllerRepresentable{
     
     func makeUIViewController(context: Context) -> SegmentationViewController {
         let viewController = SegmentationViewController(sharedImageData: sharedImageData)
+        viewController.sharedImageData = sharedImageData
         viewController.selection = selection
         viewController.classes = classes
         return viewController
