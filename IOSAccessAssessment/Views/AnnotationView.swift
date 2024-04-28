@@ -23,7 +23,11 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
+                        if (index > 0) {
+                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.objectSegmentation!)
+                        } else {
+                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
+                        }
                         Spacer()
                     }
                     HStack {
