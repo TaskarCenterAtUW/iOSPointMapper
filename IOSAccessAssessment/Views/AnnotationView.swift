@@ -23,11 +23,11 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        if (index > 0) {
+//                        if (index > 0) {
                             HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.objectSegmentation!)
-                        } else {
-                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
-                        }
+//                        } else {
+//                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
+//                        }
                         Spacer()
                     }
                     HStack {
@@ -84,6 +84,8 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
+//        print("A")
+        print(index)
         index += 1
         if index >= (selection.count) {
             // Handle completion, save responses, or navigate to the next screen

@@ -100,8 +100,10 @@ struct ContentView: View {
                     ) {
                         Button {
                             annotationView = true
-                            manager!.processingCapturedResult ? manager!.resumeStream() : manager!.startPhotoCapture()
-                            navigateToAnnotationView = true
+                            manager!.startPhotoCapture()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                navigateToAnnotationView = true
+                            }
                         } label: {
                             Image(systemName: "camera.circle.fill")
                                 .resizable()
@@ -179,7 +181,7 @@ class CameraViewController: UIViewController {
         previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 325.0)
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
-//        
+//
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
 //        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
@@ -282,7 +284,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.grayscaleValues = [grayscaleValue]
             self.masker.colorValues = [singleColor]
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            print("c")
             DispatchQueue.main.async {
                 self.sharedImageData?.objectSegmentation = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             }
@@ -290,7 +291,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.grayscaleValues = grayValues
             self.masker.colorValues =  colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            print("b")
             annotationView = false
             DispatchQueue.main.async {
                 self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
@@ -417,7 +417,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 //
 //            let colorInfos = zip(grayValues, colors).map { ColorInfo(color: SIMD4<Float>(Float($1.red), Float($1.green), Float($1.blue), Float($1.alpha)), grayscale: $0) }
 //            var params = Params(width: UInt32(inputImage.extent.width), count: UInt32(colorInfos.count))
-//            
+//
 //            let colorInfoBuffer = device.makeBuffer(bytes: colorInfos, length: MemoryLayout<ColorInfo>.stride * colorInfos.count, options: .storageModeShared)
 //            let paramsBuffer = device.makeBuffer(bytes: &params, length: MemoryLayout<Params>.stride, options: .storageModeShared)
 //

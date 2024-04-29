@@ -61,7 +61,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 DispatchQueue.main.async {
                     self.sharedImageData?.cameraImage = UIImage(ciImage: ciImage, scale: 1.0, orientation: .right)
                 }
-                print("A")
+//                print("A")
                 if self.dataAvailable == false {
                     self.dataAvailable = true
                 }
