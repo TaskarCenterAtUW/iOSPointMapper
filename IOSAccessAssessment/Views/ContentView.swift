@@ -85,7 +85,7 @@ struct ContentView: View {
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
+            AnnotationView(sharedImageData: sharedImageData, selection: sharedImageData.segmentedIndices, classes: classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
@@ -95,7 +95,7 @@ struct ContentView: View {
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes),
+                        destination: AnnotationView(sharedImageData: sharedImageData, selection: sharedImageData.segmentedIndices, classes: classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
@@ -124,6 +124,14 @@ struct ContentView: View {
             .onAppear {
                 if manager == nil {
                     manager = CameraManager(sharedImageData: sharedImageData)
+//                    let segmentationController = SegmentationViewController(sharedImageData: sharedImageData)
+//                    segmentationController.selection = selection
+//                    segmentationController.classes = classes
+//                    manager?.segmentationController = segmentationController
+//                    
+//                    sharedImageData.updateSegmentation = { index in
+//                        self.manager?.segmentationController?.classSegmentationRequest()
+//                    }
                 }
             }
             .onDisappear {
@@ -151,7 +159,13 @@ class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
     @Published var objectSegmentation: UIImage?
     @Published var segmentationImage: UIImage?
+    @Published var objectImage: UIImage?
     @Published var pixelBuffer: CIImage?
+    @Published var segmentedIndices: [Int] = []
+    @Published var classImages: [UIImage] = []
+    
+//    var updateSegmentation: ((Any) -> Void)?
+    
 }
 
 class CameraViewController: UIViewController {
@@ -258,6 +272,27 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         SegmentationViewController.requests = [segmentationRequest]
     }
     
+    
+    func classSegmentationRequest() {
+        
+        guard let image = self.sharedImageData?.cameraImage else { return }
+        
+        if let totalCount = self.sharedImageData?.segmentedIndices.count {
+            self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
+        }
+            
+        if let indices = self.sharedImageData?.segmentedIndices.indices {
+            for i in indices {
+                guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
+                self.masker.inputImage = self.sharedImageData?.pixelBuffer
+                self.masker.grayscaleValues = [grayValues[currentClass]]
+                self.masker.colorValues = [colors[currentClass]]
+                self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            }
+        }
+    }
+    
     func processSegmentationRequest(_ observations: [Any]){
         
         let obs = observations as! [VNPixelBufferObservation]
@@ -273,20 +308,19 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
         let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap, grayValues: grayValues)
         
-        let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
             print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
+            print("Selected Indices:  \(selectedIndices)")
+        self.sharedImageData?.segmentedIndices = selectedIndices
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
+        
         if (annotationView) {
-            self.masker.grayscaleValues = [grayscaleValue]
-            self.masker.colorValues = [singleColor]
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            DispatchQueue.main.async {
-                self.sharedImageData?.objectSegmentation = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
+            annotationView = false
+            classSegmentationRequest()
         } else {
             self.masker.grayscaleValues = grayValues
             self.masker.colorValues =  colors
@@ -351,7 +385,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
     
     
-    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
+    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
         var uniqueValues = Set<UInt8>()
         
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
@@ -374,7 +408,14 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             }
         }
         
-        return uniqueValues
+        let valueToIndex = Dictionary(uniqueKeysWithValues: grayValues.enumerated().map { ($0.element, $0.offset) })
+        
+        let selectedIndices = uniqueValues.map { UInt8($0) }
+            .map {Float($0) / 255.0 }
+            .compactMap { valueToIndex[$0]}
+            .sorted()
+            
+        return (uniqueValues, selectedIndices)
     }
 
     

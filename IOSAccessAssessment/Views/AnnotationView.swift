@@ -11,23 +11,20 @@ struct AnnotationView: View {
     @State private var index = 0
     @State private var selectedIndex: Int? = nil
     @State private var isShowingCameraView = false
+    @State private var isUpdatingSegmentation = false
     var selection: [Int]
     var classes: [String]
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     
     var body: some View {
-        if (isShowingCameraView == true || index >= selection.count) {
+        if isShowingCameraView || index >= sharedImageData.classImages.count {
             ContentView(selection: Array(selection), classes: classes)
         } else {
             ZStack {
                 VStack {
                     HStack {
                         Spacer()
-//                        if (index > 0) {
-                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.objectSegmentation!)
-//                        } else {
-//                            HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.segmentationImage!)
-//                        }
+                        HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.classImages[index])
                         Spacer()
                     }
                     HStack {
@@ -66,6 +63,7 @@ struct AnnotationView: View {
                         Text("Next")
                     }
                     .padding()
+                    .disabled(isUpdatingSegmentation)
                 }
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
@@ -79,18 +77,24 @@ struct AnnotationView: View {
                     .foregroundColor(.blue)
                 Text("Camera View")
             })
-            .padding()
+            .onChange(of: index) { _ in
+                // Trigger any additional actions when the index changes
+                self.refreshView()
+            }
         }
     }
     
     func nextSegment() {
-//        print("A")
-        print(index)
         index += 1
-        if index >= (selection.count) {
+        if index >= (sharedImageData.classImages.count) {
             // Handle completion, save responses, or navigate to the next screen
             ContentView(selection: Array(selection), classes: classes)
         }
+    }
+
+    func refreshView() {
+        // Any additional refresh logic can be placed here
+        // Example: fetching new data, triggering animations, etc.
     }
 
     func calculateProgress() -> Float {
@@ -128,17 +132,21 @@ class AnnotationCameraViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        let centerX = (view.bounds.width - 250.0) / 2.0
         cameraView = UIImageView(image: cameraImage)
-        let centerX = (view.bounds.width - 250.0) / 2.0;
-        cameraView!.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
-        cameraView!.contentMode = .scaleAspectFill
-        view.addSubview(cameraView!)
+        cameraView?.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
+        cameraView?.contentMode = .scaleAspectFill
+        if let cameraView = cameraView {
+            view.addSubview(cameraView)
+        }
         
         segmentationView = UIImageView(image: segmentationImage)
-        segmentationView!.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
-        segmentationView!.contentMode = .scaleAspectFill
-        view.addSubview(segmentationView!)
-        cameraView!.bringSubviewToFront(segmentationView!)
+        segmentationView?.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
+        segmentationView?.contentMode = .scaleAspectFill
+        if let segmentationView = segmentationView {
+            view.addSubview(segmentationView)
+        }
+        cameraView?.bringSubviewToFront(segmentationView!)
     }
 }
 
@@ -150,7 +158,10 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
         return AnnotationCameraViewController(cameraImage: cameraImage, segmentationImage: segmentationImage)
     }
     
-    func updateUIViewController(_ uiView: AnnotationCameraViewController, context: Context) {
+    func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
+        uiViewController.cameraImage = cameraImage
+        uiViewController.segmentationImage = segmentationImage
+        uiViewController.viewDidLoad()
     }
 }
 
