@@ -137,7 +137,9 @@ class AnnotationCameraViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let centerX = (view.bounds.width - 256.0) / 2.0
+//        print("view.bounds.width: \(view.bounds.width)")
+//        print("main.bounds.width: \(UIScreen.main.bounds.width)")
+        let centerX = (UIScreen.main.bounds.width - 256.0) / 2.0
         cameraView = UIImageView(image: cameraImage)
         cameraView?.frame = CGRect(x: centerX, y: 0.0, width: 256.0, height: 256.0)
         cameraView?.contentMode = .scaleAspectFill
