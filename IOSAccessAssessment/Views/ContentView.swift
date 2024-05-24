@@ -82,10 +82,11 @@ struct ContentView: View {
     @StateObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
+    var objectLocation = ObjectLocation()
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, selection: sharedImageData.segmentedIndices, classes: classes)
+            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
@@ -95,11 +96,12 @@ struct ContentView: View {
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, selection: sharedImageData.segmentedIndices, classes: classes),
+                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
                             annotationView = true
+                            objectLocation.settingLocation()
                             manager!.startPhotoCapture()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 navigateToAnnotationView = true
@@ -157,12 +159,13 @@ struct SpinnerView: View {
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
-    @Published var objectSegmentation: UIImage?
-    @Published var segmentationImage: UIImage?
-    @Published var objectImage: UIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
     @Published var pixelBuffer: CIImage?
+    @Published var depthData: CVPixelBuffer?
+    @Published var depthDataImage: UIImage?
     @Published var segmentedIndices: [Int] = []
-    @Published var classImages: [UIImage] = []
+    @Published var classImages: [CIImage] = []
     
 //    var updateSegmentation: ((Any) -> Void)?
     
@@ -192,7 +195,7 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 325.0)
+        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 256.0, height: 256.0)
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
 //
@@ -247,7 +250,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 393.0, height: 325.0)
+        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 256.0, height: 256.0)
 //        segmentationView.layer.borderWidth = 2.0
 //        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill
@@ -275,10 +278,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     func classSegmentationRequest() {
         
-        guard let image = self.sharedImageData?.cameraImage else { return }
+        //guard let image = self.sharedImageData?.cameraImage else { return }
         
         if let totalCount = self.sharedImageData?.segmentedIndices.count {
-            self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
+            //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
+            self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
         }
             
         if let indices = self.sharedImageData?.segmentedIndices.indices {
@@ -288,7 +292,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
                 self.masker.grayscaleValues = [grayValues[currentClass]]
                 self.masker.colorValues = [colors[currentClass]]
                 self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+                self.sharedImageData?.classImages[i] = self.masker.outputImage!
+//                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             }
         }
     }
@@ -326,9 +331,9 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.colorValues =  colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             annotationView = false
-            DispatchQueue.main.async {
-                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
+//            DispatchQueue.main.async {
+//                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//            }
         }
         //self.masker.count = 12
     }
