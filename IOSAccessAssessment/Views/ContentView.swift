@@ -195,7 +195,7 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 256.0, height: 256.0)
+//        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 256.0, height: 256.0)
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
 //
@@ -206,6 +206,9 @@ class CameraViewController: UIViewController {
 //        detectionView.layer.borderColor = UIColor.blue.cgColor
         
         DispatchQueue.main.async { [weak self] in
+            let parentViewWidth = self!.view.frame.size.width
+            let x = (parentViewWidth - 256.0) / 2.0 //Hard-coded for now
+            self!.previewLayer.frame = CGRect(x: x, y: 0.0, width: 256.0, height: 256.0)
             self!.view.layer.addSublayer(self!.previewLayer)
             //self!.view.layer.addSublayer(self!.detectionLayer)
         }
@@ -250,7 +253,10 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 256.0, height: 256.0)
+        let parentViewWidth = self.view.frame.size.width
+        let x = (parentViewWidth - 256.0) / 2.0 //Hard-coded for now
+        segmentationView.frame = CGRect(x: x, y: 325.0, width: 256.0, height: 256.0)
+//        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 256.0, height: 256.0)
 //        segmentationView.layer.borderWidth = 2.0
 //        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill

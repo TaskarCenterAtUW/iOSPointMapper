@@ -474,7 +474,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = 5NH269AX3J;
+				DEVELOPMENT_TEAM = UB6LB27Z2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
@@ -490,7 +490,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -506,7 +506,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = 5NH269AX3J;
+				DEVELOPMENT_TEAM = UB6LB27Z2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
@@ -522,7 +522,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
