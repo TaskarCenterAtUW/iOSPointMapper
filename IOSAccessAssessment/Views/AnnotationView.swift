@@ -15,7 +15,7 @@ struct AnnotationView: View {
     var objectLocation: ObjectLocation
     var selection: [Int]
     var classes: [String]
-    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
+    let options = ["I agree with this class annotation", "The class annotation is misidentified", "A class does not exist"]
     
     var body: some View {
         if isShowingCameraView || index >= sharedImageData.classImages.count {
@@ -102,6 +102,8 @@ struct AnnotationView: View {
     func calculateProgress() -> Float {
         return Float(index) / Float(selection.count)
     }
+    
+    
 }
 
 struct ProgressBar: View {

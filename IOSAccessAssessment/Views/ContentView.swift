@@ -23,53 +23,78 @@ struct Params {
 }
 
 
+//let grayscaleToClassMap: [UInt8: String] = [
+//    12: "Background",
+//    36: "Aeroplane",
+//    48: "Bicycle",
+//    84: "Bird",
+//    96: "Boat",
+//    108: "Bottle",
+//    132: "Bus",
+//    144: "Car",
+//    180: "Cat",
+//    216: "Chair",
+//    228: "Cow",
+//    240: "Diningtable"
+//]
 let grayscaleToClassMap: [UInt8: String] = [
-    12: "Background",
-    36: "Aeroplane",
-    48: "Bicycle",
-    84: "Bird",
-    96: "Boat",
-    108: "Bottle",
-    132: "Bus",
-    144: "Car",
-    180: "Cat",
-    216: "Chair",
-    228: "Cow",
-    240: "Diningtable"
+    8: "Sidewalk",
+    12: "Wall",
+    13: "Fence",
+    17: "Pole",
+    19: "Traffic Light",
+    180: "Person"
 ]
 
-let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
+//let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
+let grayValues: [Float] = [8, 12, 13, 17, 19, 180].map{Float($0)/255.0}
 
+//let colors: [CIColor] = [
+//    CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
+//    CIColor(red: 0.0, green: 1.0, blue: 0.0),      // Green
+//    CIColor(red: 0.0, green: 0.0, blue: 1.0),      // Blue
+//    CIColor(red: 0.5, green: 0.0, blue: 0.5),      // Purple
+//    CIColor(red: 1.0, green: 0.65, blue: 0.0),     // Orange
+//    CIColor(red: 1.0, green: 1.0, blue: 0.0),      // Yellow
+//    CIColor(red: 0.65, green: 0.16, blue: 0.16),   // Brown
+//    CIColor(red: 0.0, green: 1.0, blue: 1.0),      // Cyan
+//    CIColor(red: 0.0, green: 0.5, blue: 0.5),      // Teal
+//    CIColor(red: 1.0, green: 0.75, blue: 0.8),     // Pink
+//    CIColor(red: 1.0, green: 1.0, blue: 1.0),      // White
+//    CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
+//    CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
+//]
 let colors: [CIColor] = [
-    CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
-    CIColor(red: 0.0, green: 1.0, blue: 0.0),      // Green
-    CIColor(red: 0.0, green: 0.0, blue: 1.0),      // Blue
-    CIColor(red: 0.5, green: 0.0, blue: 0.5),      // Purple
-    CIColor(red: 1.0, green: 0.65, blue: 0.0),     // Orange
-    CIColor(red: 1.0, green: 1.0, blue: 0.0),      // Yellow
-    CIColor(red: 0.65, green: 0.16, blue: 0.16),   // Brown
-    CIColor(red: 0.0, green: 1.0, blue: 1.0),      // Cyan
-    CIColor(red: 0.0, green: 0.5, blue: 0.5),      // Teal
-    CIColor(red: 1.0, green: 0.75, blue: 0.8),     // Pink
-    CIColor(red: 1.0, green: 1.0, blue: 1.0),      // White
-    CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
-    CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
+    CIColor(red: 244/255.0, green: 35/255.0, blue: 232/255.0),
+    CIColor(red: 102/255.0, green: 102/255.0, blue: 156/255.0),
+    CIColor(red: 190/255.0, green: 153/255.0, blue: 153/255.0),
+    CIColor(red: 153/255.0, green: 153/255.0, blue: 153/255.0),
+    CIColor(red: 250/255.0, green: 170/255.0, blue: 30/255.0),
+    CIColor(red: 220/255.0, green: 20/255.0, blue: 60/255.0)
 ]
 
 
+//let grayscaleMap: [UInt8: Color] = [
+//    12: .blue,
+//    36: .red,
+//    48: .purple,
+//    84: .orange,
+//    96: .brown,
+//    108: .cyan,
+//    132: .white,
+//    144: .teal,
+//    180: .black,
+//    216: .green,
+//    228: .red,
+//    240: .yellow
+//]
 let grayscaleMap: [UInt8: Color] = [
-    12: .blue,
-    36: .red,
-    48: .purple,
-    84: .orange,
-    96: .brown,
-    108: .cyan,
-    132: .white,
-    144: .teal,
-    180: .black,
-    216: .green,
-    228: .red,
-    240: .yellow
+    8: .blue,
+    12: .red,
+    13: .purple,
+    17: .orange,
+    19: .brown,
+    180: .cyan
 ]
 
 var annotationView:Bool = false
