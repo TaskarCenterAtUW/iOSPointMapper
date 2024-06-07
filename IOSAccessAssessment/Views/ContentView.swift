@@ -43,11 +43,12 @@ let grayscaleToClassMap: [UInt8: String] = [
     13: "Fence",
     17: "Pole",
     19: "Traffic Light",
-    180: "Person"
+    180: "Person",
+    240: "Miscellaneous"
 ]
 
 //let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
-let grayValues: [Float] = [8, 12, 13, 17, 19, 180].map{Float($0)/255.0}
+let grayValues: [Float] = [8, 12, 13, 17, 19, 180, 240].map{Float($0)/255.0}
 
 //let colors: [CIColor] = [
 //    CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
@@ -70,7 +71,8 @@ let colors: [CIColor] = [
     CIColor(red: 190/255.0, green: 153/255.0, blue: 153/255.0),
     CIColor(red: 153/255.0, green: 153/255.0, blue: 153/255.0),
     CIColor(red: 250/255.0, green: 170/255.0, blue: 30/255.0),
-    CIColor(red: 220/255.0, green: 20/255.0, blue: 60/255.0)
+    CIColor(red: 220/255.0, green: 20/255.0, blue: 60/255.0),
+    CIColor(red: 1.0, green: 0.0, blue: 1.0)
 ]
 
 
@@ -94,7 +96,7 @@ let grayscaleMap: [UInt8: Color] = [
     13: .purple,
     17: .orange,
     19: .brown,
-    180: .cyan
+    180: .cyan,
 ]
 
 var annotationView:Bool = false
@@ -345,8 +347,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap, grayValues: grayValues)
         
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
-            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
-            print("Selected Indices:  \(selectedIndices)")
+//            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
+//            print("Selected Indices:  \(selectedIndices)")
         self.sharedImageData?.segmentedIndices = selectedIndices
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage
