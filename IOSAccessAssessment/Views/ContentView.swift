@@ -82,10 +82,11 @@ struct ContentView: View {
     @StateObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
+    var objectLocation = ObjectLocation()
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
+            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
@@ -95,13 +96,16 @@ struct ContentView: View {
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, selection: Array(selection), classes: classes),
+                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
                             annotationView = true
-                            manager!.processingCapturedResult ? manager!.resumeStream() : manager!.startPhotoCapture()
-                            navigateToAnnotationView = true
+                            objectLocation.settingLocation()
+                            manager!.startPhotoCapture()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                navigateToAnnotationView = true
+                            }
                         } label: {
                             Image(systemName: "camera.circle.fill")
                                 .resizable()
@@ -122,6 +126,14 @@ struct ContentView: View {
             .onAppear {
                 if manager == nil {
                     manager = CameraManager(sharedImageData: sharedImageData)
+//                    let segmentationController = SegmentationViewController(sharedImageData: sharedImageData)
+//                    segmentationController.selection = selection
+//                    segmentationController.classes = classes
+//                    manager?.segmentationController = segmentationController
+//                    
+//                    sharedImageData.updateSegmentation = { index in
+//                        self.manager?.segmentationController?.classSegmentationRequest()
+//                    }
                 }
             }
             .onDisappear {
@@ -147,9 +159,16 @@ struct SpinnerView: View {
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
-    @Published var objectSegmentation: UIImage?
-    @Published var segmentationImage: UIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
     @Published var pixelBuffer: CIImage?
+    @Published var depthData: CVPixelBuffer?
+    @Published var depthDataImage: UIImage?
+    @Published var segmentedIndices: [Int] = []
+    @Published var classImages: [CIImage] = []
+    
+//    var updateSegmentation: ((Any) -> Void)?
+    
 }
 
 class CameraViewController: UIViewController {
@@ -176,10 +195,10 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 393.0, height: 325.0)
+        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 256.0, height: 256.0)
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
-//        
+//
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
 //        detectionView.transform = CGAffineTransform(rotationAngle: -.pi / 2)
@@ -231,7 +250,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 393.0, height: 325.0)
+        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 256.0, height: 256.0)
 //        segmentationView.layer.borderWidth = 2.0
 //        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill
@@ -256,6 +275,29 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         SegmentationViewController.requests = [segmentationRequest]
     }
     
+    
+    func classSegmentationRequest() {
+        
+        //guard let image = self.sharedImageData?.cameraImage else { return }
+        
+        if let totalCount = self.sharedImageData?.segmentedIndices.count {
+            //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
+            self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
+        }
+            
+        if let indices = self.sharedImageData?.segmentedIndices.indices {
+            for i in indices {
+                guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
+                self.masker.inputImage = self.sharedImageData?.pixelBuffer
+                self.masker.grayscaleValues = [grayValues[currentClass]]
+                self.masker.colorValues = [colors[currentClass]]
+                self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+                self.sharedImageData?.classImages[i] = self.masker.outputImage!
+//                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            }
+        }
+    }
+    
     func processSegmentationRequest(_ observations: [Any]){
         
         let obs = observations as! [VNPixelBufferObservation]
@@ -271,30 +313,27 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
         let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap, grayValues: grayValues)
         
-        let uniqueGrayscaleValues = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
             print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
+            print("Selected Indices:  \(selectedIndices)")
+        self.sharedImageData?.segmentedIndices = selectedIndices
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
+        
         if (annotationView) {
-            self.masker.grayscaleValues = [grayscaleValue]
-            self.masker.colorValues = [singleColor]
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            print("c")
-            DispatchQueue.main.async {
-                self.sharedImageData?.objectSegmentation = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
+            annotationView = false
+            classSegmentationRequest()
         } else {
             self.masker.grayscaleValues = grayValues
             self.masker.colorValues =  colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            print("b")
             annotationView = false
-            DispatchQueue.main.async {
-                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
+//            DispatchQueue.main.async {
+//                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//            }
         }
         //self.masker.count = 12
     }
@@ -351,7 +390,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
     
     
-    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
+    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
         var uniqueValues = Set<UInt8>()
         
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
@@ -374,7 +413,14 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             }
         }
         
-        return uniqueValues
+        let valueToIndex = Dictionary(uniqueKeysWithValues: grayValues.enumerated().map { ($0.element, $0.offset) })
+        
+        let selectedIndices = uniqueValues.map { UInt8($0) }
+            .map {Float($0) / 255.0 }
+            .compactMap { valueToIndex[$0]}
+            .sorted()
+            
+        return (uniqueValues, selectedIndices)
     }
 
     
@@ -417,7 +463,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 //
 //            let colorInfos = zip(grayValues, colors).map { ColorInfo(color: SIMD4<Float>(Float($1.red), Float($1.green), Float($1.blue), Float($1.alpha)), grayscale: $0) }
 //            var params = Params(width: UInt32(inputImage.extent.width), count: UInt32(colorInfos.count))
-//            
+//
 //            let colorInfoBuffer = device.makeBuffer(bytes: colorInfos, length: MemoryLayout<ColorInfo>.stride * colorInfos.count, options: .storageModeShared)
 //            let paramsBuffer = device.makeBuffer(bytes: &params, length: MemoryLayout<Params>.stride, options: .storageModeShared)
 //
