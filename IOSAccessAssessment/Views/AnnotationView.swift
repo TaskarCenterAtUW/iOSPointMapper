@@ -12,6 +12,7 @@ struct AnnotationView: View {
     @State private var selectedIndex: Int? = nil
     @State private var isShowingCameraView = false
     @State private var isUpdatingSegmentation = false
+    var objectLocation: ObjectLocation
     var selection: [Int]
     var classes: [String]
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
@@ -24,7 +25,7 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!, segmentationImage: sharedImageData.classImages[index])
+                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
                         Spacer()
                     }
                     HStack {
@@ -57,6 +58,7 @@ struct AnnotationView: View {
                     }
                     
                     Button(action: {
+                        objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
                         self.nextSegment()
                         selectedIndex = nil
                     }) {
@@ -116,13 +118,16 @@ struct ProgressBar: View {
 
 class AnnotationCameraViewController: UIViewController {
     var cameraImage: UIImage?
-    var segmentationImage: UIImage?
+    var segmentationImage: CIImage?
     var cameraView: UIImageView? = nil
     var segmentationView: UIImageView? = nil
+    var sharedImageData: SharedImageData?
     
-    init(cameraImage: UIImage, segmentationImage: UIImage) {
-        self.cameraImage = cameraImage
-        self.segmentationImage = segmentationImage
+    init(sharedImageData: SharedImageData, index: Int) {
+        self.cameraImage = sharedImageData.cameraImage
+        self.segmentationImage = sharedImageData.classImages[index]
+//        self.cameraImage = cameraImage
+//        self.segmentationImage = segmentationImage
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -132,16 +137,18 @@ class AnnotationCameraViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let centerX = (view.bounds.width - 250.0) / 2.0
+//        print("view.bounds.width: \(view.bounds.width)")
+//        print("main.bounds.width: \(UIScreen.main.bounds.width)")
+        let centerX = (UIScreen.main.bounds.width - 256.0) / 2.0
         cameraView = UIImageView(image: cameraImage)
-        cameraView?.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
+        cameraView?.frame = CGRect(x: centerX, y: 0.0, width: 256.0, height: 256.0)
         cameraView?.contentMode = .scaleAspectFill
         if let cameraView = cameraView {
             view.addSubview(cameraView)
         }
         
-        segmentationView = UIImageView(image: segmentationImage)
-        segmentationView?.frame = CGRect(x: centerX, y: 50.0, width: 200.0, height: 200.0)
+        segmentationView = UIImageView(image: UIImage(ciImage: segmentationImage!, scale: 1.0, orientation: .downMirrored))
+        segmentationView?.frame = CGRect(x: centerX, y: 0.0, width: 256.0, height: 256.0)
         segmentationView?.contentMode = .scaleAspectFill
         if let segmentationView = segmentationView {
             view.addSubview(segmentationView)
@@ -151,16 +158,20 @@ class AnnotationCameraViewController: UIViewController {
 }
 
 struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
-    var cameraImage: UIImage
-    var segmentationImage: UIImage
+//    var cameraImage: UIImage
+//    var segmentationImage: UIImage
+    let sharedImageData: SharedImageData
+    let index: Int
     
     func makeUIViewController(context: Context) -> AnnotationCameraViewController {
-        return AnnotationCameraViewController(cameraImage: cameraImage, segmentationImage: segmentationImage)
+        return AnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
     }
     
     func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
-        uiViewController.cameraImage = cameraImage
-        uiViewController.segmentationImage = segmentationImage
+        uiViewController.cameraImage = sharedImageData.cameraImage
+        uiViewController.segmentationImage = sharedImageData.classImages[index]
+//        uiViewController.cameraImage = cameraImage
+//        uiViewController.segmentationImage = segmentationImage
         uiViewController.viewDidLoad()
     }
 }

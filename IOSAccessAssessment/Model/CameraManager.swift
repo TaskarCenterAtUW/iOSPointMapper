@@ -54,14 +54,19 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = true
     }
     
-    func onNewData(pixelBuffer: CVPixelBuffer) {
+    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer) {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
-                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-                DispatchQueue.main.async {
-                    self.sharedImageData?.cameraImage = UIImage(ciImage: ciImage, scale: 1.0, orientation: .right)
-                }
-//                print("A")
+//                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+//                DispatchQueue.main.async {
+                    self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+//                    print("shared: \(String(describing: self.sharedImageData?.cameraImage?.cgImage?.width)), \(String(describing: self.sharedImageData?.cameraImage?.cgImage?.height))")
+//                }
+                self.sharedImageData?.depthData = cvPixel
+                let context = CIContext()
+                let ciImage = CIImage(cvPixelBuffer: cvPixel)
+                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+                self.sharedImageData?.depthDataImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .right)
                 if self.dataAvailable == false {
                     self.dataAvailable = true
                 }
