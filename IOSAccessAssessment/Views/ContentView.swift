@@ -24,6 +24,19 @@ struct Params {
 
 var annotationView: Bool = false
 
+class SharedImageData: ObservableObject {
+    @Published var cameraImage: UIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
+    @Published var pixelBuffer: CIImage?
+    @Published var depthData: CVPixelBuffer?
+    @Published var depthDataImage: UIImage?
+    @Published var segmentedIndices: [Int] = []
+    @Published var classImages: [CIImage] = []
+    
+//    var updateSegmentation: ((Any) -> Void)?
+    
+}
 
 struct ContentView: View {
     var selection: [Int]
@@ -90,34 +103,6 @@ struct ContentView: View {
             }
         }
     }
-}
-
-struct SpinnerView: View {
-  var body: some View {
-    ProgressView()
-      .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-      .scaleEffect(2.0, anchor: .center) // Makes the spinner larger
-      .onAppear {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-          // Simulates a delay in content loading
-          // Perform transition to the next view here
-        }
-      }
-  }
-}
-
-class SharedImageData: ObservableObject {
-    @Published var cameraImage: UIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    @Published var pixelBuffer: CIImage?
-    @Published var depthData: CVPixelBuffer?
-    @Published var depthDataImage: UIImage?
-    @Published var segmentedIndices: [Int] = []
-    @Published var classImages: [CIImage] = []
-    
-//    var updateSegmentation: ((Any) -> Void)?
-    
 }
 
 class CameraViewController: UIViewController {
