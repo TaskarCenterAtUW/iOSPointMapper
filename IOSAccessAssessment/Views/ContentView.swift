@@ -22,7 +22,7 @@ struct Params {
     var count: UInt32       // Corresponds to the uint in Metal
 }
 
-var annotationView:Bool = false
+var annotationView: Bool = false
 
 
 struct ContentView: View {

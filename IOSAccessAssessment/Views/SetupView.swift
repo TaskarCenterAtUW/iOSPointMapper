@@ -11,7 +11,7 @@ struct SetupView: View {
     @State private var selection = Set<Int>()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(alignment: .leading) {
                 Text("Setup View")
                     .font(.largeTitle)
@@ -36,7 +36,7 @@ struct SetupView: View {
                         }
                     }
                 }
-                .environment(\.colorScheme, .dark)
+//                .environment(\.colorScheme, .dark)
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
