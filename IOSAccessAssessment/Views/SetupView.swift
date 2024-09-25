@@ -31,7 +31,8 @@ struct SetupView: View {
                             }
                         }) {
                             Text(Constants.ClassConstants.classes[index])
-                                .foregroundColor(self.selection.contains(index) ? .blue : .white)
+                                .foregroundColor(self.selection.contains(index) ?
+                                                 Color(red: 187/255, green: 134/255, blue: 252/255) : .white)
                         }
                     }
                 }
