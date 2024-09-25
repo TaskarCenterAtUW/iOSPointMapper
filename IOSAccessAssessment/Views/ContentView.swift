@@ -22,62 +22,24 @@ struct Params {
     var count: UInt32       // Corresponds to the uint in Metal
 }
 
+var annotationView: Bool = false
 
-let grayscaleToClassMap: [UInt8: String] = [
-    12: "Background",
-    36: "Aeroplane",
-    48: "Bicycle",
-    84: "Bird",
-    96: "Boat",
-    108: "Bottle",
-    132: "Bus",
-    144: "Car",
-    180: "Cat",
-    216: "Chair",
-    228: "Cow",
-    240: "Diningtable"
-]
-
-let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
-
-let colors: [CIColor] = [
-    CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
-    CIColor(red: 0.0, green: 1.0, blue: 0.0),      // Green
-    CIColor(red: 0.0, green: 0.0, blue: 1.0),      // Blue
-    CIColor(red: 0.5, green: 0.0, blue: 0.5),      // Purple
-    CIColor(red: 1.0, green: 0.65, blue: 0.0),     // Orange
-    CIColor(red: 1.0, green: 1.0, blue: 0.0),      // Yellow
-    CIColor(red: 0.65, green: 0.16, blue: 0.16),   // Brown
-    CIColor(red: 0.0, green: 1.0, blue: 1.0),      // Cyan
-    CIColor(red: 0.0, green: 0.5, blue: 0.5),      // Teal
-    CIColor(red: 1.0, green: 0.75, blue: 0.8),     // Pink
-    CIColor(red: 1.0, green: 1.0, blue: 1.0),      // White
-    CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
-    CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
-]
-
-
-let grayscaleMap: [UInt8: Color] = [
-    12: .blue,
-    36: .red,
-    48: .purple,
-    84: .orange,
-    96: .brown,
-    108: .cyan,
-    132: .white,
-    144: .teal,
-    180: .black,
-    216: .green,
-    228: .red,
-    240: .yellow
-]
-
-var annotationView:Bool = false
-
+class SharedImageData: ObservableObject {
+    @Published var cameraImage: UIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
+    @Published var pixelBuffer: CIImage?
+    @Published var depthData: CVPixelBuffer?
+    @Published var depthDataImage: UIImage?
+    @Published var segmentedIndices: [Int] = []
+    @Published var classImages: [CIImage] = []
+    
+//    var updateSegmentation: ((Any) -> Void)?
+    
+}
 
 struct ContentView: View {
     var selection: [Int]
-    var classes: [String]
     
     @StateObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
@@ -86,17 +48,17 @@ struct ContentView: View {
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes)
+            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
                         HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
+                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes),
+                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {
@@ -141,34 +103,6 @@ struct ContentView: View {
             }
         }
     }
-}
-
-struct SpinnerView: View {
-  var body: some View {
-    ProgressView()
-      .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-      .scaleEffect(2.0, anchor: .center) // Makes the spinner larger
-      .onAppear {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-          // Simulates a delay in content loading
-          // Perform transition to the next view here
-        }
-      }
-  }
-}
-
-class SharedImageData: ObservableObject {
-    @Published var cameraImage: UIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    @Published var pixelBuffer: CIImage?
-    @Published var depthData: CVPixelBuffer?
-    @Published var depthDataImage: UIImage?
-    @Published var segmentedIndices: [Int] = []
-    @Published var classImages: [CIImage] = []
-    
-//    var updateSegmentation: ((Any) -> Void)?
-    
 }
 
 class CameraViewController: UIViewController {
@@ -289,8 +223,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             for i in indices {
                 guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
                 self.masker.inputImage = self.sharedImageData?.pixelBuffer
-                self.masker.grayscaleValues = [grayValues[currentClass]]
-                self.masker.colorValues = [colors[currentClass]]
+                self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
+                self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
                 self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
                 self.sharedImageData?.classImages[i] = self.masker.outputImage!
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
@@ -311,7 +245,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
         let segMaskGray = outPixelBuffer.pixelBuffer
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: grayscaleToClassMap, grayValues: grayValues)
+        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
             print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
@@ -327,8 +261,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             annotationView = false
             classSegmentationRequest()
         } else {
-            self.masker.grayscaleValues = grayValues
-            self.masker.colorValues =  colors
+            self.masker.grayscaleValues = Constants.ClassConstants.grayValues
+            self.masker.colorValues =  Constants.ClassConstants.colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             annotationView = false
 //            DispatchQueue.main.async {
@@ -348,7 +282,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
                 selectedGrayscaleValues.append(key)
                 // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
                 if let index = grayValues.firstIndex(of: Float(key)) {
-                    selectedColors.append(colors[index])  // Fetch corresponding color using the same index
+                    selectedColors.append(Constants.ClassConstants.colors[index])
+                    // Fetch corresponding color using the same index
                 }
             }
         }
@@ -413,7 +348,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             }
         }
         
-        let valueToIndex = Dictionary(uniqueKeysWithValues: grayValues.enumerated().map { ($0.element, $0.offset) })
+        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
         
         let selectedIndices = uniqueValues.map { UInt8($0) }
             .map {Float($0) / 255.0 }

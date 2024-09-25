@@ -8,11 +8,10 @@
 import SwiftUI
 
 struct SetupView: View {
-    let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable", "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"]
     @State private var selection = Set<Int>()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(alignment: .leading) {
                 Text("Setup View")
                     .font(.largeTitle)
@@ -23,7 +22,7 @@ struct SetupView: View {
                     .foregroundColor(.gray)
                 
                 List {
-                    ForEach(0..<classes.count, id: \.self) { index in
+                    ForEach(0..<Constants.ClassConstants.classes.count, id: \.self) { index in
                         Button(action: {
                             if self.selection.contains(index) {
                                 self.selection.remove(index)
@@ -31,16 +30,17 @@ struct SetupView: View {
                                 self.selection.insert(index)
                             }
                         }) {
-                            Text(classes[index])
-                                .foregroundColor(self.selection.contains(index) ? .blue : .white)
+                            Text(Constants.ClassConstants.classes[index])
+                                .foregroundColor(self.selection.contains(index) ?
+                                                 Color(red: 187/255, green: 134/255, blue: 252/255) : .white)
                         }
                     }
                 }
-                .environment(\.colorScheme, .dark)
+//                .environment(\.colorScheme, .dark)
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
-            .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection), classes: classes)) {
+            .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
         }.environment(\.colorScheme, .dark)

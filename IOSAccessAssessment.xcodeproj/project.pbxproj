@@ -21,6 +21,8 @@
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
+		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
+		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +60,8 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				55659C0C2BB786100094DF01 /* CameraManager.swift */,
+				DAA7F8B42CA38C11003666D8 /* Constants.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -168,6 +173,7 @@
 				55659C112BB786580094DF01 /* ContentView.swift */,
 				552D9A3C2BE0378E00E17E70 /* kernel.metal */,
 				55659C132BB786700094DF01 /* AnnotationView.swift */,
+				DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -309,8 +315,10 @@
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
+				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
+				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,7 +482,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = 5NH269AX3J;
+				DEVELOPMENT_TEAM = UB6LB27Z2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
@@ -506,7 +514,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
-				DEVELOPMENT_TEAM = 5NH269AX3J;
+				DEVELOPMENT_TEAM = UB6LB27Z2X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
