@@ -40,6 +40,7 @@ class SharedImageData: ObservableObject {
 
 struct ContentView: View {
     var selection: [Int]
+    var classes: [String]
     
     @StateObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
@@ -48,17 +49,17 @@ struct ContentView: View {
     
     var body: some View {
         if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
+            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes)
         } else {
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
                         HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
+                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: classes)
                     }
                     
                     NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
+                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: classes),
                         isActive: $navigateToAnnotationView
                     ) {
                         Button {

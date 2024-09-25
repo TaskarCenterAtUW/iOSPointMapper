@@ -40,7 +40,8 @@ struct SetupView: View {
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
-            .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
+            .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection),
+                                                                                  classes: Constants.ClassConstants.classes)) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
         }.environment(\.colorScheme, .dark)

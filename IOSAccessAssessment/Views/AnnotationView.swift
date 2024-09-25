@@ -19,7 +19,7 @@ struct AnnotationView: View {
     
     var body: some View {
         if isShowingCameraView || index >= sharedImageData.classImages.count {
-            ContentView(selection: Array(selection))
+            ContentView(selection: Array(selection), classes: Constants.ClassConstants.classes)
         } else {
             ZStack {
                 VStack {
@@ -90,7 +90,7 @@ struct AnnotationView: View {
         index += 1
         if index >= (sharedImageData.classImages.count) {
             // Handle completion, save responses, or navigate to the next screen
-            ContentView(selection: Array(selection))
+            ContentView(selection: Array(selection), classes: Constants.ClassConstants.classes)
         }
     }
 
