@@ -43,7 +43,9 @@ struct SetupView: View {
             .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection), classes: classes)) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
-        }.environment(\.colorScheme, .dark)
+        }
+        .navigationViewStyle(.stack) //To avoid having side bar in ipad
+        .environment(\.colorScheme, .dark)
     }
 }
 
