@@ -47,9 +47,9 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
-        if (navigateToAnnotationView) {
-            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
-        } else {
+//        if (navigateToAnnotationView) {
+//            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
+//        } else {
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
@@ -65,6 +65,8 @@ struct ContentView: View {
                             annotationView = true
                             objectLocation.settingLocation()
                             manager!.startPhotoCapture()
+                            // TODO: Instead of an arbitrary delay, we should have an event listener
+                            // that triggers when the photo capture is completed
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 navigateToAnnotationView = true
                             }
@@ -101,6 +103,6 @@ struct ContentView: View {
             .onDisappear {
                 manager?.controller.stopStream()
             }
-        }
+//        }
     }
 }
