@@ -27,6 +27,8 @@
 		DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */; };
 		DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */; };
 		DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */; };
+		DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */; };
+		DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +72,8 @@
 		DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationViewController.swift; sourceTree = "<group>"; };
 		DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
 		DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
+		DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageUtils.swift; sourceTree = "<group>"; };
+		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +124,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				DAA7F8C62CA76514003666D8 /* ImageProcessing */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 				DAA7F8BB2CA67A3C003666D8 /* Camera */,
@@ -212,6 +217,15 @@
 				55C2F2832C00078D00B633D7 /* ObjectLocation.swift */,
 			);
 			path = Location;
+			sourceTree = "<group>";
+		};
+		DAA7F8C62CA76514003666D8 /* ImageProcessing */ = {
+			isa = PBXGroup;
+			children = (
+				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
+				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
+			);
+			path = ImageProcessing;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -348,11 +362,13 @@
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
 				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
+				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
+				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
