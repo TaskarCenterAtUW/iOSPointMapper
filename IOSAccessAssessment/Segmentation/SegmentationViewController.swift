@@ -18,8 +18,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     var sharedImageData: SharedImageData?
     var selection:[Int] = []
     var classes: [String] = []
-    var grayscaleValue:Float = 180 / 255.0
-    var singleColor:CIColor = CIColor(red: 0.0, green: 0.5, blue: 0.5)
+//    var grayscaleValue:Float = 180 / 255.0
+//    var singleColor:CIColor = CIColor(red: 0.0, green: 0.5, blue: 0.5)
     
     static var requests = [VNRequest]()
     

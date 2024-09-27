@@ -8,6 +8,8 @@
 import UIKit
 import Accelerate
 
+
+// TODO: Check if any of the methods can be sped up using GPU
 func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
     let width = CVPixelBufferGetWidth(pixelBuffer)
     let height = CVPixelBufferGetHeight(pixelBuffer)

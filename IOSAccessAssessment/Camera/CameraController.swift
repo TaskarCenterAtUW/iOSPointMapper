@@ -21,7 +21,9 @@ class CameraController: NSObject, ObservableObject {
         case lidarDeviceUnavailable
         case requiredFormatUnavailable
     }
-    
+    // TODO: Check if the videoDataOutputQueue or the DataOutputSynchronizer can be optimized
+    //  Either by moving some Image Processing functionality to the GPU
+    //  or by reducing the number of frames that are processed
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
     private(set) var captureSession: AVCaptureSession!
