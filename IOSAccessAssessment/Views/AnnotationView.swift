@@ -104,17 +104,6 @@ struct AnnotationView: View {
     }
 }
 
-struct ProgressBar: View {
-    var value: Float
-
-
-    var body: some View {
-        ProgressView(value: value)
-            .progressViewStyle(LinearProgressViewStyle())
-            .padding()
-    }
-}
-
 
 class AnnotationCameraViewController: UIViewController {
     var cameraImage: UIImage?
