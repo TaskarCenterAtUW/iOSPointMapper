@@ -120,10 +120,10 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 				DAA7F8BB2CA67A3C003666D8 /* Camera */,
 				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
-				55C2F2832C00078D00B633D7 /* ObjectLocation.swift */,
 				55659C092BB785EA0094DF01 /* VisionModel */,
 				3222F91D2B622E090019A079 /* Assets.xcassets */,
 				55659C0E2BB786240094DF01 /* Views */,
@@ -204,6 +204,14 @@
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 			);
 			path = Segmentation;
+			sourceTree = "<group>";
+		};
+		DAA7F8C52CA6858C003666D8 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				55C2F2832C00078D00B633D7 /* ObjectLocation.swift */,
+			);
+			path = Location;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
