@@ -122,6 +122,10 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
         
+        // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
+        //  and then convert to CIImage/CGIImage where needed.
+        // NOTE: The CGIImage is actually never directly used. It is converted to a UIImage.
+        //  Thus, check if we can directly send the CVPixelBuffer instead
         // Get the image buffer, convert to CIImage to crop, and convert to CGImage to send to vision model
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
@@ -130,6 +134,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
         // Get pixel buffer to process depth data,
+        // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
+        //  perform the resize and crop, then convert back to CVPixelBuffer
         let depthData = syncedDepthData.depthData
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
