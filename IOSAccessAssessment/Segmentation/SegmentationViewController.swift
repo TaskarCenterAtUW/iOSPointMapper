@@ -39,7 +39,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = CGRect(x: 0.0, y: 325.0, width: 256.0, height: 256.0)
+        segmentationView.frame = getFrame()
 //        segmentationView.layer.borderWidth = 2.0
 //        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill
@@ -64,6 +64,21 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         SegmentationViewController.requests = [segmentationRequest]
     }
     
+    // TODO: This function is redundant. Should move it to a global function eventually with the appropriate arguments
+    private func getFrame() -> CGRect {
+        let screenSize = UIScreen.main.bounds
+        let screenWidth = screenSize.width
+        let screenHeight = screenSize.height
+        
+        // Currently, the app only supports portrait mode
+        // Hence, we can set the size of the square frame relative to screen width
+        // with the screen height acting as a threshold to support other frames and buttons
+        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
+        
+        let xPosition = (screenWidth - sideLength) / 2
+        
+        return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
+    }
     
     func classSegmentationRequest() {
         
