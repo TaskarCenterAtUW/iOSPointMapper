@@ -23,6 +23,7 @@
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
+		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +63,7 @@
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
+		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,8 +114,8 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				DAA7F8BB2CA67A3C003666D8 /* Camera */,
 				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
-				55659C072BB785CB0094DF01 /* CameraController.swift */,
 				55C2F2832C00078D00B633D7 /* ObjectLocation.swift */,
 				55659C092BB785EA0094DF01 /* VisionModel */,
 				3222F91D2B622E090019A079 /* Assets.xcassets */,
@@ -160,7 +162,6 @@
 		55659C0B2BB786050094DF01 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				55659C0C2BB786100094DF01 /* CameraManager.swift */,
 				DAA7F8B42CA38C11003666D8 /* Constants.swift */,
 			);
 			path = Model;
@@ -176,6 +177,16 @@
 				DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				55659C0C2BB786100094DF01 /* CameraManager.swift */,
+				55659C072BB785CB0094DF01 /* CameraController.swift */,
+				DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */,
+			);
+			path = Camera;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -309,6 +320,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
