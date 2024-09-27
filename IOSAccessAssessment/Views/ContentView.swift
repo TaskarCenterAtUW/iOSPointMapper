@@ -22,6 +22,7 @@ struct Params {
     var count: UInt32       // Corresponds to the uint in Metal
 }
 
+// TODO: Make this a class variable instead of a global variable
 var annotationView: Bool = false
 
 class SharedImageData: ObservableObject {
@@ -30,7 +31,7 @@ class SharedImageData: ObservableObject {
 //    @Published var segmentationImage: UIImage?
     @Published var pixelBuffer: CIImage?
     @Published var depthData: CVPixelBuffer?
-    @Published var depthDataImage: UIImage?
+//    @Published var depthDataImage: UIImage?
     @Published var segmentedIndices: [Int] = []
     @Published var classImages: [CIImage] = []
     

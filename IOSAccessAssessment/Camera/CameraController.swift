@@ -9,8 +9,8 @@ import AVFoundation
 import UIKit
 import Vision
 
+// Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
     func onNewPhotoData()
 }
@@ -21,8 +21,6 @@ class CameraController: NSObject, ObservableObject {
         case lidarDeviceUnavailable
         case requiredFormatUnavailable
     }
-    
-    private let preferredWidthResolution = 1920
     
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
@@ -37,7 +35,7 @@ class CameraController: NSObject, ObservableObject {
     
     var isFilteringEnabled = true {
         didSet {
-            depthDataOutput.isFilteringEnabled = isFilteringEnabled
+            depthDataOutput?.isFilteringEnabled = isFilteringEnabled
         }
     }
     
@@ -50,6 +48,7 @@ class CameraController: NSObject, ObservableObject {
         }
     }
     
+    // Initialize the captureSession and set its configuration
     private func setupSession() throws {
         captureSession = AVCaptureSession()
         
@@ -65,13 +64,13 @@ class CameraController: NSObject, ObservableObject {
         captureSession.commitConfiguration()
     }
     
+    // Add a device input to the capture session.
     private func setupCaptureInput() throws {
-        // Look up the LiDAR camera.
+        // Look up the LiDAR camera. Generally, only present at the back camera
         guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
             throw ConfigurationError.lidarDeviceUnavailable
         }
         
-        // Add a device input to the capture session.
         let deviceInput = try AVCaptureDeviceInput(device: device)
         captureSession.addInput(deviceInput)
     }
@@ -100,7 +99,9 @@ class CameraController: NSObject, ObservableObject {
     }
     
     func startStream() {
-        captureSession.startRunning()
+        DispatchQueue.main.async {
+            self.captureSession.startRunning()
+        }
     }
     
     func stopStream() {

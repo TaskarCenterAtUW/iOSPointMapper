@@ -32,9 +32,9 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         
         self.sharedImageData = sharedImageData
         controller = CameraController()
-        controller.isFilteringEnabled = true
+        isFilteringDepth = true
         controller.startStream()
-        isFilteringDepth = controller.isFilteringEnabled
+//        isFilteringDepth = controller.isFilteringEnabled
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.orientation = UIDevice.current.orientation
@@ -58,16 +58,14 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer) {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
-//                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-//                DispatchQueue.main.async {
-                    self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-//                    print("shared: \(String(describing: self.sharedImageData?.cameraImage?.cgImage?.width)), \(String(describing: self.sharedImageData?.cameraImage?.cgImage?.height))")
-//                }
+                // TODO: Check if the reason the cameraImage and depthData are being set synchronously
+                // is the AVCaptureDataOutputSynchronizer
+                self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthData = cvPixel
                 let context = CIContext()
                 let ciImage = CIImage(cvPixelBuffer: cvPixel)
-                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
-                self.sharedImageData?.depthDataImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .right)
+//                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+//                self.sharedImageData?.depthDataImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .right)
                 if self.dataAvailable == false {
                     self.dataAvailable = true
                 }
