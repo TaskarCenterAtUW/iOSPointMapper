@@ -22,6 +22,7 @@ struct Params {
     var count: UInt32       // Corresponds to the uint in Metal
 }
 
+// TODO: Make this a class variable instead of a global variable
 var annotationView: Bool = false
 
 class SharedImageData: ObservableObject {
