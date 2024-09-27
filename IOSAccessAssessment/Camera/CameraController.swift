@@ -99,7 +99,7 @@ class CameraController: NSObject, ObservableObject {
     }
     
     func startStream() {
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
         }
     }
@@ -120,12 +120,14 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
+        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         // Convert to CIImage
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        // Crop center 256 \times 256
-        let croppedCIImage = ciImage.croppedToCenter(size: CGSize(width: 1024, height: 1024)) // 1024 \times 1024
+        // Crop center 1024 \times 1024
+        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
         // Convert to CGImage
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
@@ -135,18 +137,16 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
+        print("Depth Dimensions \(depthWidth), \(depthHeight)")
 
         let depthAspectRatio = depthWidth > depthHeight
-        let scale: Int
-        if depthAspectRatio {
-            scale = Int(floor(1024 / CGFloat(depthHeight)) + 1)
-        } else {
-            scale = Int(floor(1024 / CGFloat(depthWidth)) + 1)
-        }
-        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: CGSize(width: 1024, height: 1024)) else { return }
+        let depthSideLength = min(depthWidth, depthHeight)
+        // TODO: Check why does this lead to an error on orientation change
+        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
         
-        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
-        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
+//        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
+//        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
 //        print("After After size: \(croppedDepthWidth), \(croppedDepthHeight)")
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
