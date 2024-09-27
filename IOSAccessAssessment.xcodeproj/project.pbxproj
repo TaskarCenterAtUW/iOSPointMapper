@@ -26,6 +26,7 @@
 		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
 		DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */; };
 		DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */; };
+		DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +69,7 @@
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationViewController.swift; sourceTree = "<group>"; };
 		DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +193,7 @@
 				55659C0C2BB786100094DF01 /* CameraManager.swift */,
 				55659C072BB785CB0094DF01 /* CameraController.swift */,
 				DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */,
+				DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -344,6 +347,7 @@
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
+				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
