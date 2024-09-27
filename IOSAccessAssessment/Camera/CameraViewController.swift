@@ -53,8 +53,11 @@ class CameraViewController: UIViewController {
         let screenWidth = screenSize.width
         let screenHeight = screenSize.height
         
-        let minSideLength = min(screenWidth, screenHeight)
-        let maxSideLength = max(screenWidth, screenHeight)
+        // Currently, the app only supports portrait mode
+        // Hence, we can set the size of the square frame relative to screen width
+        // with the screen height acting as a threshold to support other frames and buttons
+        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
+        
         let xPosition = (screenWidth - sideLength) / 2
         
         return CGRect(x: xPosition, y: 0, width: sideLength, height: sideLength)
