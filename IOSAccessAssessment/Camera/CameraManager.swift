@@ -62,8 +62,8 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 // is the AVCaptureDataOutputSynchronizer
                 self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthData = cvPixel
-                let context = CIContext()
-                let ciImage = CIImage(cvPixelBuffer: cvPixel)
+//                let context = CIContext()
+//                let ciImage = CIImage(cvPixelBuffer: cvPixel)
 //                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
 //                self.sharedImageData?.depthDataImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .right)
                 if self.dataAvailable == false {
