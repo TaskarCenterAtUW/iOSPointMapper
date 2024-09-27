@@ -99,7 +99,7 @@ class CameraController: NSObject, ObservableObject {
     }
     
     func startStream() {
-        DispatchQueue.main.async {
+        DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
         }
     }
@@ -120,39 +120,43 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
+        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        
+        // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
+        //  and then convert to CIImage/CGIImage where needed.
+        // NOTE: The CGIImage is actually never directly used. It is converted to a UIImage.
+        //  Thus, check if we can directly send the CVPixelBuffer instead
+        // Get the image buffer, convert to CIImage to crop, and convert to CGImage to send to vision model
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
-        // Convert to CIImage
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        // Crop center 256 \times 256
-        let croppedCIImage = ciImage.croppedToCenter(size: CGSize(width: 1024, height: 1024)) // 1024 \times 1024
-        // Convert to CGImage
+        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
+        // Get pixel buffer to process depth data,
+        // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
+        //  perform the resize and crop, then convert back to CVPixelBuffer
         let depthData = syncedDepthData.depthData
-        // Process depth data
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-
         let depthAspectRatio = depthWidth > depthHeight
-        let scale: Int
-        if depthAspectRatio {
-            scale = Int(floor(1024 / CGFloat(depthHeight)) + 1)
-        } else {
-            scale = Int(floor(1024 / CGFloat(depthWidth)) + 1)
-        }
-        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: CGSize(width: 1024, height: 1024)) else { return }
+        let depthSideLength = min(depthWidth, depthHeight)
+        // TODO: Check why does this lead to an error on orientation change
+        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
         
-        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
-        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
+//        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
+//        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
 //        print("After After size: \(croppedDepthWidth), \(croppedDepthHeight)")
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
         delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)
         
         do {
+            // TODO: Need to check if there is a more intuitive way to trigger the requests
+            // Currently, it seems like we have a static requests object in SegmentationViewController
+            // that we hope will have a segmentation request by the time we trigger this handler.
             try imageRequestHandler.perform(SegmentationViewController.requests)
         } catch {
             print(error)
@@ -181,9 +185,9 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         
         // Retrieve the image and depth data.
-        guard let pixelBuffer = photo.pixelBuffer,
+        guard let _ = photo.pixelBuffer,
               let depthData = photo.depthData,
-              let cameraCalibrationData = depthData.cameraCalibrationData else { return }
+              let __ = depthData.cameraCalibrationData else { return }
         
         // Stop the stream until the user returns to streaming mode.
 //        stopStream()
