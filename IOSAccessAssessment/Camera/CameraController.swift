@@ -176,10 +176,14 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
         } else {
             photoSettings = AVCapturePhotoSettings()
         }
-        stopStream()
+        
         // Capture depth data with this photo capture.
         photoSettings.isDepthDataDeliveryEnabled = true
         photoOutput.capturePhoto(with: photoSettings, delegate: self)
+        
+        stopStream()
+        // FIXME: The photoOutput is not actually being used.
+        // Check if its use can be eliminated. 
     }
     
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
@@ -188,9 +192,6 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
         guard let _ = photo.pixelBuffer,
               let depthData = photo.depthData,
               let __ = depthData.cameraCalibrationData else { return }
-        
-        // Stop the stream until the user returns to streaming mode.
-//        stopStream()
         
         delegate?.onNewPhotoData()
     }
