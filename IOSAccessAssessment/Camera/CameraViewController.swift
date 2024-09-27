@@ -32,7 +32,7 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = CGRect(x: 0.0, y: 0.0, width: 256.0, height: 256.0)
+        previewLayer.frame = getFrame()
 //        previewLayer.borderWidth = 2.0
 //        previewLayer.borderColor = UIColor.blue.cgColor
 //
@@ -46,6 +46,18 @@ class CameraViewController: UIViewController {
             self!.view.layer.addSublayer(self!.previewLayer)
             //self!.view.layer.addSublayer(self!.detectionLayer)
         }
+    }
+    
+    private func getFrame() -> CGRect {
+        let screenSize = UIScreen.main.bounds
+        let screenWidth = screenSize.width
+        let screenHeight = screenSize.height
+        
+        let minSideLength = min(screenWidth, screenHeight)
+        let maxSideLength = max(screenWidth, screenHeight)
+        let xPosition = (screenWidth - sideLength) / 2
+        
+        return CGRect(x: xPosition, y: 0, width: sideLength, height: sideLength)
     }
 }
 
