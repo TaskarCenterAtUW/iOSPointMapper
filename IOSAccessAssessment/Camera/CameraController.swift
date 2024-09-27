@@ -9,8 +9,8 @@ import AVFoundation
 import UIKit
 import Vision
 
+// Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
     func onNewPhotoData()
 }
@@ -21,8 +21,6 @@ class CameraController: NSObject, ObservableObject {
         case lidarDeviceUnavailable
         case requiredFormatUnavailable
     }
-    
-    private let preferredWidthResolution = 1920
     
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
