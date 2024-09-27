@@ -118,8 +118,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
-            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
-            print("Selected Indices:  \(selectedIndices)")
+//            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
+//            print("Selected Indices:  \(selectedIndices)")
         self.sharedImageData?.segmentedIndices = selectedIndices
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage

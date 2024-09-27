@@ -9,8 +9,8 @@ import AVFoundation
 import UIKit
 import Vision
 
+// Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
     func onNewPhotoData()
 }
@@ -21,8 +21,6 @@ class CameraController: NSObject, ObservableObject {
         case lidarDeviceUnavailable
         case requiredFormatUnavailable
     }
-    
-    private let preferredWidthResolution = 1920
     
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
@@ -37,7 +35,7 @@ class CameraController: NSObject, ObservableObject {
     
     var isFilteringEnabled = true {
         didSet {
-            depthDataOutput.isFilteringEnabled = isFilteringEnabled
+            depthDataOutput?.isFilteringEnabled = isFilteringEnabled
         }
     }
     
@@ -50,6 +48,7 @@ class CameraController: NSObject, ObservableObject {
         }
     }
     
+    // Initialize the captureSession and set its configuration
     private func setupSession() throws {
         captureSession = AVCaptureSession()
         
@@ -65,13 +64,13 @@ class CameraController: NSObject, ObservableObject {
         captureSession.commitConfiguration()
     }
     
+    // Add a device input to the capture session.
     private func setupCaptureInput() throws {
-        // Look up the LiDAR camera.
+        // Look up the LiDAR camera. Generally, only present at the back camera
         guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
             throw ConfigurationError.lidarDeviceUnavailable
         }
         
-        // Add a device input to the capture session.
         let deviceInput = try AVCaptureDeviceInput(device: device)
         captureSession.addInput(deviceInput)
     }
@@ -100,7 +99,9 @@ class CameraController: NSObject, ObservableObject {
     }
     
     func startStream() {
-        captureSession.startRunning()
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.captureSession.startRunning()
+        }
     }
     
     func stopStream() {
@@ -119,39 +120,43 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
+        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        
+        // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
+        //  and then convert to CIImage/CGIImage where needed.
+        // NOTE: The CGIImage is actually never directly used. It is converted to a UIImage.
+        //  Thus, check if we can directly send the CVPixelBuffer instead
+        // Get the image buffer, convert to CIImage to crop, and convert to CGImage to send to vision model
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
-        // Convert to CIImage
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        // Crop center 256 \times 256
-        let croppedCIImage = ciImage.croppedToCenter(size: CGSize(width: 1024, height: 1024)) // 1024 \times 1024
-        // Convert to CGImage
+        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
+        // Get pixel buffer to process depth data,
+        // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
+        //  perform the resize and crop, then convert back to CVPixelBuffer
         let depthData = syncedDepthData.depthData
-        // Process depth data
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-
         let depthAspectRatio = depthWidth > depthHeight
-        let scale: Int
-        if depthAspectRatio {
-            scale = Int(floor(1024 / CGFloat(depthHeight)) + 1)
-        } else {
-            scale = Int(floor(1024 / CGFloat(depthWidth)) + 1)
-        }
-        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: CGSize(width: 1024, height: 1024)) else { return }
+        let depthSideLength = min(depthWidth, depthHeight)
+        // TODO: Check why does this lead to an error on orientation change
+        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
         
-        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
-        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
+//        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
+//        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
 //        print("After After size: \(croppedDepthWidth), \(croppedDepthHeight)")
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
         delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)
         
         do {
+            // TODO: Need to check if there is a more intuitive way to trigger the requests
+            // Currently, it seems like we have a static requests object in SegmentationViewController
+            // that we hope will have a segmentation request by the time we trigger this handler.
             try imageRequestHandler.perform(SegmentationViewController.requests)
         } catch {
             print(error)
@@ -171,107 +176,24 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
         } else {
             photoSettings = AVCapturePhotoSettings()
         }
-        stopStream()
+        
         // Capture depth data with this photo capture.
         photoSettings.isDepthDataDeliveryEnabled = true
         photoOutput.capturePhoto(with: photoSettings, delegate: self)
+        
+        stopStream()
+        // FIXME: The photoOutput is not actually being used.
+        // Check if its use can be eliminated. 
     }
     
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         
         // Retrieve the image and depth data.
-        guard let pixelBuffer = photo.pixelBuffer,
+        guard let _ = photo.pixelBuffer,
               let depthData = photo.depthData,
-              let cameraCalibrationData = depthData.cameraCalibrationData else { return }
-        
-        // Stop the stream until the user returns to streaming mode.
-//        stopStream()
+              let __ = depthData.cameraCalibrationData else { return }
         
         delegate?.onNewPhotoData()
     }
-}
-
-extension CIImage {
-    func croppedToCenter(size: CGSize) -> CIImage {
-        let x = (extent.width - size.width) / 2
-        let y = (extent.height - size.height) / 2
-//        print("before: \(x), \(y)")
-        let cropRect = CGRect(x: x, y: y, width: size.width, height: size.height)
-        return cropped(to: cropRect)
-    }
-}
-
-private func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
-    let width = CVPixelBufferGetWidth(pixelBuffer)
-    let height = CVPixelBufferGetHeight(pixelBuffer)
-//    print("After size: \(width), \(height)")
-    let cropX = (Float(width) - Float(cropSize.width)) / 2
-//    let cropX = (Float(width) - Float(cropSize.width) - (256 + 128 + 64)) / 2
-    let cropY = (Float(height) - Float(cropSize.height)) / 2
-//    print("after: \(cropX), \(cropY)")
-    var croppedPixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(cropSize.width), Int(cropSize.height), CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &croppedPixelBuffer)
-    guard status == kCVReturnSuccess, let outputBuffer = croppedPixelBuffer else { return nil }
-
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferLockBaseAddress(outputBuffer, [])
-
-    let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
-    let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
-
-    let inputBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-    let outputBytesPerRow = CVPixelBufferGetBytesPerRow(outputBuffer)
-
-    let cropXOffset = Int(cropX) * 4
-    let cropYOffset = Int(cropY) * inputBytesPerRow
-    for y in 0..<Int(cropSize.height) {
-        let inputRow = inputBaseAddress.advanced(by: cropYOffset + cropXOffset + y * inputBytesPerRow)
-        let outputRow = outputBaseAddress.advanced(by: y * outputBytesPerRow)
-        memcpy(outputRow, inputRow, Int(cropSize.width) * 4)
-    }
-
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferUnlockBaseAddress(outputBuffer, [])
-
-    return outputBuffer
-}
-
-import Accelerate
-
-private func resizePixelBuffer(_ pixelBuffer: CVPixelBuffer, width: Int, height: Int) -> CVPixelBuffer? {
-    var resizedPixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &resizedPixelBuffer)
-    guard status == kCVReturnSuccess, let outputBuffer = resizedPixelBuffer else { return nil }
-
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferLockBaseAddress(outputBuffer, [])
-
-    let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
-    let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
-
-    var inBuffer = vImage_Buffer(data: inputBaseAddress,
-                                 height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
-                                 width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
-                                 rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
-
-    var outBuffer = vImage_Buffer(data: outputBaseAddress,
-                                  height: vImagePixelCount(height),
-                                  width: vImagePixelCount(width),
-                                  rowBytes: CVPixelBufferGetBytesPerRow(outputBuffer))
-
-    let scaleError = vImageScale_ARGB8888(&inBuffer, &outBuffer, nil, vImage_Flags(0))
-    guard scaleError == kvImageNoError else { return nil }
-
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferUnlockBaseAddress(outputBuffer, [])
-
-    return outputBuffer
-}
-
-private func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, cropSize: CGSize) -> CVPixelBuffer? {
-    guard let resizedPixelBuffer = resizePixelBuffer(pixelBuffer, width: Int(targetSize.width), height: Int(targetSize.height)) else {
-        return nil
-    }
-    return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
 }
 
