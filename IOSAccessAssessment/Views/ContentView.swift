@@ -12,6 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
+// TODO: Move the structs and ObservableObjects to dedicated files
 struct ColorInfo {
     var color: SIMD4<Float> // Corresponds to the float4 in Metal
     var grayscale: Float    // Corresponds to the float in Metal

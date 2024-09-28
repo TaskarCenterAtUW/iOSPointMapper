@@ -29,6 +29,7 @@
 		DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */; };
 		DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */; };
 		DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */; };
+		DAA7F8CC2CA77FA5003666D8 /* CustomCIFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8CB2CA77FA5003666D8 /* CustomCIFilter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +75,7 @@
 		DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageUtils.swift; sourceTree = "<group>"; };
 		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
+		DAA7F8CB2CA77FA5003666D8 /* CustomCIFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCIFilter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -207,6 +209,7 @@
 			children = (
 				552D9A3C2BE0378E00E17E70 /* kernel.metal */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
+				DAA7F8CB2CA77FA5003666D8 /* CustomCIFilter.swift */,
 			);
 			path = Segmentation;
 			sourceTree = "<group>";
@@ -359,6 +362,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAA7F8CC2CA77FA5003666D8 /* CustomCIFilter.swift in Sources */,
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
 				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
