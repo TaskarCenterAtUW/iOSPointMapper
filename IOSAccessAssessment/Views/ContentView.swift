@@ -65,7 +65,7 @@ struct ContentView: View {
                             annotationView = true
                             objectLocation.settingLocation()
                             manager!.startPhotoCapture()
-                            // TODO: Instead of an arbitrary delay, we should have an event listener
+                            // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
                             // that triggers when the photo capture is completed
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 navigateToAnnotationView = true
