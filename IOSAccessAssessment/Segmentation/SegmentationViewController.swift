@@ -87,11 +87,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-        let segMaskGray = outPixelBuffer.pixelBuffer
-        //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
-        
+//        let segMaskGray = outPixelBuffer.pixelBuffer
+//        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
+//        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        
         self.sharedImageData?.segmentedIndices = selectedIndices
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
@@ -99,21 +99,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
-        // FIXME: Referencing global variables in other files would be risky.
-        // Aim to make the annotationView private to ContentView, and figure out some other way to have this condition.
-        // This is most likely an artifact of previous app versions
-//        if (annotationView) {
-        annotationView = false
+        // TODO: Check why do we need to set the segmentationView.image again after running processSegmentationRequestPerClass
         processSegmentationRequestPerClass()
-//        } else {
-//            print("Annotation View is False \(annotationView)")
         self.masker.grayscaleValues = Constants.ClassConstants.grayValues
         self.masker.colorValues =  Constants.ClassConstants.colors
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-//            DispatchQueue.main.async {
-//                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-//            }
-//        }
         //self.masker.count = 12
     }
     
