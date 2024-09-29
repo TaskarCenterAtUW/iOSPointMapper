@@ -40,8 +40,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     override func viewDidLoad() {
         super.viewDidLoad()
         segmentationView.frame = getFrame()
-//        segmentationView.layer.borderWidth = 2.0
-//        segmentationView.layer.borderColor = UIColor.blue.cgColor
         segmentationView.contentMode = .scaleAspectFill
         self.view.addSubview(segmentationView)
         self.setupVisionModel()

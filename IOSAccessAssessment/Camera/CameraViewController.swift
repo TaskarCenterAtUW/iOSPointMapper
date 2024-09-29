@@ -33,8 +33,6 @@ class CameraViewController: UIViewController {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
         previewLayer.frame = getFrame()
-//        previewLayer.borderWidth = 2.0
-//        previewLayer.borderColor = UIColor.blue.cgColor
 //
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
