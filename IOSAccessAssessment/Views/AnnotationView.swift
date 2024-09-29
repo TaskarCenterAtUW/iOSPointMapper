@@ -11,7 +11,7 @@ struct AnnotationView: View {
     @State private var index = 0
     @State private var selectedIndex: Int? = nil
     @State private var isShowingCameraView = false
-    @State private var isUpdatingSegmentation = false
+    
     var objectLocation: ObjectLocation
     var selection: [Int]
     var classes: [String]
@@ -22,7 +22,7 @@ struct AnnotationView: View {
         //  it would be better to go to the previous screen in the NavigationStack once we are done with the AnnotationView
         //  This way, if the ContentView is the previous view (in the current flow, it always is),
         //  then we avoid having to recreate it again.
-        if isShowingCameraView || self.index >= sharedImageData.classImages.count {
+        if isShowingCameraView || index >= sharedImageData.classImages.count {
             ContentView(selection: Array(selection))
         } else {
             ZStack {
@@ -69,20 +69,19 @@ struct AnnotationView: View {
                         Text("Next")
                     }
                     .padding()
-                    .disabled(isUpdatingSegmentation)
                 }
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
-            .navigationBarBackButtonHidden(true)
-            .navigationBarItems(leading: Button(action: {
-                // This action depends on how you manage navigation
-                // For demonstration, this simply dismisses the view, but you need a different mechanism to navigate to CameraView
-                self.isShowingCameraView = true;
-            }) {
-                Image(systemName: "chevron.left")
-                    .foregroundColor(.blue)
-                Text("Camera View")
-            })
+//            .navigationBarBackButtonHidden(true)
+//            .navigationBarItems(leading: Button(action: {
+//                // This action depends on how you manage navigation
+//                // For demonstration, this simply dismisses the view, but you need a different mechanism to navigate to CameraView
+//                self.isShowingCameraView = true;
+//            }) {
+//                Image(systemName: "chevron.left")
+//                    .foregroundColor(.blue)
+//                Text("Camera View")
+//            })
             .onChange(of: index) { _ in
                 // Trigger any additional actions when the index changes
                 self.refreshView()

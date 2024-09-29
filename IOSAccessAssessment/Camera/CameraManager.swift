@@ -51,6 +51,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
+    func stopStream() {
+        controller.stopStream()
+        processingCapturedResult = false
+    }
+    
     func onNewPhotoData() {
         processingCapturedResult = true
     }

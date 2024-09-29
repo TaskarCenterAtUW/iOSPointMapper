@@ -98,10 +98,12 @@ struct ContentView: View {
 //                    sharedImageData.updateSegmentation = { index in
 //                        self.manager?.segmentationController?.processSegmentationRequestPerClass()
 //                    }
+                } else {
+                    manager?.resumeStream()
                 }
             }
             .onDisappear {
-                manager?.controller.stopStream()
+                manager?.stopStream()
             }
     }
 }
