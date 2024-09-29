@@ -45,20 +45,5 @@ struct Constants {
             CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
             CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
         ]
-        
-        static let grayscaleMap: [UInt8: Color] = [
-            12: .blue,
-            36: .red,
-            48: .purple,
-            84: .orange,
-            96: .brown,
-            108: .cyan,
-            132: .white,
-            144: .teal,
-            180: .black,
-            216: .green,
-            228: .red,
-            240: .yellow
-        ]
     }
 }
