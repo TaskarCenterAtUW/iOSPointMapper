@@ -30,7 +30,9 @@ class CustomCIFilter: CIFilter {
         let textureLoader = MTKTextureLoader(device: device)
        
         let ciContext = CIContext(mtlDevice: device)
-
+        
+        // TODO: Instead of creating this kernelFunction every time a new inputImage is passed
+        // We can create this just once
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             return nil

@@ -101,6 +101,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         // TODO: Check why do we need to set the segmentationView.image again after running processSegmentationRequestPerClass
         processSegmentationRequestPerClass()
+        // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
+        // Check if you can instead simply pass the constants as the parameters during the filter initialization
         self.masker.grayscaleValues = Constants.ClassConstants.grayValues
         self.masker.colorValues =  Constants.ClassConstants.colors
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
