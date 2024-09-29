@@ -160,7 +160,10 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             
         return (uniqueValues, selectedIndices)
     }
-    
+}
+
+// Functions not currently in use
+extension SegmentationViewController {
     // Get the grayscale values and the corresponding colors
     func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
@@ -179,7 +182,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 
         return (selectedGrayscaleValues, selectedColors)
     }
-
     
     func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
         CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
