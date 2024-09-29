@@ -104,7 +104,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         // This is most likely an artifact of previous app versions
         if (annotationView) {
             annotationView = false
-            classSegmentationRequest()
+            processSegmentationRequestPerClass()
         } else {
             self.masker.grayscaleValues = Constants.ClassConstants.grayValues
             self.masker.colorValues =  Constants.ClassConstants.colors
@@ -117,7 +117,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     // Generate segmentation image for each class
-    func classSegmentationRequest() {
+    func processSegmentationRequestPerClass() {
         guard let segmentedIndices = self.sharedImageData?.segmentedIndices else {
             return
         }

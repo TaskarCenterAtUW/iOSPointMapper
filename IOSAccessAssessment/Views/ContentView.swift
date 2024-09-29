@@ -98,7 +98,7 @@ struct ContentView: View {
 //                    manager?.segmentationController = segmentationController
 //                    
 //                    sharedImageData.updateSegmentation = { index in
-//                        self.manager?.segmentationController?.classSegmentationRequest()
+//                        self.manager?.segmentationController?.processSegmentationRequestPerClass()
 //                    }
                 }
             }

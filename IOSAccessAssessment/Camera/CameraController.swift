@@ -143,7 +143,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-        let depthAspectRatio = depthWidth > depthHeight
         let depthSideLength = min(depthWidth, depthHeight)
         // TODO: Check why does this lead to an error on orientation change
         let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
