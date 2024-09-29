@@ -13,11 +13,8 @@ import Accelerate
 func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
     let width = CVPixelBufferGetWidth(pixelBuffer)
     let height = CVPixelBufferGetHeight(pixelBuffer)
-//    print("After size: \(width), \(height)")
     let cropX = (Float(width) - Float(cropSize.width)) / 2
-//    let cropX = (Float(width) - Float(cropSize.width) - (256 + 128 + 64)) / 2
     let cropY = (Float(height) - Float(cropSize.height)) / 2
-//    print("after: \(cropX), \(cropY)")
     var croppedPixelBuffer: CVPixelBuffer?
     let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(cropSize.width), Int(cropSize.height), CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &croppedPixelBuffer)
     guard status == kCVReturnSuccess, let outputBuffer = croppedPixelBuffer else { return nil }

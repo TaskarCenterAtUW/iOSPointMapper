@@ -102,17 +102,18 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         // FIXME: Referencing global variables in other files would be risky.
         // Aim to make the annotationView private to ContentView, and figure out some other way to have this condition.
         // This is most likely an artifact of previous app versions
-        if (annotationView) {
-            annotationView = false
-            processSegmentationRequestPerClass()
-        } else {
-            self.masker.grayscaleValues = Constants.ClassConstants.grayValues
-            self.masker.colorValues =  Constants.ClassConstants.colors
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//        if (annotationView) {
+        annotationView = false
+        processSegmentationRequestPerClass()
+//        } else {
+//            print("Annotation View is False \(annotationView)")
+        self.masker.grayscaleValues = Constants.ClassConstants.grayValues
+        self.masker.colorValues =  Constants.ClassConstants.colors
+        self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //            DispatchQueue.main.async {
 //                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //            }
-        }
+//        }
         //self.masker.count = 12
     }
     

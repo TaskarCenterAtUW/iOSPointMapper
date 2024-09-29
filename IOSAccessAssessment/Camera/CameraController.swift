@@ -150,7 +150,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
 //        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
 //        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
-//        print("After After size: \(croppedDepthWidth), \(croppedDepthHeight)")
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
         delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)
