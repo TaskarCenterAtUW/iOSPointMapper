@@ -89,7 +89,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let outPixelBuffer = (obs.first)!
 //        let segMaskGray = outPixelBuffer.pixelBuffer
 //        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
+//        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
@@ -128,19 +128,19 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
     }
     
-    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+    // Get the grayscale values and the corresponding colors
+    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
         var selectedGrayscaleValues: [UInt8] = []
         var selectedColors: [CIColor] = []
 
-        for (key, value) in grayscaleMap {
-            if selectedClasses.contains(value) {
-                selectedGrayscaleValues.append(key)
-                // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
-                if let index = grayValues.firstIndex(of: Float(key)) {
-                    selectedColors.append(Constants.ClassConstants.colors[index])
-                    // Fetch corresponding color using the same index
-                }
+        for (key, value) in grayscaleToClassMap {
+            if !selectedClasses.contains(value) { continue }
+            selectedGrayscaleValues.append(key)
+            // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
+            if let index = grayValues.firstIndex(of: Float(key)) {
+                selectedColors.append(Constants.ClassConstants.colors[index])
+                // Fetch corresponding color using the same index
             }
         }
 
