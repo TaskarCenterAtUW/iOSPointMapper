@@ -54,6 +54,8 @@ class CameraViewController: UIViewController {
         // Currently, the app only supports portrait mode
         // Hence, we can set the size of the square frame relative to screen width
         // with the screen height acting as a threshold to support other frames and buttons
+        // FIXME: Make this logic more robust to screen orientation 
+        //  so that we can eventually use other orientations
         let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
         
         let xPosition = (screenWidth - sideLength) / 2

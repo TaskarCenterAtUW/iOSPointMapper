@@ -192,7 +192,7 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
         // Retrieve the image and depth data.
         guard let _ = photo.pixelBuffer,
               let depthData = photo.depthData,
-              let __ = depthData.cameraCalibrationData else { return }
+              let _ = depthData.cameraCalibrationData else { return }
         
         delegate?.onNewPhotoData()
     }
