@@ -89,7 +89,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let outPixelBuffer = (obs.first)!
 //        let segMaskGray = outPixelBuffer.pixelBuffer
 //        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
+//        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
@@ -128,8 +128,41 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
     }
     
+    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
+        var uniqueValues = Set<UInt8>()
+        
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
+        
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let bitDepth = 8 // Assuming 8 bits per component in a grayscale image.
+        
+        let byteBuffer = baseAddress!.assumingMemoryBound(to: UInt8.self)
+        
+        for row in 0..<height {
+            for col in 0..<width {
+                let offset = row * bytesPerRow + col * (bitDepth / 8)
+                let value = byteBuffer[offset]
+                uniqueValues.insert(value)
+            }
+        }
+        
+        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
+        
+        let selectedIndices = uniqueValues.map { UInt8($0) }
+            .map {Float($0) / 255.0 }
+            .compactMap { valueToIndex[$0]}
+            .sorted()
+            
+        return (uniqueValues, selectedIndices)
+    }
+    
     // Get the grayscale values and the corresponding colors
-    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+    func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
         var selectedGrayscaleValues: [UInt8] = []
         var selectedColors: [CIColor] = []
@@ -177,41 +210,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-    }
-
-    
-    
-    func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
-        var uniqueValues = Set<UInt8>()
-        
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-        
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
-        
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        let bitDepth = 8 // Assuming 8 bits per component in a grayscale image.
-        
-        let byteBuffer = baseAddress!.assumingMemoryBound(to: UInt8.self)
-        
-        for row in 0..<height {
-            for col in 0..<width {
-                let offset = row * bytesPerRow + col * (bitDepth / 8)
-                let value = byteBuffer[offset]
-                uniqueValues.insert(value)
-            }
-        }
-        
-        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
-        
-        let selectedIndices = uniqueValues.map { UInt8($0) }
-            .map {Float($0) / 255.0 }
-            .compactMap { valueToIndex[$0]}
-            .sorted()
-            
-        return (uniqueValues, selectedIndices)
     }
 }
 

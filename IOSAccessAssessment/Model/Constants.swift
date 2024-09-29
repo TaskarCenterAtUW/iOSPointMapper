@@ -13,6 +13,8 @@ struct Constants {
     struct ClassConstants {
         static let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable", "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"]
         
+        static let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
+        
         static let grayscaleToClassMap: [UInt8: String] = [
             12: "Background",
             36: "Aeroplane",
@@ -27,8 +29,6 @@ struct Constants {
             228: "Cow",
             240: "Diningtable"
         ]
-        
-        static let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
         
         static let colors: [CIColor] = [
             CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
