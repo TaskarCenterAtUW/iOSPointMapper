@@ -25,7 +25,9 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     // define the filter that will convert the grayscale prediction to color image
     //let masker = ColorMasker()
-    let masker = CustomCIFilter()
+    // TODO: Check if replacing the custom CIFilter with a plain class would help improve performance.
+    //  We are not chaining additional filters, thus using CIFilter doesn't seem to make much sense.
+    let masker = GrayscaleToColorCIFilter()
     
     init(sharedImageData: SharedImageData) {
         self.segmentationView = UIImageView()
@@ -82,14 +84,14 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
-            print("Empty")
+            print("The Segmentation array is Empty")
             return
         }
 
         let outPixelBuffer = (obs.first)!
 //        let segMaskGray = outPixelBuffer.pixelBuffer
 //        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
+//        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
@@ -99,8 +101,9 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
-        // TODO: Check why do we need to set the segmentationView.image again after running processSegmentationRequestPerClass
         processSegmentationRequestPerClass()
+        // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
+        // Check if you can instead simply pass the constants as the parameters during the filter initialization
         self.masker.grayscaleValues = Constants.ClassConstants.grayValues
         self.masker.colorValues =  Constants.ClassConstants.colors
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
@@ -127,59 +130,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         }
     }
-    
-    // Get the grayscale values and the corresponding colors
-    func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
-        let selectedClasses = selection.map { classes[$0] }
-        var selectedGrayscaleValues: [UInt8] = []
-        var selectedColors: [CIColor] = []
-
-        for (key, value) in grayscaleToClassMap {
-            if !selectedClasses.contains(value) { continue }
-            selectedGrayscaleValues.append(key)
-            // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
-            if let index = grayValues.firstIndex(of: Float(key)) {
-                selectedColors.append(Constants.ClassConstants.colors[index])
-                // Fetch corresponding color using the same index
-            }
-        }
-
-        return (selectedGrayscaleValues, selectedColors)
-    }
-
-    
-    func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
-        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        let buffer = CVPixelBufferGetBaseAddress(pixelBuffer)
-
-        let pixelBufferFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-        
-        guard pixelBufferFormat == kCVPixelFormatType_OneComponent8 else {
-            print("Pixel buffer format is not 8-bit grayscale.")
-            CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-            return
-        }
-
-        let selectedValuesSet = Set(selectedValues) // Improve lookup performance
-        
-        for row in 0..<height {
-            let rowBase = buffer!.advanced(by: row * bytesPerRow)
-            for column in 0..<width {
-                let pixel = rowBase.advanced(by: column)
-                let pixelValue = pixel.load(as: UInt8.self)
-                if !selectedValuesSet.contains(pixelValue) {
-                    pixel.storeBytes(of: 0, as: UInt8.self) // Setting unselected values to 0
-                }
-            }
-        }
-
-        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-    }
-
-    
     
     func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
         var uniqueValues = Set<UInt8>()
@@ -212,6 +162,59 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             .sorted()
             
         return (uniqueValues, selectedIndices)
+    }
+}
+
+// Functions not currently in use
+extension SegmentationViewController {
+    // Get the grayscale values and the corresponding colors
+    func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+        let selectedClasses = selection.map { classes[$0] }
+        var selectedGrayscaleValues: [UInt8] = []
+        var selectedColors: [CIColor] = []
+
+        for (key, value) in grayscaleToClassMap {
+            if !selectedClasses.contains(value) { continue }
+            selectedGrayscaleValues.append(key)
+            // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
+            if let index = grayValues.firstIndex(of: Float(key)) {
+                selectedColors.append(Constants.ClassConstants.colors[index])
+                // Fetch corresponding color using the same index
+            }
+        }
+
+        return (selectedGrayscaleValues, selectedColors)
+    }
+    
+    func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
+        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let buffer = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+        let pixelBufferFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        
+        guard pixelBufferFormat == kCVPixelFormatType_OneComponent8 else {
+            print("Pixel buffer format is not 8-bit grayscale.")
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+            return
+        }
+
+        let selectedValuesSet = Set(selectedValues) // Improve lookup performance
+        
+        for row in 0..<height {
+            let rowBase = buffer!.advanced(by: row * bytesPerRow)
+            for column in 0..<width {
+                let pixel = rowBase.advanced(by: column)
+                let pixelValue = pixel.load(as: UInt8.self)
+                if !selectedValuesSet.contains(pixelValue) {
+                    pixel.storeBytes(of: 0, as: UInt8.self) // Setting unselected values to 0
+                }
+            }
+        }
+
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
     }
 }
 
