@@ -69,6 +69,7 @@ class CameraController: NSObject, ObservableObject {
     // Add a device input to the capture session.
     private func setupCaptureInput() throws {
         // Look up the LiDAR camera. Generally, only present at the back camera
+        // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
         guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
             throw ConfigurationError.lidarDeviceUnavailable
         }

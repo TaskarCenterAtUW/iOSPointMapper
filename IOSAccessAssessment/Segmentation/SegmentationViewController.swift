@@ -78,34 +78,13 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
     }
     
-    func classSegmentationRequest() {
-        
-        //guard let image = self.sharedImageData?.cameraImage else { return }
-        
-        if let totalCount = self.sharedImageData?.segmentedIndices.count {
-            //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
-            self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
-        }
-            
-        if let indices = self.sharedImageData?.segmentedIndices.indices {
-            for i in indices {
-                guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
-                self.masker.inputImage = self.sharedImageData?.pixelBuffer
-                self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
-                self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-                self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-                self.sharedImageData?.classImages[i] = self.masker.outputImage!
-//                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
-        }
-    }
-    
     func processSegmentationRequest(_ observations: [Any]){
         
         let obs = observations as! [VNPixelBufferObservation]
 
         if obs.isEmpty{
             print("Empty")
+            return
         }
 
         let outPixelBuffer = (obs.first)!
@@ -138,6 +117,28 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 //            }
         }
         //self.masker.count = 12
+    }
+    
+    func classSegmentationRequest() {
+        
+        //guard let image = self.sharedImageData?.cameraImage else { return }
+        
+        if let totalCount = self.sharedImageData?.segmentedIndices.count {
+            //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
+            self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
+        }
+            
+        if let indices = self.sharedImageData?.segmentedIndices.indices {
+            for i in indices {
+                guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
+                self.masker.inputImage = self.sharedImageData?.pixelBuffer
+                self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
+                self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
+                self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+                self.sharedImageData?.classImages[i] = self.masker.outputImage!
+//                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            }
+        }
     }
     
     func convertSelectionToGrayscaleValues(selection: [Int], classes: [String], grayscaleMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
