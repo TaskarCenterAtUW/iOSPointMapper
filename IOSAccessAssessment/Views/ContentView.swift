@@ -28,16 +28,16 @@ var annotationView: Bool = false
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    @Published var pixelBuffer: CIImage?
     @Published var depthData: CVPixelBuffer?
 //    @Published var depthDataImage: UIImage?
+    
+    @Published var pixelBuffer: CIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
+    
     @Published var segmentedIndices: [Int] = []
+    // Single image for each class
     @Published var classImages: [CIImage] = []
-    
-//    var updateSegmentation: ((Any) -> Void)?
-    
 }
 
 struct ContentView: View {
@@ -58,7 +58,7 @@ struct ContentView: View {
                         HostedCameraViewController(session: manager!.controller.captureSession)
                         HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
-                    
+                    // TODO: Update to NavigationDestination
                     NavigationLink(
                         destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
                         isActive: $navigateToAnnotationView

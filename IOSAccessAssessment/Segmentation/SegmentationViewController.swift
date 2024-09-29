@@ -88,22 +88,21 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-        
-
         let segMaskGray = outPixelBuffer.pixelBuffer
         //let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
         let (selectedGrayscaleValues, selectedColors) = convertSelectionToGrayscaleValues(selection: selection, classes: classes, grayscaleMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
-//            print("Unique Grayscale Values: \(uniqueGrayscaleValues)")
-//            print("Selected Indices:  \(selectedIndices)")
         self.sharedImageData?.segmentedIndices = selectedIndices
+        // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
         let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
-        
+        // FIXME: Referencing global variables in other files would be risky.
+        // Aim to make the annotationView private to ContentView, and figure out some other way to have this condition.
+        // This is most likely an artifact of previous app versions
         if (annotationView) {
             annotationView = false
             classSegmentationRequest()
@@ -111,7 +110,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.grayscaleValues = Constants.ClassConstants.grayValues
             self.masker.colorValues =  Constants.ClassConstants.colors
             self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            annotationView = false
 //            DispatchQueue.main.async {
 //                self.sharedImageData?.segmentationImage = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //            }
@@ -120,8 +118,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     func classSegmentationRequest() {
-        
-        //guard let image = self.sharedImageData?.cameraImage else { return }
         
         if let totalCount = self.sharedImageData?.segmentedIndices.count {
             //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
