@@ -25,7 +25,9 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     // define the filter that will convert the grayscale prediction to color image
     //let masker = ColorMasker()
-    let masker = CustomCIFilter()
+    // TODO: Check if replacing the custom CIFilter with a plain class would help improve performance.
+    //  We are not chaining additional filters, thus using CIFilter doesn't seem to make much sense.
+    let masker = GrayscaleToColorCIFilter()
     
     init(sharedImageData: SharedImageData) {
         self.segmentationView = UIImageView()

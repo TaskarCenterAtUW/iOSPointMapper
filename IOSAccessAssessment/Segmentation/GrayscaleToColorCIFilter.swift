@@ -1,5 +1,5 @@
 //
-//  CustomCIFilter.swift
+//  GrayscaleToColorCIFilter.swift
 //  IOSAccessAssessment
 //
 //  Created by TCAT on 9/27/24.
@@ -10,7 +10,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-class CustomCIFilter: CIFilter {
+class GrayscaleToColorCIFilter: CIFilter {
     var inputImage: CIImage?
     var grayscaleValues: [Float] = []
     var colorValues: [CIColor] = []
@@ -47,12 +47,12 @@ class CustomCIFilter: CIFilter {
             print("Error: inputImage does not have a valid CGImage")
             return nil
         }
-                
         
         guard let inputTexture = try? textureLoader.newTexture(cgImage: cgImage, options: options) else {
             return nil
         }
 
+        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = device.makeTexture(descriptor: descriptor),
               let commandBuffer = commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
@@ -61,7 +61,7 @@ class CustomCIFilter: CIFilter {
 
         let grayscaleBuffer = device.makeBuffer(bytes: grayscaleValues, length: grayscaleValues.count * MemoryLayout<Float>.size, options: [])
         let colorBuffer = device.makeBuffer(bytes: colorValues.map { SIMD3<Float>(Float($0.red), Float($0.green), Float($0.blue)) }, length: colorValues.count * MemoryLayout<SIMD3<Float>>.size, options: [])
-
+        
         commandEncoder.setComputePipelineState(pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
