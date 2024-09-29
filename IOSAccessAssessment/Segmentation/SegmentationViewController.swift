@@ -84,7 +84,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
-            print("Empty")
+            print("The Segmentation array is Empty")
             return
         }
 
@@ -101,7 +101,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
-        // TODO: Check why do we need to set the segmentationView.image again after running processSegmentationRequestPerClass
         processSegmentationRequestPerClass()
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization

@@ -14,7 +14,35 @@ class GrayscaleToColorCIFilter: CIFilter {
     var inputImage: CIImage?
     var grayscaleValues: [Float] = []
     var colorValues: [CIColor] = []
+    
+    // Metal-related properties
+    private let device: MTLDevice
+    private let commandQueue: MTLCommandQueue
+    private let ciContext: CIContext
+    private let pipeline: MTLComputePipelineState
+    private let textureLoader: MTKTextureLoader
 
+    override init() {
+        guard let device = MTLCreateSystemDefaultDevice(),
+              let commandQueue = device.makeCommandQueue() else  {
+            fatalError("Error: Failed to initialize Metal resources")
+        }
+        self.device = device
+        self.commandQueue = commandQueue
+        self.ciContext = CIContext(mtlDevice: device)
+        self.textureLoader = MTKTextureLoader(device: device)
+        
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernel"),
+              let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+            fatalError("Error: Failed to initialize Metal pipeline")
+        }
+        self.pipeline = pipeline
+        super.init()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override var outputImage: CIImage? {
         guard let inputImage = inputImage else { return nil }
