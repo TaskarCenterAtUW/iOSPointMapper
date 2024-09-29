@@ -36,7 +36,7 @@ class SharedImageData: ObservableObject {
 //    @Published var segmentationImage: UIImage?
     
     @Published var segmentedIndices: [Int] = []
-    // Single image for each class
+    // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
 }
 

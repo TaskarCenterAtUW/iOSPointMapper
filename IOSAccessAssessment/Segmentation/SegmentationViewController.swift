@@ -81,7 +81,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     func processSegmentationRequest(_ observations: [Any]){
         
         let obs = observations as! [VNPixelBufferObservation]
-
         if obs.isEmpty{
             print("Empty")
             return
@@ -117,23 +116,24 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         //self.masker.count = 12
     }
     
+    // Generate segmentation image for each class
     func classSegmentationRequest() {
-        
-        if let totalCount = self.sharedImageData?.segmentedIndices.count {
-            //self.sharedImageData?.classImages = Array(repeating: image, count: totalCount)
-            self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
+        guard let segmentedIndices = self.sharedImageData?.segmentedIndices else {
+            return
         }
-            
-        if let indices = self.sharedImageData?.segmentedIndices.indices {
-            for i in indices {
-                guard let currentClass = self.sharedImageData?.segmentedIndices[i] else { return }
-                self.masker.inputImage = self.sharedImageData?.pixelBuffer
-                self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
-                self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-                self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-                self.sharedImageData?.classImages[i] = self.masker.outputImage!
+        
+        // Initialize an array of classImages
+        let totalCount = segmentedIndices.count
+        self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
+        // For each class, extract the separate segment
+        for i in segmentedIndices.indices {
+            let currentClass = segmentedIndices[i]
+            self.masker.inputImage = self.sharedImageData?.pixelBuffer
+            self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
+            self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
+            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            self.sharedImageData?.classImages[i] = self.masker.outputImage!
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-            }
         }
     }
     
