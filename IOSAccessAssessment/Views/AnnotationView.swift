@@ -18,7 +18,11 @@ struct AnnotationView: View {
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     
     var body: some View {
-        if isShowingCameraView || index >= sharedImageData.classImages.count {
+        // TODO: Instead of adding the ContentView again to the NavigationStack,
+        //  it would be better to go to the previous screen in the NavigationStack once we are done with the AnnotationView
+        //  This way, if the ContentView is the previous view (in the current flow, it always is),
+        //  then we avoid having to recreate it again.
+        if isShowingCameraView || self.index >= sharedImageData.classImages.count {
             ContentView(selection: Array(selection))
         } else {
             ZStack {
@@ -87,8 +91,8 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
-        index += 1
-        if index >= (sharedImageData.classImages.count) {
+        self.index += 1
+        if self.index >= (sharedImageData.classImages.count) {
             // Handle completion, save responses, or navigate to the next screen
             ContentView(selection: Array(selection))
         }
@@ -100,6 +104,6 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        return Float(index) / Float(selection.count)
+        return Float(self.index) / Float(selection.count)
     }
 }

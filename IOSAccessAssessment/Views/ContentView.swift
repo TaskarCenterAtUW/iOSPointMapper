@@ -49,16 +49,14 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
-//        if (navigateToAnnotationView) {
-//            AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
-//        } else {
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
                         HostedCameraViewController(session: manager!.controller.captureSession)
                         HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
-                    // TODO: Update to NavigationDestination
+                    // TODO: Check if we should update to NavigationDestination which is compatible with iOS 16+
+                    //  Warning: This will not work in iOS versions before 16
                     NavigationLink(
                         destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
                         isActive: $navigateToAnnotationView
@@ -67,7 +65,7 @@ struct ContentView: View {
                             annotationView = true
                             objectLocation.settingLocation()
                             manager!.startPhotoCapture()
-                            // TODO: Instead of an arbitrary delay, we should have an event listener
+                            // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
                             // that triggers when the photo capture is completed
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 navigateToAnnotationView = true
@@ -105,6 +103,5 @@ struct ContentView: View {
             .onDisappear {
                 manager?.controller.stopStream()
             }
-//        }
     }
 }

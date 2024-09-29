@@ -11,6 +11,7 @@ struct SetupView: View {
     @State private var selection = Set<Int>()
     
     var body: some View {
+        // TODO: Check if it is prudent to use a feature which is only usable after iOS 16
         NavigationStack {
             VStack(alignment: .leading) {
                 Text("Setup View")
