@@ -11,7 +11,6 @@ extension CIImage {
     func croppedToCenter(size: CGSize) -> CIImage {
         let x = (extent.width - size.width) / 2
         let y = (extent.height - size.height) / 2
-//        print("before: \(x), \(y)")
         let cropRect = CGRect(x: x, y: y, width: size.width, height: size.height)
         return cropped(to: cropRect)
     }

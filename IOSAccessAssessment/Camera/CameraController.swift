@@ -21,7 +21,9 @@ class CameraController: NSObject, ObservableObject {
         case lidarDeviceUnavailable
         case requiredFormatUnavailable
     }
-    
+    // TODO: Check if the videoDataOutputQueue or the DataOutputSynchronizer can be optimized
+    //  Either by moving some Image Processing functionality to the GPU
+    //  or by reducing the number of frames that are processed
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
     private(set) var captureSession: AVCaptureSession!
@@ -67,6 +69,7 @@ class CameraController: NSObject, ObservableObject {
     // Add a device input to the capture session.
     private func setupCaptureInput() throws {
         // Look up the LiDAR camera. Generally, only present at the back camera
+        // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
         guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
             throw ConfigurationError.lidarDeviceUnavailable
         }
@@ -140,7 +143,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
         let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-        let depthAspectRatio = depthWidth > depthHeight
         let depthSideLength = min(depthWidth, depthHeight)
         // TODO: Check why does this lead to an error on orientation change
         let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
@@ -148,7 +150,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
 //        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
 //        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
-//        print("After After size: \(croppedDepthWidth), \(croppedDepthHeight)")
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
         delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)

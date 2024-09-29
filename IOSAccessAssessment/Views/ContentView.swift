@@ -12,6 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
+// TODO: Move the structs and ObservableObjects to dedicated files
 struct ColorInfo {
     var color: SIMD4<Float> // Corresponds to the float4 in Metal
     var grayscale: Float    // Corresponds to the float in Metal
@@ -27,16 +28,16 @@ var annotationView: Bool = false
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    @Published var pixelBuffer: CIImage?
     @Published var depthData: CVPixelBuffer?
 //    @Published var depthDataImage: UIImage?
+    
+    @Published var pixelBuffer: CIImage?
+//    @Published var objectSegmentation: CIImage?
+//    @Published var segmentationImage: UIImage?
+    
     @Published var segmentedIndices: [Int] = []
+    // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
-    
-//    var updateSegmentation: ((Any) -> Void)?
-    
 }
 
 struct ContentView: View {
@@ -57,7 +58,7 @@ struct ContentView: View {
                         HostedCameraViewController(session: manager!.controller.captureSession)
                         HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
-                    
+                    // TODO: Update to NavigationDestination
                     NavigationLink(
                         destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
                         isActive: $navigateToAnnotationView
@@ -97,7 +98,7 @@ struct ContentView: View {
 //                    manager?.segmentationController = segmentationController
 //                    
 //                    sharedImageData.updateSegmentation = { index in
-//                        self.manager?.segmentationController?.classSegmentationRequest()
+//                        self.manager?.segmentationController?.processSegmentationRequestPerClass()
 //                    }
                 }
             }

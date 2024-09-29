@@ -51,7 +51,6 @@ class ObjectLocation {
         }
         
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-    //    print("width: \(width)")
         var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
         for row in 0..<height {
             for col in 0..<width {
@@ -75,7 +74,6 @@ class ObjectLocation {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
 //            locationStatus = "Latitude: \(latitude), Longitude: \(longitude)"
-//            print(locationStatus)
         }
     }
     
@@ -118,36 +116,27 @@ class ObjectLocation {
                         sumY += y
 //                        let pixelOffset = (y * 4) * bytesPerRow / MemoryLayout<Float>.size + (x * 4)
 //                        let depthValue = floatBuffer[pixelOffset]
-//                        print(depthValue)
 //                        distanceSum += depthValue
                     }
                 }
             }
             let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
             let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
-//            print("Y: \(gravityY), X: \(gravityX)")
             let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
             depthValue = floatBuffer[pixelOffset]
-//            print("Gravity depth value: \(depthValue)")
-//
-//            print("centerY: \(centerY), centerX: \(centerX)")
 //            let centerPixelOffset = centerY * bytesPerRow / MemoryLayout<Float>.size + centerX
 //            let centerDepthValue = floatBuffer[centerPixelOffset]
-//            print("center depth: \(centerDepthValue)")
         }
         
 //        let meanDepth = distanceSum / Float(numPixels)
-//        print("Mean depth value: \(meanDepth), Pixels: \(numPixels)")
     }
     
     func settingLocation() {
         handleLocationUpdate()
         handleHeadingUpdate()
 //        guard let depth = self.depthValue else {
-//            print("depth: nil")
 //            return
 //        }
-//        print("depth: \(depth)")
         
         guard let latitude = self.latitude, let longitude = self.longitude else {
             print("latitude or longitude: nil")
