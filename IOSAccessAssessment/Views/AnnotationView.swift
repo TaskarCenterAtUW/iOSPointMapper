@@ -29,6 +29,7 @@ struct AnnotationView: View {
                     //  Currently, when done synchronously, the onAppear of the previous view does not run
                     //  as the previous view may be considered to have not disappeared.
                     //  May have to do with the way SwiftUI runs the view lifecycle update. 
+                    // TODO: Alternatively, consider never navigating from ContentView to begin with when segments are empty
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         self.dismiss()
                     }

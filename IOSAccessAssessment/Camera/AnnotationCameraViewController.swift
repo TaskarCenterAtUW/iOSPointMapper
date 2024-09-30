@@ -26,21 +26,38 @@ class AnnotationCameraViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let centerX = (UIScreen.main.bounds.width - 256.0) / 2.0
         cameraView = UIImageView(image: cameraImage)
-        cameraView?.frame = CGRect(x: centerX, y: 0.0, width: 256.0, height: 256.0)
+        cameraView?.frame = getFrame()
         cameraView?.contentMode = .scaleAspectFill
         if let cameraView = cameraView {
             view.addSubview(cameraView)
         }
         
         segmentationView = UIImageView(image: UIImage(ciImage: segmentationImage!, scale: 1.0, orientation: .downMirrored))
-        segmentationView?.frame = CGRect(x: centerX, y: 0.0, width: 256.0, height: 256.0)
+        segmentationView?.frame = getFrame()
         segmentationView?.contentMode = .scaleAspectFill
         if let segmentationView = segmentationView {
             view.addSubview(segmentationView)
         }
         cameraView?.bringSubviewToFront(segmentationView!)
+    }
+    
+    // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
+    private func getFrame() -> CGRect {
+        let screenSize = UIScreen.main.bounds
+        let screenWidth = screenSize.width
+        let screenHeight = screenSize.height
+        
+        // Currently, the app only supports portrait mode
+        // Hence, we can set the size of the square frame relative to screen width
+        // with the screen height acting as a threshold to support other frames and buttons
+        // FIXME: Make this logic more robust to screen orientation
+        //  so that we can eventually use other orientations
+        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
+        
+        let xPosition = (screenWidth - sideLength) / 2
+        
+        return CGRect(x: xPosition, y: 0, width: sideLength, height: sideLength)
     }
 }
 
