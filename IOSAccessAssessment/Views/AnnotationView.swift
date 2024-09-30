@@ -95,12 +95,6 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
-        if (self.index + 1) >= (sharedImageData.classImages.count) {
-            // Handle completion, save responses, or navigate to the next screen
-//            ContentView(selection: Array(selection))
-            self.dismiss()
-            return
-        }
         self.index += 1
     }
 
@@ -110,9 +104,6 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        if (self.selection.isEmpty) {
-            return 0
-        }
         return Float(self.index) / Float(self.selection.count)
     }
 }
