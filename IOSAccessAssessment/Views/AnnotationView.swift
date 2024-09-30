@@ -9,7 +9,6 @@ import SwiftUI
 struct AnnotationView: View {
     @ObservedObject var sharedImageData: SharedImageData
     @State private var index = 0
-    @State private var isShowingCameraView = false
     
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     @State private var selectedOptionIndex: Int? = nil
@@ -21,65 +20,77 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        ZStack {
-            VStack {
-                HStack {
-                    Spacer()
-                    if (self.isValid()) {
+        if (!self.isValid()) {
+            Rectangle()
+                .frame(width: 0, height: 0)
+                .onAppear() {
+                    // TODO: Currently, this delay seems to work the best for automatic back navigation
+                    //  Need to figure out a way to programmatically navigate without issues when done synchronously.
+                    //  Currently, when done synchronously, the onAppear of the previous view does not run
+                    //  as the previous view may be considered to have not disappeared.
+                    //  May have to do with the way SwiftUI runs the view lifecycle update. 
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.dismiss()
+                    }
+                }
+        } else {
+            ZStack {
+                VStack {
+                    HStack {
+                        Spacer()
                         HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                        Spacer()
                     }
-                    Spacer()
-                }
-                HStack {
-                    Spacer()
-                    if (self.isValid()) {
+                    HStack {
+                        Spacer()
                         Text("Selected class: \(classes[selection[index]])")
+                        Spacer()
                     }
-                    Spacer()
-                }
-                
-                ProgressBar(value: calculateProgress())
-                
-                HStack {
-                    Spacer()
-                    VStack {
-                        ForEach(0..<options.count, id: \.self) { optionIndex in
-                            Button(action: {
-                                // Toggle selection
-                                if selectedOptionIndex == optionIndex {
-                                    selectedOptionIndex = nil
-                                } else {
-                                    selectedOptionIndex = optionIndex
+                    
+                    ProgressBar(value: calculateProgress())
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            ForEach(0..<options.count, id: \.self) { optionIndex in
+                                Button(action: {
+                                    // Toggle selection
+                                    if selectedOptionIndex == optionIndex {
+                                        selectedOptionIndex = nil
+                                    } else {
+                                        selectedOptionIndex = optionIndex
+                                    }
+                                }) {
+                                    Text(options[optionIndex])
+                                        .padding()
+                                        .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
                                 }
-                            }) {
-                                Text(options[optionIndex])
-                                    .padding()
-                                    .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
                             }
                         }
+                        Spacer()
                     }
-                    Spacer()
+                    
+                    Button(action: {
+                        objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
+                        self.nextSegment()
+                        selectedOptionIndex = nil
+                    }) {
+                        Text("Next")
+                    }
+                    .padding()
                 }
-                
-                Button(action: {
-                    objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
-                    self.nextSegment()
-                    selectedOptionIndex = nil
-                }) {
-                    Text("Next")
+            }
+            .navigationBarTitle("Annotation View", displayMode: .inline)
+            .onAppear {
+                print("AnnotationView isValid 2 \(self.selection.isEmpty), \(index) vs \(self.selection.count)")
+                if (!self.isValid()) {
+                    self.dismiss()
                 }
-                .padding()
             }
-        }
-        .navigationBarTitle("Annotation View", displayMode: .inline)
-        .onAppear {
-            if (!self.isValid()) {
-                self.dismiss()
+            .onChange(of: index) { _ in
+                // Trigger any additional actions when the index changes
+                self.refreshView()
             }
-        }
-        .onChange(of: index) { _ in
-            // Trigger any additional actions when the index changes
-            self.refreshView()
         }
     }
     
@@ -91,12 +102,6 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
-        if (self.index + 1) >= (sharedImageData.classImages.count) {
-            // Handle completion, save responses, or navigate to the next screen
-//            ContentView(selection: Array(selection))
-            self.dismiss()
-            return
-        }
         self.index += 1
     }
 
@@ -106,9 +111,6 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        if (self.selection.isEmpty) {
-            return 0
-        }
         return Float(self.index) / Float(self.selection.count)
     }
 }
