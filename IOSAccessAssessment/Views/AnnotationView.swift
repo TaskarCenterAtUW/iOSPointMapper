@@ -21,65 +21,69 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        ZStack {
-            VStack {
-                HStack {
-                    Spacer()
-                    if (self.isValid()) {
+        if (!self.isValid()) {
+            Rectangle()
+                .frame(width: 0, height: 0)
+                .onAppear() {
+                    self.dismiss()
+                }
+        } else {
+            ZStack {
+                VStack {
+                    HStack {
+                        Spacer()
                         HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                        Spacer()
                     }
-                    Spacer()
-                }
-                HStack {
-                    Spacer()
-                    if (self.isValid()) {
+                    HStack {
+                        Spacer()
                         Text("Selected class: \(classes[selection[index]])")
+                        Spacer()
                     }
-                    Spacer()
-                }
-                
-                ProgressBar(value: calculateProgress())
-                
-                HStack {
-                    Spacer()
-                    VStack {
-                        ForEach(0..<options.count, id: \.self) { optionIndex in
-                            Button(action: {
-                                // Toggle selection
-                                if selectedOptionIndex == optionIndex {
-                                    selectedOptionIndex = nil
-                                } else {
-                                    selectedOptionIndex = optionIndex
+                    
+                    ProgressBar(value: calculateProgress())
+                    
+                    HStack {
+                        Spacer()
+                        VStack {
+                            ForEach(0..<options.count, id: \.self) { optionIndex in
+                                Button(action: {
+                                    // Toggle selection
+                                    if selectedOptionIndex == optionIndex {
+                                        selectedOptionIndex = nil
+                                    } else {
+                                        selectedOptionIndex = optionIndex
+                                    }
+                                }) {
+                                    Text(options[optionIndex])
+                                        .padding()
+                                        .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
                                 }
-                            }) {
-                                Text(options[optionIndex])
-                                    .padding()
-                                    .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
                             }
                         }
+                        Spacer()
                     }
-                    Spacer()
+                    
+                    Button(action: {
+                        objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
+                        self.nextSegment()
+                        selectedOptionIndex = nil
+                    }) {
+                        Text("Next")
+                    }
+                    .padding()
                 }
-                
-                Button(action: {
-                    objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
-                    self.nextSegment()
-                    selectedOptionIndex = nil
-                }) {
-                    Text("Next")
+            }
+            .navigationBarTitle("Annotation View", displayMode: .inline)
+            .onAppear {
+                if (!self.isValid()) {
+                    self.dismiss()
                 }
-                .padding()
             }
-        }
-        .navigationBarTitle("Annotation View", displayMode: .inline)
-        .onAppear {
-            if (!self.isValid()) {
-                self.dismiss()
+            .onChange(of: index) { _ in
+                // Trigger any additional actions when the index changes
+                self.refreshView()
             }
-        }
-        .onChange(of: index) { _ in
-            // Trigger any additional actions when the index changes
-            self.refreshView()
         }
     }
     
