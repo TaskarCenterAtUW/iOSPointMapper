@@ -25,12 +25,16 @@ struct AnnotationView: View {
             VStack {
                 HStack {
                     Spacer()
-                    HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                    if (self.isValid()) {
+                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                    }
                     Spacer()
                 }
                 HStack {
                     Spacer()
-                    Text("Selected class: \(classes[selection[index]])")
+                    if (self.isValid()) {
+                        Text("Selected class: \(classes[selection[index]])")
+                    }
                     Spacer()
                 }
                 
@@ -68,10 +72,22 @@ struct AnnotationView: View {
             }
         }
         .navigationBarTitle("Annotation View", displayMode: .inline)
+        .onAppear {
+            if (!self.isValid()) {
+                self.dismiss()
+            }
+        }
         .onChange(of: index) { _ in
             // Trigger any additional actions when the index changes
             self.refreshView()
         }
+    }
+    
+    func isValid() -> Bool {
+        if (self.selection.isEmpty || (index >= self.selection.count)) {
+            return false
+        }
+        return true
     }
     
     func nextSegment() {
@@ -90,6 +106,9 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        return Float(self.index) / Float(selection.count)
+        if (self.selection.isEmpty) {
+            return 0
+        }
+        return Float(self.index) / Float(self.selection.count)
     }
 }
