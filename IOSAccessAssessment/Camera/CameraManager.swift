@@ -19,6 +19,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         }
     }
     // TODO: Currently, the orientation is redundant until we start using other orientation types
+    //  It does not seem to be used anywhere currently
     @Published var orientation = UIDevice.current.orientation
     @Published var processingCapturedResult = false
     @Published var dataAvailable = false
@@ -48,6 +49,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     func resumeStream() {
         controller.startStream()
+        processingCapturedResult = false
+    }
+    
+    func stopStream() {
+        controller.stopStream()
         processingCapturedResult = false
     }
     
