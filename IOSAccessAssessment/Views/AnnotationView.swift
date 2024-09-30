@@ -17,14 +17,16 @@ struct AnnotationView: View {
     var classes: [String]
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         // TODO: Instead of adding the ContentView again to the NavigationStack,
         //  it would be better to go to the previous screen in the NavigationStack once we are done with the AnnotationView
         //  This way, if the ContentView is the previous view (in the current flow, it always is),
         //  then we avoid having to recreate it again.
-        if isShowingCameraView || index >= sharedImageData.classImages.count {
-            ContentView(selection: Array(selection))
-        } else {
+//        if isShowingCameraView || index >= sharedImageData.classImages.count {
+//            ContentView(selection: Array(selection))
+//        } else {
             ZStack {
                 VStack {
                     HStack {
@@ -43,18 +45,18 @@ struct AnnotationView: View {
                     HStack {
                         Spacer()
                         VStack {
-                            ForEach(0..<options.count) { index in
+                            ForEach(0..<options.count) { optionIndex in
                                 Button(action: {
                                     // Toggle selection
-                                    if selectedIndex == index {
+                                    if selectedIndex == optionIndex {
                                         selectedIndex = nil
                                     } else {
-                                        selectedIndex = index
+                                        selectedIndex = optionIndex
                                     }
                                 }) {
-                                    Text(options[index])
+                                    Text(options[optionIndex])
                                         .padding()
-                                        .foregroundColor(selectedIndex == index ? .red : .blue) // Change color based on selection
+                                        .foregroundColor(selectedIndex == optionIndex ? .red : .blue) // Change color based on selection
                                 }
                             }
                         }
@@ -72,29 +74,21 @@ struct AnnotationView: View {
                 }
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
-//            .navigationBarBackButtonHidden(true)
-//            .navigationBarItems(leading: Button(action: {
-//                // This action depends on how you manage navigation
-//                // For demonstration, this simply dismisses the view, but you need a different mechanism to navigate to CameraView
-//                self.isShowingCameraView = true;
-//            }) {
-//                Image(systemName: "chevron.left")
-//                    .foregroundColor(.blue)
-//                Text("Camera View")
-//            })
             .onChange(of: index) { _ in
                 // Trigger any additional actions when the index changes
                 self.refreshView()
             }
-        }
+//        }
     }
     
     func nextSegment() {
-        self.index += 1
-        if self.index >= (sharedImageData.classImages.count) {
+        if (self.index + 1) >= (sharedImageData.classImages.count) {
             // Handle completion, save responses, or navigate to the next screen
-            ContentView(selection: Array(selection))
+//            ContentView(selection: Array(selection))
+            self.dismiss()
+            return
         }
+        self.index += 1
     }
 
     func refreshView() {
