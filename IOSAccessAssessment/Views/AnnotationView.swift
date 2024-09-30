@@ -82,7 +82,6 @@ struct AnnotationView: View {
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
             .onAppear {
-                print("AnnotationView isValid 2 \(self.selection.isEmpty), \(index) vs \(self.selection.count)")
                 if (!self.isValid()) {
                     self.dismiss()
                 }

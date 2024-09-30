@@ -17,8 +17,6 @@ class AnnotationCameraViewController: UIViewController {
     init(sharedImageData: SharedImageData, index: Int) {
         self.cameraImage = sharedImageData.cameraImage
         self.segmentationImage = sharedImageData.classImages[index]
-//        self.cameraImage = cameraImage
-//        self.segmentationImage = segmentationImage
         super.init(nibName: nil, bundle: nil)
     }
     
