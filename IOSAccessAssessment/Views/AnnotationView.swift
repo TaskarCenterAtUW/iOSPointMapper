@@ -9,7 +9,6 @@ import SwiftUI
 struct AnnotationView: View {
     @ObservedObject var sharedImageData: SharedImageData
     @State private var index = 0
-    @State private var isShowingCameraView = false
     
     let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     @State private var selectedOptionIndex: Int? = nil
@@ -25,8 +24,9 @@ struct AnnotationView: View {
             Rectangle()
                 .frame(width: 0, height: 0)
                 .onAppear() {
-                    print("AnnotationView isValid 1 \(self.selection.isEmpty), \(index >= self.selection.count)")
-                    self.dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        self.dismiss()
+                    }
                 }
         } else {
             ZStack {
@@ -77,7 +77,7 @@ struct AnnotationView: View {
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
             .onAppear {
-                print("AnnotationView isValid 2 \(self.selection.isEmpty), \(index >= self.selection.count)")
+                print("AnnotationView isValid 2 \(self.selection.isEmpty), \(index) vs \(self.selection.count)")
                 if (!self.isValid()) {
                     self.dismiss()
                 }

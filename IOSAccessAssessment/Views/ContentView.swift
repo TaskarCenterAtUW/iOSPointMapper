@@ -55,12 +55,6 @@ struct ContentView: View {
                         HostedCameraViewController(session: manager!.controller.captureSession)
                         HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
-                    // TODO: Check if we should update to NavigationDestination which is compatible with iOS 16+
-                    //  Warning: This will not work in iOS versions before 16
-//                    NavigationLink(
-//                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes, navigateToAnnotationView: $navigateToAnnotationView),
-//                        isActive: $navigateToAnnotationView
-//                    ) {
                     Button {
                         annotationView = true
                         objectLocation.settingLocation()
@@ -76,7 +70,6 @@ struct ContentView: View {
                             .frame(width: 60, height: 60)
                             .foregroundColor(.white)
                     }
-//                    }
                 }
                 else {
                     VStack {
@@ -88,7 +81,8 @@ struct ContentView: View {
             }
             .navigationDestination(isPresented: $navigateToAnnotationView) {
                 AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, 
-                               selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
+                               selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes
+                )
             }
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
@@ -112,10 +106,5 @@ struct ContentView: View {
             .onDisappear {
                 manager?.stopStream()
             }
-//            .onChange(of: navigateToAnnotationView) { newNavigateToAnnotationView in
-//                if (!newNavigateToAnnotationView && (manager != nil)) {
-//                    manager?.resumeStream()
-//                }
-//            }
     }
 }
