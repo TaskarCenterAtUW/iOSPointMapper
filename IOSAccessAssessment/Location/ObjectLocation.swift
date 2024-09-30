@@ -66,14 +66,12 @@ class ObjectLocation {
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
         locationManager.startUpdatingHeading()
-        //        locationManager.delegate = cameraController
     }
     
     private func handleLocationUpdate() {
         if let location = locationManager.location {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
-//            locationStatus = "Latitude: \(latitude), Longitude: \(longitude)"
         }
     }
     
@@ -114,9 +112,6 @@ class ObjectLocation {
                         numPixels += 1
                         sumX += x
                         sumY += y
-//                        let pixelOffset = (y * 4) * bytesPerRow / MemoryLayout<Float>.size + (x * 4)
-//                        let depthValue = floatBuffer[pixelOffset]
-//                        distanceSum += depthValue
                     }
                 }
             }
@@ -124,19 +119,12 @@ class ObjectLocation {
             let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
             let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
             depthValue = floatBuffer[pixelOffset]
-//            let centerPixelOffset = centerY * bytesPerRow / MemoryLayout<Float>.size + centerX
-//            let centerDepthValue = floatBuffer[centerPixelOffset]
         }
-        
-//        let meanDepth = distanceSum / Float(numPixels)
     }
     
     func settingLocation() {
         handleLocationUpdate()
         handleHeadingUpdate()
-//        guard let depth = self.depthValue else {
-//            return
-//        }
         
         guard let latitude = self.latitude, let longitude = self.longitude else {
             print("latitude or longitude: nil")
