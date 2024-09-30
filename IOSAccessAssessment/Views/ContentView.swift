@@ -57,26 +57,26 @@ struct ContentView: View {
                     }
                     // TODO: Check if we should update to NavigationDestination which is compatible with iOS 16+
                     //  Warning: This will not work in iOS versions before 16
-                    NavigationLink(
-                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes),
-                        isActive: $navigateToAnnotationView
-                    ) {
-                        Button {
-                            annotationView = true
-                            objectLocation.settingLocation()
-                            manager!.startPhotoCapture()
-                            // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
-                            // that triggers when the photo capture is completed
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                navigateToAnnotationView = true
-                            }
-                        } label: {
-                            Image(systemName: "camera.circle.fill")
-                                .resizable()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(.white)
+//                    NavigationLink(
+//                        destination: AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes, navigateToAnnotationView: $navigateToAnnotationView),
+//                        isActive: $navigateToAnnotationView
+//                    ) {
+                    Button {
+                        annotationView = true
+                        objectLocation.settingLocation()
+                        manager!.startPhotoCapture()
+                        // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
+                        // that triggers when the photo capture is completed
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            navigateToAnnotationView = true
                         }
+                    } label: {
+                        Image(systemName: "camera.circle.fill")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(.white)
                     }
+//                    }
                 }
                 else {
                     VStack {
@@ -86,10 +86,14 @@ struct ContentView: View {
                     }
                 }
             }
+            .navigationDestination(isPresented: $navigateToAnnotationView) {
+                AnnotationView(sharedImageData: sharedImageData, objectLocation: objectLocation, 
+                               selection: sharedImageData.segmentedIndices, classes: Constants.ClassConstants.classes)
+            }
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
                 print("Is Manager Nil \(self.manager == nil)")
-                if manager == nil {
+                if (manager == nil) {
                     manager = CameraManager(sharedImageData: sharedImageData)
 //                    let segmentationController = SegmentationViewController(sharedImageData: sharedImageData)
 //                    segmentationController.selection = selection
@@ -108,5 +112,10 @@ struct ContentView: View {
             .onDisappear {
                 manager?.stopStream()
             }
+//            .onChange(of: navigateToAnnotationView) { newNavigateToAnnotationView in
+//                if (!newNavigateToAnnotationView && (manager != nil)) {
+//                    manager?.resumeStream()
+//                }
+//            }
     }
 }

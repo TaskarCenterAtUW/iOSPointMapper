@@ -25,6 +25,7 @@ struct AnnotationView: View {
             Rectangle()
                 .frame(width: 0, height: 0)
                 .onAppear() {
+                    print("AnnotationView isValid 1 \(self.selection.isEmpty), \(index >= self.selection.count)")
                     self.dismiss()
                 }
         } else {
@@ -76,6 +77,7 @@ struct AnnotationView: View {
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
             .onAppear {
+                print("AnnotationView isValid 2 \(self.selection.isEmpty), \(index >= self.selection.count)")
                 if (!self.isValid()) {
                     self.dismiss()
                 }
