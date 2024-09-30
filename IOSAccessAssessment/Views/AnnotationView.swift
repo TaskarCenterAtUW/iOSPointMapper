@@ -9,76 +9,69 @@ import SwiftUI
 struct AnnotationView: View {
     @ObservedObject var sharedImageData: SharedImageData
     @State private var index = 0
-    @State private var selectedIndex: Int? = nil
     @State private var isShowingCameraView = false
+    
+    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
+    @State private var selectedOptionIndex: Int? = nil
     
     var objectLocation: ObjectLocation
     var selection: [Int]
     var classes: [String]
-    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
     
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        // TODO: Instead of adding the ContentView again to the NavigationStack,
-        //  it would be better to go to the previous screen in the NavigationStack once we are done with the AnnotationView
-        //  This way, if the ContentView is the previous view (in the current flow, it always is),
-        //  then we avoid having to recreate it again.
-//        if isShowingCameraView || index >= sharedImageData.classImages.count {
-//            ContentView(selection: Array(selection))
-//        } else {
-            ZStack {
-                VStack {
-                    HStack {
-                        Spacer()
-                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
-                        Spacer()
-                    }
-                    HStack {
-                        Spacer()
-                        Text("Selected class: \(classes[selection[index]])")
-                        Spacer()
-                    }
-                    
-                    ProgressBar(value: calculateProgress())
-                    
-                    HStack {
-                        Spacer()
-                        VStack {
-                            ForEach(0..<options.count) { optionIndex in
-                                Button(action: {
-                                    // Toggle selection
-                                    if selectedIndex == optionIndex {
-                                        selectedIndex = nil
-                                    } else {
-                                        selectedIndex = optionIndex
-                                    }
-                                }) {
-                                    Text(options[optionIndex])
-                                        .padding()
-                                        .foregroundColor(selectedIndex == optionIndex ? .red : .blue) // Change color based on selection
+        ZStack {
+            VStack {
+                HStack {
+                    Spacer()
+                    HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                    Spacer()
+                }
+                HStack {
+                    Spacer()
+                    Text("Selected class: \(classes[selection[index]])")
+                    Spacer()
+                }
+                
+                ProgressBar(value: calculateProgress())
+                
+                HStack {
+                    Spacer()
+                    VStack {
+                        ForEach(0..<options.count, id: \.self) { optionIndex in
+                            Button(action: {
+                                // Toggle selection
+                                if selectedOptionIndex == optionIndex {
+                                    selectedOptionIndex = nil
+                                } else {
+                                    selectedOptionIndex = optionIndex
                                 }
+                            }) {
+                                Text(options[optionIndex])
+                                    .padding()
+                                    .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
                             }
                         }
-                        Spacer()
                     }
-                    
-                    Button(action: {
-                        objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
-                        self.nextSegment()
-                        selectedIndex = nil
-                    }) {
-                        Text("Next")
-                    }
-                    .padding()
+                    Spacer()
                 }
+                
+                Button(action: {
+                    objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
+                    self.nextSegment()
+                    selectedOptionIndex = nil
+                }) {
+                    Text("Next")
+                }
+                .padding()
             }
-            .navigationBarTitle("Annotation View", displayMode: .inline)
-            .onChange(of: index) { _ in
-                // Trigger any additional actions when the index changes
-                self.refreshView()
-            }
-//        }
+        }
+        .navigationBarTitle("Annotation View", displayMode: .inline)
+        .onChange(of: index) { _ in
+            // Trigger any additional actions when the index changes
+            self.refreshView()
+        }
     }
     
     func nextSegment() {
@@ -93,7 +86,7 @@ struct AnnotationView: View {
 
     func refreshView() {
         // Any additional refresh logic can be placed here
-        // Example: fetching new data, triggering animations, etc.
+        // Example: fetching new data, triggering animations, sending current data etc.
     }
 
     func calculateProgress() -> Float {
