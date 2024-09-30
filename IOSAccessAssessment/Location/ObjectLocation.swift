@@ -11,7 +11,8 @@ import AVFoundation
 import CoreImage
 import CoreLocation
 
-
+// TODO: As pointed out in the TODO for the ContentView objectLocation
+// We would want to separate out device location logic, and pixel-wise location calculation logic
 class ObjectLocation {
     var depthValue: Float?
     var locationManager: CLLocationManager
@@ -34,35 +35,33 @@ class ObjectLocation {
         locationManager.startUpdatingHeading()
     }
     
-    private func handleLocationUpdate() {
+    private func setLocation() {
         if let location = locationManager.location {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
         }
     }
     
-    private func handleHeadingUpdate() {
+    private func setHeading() {
         if let heading = locationManager.heading {
             self.headingDegrees = heading.magneticHeading
 //            headingStatus = "Heading: \(headingDegrees) degrees"
         }
     }
     
-    func settingLocation() {
-        handleLocationUpdate()
-        handleHeadingUpdate()
+    func settingLocationAndHeading() {
+        setLocation()
+        setHeading()
         
         guard let latitude = self.latitude, let longitude = self.longitude else {
             print("latitude or longitude: nil")
             return
         }
-        print("latitude: \(latitude), longitude: \(longitude)")
         
         guard let heading = self.headingDegrees else {
             print("heading: nil")
             return
         }
-        print("heading: \(heading)")
     }
     
     func calcLocation(sharedImageData: SharedImageData, index: Int) {
@@ -73,8 +72,8 @@ class ObjectLocation {
         }
         print("depth: \(depth)")
 
-        handleLocationUpdate()
-        handleHeadingUpdate()
+        setLocation()
+        setHeading()
 
         guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
