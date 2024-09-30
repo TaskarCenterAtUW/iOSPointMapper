@@ -74,8 +74,6 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
     func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
         uiViewController.cameraImage = sharedImageData.cameraImage
         uiViewController.segmentationImage = sharedImageData.classImages[index]
-//        uiViewController.cameraImage = cameraImage
-//        uiViewController.segmentationImage = segmentationImage
         uiViewController.viewDidLoad()
     }
 }
