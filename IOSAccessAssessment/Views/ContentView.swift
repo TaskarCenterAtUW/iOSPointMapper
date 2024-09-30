@@ -86,7 +86,6 @@ struct ContentView: View {
             }
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
-                print("Is Manager Nil \(self.manager == nil)")
                 if (manager == nil) {
                     manager = CameraManager(sharedImageData: sharedImageData)
                 } else {
