@@ -28,40 +28,6 @@ class ObjectLocation {
         self.setupLocationManager()
     }
     
-    func createMask(from image: CIImage) -> [[Int]] {
-        let context = CIContext(options: nil)
-        guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
-        
-        let width = cgImage.width
-        let height = cgImage.height
-        let colorSpace = CGColorSpaceCreateDeviceGray()
-        let bytesPerPixel = 1
-        let bytesPerRow = bytesPerPixel * width
-        let bitsPerComponent = 8
-        var pixelData = [UInt8](repeating: 0, count: width * height)
-        
-        guard let context = CGContext(data: &pixelData,
-                                      width: width,
-                                      height: height,
-                                      bitsPerComponent: bitsPerComponent,
-                                      bytesPerRow: bytesPerRow,
-                                      space: colorSpace,
-                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
-            return []
-        }
-        
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
-        for row in 0..<height {
-            for col in 0..<width {
-                let pixelIndex = row * width + col
-                let pixelValue = pixelData[pixelIndex]
-                mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
-            }
-        }
-        return mask
-    }
-    
     private func setupLocationManager() {
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
@@ -79,46 +45,6 @@ class ObjectLocation {
         if let heading = locationManager.heading {
             self.headingDegrees = heading.magneticHeading
 //            headingStatus = "Heading: \(headingDegrees) degrees"
-        }
-    }
-    
-    func getDepth(sharedImageData: SharedImageData, index: Int) {
-        let objectSegmentation = sharedImageData.classImages[index]
-        let mask = createMask(from: objectSegmentation)
-        guard let depthMap = sharedImageData.depthData else { return }
-//        var distanceSum: Float = 0
-        var sumX = 0
-        var sumY = 0
-        var numPixels = 0
-        
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
-        
-        let width = mask[0].count
-        let height = mask.count
-        
-        let depthWidth = CVPixelBufferGetWidth(depthMap)
-        let depthHeight = CVPixelBufferGetHeight(depthMap)
-        let centerX = depthWidth / 2
-        let centerY = depthHeight / 2
-        
-        if let baseAddress = CVPixelBufferGetBaseAddress(depthMap) {
-            let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
-            let floatBuffer = baseAddress.assumingMemoryBound(to: Float.self)
-            
-            for y in 0..<height {
-                for x in 0..<width {
-                    if mask[y][x] == 1 {
-                        numPixels += 1
-                        sumX += x
-                        sumY += y
-                    }
-                }
-            }
-            let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
-            let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
-            let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
-            depthValue = floatBuffer[pixelOffset]
         }
     }
     
@@ -170,5 +96,77 @@ class ObjectLocation {
         let objectLongitude = longitude + (deltaX / metersPerDegree)
 
         print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
+    }
+    
+    func createMask(from image: CIImage) -> [[Int]] {
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let bytesPerPixel = 1
+        let bytesPerRow = bytesPerPixel * width
+        let bitsPerComponent = 8
+        var pixelData = [UInt8](repeating: 0, count: width * height)
+        
+        guard let context = CGContext(data: &pixelData,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: bitsPerComponent,
+                                      bytesPerRow: bytesPerRow,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+            return []
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
+        for row in 0..<height {
+            for col in 0..<width {
+                let pixelIndex = row * width + col
+                let pixelValue = pixelData[pixelIndex]
+                mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
+            }
+        }
+        return mask
+    }
+    
+    func getDepth(sharedImageData: SharedImageData, index: Int) {
+        let objectSegmentation = sharedImageData.classImages[index]
+        let mask = createMask(from: objectSegmentation)
+        guard let depthMap = sharedImageData.depthData else { return }
+//        var distanceSum: Float = 0
+        var sumX = 0
+        var sumY = 0
+        var numPixels = 0
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let width = mask[0].count
+        let height = mask.count
+        
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        
+        if let baseAddress = CVPixelBufferGetBaseAddress(depthMap) {
+            let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+            let floatBuffer = baseAddress.assumingMemoryBound(to: Float.self)
+            
+            for y in 0..<height {
+                for x in 0..<width {
+                    if mask[y][x] == 1 {
+                        numPixels += 1
+                        sumX += x
+                        sumY += y
+                    }
+                }
+            }
+            let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
+            let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
+            let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
+            depthValue = floatBuffer[pixelOffset]
+        }
     }
 }
