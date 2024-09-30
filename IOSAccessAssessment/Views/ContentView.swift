@@ -63,7 +63,7 @@ struct ContentView: View {
                     }
                     Button {
                         annotationView = true
-                        objectLocation.settingLocationAndHeading()
+                        objectLocation.setLocationAndHeading()
                         manager!.startPhotoCapture()
                         // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
                         // that triggers when the photo capture is completed

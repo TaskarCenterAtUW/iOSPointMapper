@@ -49,7 +49,7 @@ class ObjectLocation {
         }
     }
     
-    func settingLocationAndHeading() {
+    func setLocationAndHeading() {
         setLocation()
         setHeading()
         
@@ -71,7 +71,9 @@ class ObjectLocation {
             return
         }
         print("depth: \(depth)")
-
+        
+        // FIXME: Setting the location for every segment means that there is potential for errors
+        //  If the user moves while validating each segment, would every segment get different device location?
         setLocation()
         setHeading()
 
