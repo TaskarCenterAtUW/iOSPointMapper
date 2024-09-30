@@ -97,40 +97,7 @@ class ObjectLocation {
         print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
     }
     
-    func createMask(from image: CIImage) -> [[Int]] {
-        let context = CIContext(options: nil)
-        guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
-        
-        let width = cgImage.width
-        let height = cgImage.height
-        let colorSpace = CGColorSpaceCreateDeviceGray()
-        let bytesPerPixel = 1
-        let bytesPerRow = bytesPerPixel * width
-        let bitsPerComponent = 8
-        var pixelData = [UInt8](repeating: 0, count: width * height)
-        
-        guard let context = CGContext(data: &pixelData,
-                                      width: width,
-                                      height: height,
-                                      bitsPerComponent: bitsPerComponent,
-                                      bytesPerRow: bytesPerRow,
-                                      space: colorSpace,
-                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
-            return []
-        }
-        
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
-        for row in 0..<height {
-            for col in 0..<width {
-                let pixelIndex = row * width + col
-                let pixelValue = pixelData[pixelIndex]
-                mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
-            }
-        }
-        return mask
-    }
-    
+    // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
     func getDepth(sharedImageData: SharedImageData, index: Int) {
         let objectSegmentation = sharedImageData.classImages[index]
         let mask = createMask(from: objectSegmentation)
@@ -167,5 +134,39 @@ class ObjectLocation {
             let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
             depthValue = floatBuffer[pixelOffset]
         }
+    }
+    
+    func createMask(from image: CIImage) -> [[Int]] {
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let bytesPerPixel = 1
+        let bytesPerRow = bytesPerPixel * width
+        let bitsPerComponent = 8
+        var pixelData = [UInt8](repeating: 0, count: width * height)
+        
+        guard let context = CGContext(data: &pixelData,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: bitsPerComponent,
+                                      bytesPerRow: bytesPerRow,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+            return []
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
+        for row in 0..<height {
+            for col in 0..<width {
+                let pixelIndex = row * width + col
+                let pixelValue = pixelData[pixelIndex]
+                mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
+            }
+        }
+        return mask
     }
 }
