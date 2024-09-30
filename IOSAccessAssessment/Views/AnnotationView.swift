@@ -24,7 +24,12 @@ struct AnnotationView: View {
             Rectangle()
                 .frame(width: 0, height: 0)
                 .onAppear() {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    // TODO: Currently, this delay seems to work the best for automatic back navigation
+                    //  Need to figure out a way to programmatically navigate without issues when done synchronously.
+                    //  Currently, when done synchronously, the onAppear of the previous view does not run
+                    //  as the previous view may be considered to have not disappeared.
+                    //  May have to do with the way SwiftUI runs the view lifecycle update. 
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         self.dismiss()
                     }
                 }
