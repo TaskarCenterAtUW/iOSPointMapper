@@ -86,17 +86,8 @@ struct ContentView: View {
             }
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
-                print("Is Manager Nil \(self.manager == nil)")
                 if (manager == nil) {
                     manager = CameraManager(sharedImageData: sharedImageData)
-//                    let segmentationController = SegmentationViewController(sharedImageData: sharedImageData)
-//                    segmentationController.selection = selection
-//                    segmentationController.classes = classes
-//                    manager?.segmentationController = segmentationController
-//                    
-//                    sharedImageData.updateSegmentation = { index in
-//                        self.manager?.segmentationController?.processSegmentationRequestPerClass()
-//                    }
                 } else {
                     // TODO: Need to check if simply resuming the stream is enough
                     //  or do we have to re-initialize some other properties
