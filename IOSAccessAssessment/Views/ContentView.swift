@@ -12,17 +12,6 @@ import Metal
 import CoreImage
 import MetalKit
 
-// TODO: Move the structs and ObservableObjects to dedicated files
-struct ColorInfo {
-    var color: SIMD4<Float> // Corresponds to the float4 in Metal
-    var grayscale: Float    // Corresponds to the float in Metal
-}
-
-struct Params {
-    var width: UInt32       // Corresponds to the uint in Metal
-    var count: UInt32       // Corresponds to the uint in Metal
-}
-
 // TODO: Make this a class variable instead of a global variable
 var annotationView: Bool = false
 
