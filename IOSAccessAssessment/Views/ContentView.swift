@@ -84,8 +84,6 @@ struct ContentView: View {
                 if (manager == nil) {
                     manager = CameraManager(sharedImageData: sharedImageData)
                 } else {
-                    // TODO: Need to check if simply resuming the stream is enough
-                    //  or do we have to re-initialize some other properties
                     manager?.resumeStream()
                 }
             }
