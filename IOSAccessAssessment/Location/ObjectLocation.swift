@@ -11,7 +11,8 @@ import AVFoundation
 import CoreImage
 import CoreLocation
 
-
+// TODO: As pointed out in the TODO for the ContentView objectLocation
+// We would want to separate out device location logic, and pixel-wise location calculation logic
 class ObjectLocation {
     var depthValue: Float?
     var locationManager: CLLocationManager
@@ -26,6 +27,115 @@ class ObjectLocation {
         self.latitude = nil
         self.headingDegrees = nil
         self.setupLocationManager()
+    }
+    
+    private func setupLocationManager() {
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+        locationManager.startUpdatingHeading()
+    }
+    
+    private func setLocation() {
+        if let location = locationManager.location {
+            self.latitude = location.coordinate.latitude
+            self.longitude = location.coordinate.longitude
+        }
+    }
+    
+    private func setHeading() {
+        if let heading = locationManager.heading {
+            self.headingDegrees = heading.magneticHeading
+//            headingStatus = "Heading: \(headingDegrees) degrees"
+        }
+    }
+    
+    func setLocationAndHeading() {
+        setLocation()
+        setHeading()
+        
+        guard let latitude = self.latitude, let longitude = self.longitude else {
+            print("latitude or longitude: nil")
+            return
+        }
+        
+        guard let heading = self.headingDegrees else {
+            print("heading: nil")
+            return
+        }
+    }
+    
+    func calcLocation(sharedImageData: SharedImageData, index: Int) {
+        getDepth(sharedImageData: sharedImageData, index: index)
+        guard let depth = self.depthValue else {
+            print("depth: nil")
+            return
+        }
+        print("depth: \(depth)")
+        
+        // FIXME: Setting the location for every segment means that there is potential for errors
+        //  If the user moves while validating each segment, would every segment get different device location?
+        setLocation()
+        setHeading()
+
+        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
+            print("latitude, longitude, or heading: nil")
+            return
+        }
+
+        // Calculate the object's coordinates assuming a flat plane
+        let distance = depth
+        let bearing = heading * .pi / 180.0 // Convert to radians
+
+        // Calculate the change in coordinates
+        let deltaX = Double(distance) * cos(Double(bearing))
+        let deltaY = Double(distance) * sin(Double(bearing))
+
+        // Assuming 1 degree of latitude and longitude is approximately 111,000 meters
+        let metersPerDegree = 111_000.0
+
+        let objectLatitude = latitude + (deltaY / metersPerDegree)
+        let objectLongitude = longitude + (deltaX / metersPerDegree)
+
+        print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
+    }
+    
+    // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
+    func getDepth(sharedImageData: SharedImageData, index: Int) {
+        let objectSegmentation = sharedImageData.classImages[index]
+        let mask = createMask(from: objectSegmentation)
+        guard let depthMap = sharedImageData.depthData else { return }
+//        var distanceSum: Float = 0
+        var sumX = 0
+        var sumY = 0
+        var numPixels = 0
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let width = mask[0].count
+        let height = mask.count
+        
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        
+        if let baseAddress = CVPixelBufferGetBaseAddress(depthMap) {
+            let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+            let floatBuffer = baseAddress.assumingMemoryBound(to: Float.self)
+            
+            for y in 0..<height {
+                for x in 0..<width {
+                    if mask[y][x] == 1 {
+                        numPixels += 1
+                        sumX += x
+                        sumY += y
+                    }
+                }
+            }
+            let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
+            let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
+            let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
+            depthValue = floatBuffer[pixelOffset]
+        }
     }
     
     func createMask(from image: CIImage) -> [[Int]] {
@@ -60,127 +170,5 @@ class ObjectLocation {
             }
         }
         return mask
-    }
-    
-    private func setupLocationManager() {
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
-        //        locationManager.delegate = cameraController
-    }
-    
-    private func handleLocationUpdate() {
-        if let location = locationManager.location {
-            self.latitude = location.coordinate.latitude
-            self.longitude = location.coordinate.longitude
-//            locationStatus = "Latitude: \(latitude), Longitude: \(longitude)"
-        }
-    }
-    
-    private func handleHeadingUpdate() {
-        if let heading = locationManager.heading {
-            self.headingDegrees = heading.magneticHeading
-//            headingStatus = "Heading: \(headingDegrees) degrees"
-        }
-    }
-    
-    func getDepth(sharedImageData: SharedImageData, index: Int) {
-        let objectSegmentation = sharedImageData.classImages[index]
-        let mask = createMask(from: objectSegmentation)
-        guard let depthMap = sharedImageData.depthData else { return }
-//        var distanceSum: Float = 0
-        var sumX = 0
-        var sumY = 0
-        var numPixels = 0
-        
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
-        
-        let width = mask[0].count
-        let height = mask.count
-        
-        let depthWidth = CVPixelBufferGetWidth(depthMap)
-        let depthHeight = CVPixelBufferGetHeight(depthMap)
-        let centerX = depthWidth / 2
-        let centerY = depthHeight / 2
-        
-        if let baseAddress = CVPixelBufferGetBaseAddress(depthMap) {
-            let bytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
-            let floatBuffer = baseAddress.assumingMemoryBound(to: Float.self)
-            
-            for y in 0..<height {
-                for x in 0..<width {
-                    if mask[y][x] == 1 {
-                        numPixels += 1
-                        sumX += x
-                        sumY += y
-//                        let pixelOffset = (y * 4) * bytesPerRow / MemoryLayout<Float>.size + (x * 4)
-//                        let depthValue = floatBuffer[pixelOffset]
-//                        distanceSum += depthValue
-                    }
-                }
-            }
-            let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
-            let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
-            let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
-            depthValue = floatBuffer[pixelOffset]
-//            let centerPixelOffset = centerY * bytesPerRow / MemoryLayout<Float>.size + centerX
-//            let centerDepthValue = floatBuffer[centerPixelOffset]
-        }
-        
-//        let meanDepth = distanceSum / Float(numPixels)
-    }
-    
-    func settingLocation() {
-        handleLocationUpdate()
-        handleHeadingUpdate()
-//        guard let depth = self.depthValue else {
-//            return
-//        }
-        
-        guard let latitude = self.latitude, let longitude = self.longitude else {
-            print("latitude or longitude: nil")
-            return
-        }
-        print("latitude: \(latitude), longitude: \(longitude)")
-        
-        guard let heading = self.headingDegrees else {
-            print("heading: nil")
-            return
-        }
-        print("heading: \(heading)")
-    }
-    
-    func calcLocation(sharedImageData: SharedImageData, index: Int) {
-        getDepth(sharedImageData: sharedImageData, index: index)
-        guard let depth = self.depthValue else {
-            print("depth: nil")
-            return
-        }
-        print("depth: \(depth)")
-
-        handleLocationUpdate()
-        handleHeadingUpdate()
-
-        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
-            print("latitude, longitude, or heading: nil")
-            return
-        }
-
-        // Calculate the object's coordinates assuming a flat plane
-        let distance = depth
-        let bearing = heading * .pi / 180.0 // Convert to radians
-
-        // Calculate the change in coordinates
-        let deltaX = Double(distance) * cos(Double(bearing))
-        let deltaY = Double(distance) * sin(Double(bearing))
-
-        // Assuming 1 degree of latitude and longitude is approximately 111,000 meters
-        let metersPerDegree = 111_000.0
-
-        let objectLatitude = latitude + (deltaY / metersPerDegree)
-        let objectLongitude = longitude + (deltaX / metersPerDegree)
-
-        print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
     }
 }
