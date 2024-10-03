@@ -156,9 +156,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)
         
         do {
-            // TODO: Need to check if there is a more intuitive way to trigger the requests
-            // Currently, it seems like we have a static requests object in SegmentationViewController
-            // that we hope will have a segmentation request by the time we trigger this handler.
             try imageRequestHandler.perform(SegmentationViewController.requests)
         } catch {
             print(error)
