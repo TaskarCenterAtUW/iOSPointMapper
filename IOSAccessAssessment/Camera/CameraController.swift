@@ -130,6 +130,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // NOTE: The CGIImage is actually never directly used. It is converted to a UIImage.
         //  Thus, check if we can directly send the CVPixelBuffer instead
         // Get the image buffer, convert to CIImage to crop, and convert to CGImage to send to vision model
+        // NOTE: CVPixelBuffer may not be appropriate due to it being for video frame data.
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)

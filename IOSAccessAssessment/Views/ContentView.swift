@@ -46,6 +46,12 @@ struct ContentView: View {
     @StateObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
+    // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
+    //  means that the current setup is built to handle only one capture at a time.
+    //  If we want to allow multiple captures, then we should to pass a different smaller object
+    //  that only contains the device location details.
+    //  There should be a separate class (possibly this ObjectLocation without the logic to get location details)
+    //  that calculates the pixel-wise location using the device location and the depth map.
     var objectLocation = ObjectLocation()
     
     var body: some View {
@@ -57,7 +63,7 @@ struct ContentView: View {
                     }
                     Button {
                         annotationView = true
-                        objectLocation.settingLocation()
+                        objectLocation.setLocationAndHeading()
                         manager!.startPhotoCapture()
                         // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
                         // that triggers when the photo capture is completed
@@ -86,17 +92,8 @@ struct ContentView: View {
             }
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
-                print("Is Manager Nil \(self.manager == nil)")
                 if (manager == nil) {
                     manager = CameraManager(sharedImageData: sharedImageData)
-//                    let segmentationController = SegmentationViewController(sharedImageData: sharedImageData)
-//                    segmentationController.selection = selection
-//                    segmentationController.classes = classes
-//                    manager?.segmentationController = segmentationController
-//                    
-//                    sharedImageData.updateSegmentation = { index in
-//                        self.manager?.segmentationController?.processSegmentationRequestPerClass()
-//                    }
                 } else {
                     // TODO: Need to check if simply resuming the stream is enough
                     //  or do we have to re-initialize some other properties

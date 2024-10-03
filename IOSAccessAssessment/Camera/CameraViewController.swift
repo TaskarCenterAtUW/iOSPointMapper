@@ -46,6 +46,7 @@ class CameraViewController: UIViewController {
         }
     }
     
+    // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
     private func getFrame() -> CGRect {
         let screenSize = UIScreen.main.bounds
         let screenWidth = screenSize.width
