@@ -64,7 +64,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         SegmentationViewController.requests = [segmentationRequest]
     }
     
-    // TODO: This function is redundant. Should move it to a global function eventually with the appropriate arguments
     // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
     private func getFrame() -> CGRect {
         let screenSize = UIScreen.main.bounds
