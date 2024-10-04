@@ -12,9 +12,6 @@ import Metal
 import CoreImage
 import MetalKit
 
-// TODO: Make this a class variable instead of a global variable
-var annotationView: Bool = false
-
 class SharedImageData: ObservableObject {
     @Published var cameraImage: UIImage?
     @Published var depthData: CVPixelBuffer?
@@ -51,7 +48,6 @@ struct ContentView: View {
                         HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
                     Button {
-                        annotationView = true
                         objectLocation.setLocationAndHeading()
                         manager!.startPhotoCapture()
                         // TODO: Instead of an arbitrary delay, we should have an event listener to the CameraManager
