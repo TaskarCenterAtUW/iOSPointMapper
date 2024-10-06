@@ -69,7 +69,6 @@ struct HostedCameraViewController: UIViewControllerRepresentable{
     var session: AVCaptureSession!
     
     func makeUIViewController(context: Context) -> CameraViewController {
-        annotationView = false
         return CameraViewController(session: session)
     }
     
