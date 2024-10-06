@@ -8,8 +8,8 @@
 import UIKit
 import Accelerate
 
-
 // TODO: Check if any of the methods can be sped up using GPU
+// TODO: Check if the forced unwrapping used all over the functions is safe in the given context
 func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
     let width = CVPixelBufferGetWidth(pixelBuffer)
     let height = CVPixelBufferGetHeight(pixelBuffer)
@@ -77,4 +77,22 @@ func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, 
         return nil
     }
     return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
+}
+
+func createBlackDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
+    let width = Int(targetSize.width)
+    let height = Int(targetSize.height)
+    
+    var pixelBuffer: CVPixelBuffer?
+    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_DepthFloat32, nil, &pixelBuffer)
+    
+    guard status == kCVReturnSuccess, let blankPixelBuffer = pixelBuffer else { return nil }
+    
+    CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
+    let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!
+    let blankBufferPointer = blankBaseAddress.bindMemory(to: Float.self, capacity: width * height)
+    vDSP_vclr(blankBufferPointer, 1, vDSP_Length(width * height))
+    CVPixelBufferUnlockBaseAddress(blankPixelBuffer, [])
+    
+    return blankPixelBuffer
 }

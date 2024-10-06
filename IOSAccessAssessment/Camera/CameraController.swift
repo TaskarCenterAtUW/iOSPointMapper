@@ -167,25 +167,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            let width = Int(croppedSize.width)  // Replace with your desired width or calculated width
-            let height = Int(croppedSize.height) // Replace with your desired height or calculated height
-            
-            var blankPixelBuffer: CVPixelBuffer?
-            let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_DepthFloat32, nil, &blankPixelBuffer)
-            
-            guard status == kCVReturnSuccess, let depthPixelBuffer = blankPixelBuffer else { return }
-            
-            CVPixelBufferLockBaseAddress(depthPixelBuffer, .readOnly)
-            
-            if let baseAddress = CVPixelBufferGetBaseAddress(depthPixelBuffer) {
-                let bufferPointer = baseAddress.bindMemory(to: Float.self, capacity: width * height)
-                for i in 0..<(width * height) {
-                    bufferPointer[i] = 0.0  // Set every value to 0
-                }
-            }
-            
-            CVPixelBufferUnlockBaseAddress(depthPixelBuffer, .readOnly)
-            finalDepthPixelBuffer = depthPixelBuffer
+            finalDepthPixelBuffer = createBlackDepthPixelBuffer(targetSize: croppedSize)!
         }
         
         
