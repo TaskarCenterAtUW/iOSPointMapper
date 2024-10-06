@@ -28,7 +28,7 @@ class CameraController: NSObject, ObservableObject {
     
     private(set) var captureSession: AVCaptureSession!
     
-    private var photoOutput: AVCapturePhotoOutput!
+//    private var photoOutput: AVCapturePhotoOutput!
     private var depthDataOutput: AVCaptureDepthDataOutput!
     private var videoDataOutput: AVCaptureVideoDataOutput!
     private var outputVideoSync: AVCaptureDataOutputSynchronizer!
@@ -93,12 +93,12 @@ class CameraController: NSObject, ObservableObject {
         outputVideoSync.setDelegate(self, queue: videoDataOutputQueue)
         
         // Create an object to output photos.
-        photoOutput = AVCapturePhotoOutput()
-        photoOutput.maxPhotoQualityPrioritization = .quality
-        captureSession.addOutput(photoOutput)
-        
-        // Enable delivery of depth data after adding the output to the capture session.
-        photoOutput.isDepthDataDeliveryEnabled = true
+//        photoOutput = AVCapturePhotoOutput()
+//        photoOutput.maxPhotoQualityPrioritization = .quality
+//        captureSession.addOutput(photoOutput)
+//        
+//        // Enable delivery of depth data after adding the output to the capture session.
+//        photoOutput.isDepthDataDeliveryEnabled = true
     }
     
     func startStream() {
@@ -164,35 +164,35 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
 }
 
 // MARK: Photo Capture Delegate
-extension CameraController: AVCapturePhotoCaptureDelegate {
-    
-    func capturePhoto() {
-        var photoSettings: AVCapturePhotoSettings
-        if  photoOutput.availablePhotoPixelFormatTypes.contains(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-            photoSettings = AVCapturePhotoSettings(format: [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
-            ])
-        } else {
-            photoSettings = AVCapturePhotoSettings()
-        }
-        
-        // Capture depth data with this photo capture.
-        photoSettings.isDepthDataDeliveryEnabled = true
-        photoOutput.capturePhoto(with: photoSettings, delegate: self)
-        
-        stopStream()
-        // FIXME: The photoOutput is not actually being used.
-        // Check if its use can be eliminated. 
-    }
-    
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        
-        // Retrieve the image and depth data.
-        guard let _ = photo.pixelBuffer,
-              let depthData = photo.depthData,
-              let _ = depthData.cameraCalibrationData else { return }
-        
-        delegate?.onNewPhotoData()
-    }
-}
+//extension CameraController: AVCapturePhotoCaptureDelegate {
+//    
+//    func capturePhoto() {
+//        var photoSettings: AVCapturePhotoSettings
+//        if  photoOutput.availablePhotoPixelFormatTypes.contains(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
+//            photoSettings = AVCapturePhotoSettings(format: [
+//                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+//            ])
+//        } else {
+//            photoSettings = AVCapturePhotoSettings()
+//        }
+//        
+//        // Capture depth data with this photo capture.
+//        photoSettings.isDepthDataDeliveryEnabled = true
+//        photoOutput.capturePhoto(with: photoSettings, delegate: self)
+//        
+//        stopStream()
+//        // FIXME: The photoOutput is not actually being used.
+//        // Check if its use can be eliminated. 
+//    }
+//    
+//    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+//        
+//        // Retrieve the image and depth data.
+//        guard let _ = photo.pixelBuffer,
+//              let depthData = photo.depthData,
+//              let _ = depthData.cameraCalibrationData else { return }
+//        
+//        delegate?.onNewPhotoData()
+//    }
+//}
 

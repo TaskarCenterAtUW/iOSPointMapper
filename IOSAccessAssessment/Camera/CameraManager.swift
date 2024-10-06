@@ -44,7 +44,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     }
     
     func startPhotoCapture() {
-        controller.capturePhoto()
+//        controller.capturePhoto()
     }
     
     func resumeStream() {
