@@ -28,7 +28,7 @@ class CameraController: NSObject, ObservableObject {
     
     private(set) var captureSession: AVCaptureSession!
     
-    private var isLidarDeviceUnavailable: Bool
+    private var isLidarDeviceAvailable: Bool!
     private var depthDataOutput: AVCaptureDepthDataOutput!
     private var videoDataOutput: AVCaptureVideoDataOutput!
     private var outputVideoSync: AVCaptureDataOutputSynchronizer!
@@ -72,7 +72,7 @@ class CameraController: NSObject, ObservableObject {
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
         let deviceAndDepthFlag = try getDeviceAndDepthFlag()
         let device = deviceAndDepthFlag.device
-        isLidarDeviceUnavailable = deviceAndDepthFlag.hasLidar
+        isLidarDeviceAvailable = deviceAndDepthFlag.hasLidar
         
         
         let deviceInput = try AVCaptureDeviceInput(device: device)
@@ -103,7 +103,7 @@ class CameraController: NSObject, ObservableObject {
         dataOutputs.append(videoDataOutput)
         
         // Create an object to output depth data.
-        if (!isLidarDeviceUnavailable) {
+        if (isLidarDeviceAvailable) {
             depthDataOutput = AVCaptureDepthDataOutput()
             depthDataOutput.isFilteringEnabled = isFilteringEnabled
             captureSession.addOutput(depthDataOutput)
@@ -132,8 +132,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
     func dataOutputSynchronizer(_ synchronizer: AVCaptureDataOutputSynchronizer,
                                 didOutput synchronizedDataCollection: AVCaptureSynchronizedDataCollection) {
         // Retrieve the synchronized depth and sample buffer container objects.
-        guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData,
-              let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
+        guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
         var imageRequestHandler: VNImageRequestHandler
         
@@ -154,20 +153,45 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
         //  perform the resize and crop, then convert back to CVPixelBuffer
-        let depthData = syncedDepthData.depthData
-        let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
-        let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-        let depthSideLength = min(depthWidth, depthHeight)
-        // TODO: Check why does this lead to an error on orientation change
-        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
-        guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
+        var finalDepthPixelBuffer: CVPixelBuffer
+        if (isLidarDeviceAvailable) {
+            guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
+            let depthData = syncedDepthData.depthData
+            let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
+            let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
+            let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
+            let depthSideLength = min(depthWidth, depthHeight)
+            // TODO: Check why does this lead to an error on orientation change
+            let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
+            finalDepthPixelBuffer = croppedDepthPixelBuffer
+        } else {
+            // LiDAR is not available, so create a CVPixelBuffer filled with 0s
+            let width = Int(croppedSize.width)  // Replace with your desired width or calculated width
+            let height = Int(croppedSize.height) // Replace with your desired height or calculated height
+            
+            var blankPixelBuffer: CVPixelBuffer?
+            let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_DepthFloat32, nil, &blankPixelBuffer)
+            
+            guard status == kCVReturnSuccess, let depthPixelBuffer = blankPixelBuffer else { return }
+            
+            CVPixelBufferLockBaseAddress(depthPixelBuffer, .readOnly)
+            
+            if let baseAddress = CVPixelBufferGetBaseAddress(depthPixelBuffer) {
+                let bufferPointer = baseAddress.bindMemory(to: Float.self, capacity: width * height)
+                for i in 0..<(width * height) {
+                    bufferPointer[i] = 0.0  // Set every value to 0
+                }
+            }
+            
+            CVPixelBufferUnlockBaseAddress(depthPixelBuffer, .readOnly)
+            finalDepthPixelBuffer = depthPixelBuffer
+        }
         
-//        let croppedDepthWidth = CVPixelBufferGetWidth(croppedDepthPixelBuffer)
-//        let croppedDepthHeight = CVPixelBufferGetHeight(croppedDepthPixelBuffer)
+        
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
-        delegate?.onNewData(cgImage: cgImage, cvPixel: croppedDepthPixelBuffer)
+        delegate?.onNewData(cgImage: cgImage, cvPixel: finalDepthPixelBuffer)
         
         do {
             try imageRequestHandler.perform(SegmentationViewController.requests)
