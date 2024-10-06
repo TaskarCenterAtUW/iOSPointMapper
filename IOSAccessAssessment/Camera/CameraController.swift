@@ -18,6 +18,7 @@ class CameraController: NSObject, ObservableObject {
     
     enum ConfigurationError: Error {
         case lidarDeviceUnavailable
+        case requiredDeviceUnavailable
         case requiredFormatUnavailable
     }
     // TODO: Check if the videoDataOutputQueue or the DataOutputSynchronizer can be optimized
@@ -27,6 +28,7 @@ class CameraController: NSObject, ObservableObject {
     
     private(set) var captureSession: AVCaptureSession!
     
+    private var isLidarDeviceUnavailable: Bool
     private var depthDataOutput: AVCaptureDepthDataOutput!
     private var videoDataOutput: AVCaptureVideoDataOutput!
     private var outputVideoSync: AVCaptureDataOutputSynchronizer!
@@ -68,26 +70,48 @@ class CameraController: NSObject, ObservableObject {
     private func setupCaptureInput() throws {
         // Look up the LiDAR camera. Generally, only present at the back camera
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
-        guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
-            throw ConfigurationError.lidarDeviceUnavailable
-        }
+        let deviceAndDepthFlag = try getDeviceAndDepthFlag()
+        let device = deviceAndDepthFlag.device
+        isLidarDeviceUnavailable = deviceAndDepthFlag.hasLidar
+        
         
         let deviceInput = try AVCaptureDeviceInput(device: device)
         captureSession.addInput(deviceInput)
     }
     
+    // Get the best available device
+    private func getDeviceAndDepthFlag() throws -> (device: AVCaptureDevice, hasLidar: Bool) {
+        let deviceTypes: [(AVCaptureDevice.DeviceType, Bool)] = [
+                (.builtInLiDARDepthCamera, true),
+                (.builtInTripleCamera, false),
+                (.builtInDualCamera, false),
+                (.builtInWideAngleCamera, false)
+        ]
+        for (deviceType, hasLidar) in deviceTypes {
+            if let device = AVCaptureDevice.default(deviceType, for: .video, position: .back) {
+                return (device: device, hasLidar: hasLidar)
+            }
+        }
+        throw ConfigurationError.requiredDeviceUnavailable
+    }
+    
     private func setupCaptureOutputs() {
+        var dataOutputs: [AVCaptureOutput] = []
         // Create an object to output video sample buffers.
         videoDataOutput = AVCaptureVideoDataOutput()
         captureSession.addOutput(videoDataOutput)
+        dataOutputs.append(videoDataOutput)
         
         // Create an object to output depth data.
-        depthDataOutput = AVCaptureDepthDataOutput()
-        depthDataOutput.isFilteringEnabled = isFilteringEnabled
-        captureSession.addOutput(depthDataOutput)
+        if (!isLidarDeviceUnavailable) {
+            depthDataOutput = AVCaptureDepthDataOutput()
+            depthDataOutput.isFilteringEnabled = isFilteringEnabled
+            captureSession.addOutput(depthDataOutput)
+            dataOutputs.append(depthDataOutput)
+        }
         
         // Create an object to synchronize the delivery of depth and video data.
-        outputVideoSync = AVCaptureDataOutputSynchronizer(dataOutputs: [depthDataOutput, videoDataOutput])
+        outputVideoSync = AVCaptureDataOutputSynchronizer(dataOutputs: dataOutputs)
         outputVideoSync.setDelegate(self, queue: videoDataOutputQueue)
     }
     
