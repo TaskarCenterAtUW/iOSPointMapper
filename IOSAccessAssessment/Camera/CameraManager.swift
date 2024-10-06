@@ -53,10 +53,6 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewPhotoData() {
-        processingCapturedResult = true
-    }
-    
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer) {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {

@@ -12,7 +12,6 @@ import Vision
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
     func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
-    func onNewPhotoData()
 }
 
 class CameraController: NSObject, ObservableObject {
