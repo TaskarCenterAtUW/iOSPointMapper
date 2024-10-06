@@ -50,7 +50,9 @@ struct ContentView: View {
                     Button {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-                        navigateToAnnotationView = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            navigateToAnnotationView = true
+                        }
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
