@@ -43,10 +43,6 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         controller.delegate = self
     }
     
-    func startPhotoCapture() {
-//        controller.capturePhoto()
-    }
-    
     func resumeStream() {
         controller.startStream()
         processingCapturedResult = false
