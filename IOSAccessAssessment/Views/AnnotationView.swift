@@ -155,7 +155,7 @@ struct ClassSelectionView: View {
 
     var body: some View {
         VStack {
-            Text("Select a new POI Class")
+            Text("Select correct annotation")
                 .font(.headline)
                 .padding()
 
