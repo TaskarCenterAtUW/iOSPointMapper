@@ -7,26 +7,26 @@
 
 import SwiftUI
 struct AnnotationView: View {
+    
+    enum AnnotationOption: String, CaseIterable {
+        case agree = "I agree with this class annotation"
+        case missingInstances = "Annotation is missing some instances of the class"
+        case misidentified = "The class annotation is misidentified"
+    }
+    
     @ObservedObject var sharedImageData: SharedImageData
+    var objectLocation: ObjectLocation
+    @State var selection: [Int]
     @State private var index = 0
-    
-    let options = [
-        "I agree with this class annotation",
-        "Annotation is missing some instances of the class",
-        "The class annotation is misidentified"
-    ]
-    
-    @State private var selectedOptionIndex: Int? = nil
+    @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
+    @Environment(\.dismiss) var dismiss
     
-    var objectLocation: ObjectLocation
-    @State var selection: [Int]
     var classes: [String]
     var selectedClassesIndices: [Int]
-    
-    @Environment(\.dismiss) var dismiss
+    let options = AnnotationOption.allCases
     
     var body: some View {
         if (!self.isValid()) {
@@ -62,24 +62,19 @@ struct AnnotationView: View {
                     HStack {
                         Spacer()
                         VStack {
-                            ForEach(0..<options.count, id: \.self) { optionIndex in
+                            ForEach(options, id: \.self) { option in
                                 Button(action: {
-                                    // Toggle selection
-                                    if selectedOptionIndex == optionIndex {
-                                        selectedOptionIndex = nil
-                                    } else {
-                                        selectedOptionIndex = optionIndex
-                                    }
+                                    selectedOption = (selectedOption == option) ? nil : option
                                     
-                                    if optionIndex == 2 {
+                                    if option == .misidentified {
                                         selectedClassIndex = index
                                         tempSelectedClassIndex = selection[index]
                                         isShowingClassSelectionModal = true
                                     }
                                 }) {
-                                    Text(options[optionIndex])
+                                    Text(option.rawValue)
                                         .padding()
-                                        .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
+                                        .foregroundColor(selectedOption == option ? .red : .blue) // Change color based on selection
                                 }
                             }
                         }
@@ -89,7 +84,7 @@ struct AnnotationView: View {
                     Button(action: {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
                         self.nextSegment()
-                        selectedOptionIndex = nil
+                        selectedOption = nil
                     }) {
                         Text("Next")
                     }
