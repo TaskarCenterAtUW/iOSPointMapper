@@ -10,12 +10,21 @@ struct AnnotationView: View {
     @ObservedObject var sharedImageData: SharedImageData
     @State private var index = 0
     
-    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
+    let options = [
+        "I agree with this class annotation",
+        "Annotation is missing some instances of the class",
+        "The class annotation is misidentified"
+    ]
+    
     @State private var selectedOptionIndex: Int? = nil
+    @State private var isShowingClassSelectionModal: Bool = false
+    @State private var selectedClassIndex: Int? = nil
+    @State private var tempSelectedClassIndex: Int = 0
     
     var objectLocation: ObjectLocation
-    var selection: [Int]
+    @State var selection: [Int]
     var classes: [String]
+    var selectedClassesIndices: [Int]
     
     @Environment(\.dismiss) var dismiss
     
@@ -61,6 +70,12 @@ struct AnnotationView: View {
                                     } else {
                                         selectedOptionIndex = optionIndex
                                     }
+                                    
+                                    if optionIndex == 2 {
+                                        selectedClassIndex = index
+                                        tempSelectedClassIndex = selection[index]
+                                        isShowingClassSelectionModal = true
+                                    }
                                 }) {
                                     Text(options[optionIndex])
                                         .padding()
@@ -91,6 +106,28 @@ struct AnnotationView: View {
                 // Trigger any additional actions when the index changes
                 self.refreshView()
             }
+            .sheet(isPresented: $isShowingClassSelectionModal) {
+                if let selectedClassIndex = selectedClassIndex {
+                    let filteredClasses = selectedClassesIndices.map { classes[$0] }
+                    
+                    // mapping between filtered and non-filtered
+                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: selection[selectedClassIndex]) ?? 0
+                    
+                    let selectedClassBinding = Binding(
+                        get: { selectedFilteredIndex },
+                        set: { newValue in
+                            let originalIndex = selectedClassesIndices[newValue]
+                            selection[selectedClassIndex] = originalIndex
+                        }
+                    )
+                    
+                    ClassSelectionView(
+                        classes: filteredClasses,
+                        selectedClass: selectedClassBinding
+                    )
+                }
+            }
+
         }
     }
     
@@ -112,5 +149,44 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.selection.count)
+    }
+}
+
+struct ClassSelectionView: View {
+    var classes: [String]
+    @Binding var selectedClass: Int
+    
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        VStack {
+            Text("Select a new POI Class")
+                .font(.headline)
+                .padding()
+
+            List {
+                ForEach(0..<classes.count, id: \.self) { index in
+                    Button(action: {
+                        selectedClass = index
+                    }) {
+                        HStack {
+                            Text(classes[index])
+                            Spacer()
+                            if selectedClass == index {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Button(action: {
+                self.presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Done")
+                    .padding()
+            }
+        }
     }
 }
