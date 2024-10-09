@@ -61,7 +61,7 @@ struct AnnotationView: View {
                     
                     HStack {
                         Spacer()
-                        VStack {
+                        VStack(spacing: 10) {
                             ForEach(options, id: \.self) { option in
                                 Button(action: {
                                     selectedOption = (selectedOption == option) ? nil : option
@@ -73,13 +73,18 @@ struct AnnotationView: View {
                                     }
                                 }) {
                                     Text(option.rawValue)
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity)
                                         .padding()
-                                        .foregroundColor(selectedOption == option ? .red : .blue) // Change color based on selection
+                                        .background(selectedOption == option ? Color.blue : Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
                                 }
                             }
                         }
                         Spacer()
                     }
+                    .padding()
                     
                     Button(action: {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
