@@ -167,7 +167,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            finalDepthPixelBuffer = createBlackDepthPixelBuffer(targetSize: croppedSize)!
+            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
         

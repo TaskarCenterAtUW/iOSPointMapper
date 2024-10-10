@@ -79,7 +79,7 @@ func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, 
     return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
 }
 
-func createBlackDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
+func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     let width = Int(targetSize.width)
     let height = Int(targetSize.height)
     
