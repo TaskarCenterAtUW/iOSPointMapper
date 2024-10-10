@@ -50,7 +50,14 @@ struct ContentView: View {
                     Button {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
+                        
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            // MARK: Code to save the images
+                            let imageSaver = ImageSaver()
+                            imageSaver.writeToPhotoAlbum(image: sharedImageData.cameraImage!)
+                            imageSaver.writeCIImageToPhotoAlbum(ciImage: sharedImageData.pixelBuffer!)
+                            imageSaver.writeDepthMapToPhotoAlbum(cvPixelBufferDepth: sharedImageData.depthData!)
+                            
                             navigateToAnnotationView = true
                         }
                     } label: {
