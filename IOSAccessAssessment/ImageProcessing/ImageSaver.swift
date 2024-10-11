@@ -18,8 +18,11 @@ class ImageSaver: NSObject {
         printDepthPixel(from: cvPixelBufferDepth, atX: 128, atY: 128)
         printDepthPixel(from: cvPixelBufferDepth, atX: 256, atY: 256)
         
+        let cvPixelBufferDepth_normalized = copyPixelBuffer(cvPixelBufferDepth)!
+        normalizePixelBuffer(cvPixelBufferDepth_normalized)
+        
         // CVPixelBuffer to UIImage
-        let ciImageDepth            = CIImage(cvPixelBuffer: cvPixelBufferDepth)
+        let ciImageDepth            = CIImage(cvPixelBuffer: cvPixelBufferDepth_normalized)
         let contextDepth:CIContext  = CIContext.init(options: nil)
         let cgImageDepth:CGImage    = contextDepth.createCGImage(ciImageDepth, from: ciImageDepth.extent)!
         let uiImageDepth:UIImage    = UIImage(cgImage: cgImageDepth, scale: 1, orientation: UIImage.Orientation.up)

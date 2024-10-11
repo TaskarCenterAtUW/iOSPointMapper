@@ -162,3 +162,78 @@ func savePixelBufferAsBinary(_ pixelBuffer: CVPixelBuffer, fileName: String) -> 
         return nil
     }
 }
+
+func copyPixelBuffer(_ pixelBuffer: CVPixelBuffer) -> CVPixelBuffer? {
+    var _copy: CVPixelBuffer?
+
+    let width = CVPixelBufferGetWidth(pixelBuffer)
+    let height = CVPixelBufferGetHeight(pixelBuffer)
+    let formatType = CVPixelBufferGetPixelFormatType(pixelBuffer)
+    let attachments = CVBufferCopyAttachments(pixelBuffer, .shouldPropagate)
+
+    CVPixelBufferCreate(nil, width, height, formatType, attachments, &_copy)
+
+    guard let copy = _copy else {
+        return nil
+    }
+
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    CVPixelBufferLockBaseAddress(copy, [])
+
+    defer {
+        CVPixelBufferUnlockBaseAddress(copy, [])
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+    }
+    
+    let dest = CVPixelBufferGetBaseAddress(copy)
+    let source = CVPixelBufferGetBaseAddress(pixelBuffer)
+    let bytesPerRowSrc = CVPixelBufferGetBytesPerRow(pixelBuffer)
+    let bytesPerRowDest = CVPixelBufferGetBytesPerRow(copy)
+    if bytesPerRowSrc == bytesPerRowDest {
+        memcpy(dest, source, height * bytesPerRowSrc)
+    }else {
+        var startOfRowSrc = source
+        var startOfRowDest = dest
+        for _ in 0..<height {
+            memcpy(startOfRowDest, startOfRowSrc, min(bytesPerRowSrc, bytesPerRowDest))
+            startOfRowSrc = startOfRowSrc?.advanced(by: bytesPerRowSrc)
+            startOfRowDest = startOfRowDest?.advanced(by: bytesPerRowDest)
+        }
+    }
+    return copy
+}
+
+func normalizePixelBuffer(_ pixelBuffer: CVPixelBuffer) {
+    let width = CVPixelBufferGetWidth(pixelBuffer)
+    let height = CVPixelBufferGetHeight(pixelBuffer)
+
+    CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+    let floatBuffer = unsafeBitCast(CVPixelBufferGetBaseAddress(pixelBuffer), to: UnsafeMutablePointer<Float>.self)
+
+    var minPixel: Float = 1.0
+    var maxPixel: Float = 0.0
+    var totalPixel: Float = 0.0
+
+    for y in 0 ..< height {
+      for x in 0 ..< width {
+        let pixel = floatBuffer[y * width + x]
+        minPixel = min(pixel, minPixel)
+        maxPixel = max(pixel, maxPixel)
+        totalPixel += pixel
+      }
+    }
+    
+    print("max and min pixels: \(minPixel), \(maxPixel)")
+    print("avg pixel value: \(totalPixel/Float(width*height))")
+
+    let range = maxPixel - minPixel
+
+    for y in 0 ..< height {
+      for x in 0 ..< width {
+        let pixel = floatBuffer[y * width + x]
+        floatBuffer[y * width + x] = (pixel - minPixel) / range
+      }
+    }
+
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+}

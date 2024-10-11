@@ -56,10 +56,10 @@ struct ContentView: View {
                             let imageSaver = ImageSaver()
                             imageSaver.writeToPhotoAlbum(image: sharedImageData.cameraImage!)
                             imageSaver.writeCIImageToPhotoAlbum(ciImage: sharedImageData.pixelBuffer!)
-//                            imageSaver.writeDepthMapToPhotoAlbum(cvPixelBufferDepth: sharedImageData.depthData!)
+                            imageSaver.writeDepthMapToPhotoAlbum(cvPixelBufferDepth: sharedImageData.depthData!)
                             var _ = savePixelBufferAsBinary(sharedImageData.depthData!, fileName: generateFileNameWithTimestamp(prefix: "depth", fileExtension: "bin"))//DateFormatter().string(from: Date.now))
                             
-                            listFilesInDocumentsDirectory()
+//                            listFilesInDocumentsDirectory()
                             
                             navigateToAnnotationView = true
                         }
