@@ -129,30 +129,22 @@ func printDepthPixel(from depthBuffer: CVPixelBuffer, atX x: Int, atY y: Int) {
 func pixelBufferToData(_ pixelBuffer: CVPixelBuffer) -> Data {
     CVPixelBufferLockBaseAddress(pixelBuffer, [.readOnly])
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, [.readOnly]) }
-
-    // Calculate sum of planes' size
-    var totalSize = 0
-    for plane in 0 ..< CVPixelBufferGetPlaneCount(pixelBuffer) {
-        let height      = CVPixelBufferGetHeightOfPlane(pixelBuffer, plane)
-        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, plane)
-        let planeSize   = height * bytesPerRow
-        totalSize += planeSize
-    }
-
-    guard let rawFrame = malloc(totalSize) else { fatalError() }
-    var dest = rawFrame
-
-    for plane in 0 ..< CVPixelBufferGetPlaneCount(pixelBuffer) {
-        let source      = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, plane)
-        let height      = CVPixelBufferGetHeightOfPlane(pixelBuffer, plane)
-        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, plane)
-        let planeSize   = height * bytesPerRow
-
-        memcpy(dest, source, planeSize)
-        dest += planeSize
-    }
-
-    return Data(bytesNoCopy: rawFrame, count: totalSize, deallocator: .free)
+    
+    let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+    // Get the width and height of the pixel buffer
+    let width = CVPixelBufferGetWidth(pixelBuffer)
+    let height = CVPixelBufferGetHeight(pixelBuffer)
+//    print("pixel format type: \(pixelFormat)")
+//    print("pixel buffer plane count: \(CVPixelBufferGetPlaneCount(pixelBuffer))")
+    
+    let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
+    // Calculate the total size of the data (width * height * size of each Float32)
+    let totalSize = width * height * MemoryLayout<Float32>.size
+    
+    // Create a Data object from the buffer's base address
+    let data = Data(bytes: baseAddress, count: totalSize)
+    
+    return data
 }
 
 func savePixelBufferAsBinary(_ pixelBuffer: CVPixelBuffer, fileName: String) -> URL? {
