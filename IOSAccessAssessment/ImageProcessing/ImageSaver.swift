@@ -13,6 +13,11 @@ class ImageSaver: NSObject {
     }
     
     func writeDepthMapToPhotoAlbum(cvPixelBufferDepth: CVPixelBuffer) {
+        // Print for good measure
+        printDepthPixel(from: cvPixelBufferDepth, atX: 10, atY: 10)
+        printDepthPixel(from: cvPixelBufferDepth, atX: 128, atY: 128)
+        printDepthPixel(from: cvPixelBufferDepth, atX: 256, atY: 256)
+        
         // CVPixelBuffer to UIImage
         let ciImageDepth            = CIImage(cvPixelBuffer: cvPixelBufferDepth)
         let contextDepth:CIContext  = CIContext.init(options: nil)
@@ -36,3 +41,4 @@ class ImageSaver: NSObject {
         print("Save finished!")
     }
 }
+

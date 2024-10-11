@@ -96,3 +96,77 @@ func createBlackDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     
     return blankPixelBuffer
 }
+
+func printDepthPixel(from depthBuffer: CVPixelBuffer, atX x: Int, atY y: Int) {
+    // Lock the base address of the pixel buffer before accessing the data
+    CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
+
+    // Get the width and height of the depth buffer
+    let width = CVPixelBufferGetWidth(depthBuffer)
+    let height = CVPixelBufferGetHeight(depthBuffer)
+
+    // Ensure that the coordinates are within bounds
+    guard x < width, y < height else {
+        print("Pixel coordinates are out of bounds")
+        return
+    }
+    
+    if let baseAddress = CVPixelBufferGetBaseAddress(depthBuffer) {
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
+        let floatBuffer = baseAddress.assumingMemoryBound(to: Float.self)
+        
+        let pixelOffset = Int(y) * bytesPerRow / MemoryLayout<Float>.size + Int(x)
+        let depthValue = floatBuffer[pixelOffset]
+        
+        // Print the depth value (in meters)
+        print("Depth value at (\(x), \(y)) is \(depthValue) meters")
+    }
+
+    // Unlock the base address
+    CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly)
+}
+
+func pixelBufferToData(_ pixelBuffer: CVPixelBuffer) -> Data {
+    CVPixelBufferLockBaseAddress(pixelBuffer, [.readOnly])
+    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, [.readOnly]) }
+
+    // Calculate sum of planes' size
+    var totalSize = 0
+    for plane in 0 ..< CVPixelBufferGetPlaneCount(pixelBuffer) {
+        let height      = CVPixelBufferGetHeightOfPlane(pixelBuffer, plane)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, plane)
+        let planeSize   = height * bytesPerRow
+        totalSize += planeSize
+    }
+
+    guard let rawFrame = malloc(totalSize) else { fatalError() }
+    var dest = rawFrame
+
+    for plane in 0 ..< CVPixelBufferGetPlaneCount(pixelBuffer) {
+        let source      = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, plane)
+        let height      = CVPixelBufferGetHeightOfPlane(pixelBuffer, plane)
+        let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, plane)
+        let planeSize   = height * bytesPerRow
+
+        memcpy(dest, source, planeSize)
+        dest += planeSize
+    }
+
+    return Data(bytesNoCopy: rawFrame, count: totalSize, deallocator: .free)
+}
+
+func savePixelBufferAsBinary(_ pixelBuffer: CVPixelBuffer, fileName: String) -> URL? {
+    // Create a Swift Data object to hold the raw depth values
+    let data = pixelBufferToData(pixelBuffer)
+    
+    // Save the Data object to a file in the documents directory
+    let fileURL = getDocumentsDirectory().appendingPathComponent(fileName)
+    do {
+        try data.write(to: fileURL)
+        print("CVPixelBuffer data saved to \(fileURL.path)")
+        return fileURL
+    } catch {
+        print("Error saving CVPixelBuffer data: \(error)")
+        return nil
+    }
+}
