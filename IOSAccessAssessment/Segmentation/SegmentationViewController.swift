@@ -48,7 +48,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     private func setupVisionModel() {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "deeplabv3plus_mobilenet", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Can not load CNN model")
         }
@@ -89,10 +89,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-//        let segMaskGray = outPixelBuffer.pixelBuffer
-//        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
-        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
@@ -107,7 +104,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         self.masker.grayscaleValues = Constants.ClassConstants.grayValues
         self.masker.colorValues =  Constants.ClassConstants.colors
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-        //self.masker.count = 12
     }
     
     // Generate segmentation image for each class
@@ -147,7 +143,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let byteBuffer = baseAddress!.assumingMemoryBound(to: UInt8.self)
         
         for row in 0..<height {
-            for col in 0..<width {
+            for col in 0..<width {  
                 let offset = row * bytesPerRow + col * (bitDepth / 8)
                 let value = byteBuffer[offset]
                 uniqueValues.insert(value)
@@ -156,7 +152,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
         
-        let selectedIndices = uniqueValues.map { UInt8($0) }
+        let selectedIndices = uniqueValues.map { Int($0) }
             .map {Float($0) / 255.0 }
             .compactMap { valueToIndex[$0]}
             .sorted()
