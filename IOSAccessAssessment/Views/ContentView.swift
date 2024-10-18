@@ -50,7 +50,17 @@ struct ContentView: View {
                     Button {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
+                        
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            // MARK: Code to save the images
+                            let imageSaver = ImageSaver()
+                            imageSaver.writeToPhotoAlbum(image: sharedImageData.cameraImage!)
+                            imageSaver.writeCIImageToPhotoAlbum(ciImage: sharedImageData.pixelBuffer!)
+                            imageSaver.writeDepthMapToPhotoAlbum(cvPixelBufferDepth: sharedImageData.depthData!)
+                            var _ = savePixelBufferAsBinary(sharedImageData.depthData!, fileName: generateFileNameWithTimestamp(prefix: "depth", fileExtension: "bin"))//DateFormatter().string(from: Date.now))
+                            
+//                            listFilesInDocumentsDirectory()
+                            
                             navigateToAnnotationView = true
                         }
                     } label: {
