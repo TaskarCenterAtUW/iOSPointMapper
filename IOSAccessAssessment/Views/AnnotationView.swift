@@ -7,17 +7,26 @@
 
 import SwiftUI
 struct AnnotationView: View {
+    
+    enum AnnotationOption: String, CaseIterable {
+        case agree = "I agree with this class annotation"
+        case missingInstances = "Annotation is missing some instances of the class"
+        case misidentified = "The class annotation is misidentified"
+    }
+    
     @ObservedObject var sharedImageData: SharedImageData
-    @State private var index = 0
-    
-    let options = ["I agree with this class annotation", "Annotation is missing some instances of the class", "The class annotation is misidentified"]
-    @State private var selectedOptionIndex: Int? = nil
-    
     var objectLocation: ObjectLocation
-    var selection: [Int]
-    var classes: [String]
-    
+    @State var selection: [Int]
+    @State private var index = 0
+    @State private var selectedOption: AnnotationOption? = nil
+    @State private var isShowingClassSelectionModal: Bool = false
+    @State private var selectedClassIndex: Int? = nil
+    @State private var tempSelectedClassIndex: Int = 0
     @Environment(\.dismiss) var dismiss
+    
+    var classes: [String]
+    var selectedClassesIndices: [Int]
+    let options = AnnotationOption.allCases
     
     var body: some View {
         if (!self.isValid()) {
@@ -52,29 +61,35 @@ struct AnnotationView: View {
                     
                     HStack {
                         Spacer()
-                        VStack {
-                            ForEach(0..<options.count, id: \.self) { optionIndex in
+                        VStack(spacing: 10) {
+                            ForEach(options, id: \.self) { option in
                                 Button(action: {
-                                    // Toggle selection
-                                    if selectedOptionIndex == optionIndex {
-                                        selectedOptionIndex = nil
-                                    } else {
-                                        selectedOptionIndex = optionIndex
+                                    selectedOption = (selectedOption == option) ? nil : option
+                                    
+                                    if option == .misidentified {
+                                        selectedClassIndex = index
+                                        tempSelectedClassIndex = selection[index]
+                                        isShowingClassSelectionModal = true
                                     }
                                 }) {
-                                    Text(options[optionIndex])
+                                    Text(option.rawValue)
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity)
                                         .padding()
-                                        .foregroundColor(selectedOptionIndex == optionIndex ? .red : .blue) // Change color based on selection
+                                        .background(selectedOption == option ? Color.blue : Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
                                 }
                             }
                         }
                         Spacer()
                     }
+                    .padding()
                     
                     Button(action: {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
                         self.nextSegment()
-                        selectedOptionIndex = nil
+                        selectedOption = nil
                     }) {
                         Text("Next")
                     }
@@ -91,6 +106,28 @@ struct AnnotationView: View {
                 // Trigger any additional actions when the index changes
                 self.refreshView()
             }
+            .sheet(isPresented: $isShowingClassSelectionModal) {
+                if let selectedClassIndex = selectedClassIndex {
+                    let filteredClasses = selectedClassesIndices.map { classes[$0] }
+                    
+                    // mapping between filtered and non-filtered
+                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: selection[selectedClassIndex]) ?? 0
+                    
+                    let selectedClassBinding = Binding(
+                        get: { selectedFilteredIndex },
+                        set: { newValue in
+                            let originalIndex = selectedClassesIndices[newValue]
+                            selection[selectedClassIndex] = originalIndex
+                        }
+                    )
+                    
+                    ClassSelectionView(
+                        classes: filteredClasses,
+                        selectedClass: selectedClassBinding
+                    )
+                }
+            }
+
         }
     }
     
@@ -112,5 +149,44 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.selection.count)
+    }
+}
+
+struct ClassSelectionView: View {
+    var classes: [String]
+    @Binding var selectedClass: Int
+    
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        VStack {
+            Text("Select correct annotation")
+                .font(.headline)
+                .padding()
+
+            List {
+                ForEach(0..<classes.count, id: \.self) { index in
+                    Button(action: {
+                        selectedClass = index
+                    }) {
+                        HStack {
+                            Text(classes[index])
+                            Spacer()
+                            if selectedClass == index {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Button(action: {
+                self.presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Done")
+                    .padding()
+            }
+        }
     }
 }
