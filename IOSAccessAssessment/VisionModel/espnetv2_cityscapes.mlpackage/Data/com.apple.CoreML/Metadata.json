@@ -1,0 +1,11 @@
+{
+  "MLModelVersionStringKey" : "--",
+  "MLModelDescriptionKey" : "Semantic Segmentation using ESPNetv2 trained on CityScapes",
+  "MLModelCreatorDefinedKey" : {
+    "com.github.apple.coremltools.version" : "7.2",
+    "com.github.apple.coremltools.source_dialect" : "TorchScript",
+    "com.github.apple.coremltools.source" : "torch==1.12.1"
+  },
+  "MLModelAuthorKey" : "--",
+  "MLModelLicenseKey" : "--"
+}

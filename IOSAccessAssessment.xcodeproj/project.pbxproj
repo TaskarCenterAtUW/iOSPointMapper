@@ -30,6 +30,7 @@
 		DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */; };
 		DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */; };
 		DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */; };
+		DAD58F902CC8DC1A0013CB22 /* mobilenet_v2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = DAD58F8F2CC8DC1A0013CB22 /* mobilenet_v2.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +77,7 @@
 		DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageUtils.swift; sourceTree = "<group>"; };
 		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
 		DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrayscaleToColorCIFilter.swift; sourceTree = "<group>"; };
+		DAD58F8F2CC8DC1A0013CB22 /* mobilenet_v2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = mobilenet_v2.mlpackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,6 +170,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
+				DAD58F8F2CC8DC1A0013CB22 /* mobilenet_v2.mlpackage */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
 			path = VisionModel;
@@ -371,6 +374,7 @@
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
+				DAD58F902CC8DC1A0013CB22 /* mobilenet_v2.mlpackage in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
