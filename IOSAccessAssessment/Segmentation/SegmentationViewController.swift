@@ -106,7 +106,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
         self.masker.grayscaleValues = Constants.ClassConstants.grayValues
         self.masker.colorValues =  Constants.ClassConstants.colors
-        self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//        self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         //self.masker.count = 12
     }
     
@@ -125,7 +125,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.inputImage = self.sharedImageData?.pixelBuffer
             self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             self.sharedImageData?.classImages[i] = self.masker.outputImage!
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         }
