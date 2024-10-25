@@ -136,7 +136,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
-        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        let croppedSize: CGSize = CGSize(width: 2048, height: 1024)
         
         // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
         //  and then convert to CIImage/CGIImage where needed.
@@ -160,10 +160,12 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
             let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
             let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-            let depthSideLength = min(depthWidth, depthHeight)
+//            let depthSideLength = min(depthWidth, depthHeight)
             // TODO: Check why does this lead to an error on orientation change
-            let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
-            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
+//            let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+            let widthScale: Int = Int(floor(2048 / CGFloat(depthWidth)) + 1)
+            let heightScale: Int = Int(floor(1024 / CGFloat(depthHeight)) + 1)
+            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * widthScale, height: depthHeight * heightScale), cropSize: croppedSize) else { return }
             finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s

@@ -48,7 +48,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     private func setupVisionModel() {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "deeplabv3plus_mobilenet", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Can not load CNN model")
         }
@@ -73,11 +73,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         // Currently, the app only supports portrait mode
         // Hence, we can set the size of the square frame relative to screen width
         // with the screen height acting as a threshold to support other frames and buttons
-        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
+        let sideLength = min(screenWidth * 0.45, screenHeight * 0.40)
         
-        let xPosition = (screenWidth - sideLength) / 2
+        let xPosition = (screenWidth - (sideLength*2)) / 2
         
-        return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
+        return CGRect(x: xPosition, y: sideLength, width: sideLength*2, height: sideLength)
     }
     
     func processSegmentationRequest(_ observations: [Any]){

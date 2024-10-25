@@ -57,11 +57,11 @@ class CameraViewController: UIViewController {
         // with the screen height acting as a threshold to support other frames and buttons
         // FIXME: Make this logic more robust to screen orientation 
         //  so that we can eventually use other orientations
-        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
+        let sideLength = min(screenWidth * 0.45, screenHeight * 0.40)
         
-        let xPosition = (screenWidth - sideLength) / 2
+        let xPosition = (screenWidth - (sideLength*2)) / 2
         
-        return CGRect(x: xPosition, y: 0, width: sideLength, height: sideLength)
+        return CGRect(x: xPosition, y: 0, width: sideLength*2, height: sideLength)
     }
 }
 
