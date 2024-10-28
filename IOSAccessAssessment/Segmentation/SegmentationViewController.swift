@@ -48,7 +48,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     private func setupVisionModel() {
-        let modelURL = Bundle.main.url(forResource: "deeplabv3plus_mobilenet", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "espnetv2_cityscapes_512_256", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Can not load CNN model")
         }
