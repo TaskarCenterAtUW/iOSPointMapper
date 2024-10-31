@@ -48,11 +48,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     private func setupVisionModel() {
-        let modelURL = Bundle.main.url(forResource: "DeepLabV3", withExtension: "mlmodelc")
-//        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
-//            fatalError("Can not load CNN model")
-//        }
-        guard let visionModel = try? VNCoreMLModel(for: DeepLabV3(configuration: .init()).model) else {
+        let modelURL = Bundle.main.url(forResource: "DeepLabV3ToImage", withExtension: "mlmodelc")
+        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Can not load CNN model")
         }
 
@@ -76,51 +73,40 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         // Currently, the app only supports portrait mode
         // Hence, we can set the size of the square frame relative to screen width
         // with the screen height acting as a threshold to support other frames and buttons
-        let sideLength = min(screenWidth * 0.45, screenHeight * 0.40)
+        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
         
-        let xPosition = (screenWidth - (sideLength*2)) / 2
+        let xPosition = (screenWidth - sideLength) / 2
         
-        return CGRect(x: xPosition, y: sideLength, width: sideLength*2, height: sideLength)
+        return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
     }
     
     func processSegmentationRequest(_ observations: [Any]){
         
-        let obs = observations as! [VNCoreMLFeatureValueObservation]
+        let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
             return
         }
-        
-        
 
-//        let outPixelBuffer = (obs.first)!
-        
-        let segmentationmap = obs.first?.featureValue.multiArrayValue
-        
-        let segmentationMask = segmentationmap!.image(min: 0, max: 1) //segmentationmap?.pixelBuffer
-        let outputPixelBuffer = segmentationMask?.pixelBuffer(width: 513, height: 513)
+        let outPixelBuffer = (obs.first)!
 //        let segMaskGray = outPixelBuffer.pixelBuffer
 //        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
 //        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
-        
-        
-        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outputPixelBuffer!)
-//        extractUniqueGrayscaleValues(from: createBlackDepthPixelBuffer(targetSize: CGSize(width: 2048, height: 1024))!)//outPixelBuffer.pixelBuffer)
+        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
-        let ciImage = CIImage(cvPixelBuffer: outputPixelBuffer!)
-//        CIImage(cvPixelBuffer: createBlackDepthPixelBuffer(targetSize: CGSize(width: 2048, height: 1024))!)//outPixelBuffer.pixelBuffer)
+        let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.sharedImageData?.pixelBuffer = ciImage
         //pass through the filter that converts grayscale image to different shades of red
         self.masker.inputImage = ciImage
         
-//        processSegmentationRequestPerClass()
+        processSegmentationRequestPerClass()
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
-//        self.masker.grayscaleValues = Constants.ClassConstants.grayValues
-//        self.masker.colorValues =  Constants.ClassConstants.colors
-        self.segmentationView.image = UIImage(ciImage: ciImage, scale: 1.0, orientation: .downMirrored)
+        self.masker.grayscaleValues = Constants.ClassConstants.grayValues
+        self.masker.colorValues =  Constants.ClassConstants.colors
+        self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         //self.masker.count = 12
     }
     
@@ -139,7 +125,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.inputImage = self.sharedImageData?.pixelBuffer
             self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-//            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             self.sharedImageData?.classImages[i] = self.masker.outputImage!
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         }
@@ -248,4 +234,3 @@ struct HostedSegmentationViewController: UIViewControllerRepresentable{
     func updateUIViewController(_ uiView: SegmentationViewController, context: Context) {
     }
 }
-

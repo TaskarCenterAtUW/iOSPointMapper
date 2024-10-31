@@ -35,6 +35,7 @@
 		DADC730D2CD315460033600B /* CGIImage+RawHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730C2CD315460033600B /* CGIImage+RawHelpers.swift */; };
 		DADC730F2CD315790033600B /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730E2CD315790033600B /* Math.swift */; };
 		DADC73112CD31F760033600B /* UIImage+CVPixelBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */; };
+		DADC73132CD3294D0033600B /* DeepLabV3ToImage.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +87,7 @@
 		DADC730C2CD315460033600B /* CGIImage+RawHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGIImage+RawHelpers.swift"; sourceTree = "<group>"; };
 		DADC730E2CD315790033600B /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
+		DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = DeepLabV3ToImage.mlmodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -178,6 +180,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
+				DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */,
 				DADC73082CD30A260033600B /* DeepLabV3.mlmodel */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
@@ -382,6 +385,7 @@
 				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
+				DADC73132CD3294D0033600B /* DeepLabV3ToImage.mlmodel in Sources */,
 				DADC730B2CD314C70033600B /* MLMultiArrayHelpers.swift in Sources */,
 				DADC730D2CD315460033600B /* CGIImage+RawHelpers.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
