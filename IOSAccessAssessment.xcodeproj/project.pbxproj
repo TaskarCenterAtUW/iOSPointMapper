@@ -30,12 +30,12 @@
 		DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */; };
 		DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */; };
 		DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */; };
-		DADC73092CD30A260033600B /* DeepLabV3.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73082CD30A260033600B /* DeepLabV3.mlmodel */; };
 		DADC730B2CD314C70033600B /* MLMultiArrayHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730A2CD314C70033600B /* MLMultiArrayHelpers.swift */; };
 		DADC730D2CD315460033600B /* CGIImage+RawHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730C2CD315460033600B /* CGIImage+RawHelpers.swift */; };
 		DADC730F2CD315790033600B /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730E2CD315790033600B /* Math.swift */; };
 		DADC73112CD31F760033600B /* UIImage+CVPixelBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */; };
 		DADC73132CD3294D0033600B /* DeepLabV3ToImage.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */; };
+		DADC73152CD331620033600B /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,12 +82,12 @@
 		DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageUtils.swift; sourceTree = "<group>"; };
 		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
 		DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrayscaleToColorCIFilter.swift; sourceTree = "<group>"; };
-		DADC73082CD30A260033600B /* DeepLabV3.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = DeepLabV3.mlmodel; sourceTree = "<group>"; };
 		DADC730A2CD314C70033600B /* MLMultiArrayHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLMultiArrayHelpers.swift; sourceTree = "<group>"; };
 		DADC730C2CD315460033600B /* CGIImage+RawHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGIImage+RawHelpers.swift"; sourceTree = "<group>"; };
 		DADC730E2CD315790033600B /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
 		DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = DeepLabV3ToImage.mlmodel; sourceTree = "<group>"; };
+		DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,8 +180,8 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
+				DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */,
 				DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */,
-				DADC73082CD30A260033600B /* DeepLabV3.mlmodel */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
 			path = VisionModel;
@@ -399,8 +399,8 @@
 				DADC73112CD31F760033600B /* UIImage+CVPixelBuffer.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
+				DADC73152CD331620033600B /* deeplabv3plus_mobilenet.mlmodel in Sources */,
 				DADC730F2CD315790033600B /* Math.swift in Sources */,
-				DADC73092CD30A260033600B /* DeepLabV3.mlmodel in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
 			);
