@@ -96,3 +96,29 @@ func createBlackDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     
     return blankPixelBuffer
 }
+
+func pixelBufferFromCGImage(image: CGImage) -> CVPixelBuffer {
+    var pxbuffer: CVPixelBuffer? = nil
+    let options: NSDictionary = [:]
+
+    let width =  image.width
+    let height = image.height
+    let bytesPerRow = image.bytesPerRow
+
+    let dataFromImageDataProvider = CFDataCreateMutableCopy(kCFAllocatorDefault, 0, image.dataProvider!.data)
+    let x = CFDataGetMutableBytePtr(dataFromImageDataProvider)
+
+    CVPixelBufferCreateWithBytes(
+        kCFAllocatorDefault,
+        width,
+        height,
+        kCVPixelFormatType_32ARGB,
+        x!,
+        bytesPerRow,
+        nil,
+        nil,
+        options,
+        &pxbuffer
+    )
+    return pxbuffer!;
+}

@@ -21,6 +21,11 @@ extern "C" kernel void colorMatchingKernel(
         return;
 
     float4 pixelColor = inputTexture.read(gid);
+    
+    pixelColor = float4(pixelColor.r, pixelColor.r, pixelColor.r, 0.9);
+    outputTexture.write(pixelColor, gid);
+    return;
+    
     float grayscale = pixelColor.r;
 
     for (uint i = 0; i < grayscaleCount; i++) {
