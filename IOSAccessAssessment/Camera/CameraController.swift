@@ -178,6 +178,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         delegate?.onNewData(cgImage: cgImage, cvPixel: finalDepthPixelBuffer)
         
         do {
+            Counter.shared.increment()
+            print("New request added \(Counter.shared.count)")
             try imageRequestHandler.perform(SegmentationViewController.requests)
         } catch {
             print(error)

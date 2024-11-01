@@ -48,10 +48,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     private func setupVisionModel() {
-        let modelURL = Bundle.main.url(forResource: "SegmentationModel_with_metadata", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "deeplabv3plus_mobilenet", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Can not load CNN model")
         }
+//        let visionModel = createSegmentationModel()
 
         let segmentationRequest = VNCoreMLRequest(model: visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
@@ -63,6 +64,25 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         segmentationRequest.imageCropAndScaleOption = .scaleFill
         SegmentationViewController.requests = [segmentationRequest]
     }
+    
+//    private func createSegmentationModel() -> VNCoreMLModel {
+//        // Use a default model configuration.
+//        let defaultConfig = MLModelConfiguration()
+//
+//        do {
+//            // Create an instance of the image classifier's wrapper class.
+//            let imageSegmentationModelWrapper = try SegmentationModel_with_metadata(configuration: defaultConfig)
+//            
+//            // Get the underlying model instance.
+//            let imageSegmentationModel = imageSegmentationModelWrapper.model
+//
+//            // Create a Vision instance using the image classifier's model instance.
+//            return try VNCoreMLModel(for: imageSegmentationModel)
+//
+//        } catch {
+//            fatalError("App failed to create a `VNCoreMLModel` instance with error: \(error)")
+//        }
+//    }
     
     // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
     private func getFrame() -> CGRect {
