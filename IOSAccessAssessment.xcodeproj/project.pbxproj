@@ -23,6 +23,7 @@
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA782F82CD4F38400A95784 /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DAA782F72CD4F38300A95784 /* deeplabv3plus_mobilenet.mlmodel */; };
 		DAA782FA2CD5177200A95784 /* Counter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA782F92CD5177200A95784 /* Counter.swift */; };
+		DAA782FC2CD51A2000A95784 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA782FB2CD51A1F00A95784 /* CameraDevice.swift */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
 		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
@@ -76,6 +77,7 @@
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
 		DAA782F72CD4F38300A95784 /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 		DAA782F92CD5177200A95784 /* Counter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Counter.swift; sourceTree = "<group>"; };
+		DAA782FB2CD51A1F00A95784 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -217,6 +219,7 @@
 				55659C072BB785CB0094DF01 /* CameraController.swift */,
 				DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */,
 				DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */,
+				DAA782FB2CD51A1F00A95784 /* CameraDevice.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -404,6 +407,7 @@
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				DAA782F82CD4F38400A95784 /* deeplabv3plus_mobilenet.mlmodel in Sources */,
+				DAA782FC2CD51A2000A95784 /* CameraDevice.swift in Sources */,
 				DADC730F2CD315790033600B /* Math.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,

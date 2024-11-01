@@ -27,6 +27,7 @@ class CameraController: NSObject, ObservableObject {
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
     private(set) var captureSession: AVCaptureSession!
+    private(set) var captureDevice: AVCaptureDevice!
     
     private var isLidarDeviceAvailable: Bool!
     private var depthDataOutput: AVCaptureDepthDataOutput!
@@ -71,11 +72,13 @@ class CameraController: NSObject, ObservableObject {
         // Look up the LiDAR camera. Generally, only present at the back camera
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
         let deviceAndDepthFlag = try getDeviceAndDepthFlag()
-        let device = deviceAndDepthFlag.device
+        captureDevice = deviceAndDepthFlag.device
         isLidarDeviceAvailable = deviceAndDepthFlag.hasLidar
         
+        // Change the frame rate of the device
+        captureDevice.configureDesiredFrameRate(2)
         
-        let deviceInput = try AVCaptureDeviceInput(device: device)
+        let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
         captureSession.addInput(deviceInput)
     }
     
@@ -99,6 +102,7 @@ class CameraController: NSObject, ObservableObject {
         var dataOutputs: [AVCaptureOutput] = []
         // Create an object to output video sample buffers.
         videoDataOutput = AVCaptureVideoDataOutput()
+        videoDataOutput.alwaysDiscardsLateVideoFrames = true
         captureSession.addOutput(videoDataOutput)
         dataOutputs.append(videoDataOutput)
         
@@ -118,6 +122,7 @@ class CameraController: NSObject, ObservableObject {
     func startStream() {
         DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
+            self.captureDevice.configureDesiredFrameRate(2)
         }
     }
     
