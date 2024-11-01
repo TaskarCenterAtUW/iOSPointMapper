@@ -21,6 +21,7 @@
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
+		DAA782F42CD4DA8500A95784 /* SegmentationModel_with_metadata.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = DAA782F32CD4DA8500A95784 /* SegmentationModel_with_metadata.mlpackage */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
 		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
@@ -35,7 +36,6 @@
 		DADC730F2CD315790033600B /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC730E2CD315790033600B /* Math.swift */; };
 		DADC73112CD31F760033600B /* UIImage+CVPixelBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */; };
 		DADC73132CD3294D0033600B /* DeepLabV3ToImage.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */; };
-		DADC73152CD331620033600B /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +73,7 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		DAA782F32CD4DA8500A95784 /* SegmentationModel_with_metadata.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SegmentationModel_with_metadata.mlpackage; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -87,7 +88,6 @@
 		DADC730E2CD315790033600B /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		DADC73102CD31F760033600B /* UIImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
 		DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = DeepLabV3ToImage.mlmodel; sourceTree = "<group>"; };
-		DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,7 +180,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
-				DADC73142CD331620033600B /* deeplabv3plus_mobilenet.mlmodel */,
+				DAA782F32CD4DA8500A95784 /* SegmentationModel_with_metadata.mlpackage */,
 				DADC73122CD3294C0033600B /* DeepLabV3ToImage.mlmodel */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
@@ -388,6 +388,7 @@
 				DADC73132CD3294D0033600B /* DeepLabV3ToImage.mlmodel in Sources */,
 				DADC730B2CD314C70033600B /* MLMultiArrayHelpers.swift in Sources */,
 				DADC730D2CD315460033600B /* CGIImage+RawHelpers.swift in Sources */,
+				DAA782F42CD4DA8500A95784 /* SegmentationModel_with_metadata.mlpackage in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
@@ -399,7 +400,6 @@
 				DADC73112CD31F760033600B /* UIImage+CVPixelBuffer.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
-				DADC73152CD331620033600B /* deeplabv3plus_mobilenet.mlmodel in Sources */,
 				DADC730F2CD315790033600B /* Math.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
