@@ -10,7 +10,7 @@ import SwiftUI
 // Constants related to the supported classes
 struct Constants {
     // Supported Classes
-    struct ClassConstants {
+    struct VOCConstants {
         static let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable", "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"]
         
         static let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
@@ -47,8 +47,8 @@ struct Constants {
         ]
     }
     
-    struct CityscapesConstants {
-        static let classes: [String] = ["Unlabeled", "Ego vehicle", "Rectification border", "Out of roi", "Static", "Dynamic", "Ground", 
+    struct ClassConstants { // CityScapes
+        static let classes: [String] = ["Unlabeled", "Ego vehicle", "Rectification border", "Out of roi", "Static", "Dynamic", "Ground",
                                         "Road", "Sidewalk", "Parking", "Rail track", "Building", "Wall", "Fence", "Guard rail", "Bridge",
                                         "Tunnel", "Pole", "Polegroup", "Traffic light", "Traffic sign", "Vegetation", "Terrain", "Sky", "Person",
                                         "Rider", "Car", "Truck", "Bus", "Caravan", "Trailer", "Train", "Motorcycle", "Bicycle"
