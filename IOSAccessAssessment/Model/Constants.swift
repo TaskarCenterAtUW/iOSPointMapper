@@ -137,3 +137,20 @@ struct Constants {
         ]
     }
 }
+
+class Counter {
+    static let shared = Counter()
+    
+    private(set) var count = 0
+    private(set) var lastFrameTime = Date()
+    
+    private init() {}
+    
+    func increment() {
+        self.count += 1
+    }
+    
+    func update() {
+        self.lastFrameTime = Date()
+    }
+}

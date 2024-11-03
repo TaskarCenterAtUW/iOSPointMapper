@@ -93,6 +93,11 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
 //        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
 //        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        if (Counter.shared.count < 10) {
+            Counter.shared.increment()
+            print("uniqueGrayscaleValues: \(uniqueGrayscaleValues)")
+            print("selectedIndices: \(selectedIndices)")
+        }
         
         self.sharedImageData?.segmentedIndices = selectedIndices
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
