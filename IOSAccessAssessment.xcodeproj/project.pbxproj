@@ -21,6 +21,7 @@
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
+		DAA2A9942CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
 		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
@@ -67,6 +68,7 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
+				DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
 			path = VisionModel;
@@ -375,6 +378,7 @@
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
+				DAA2A9942CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
@@ -559,7 +563,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu1;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu5;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -592,7 +596,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu1;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu5;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
