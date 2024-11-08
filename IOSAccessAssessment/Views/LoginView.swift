@@ -11,43 +11,38 @@ struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var errorMessage: String?
-    @State private var isAuthenticated = false
+    @Binding var isAuthenticated: Bool
     
     private let authService = AuthService()
     private let keychainService = KeychainService()
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 30) {
-                TextField("Username", text: $username)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                
-                SecureField("Password", text: $password)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                }
-                
-                Button(action: login) {
-                    Text("Login")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(username.isEmpty || password.isEmpty)
+        VStack(spacing: 30) {
+            TextField("Username", text: $username)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+            
+            SecureField("Password", text: $password)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
             }
-            .padding()
-            .navigationDestination(isPresented: $isAuthenticated) {
-                SetupView()
+            
+            Button(action: login) {
+                Text("Login")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
             }
+            .disabled(username.isEmpty || password.isEmpty)
         }
+        .padding()
     }
     
     private func login() {
