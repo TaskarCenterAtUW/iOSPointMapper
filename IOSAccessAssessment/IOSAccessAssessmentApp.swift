@@ -13,8 +13,8 @@ struct IOSAccessAssessmentApp: App {
     @State private var isAuthenticated: Bool
     
     init() {
-        let tokenExists = keychainService.getValue(for: "token") != nil
-        _isAuthenticated = State(initialValue: tokenExists)
+        let isTokenValid = keychainService.isTokenValid()
+        _isAuthenticated = State(initialValue: isTokenValid)
     }
     
     var body: some Scene {

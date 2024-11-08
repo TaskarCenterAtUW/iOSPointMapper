@@ -74,4 +74,36 @@ final class KeychainService {
         }
     }
     
+    func setDate(_ date: Date, for key: String) {
+        let dateString = dateToString(date)
+        setValue(dateString, for: key)
+    }
+    
+    func getDate(for key: String) -> Date? {
+        guard let dateString = getValue(for: key) else { return nil }
+        return stringToDate(dateString)
+    }
+    
+    func isTokenValid() -> Bool {
+        guard let _ = getValue(for: "accessToken") else {
+            return false
+        }
+        
+        if let expirationDate = getDate(for: "expirationDate"), expirationDate > Date() {
+            return true
+        }
+        
+        return false
+    }
+
+    private func dateToString(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: date)
+    }
+    
+    private func stringToDate(_ dateString: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: dateString)
+    }
+    
 }

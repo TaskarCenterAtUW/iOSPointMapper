@@ -52,8 +52,11 @@ struct LoginView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    keychainService.setValue(response.accessToken, for: "token")
-                    if let _ = keychainService.getValue(for: "token") {
+                    keychainService.setValue(response.accessToken, for: "accessToken")
+                    let expirationDate = Date().addingTimeInterval(TimeInterval(response.expiresIn))
+                    keychainService.setDate(expirationDate, for: "expirationDate")       
+                    
+                    if let _ = keychainService.getValue(for: "accessToken") {
                         self.isAuthenticated = true
                     }
                 case .failure(let error):
