@@ -8,10 +8,17 @@
 import Foundation
 
 struct AuthResponse: Decodable {
-    let access_token: String
-    let refresh_token: String
-    let expires_in: Int
-    let refresh_expires_in: Int
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int
+    let refreshExpiresIn: Int
+    
+    private enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case refreshToken = "refresh_token"
+        case expiresIn = "expires_in"
+        case refreshExpiresIn = "refresh_expires_in"
+    }
 }
 
 class AuthService {
