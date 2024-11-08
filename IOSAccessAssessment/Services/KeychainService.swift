@@ -8,17 +8,19 @@
 import Foundation
 import Security
 
-import Foundation
-import Security
+enum KeychainKey: String {
+    case accessToken
+    case expirationDate
+}
 
 final class KeychainService {
 
-    func setValue(_ value: String, for key: String) {
+    func setValue(_ value: String, for key: KeychainKey) {
         guard let encodedValue = value.data(using: .utf8) else { return }
         
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key
+            kSecAttrAccount as String: key.rawValue
         ]
         
         var status = SecItemCopyMatching(query as CFDictionary, nil)
@@ -38,10 +40,10 @@ final class KeychainService {
         }
     }
     
-    func getValue(for key: String) -> String? {
+    func getValue(for key: KeychainKey) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key,
+            kSecAttrAccount as String: key.rawValue,
             kSecReturnData as String: kCFBooleanTrue!,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -62,10 +64,10 @@ final class KeychainService {
         return nil
     }
     
-    func removeValue(for key: String) {
+    func removeValue(for key: KeychainKey) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: key
+            kSecAttrAccount as String: key.rawValue
         ]
         
         let status = SecItemDelete(query as CFDictionary)
@@ -74,22 +76,22 @@ final class KeychainService {
         }
     }
     
-    func setDate(_ date: Date, for key: String) {
+    func setDate(_ date: Date, for key: KeychainKey) {
         let dateString = dateToString(date)
         setValue(dateString, for: key)
     }
     
-    func getDate(for key: String) -> Date? {
+    func getDate(for key: KeychainKey) -> Date? {
         guard let dateString = getValue(for: key) else { return nil }
         return stringToDate(dateString)
     }
     
     func isTokenValid() -> Bool {
-        guard let _ = getValue(for: "accessToken") else {
+        guard let _ = getValue(for: .accessToken) else {
             return false
         }
         
-        if let expirationDate = getDate(for: "expirationDate"), expirationDate > Date() {
+        if let expirationDate = getDate(for: .expirationDate), expirationDate > Date() {
             return true
         }
         
