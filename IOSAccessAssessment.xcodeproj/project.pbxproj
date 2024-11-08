@@ -20,6 +20,9 @@
 		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
+		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
+		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
+		CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA9477A2CDE70D5000C6918 /* KeychainService.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
@@ -67,6 +70,9 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		CAA9477A2CDE70D5000C6918 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -126,6 +132,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				CAA947772CDE7001000C6918 /* Services */,
 				DAA7F8C62CA76514003666D8 /* ImageProcessing */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
@@ -184,6 +191,7 @@
 		55659C0E2BB786240094DF01 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				CAA947752CDE6FBB000C6918 /* LoginView.swift */,
 				55659C0F2BB7863F0094DF01 /* SetupView.swift */,
 				55659C112BB786580094DF01 /* ContentView.swift */,
 				55659C132BB786700094DF01 /* AnnotationView.swift */,
@@ -191,6 +199,15 @@
 				DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		CAA947772CDE7001000C6918 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
+				CAA947782CDE7007000C6918 /* AuthService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
@@ -368,12 +385,15 @@
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
+				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
+				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
+				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,

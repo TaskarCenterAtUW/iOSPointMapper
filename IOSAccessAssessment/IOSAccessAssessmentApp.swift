@@ -11,7 +11,8 @@ import SwiftUI
 struct IOSAccessAssessmentApp: App {
     var body: some Scene {
         WindowGroup {
-            SetupView()
+            LoginView()
+            //SetupView()
         }
     }
 }
