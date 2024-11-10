@@ -41,11 +41,16 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
+        GeometryReader { geometry in
+            
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
+                        HostedCameraViewController(session: manager!.controller.captureSession,
+                                                   frameRect: VerticalFrame.getColumnFrame(row: 0))
+                        HostedSegmentationViewController(sharedImageData: sharedImageData,
+                                                         frameRect: VerticalFrame.getColumnFrame(row: 1),
+                                selection: Array(selection), classes: Constants.ClassConstants.classes)
                     }
                     Button {
                         objectLocation.setLocationAndHeading()
@@ -87,5 +92,6 @@ struct ContentView: View {
             .onDisappear {
                 manager?.stopStream()
             }
+        }
     }
 }

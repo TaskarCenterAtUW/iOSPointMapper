@@ -48,7 +48,8 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index,
+                                                             frameRect: VerticalFrame.getColumnFrame(row: 0))
                         Spacer()
                     }
                     HStack {

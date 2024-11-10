@@ -15,7 +15,10 @@ import MetalKit
 
 class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var segmentationView: UIImageView! = nil
+    
     var sharedImageData: SharedImageData?
+    
+    var frameRect: CGRect = CGRect()
     var selection:[Int] = []
     var classes: [String] = []
 //    var grayscaleValue:Float = 180 / 255.0
@@ -41,7 +44,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = getFrame()
+        segmentationView.frame = self.frameRect
         segmentationView.contentMode = .scaleAspectFill
         self.view.addSubview(segmentationView)
         self.setupVisionModel()
@@ -62,22 +65,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         })
         segmentationRequest.imageCropAndScaleOption = .scaleFill
         SegmentationViewController.requests = [segmentationRequest]
-    }
-    
-    // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
-    private func getFrame() -> CGRect {
-        let screenSize = UIScreen.main.bounds
-        let screenWidth = screenSize.width
-        let screenHeight = screenSize.height
-        
-        // Currently, the app only supports portrait mode
-        // Hence, we can set the size of the square frame relative to screen width
-        // with the screen height acting as a threshold to support other frames and buttons
-        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
-        
-        let xPosition = (screenWidth - sideLength) / 2
-        
-        return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
     }
     
     func processSegmentationRequest(_ observations: [Any]){
@@ -225,12 +212,14 @@ extension SegmentationViewController {
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
     var sharedImageData: SharedImageData
+    var frameRect: CGRect
     var selection:[Int]
     var classes: [String]
     
     func makeUIViewController(context: Context) -> SegmentationViewController {
         let viewController = SegmentationViewController(sharedImageData: sharedImageData)
 //        viewController.sharedImageData = sharedImageData
+        viewController.frameRect = frameRect
         viewController.selection = selection
         viewController.classes = classes
         return viewController

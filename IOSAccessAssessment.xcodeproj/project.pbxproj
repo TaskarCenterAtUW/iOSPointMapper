@@ -21,6 +21,7 @@
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
+		A3B070962CE086150028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070942CE086100028CAC5 /* Frame.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA2A9942CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
@@ -70,6 +71,7 @@
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
+		A3B070942CE086100028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				A3B070972CE086950028CAC5 /* UI */,
 				DAA7F8C62CA76514003666D8 /* ImageProcessing */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
@@ -196,6 +199,14 @@
 				DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A3B070972CE086950028CAC5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A3B070942CE086100028CAC5 /* Frame.swift */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
@@ -377,6 +388,7 @@
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
+				A3B070962CE086150028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,

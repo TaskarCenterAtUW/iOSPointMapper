@@ -119,7 +119,7 @@ class CameraController: NSObject, ObservableObject {
     func startStream() {
         DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
-            self.captureDevice.configureDesiredFrameRate(5)
+            self.captureDevice.configureDesiredFrameRate(Constants.frameRate)
         }
     }
     
@@ -138,7 +138,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
-        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        let croppedSize: CGSize = Constants.ClassConstants.inputSize
         
         // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
         //  and then convert to CIImage/CGIImage where needed.
@@ -149,8 +149,14 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        print("Default: \(UIDevice.current.orientation), Current: ")
+        print("CIImage: \(ciImage.extent.width), \(ciImage.extent.height)")
+        // FIXME: Need to check why the image is actually rotated 90 degrees.
+        // (We use orientation: .right in CameraManager)
         let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
+        print("CIImage 2: \(ciImage.extent.width), \(ciImage.extent.height)")
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
+        print("CGImage: \(cgImage.width), \(cgImage.height)")
         
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,

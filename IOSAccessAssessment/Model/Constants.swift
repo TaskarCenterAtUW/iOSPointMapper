@@ -138,8 +138,10 @@ struct Constants {
             CIColor(red: 0.0, green: 0.0, blue: 0.5568627450980392)
         ]
         
-        static let inputSize: CGSize = CGSize(width: 1024, height: 512)
+        static let inputSize: CGSize = CGSize(width: 2048, height: 1024)
     }
+    
+    static let frameRate: Int = 5
 }
 
 class Counter {
