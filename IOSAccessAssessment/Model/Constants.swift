@@ -45,6 +45,8 @@ struct Constants {
             CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
             CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
         ]
+        
+        static let inputSize: CGSize = CGSize(width: 1024, height: 1024)
     }
     
     struct ClassConstants { // CityScapes
@@ -135,6 +137,8 @@ struct Constants {
             CIColor(red: 0.4666666666666667, green: 0.043137254901960784, blue: 0.12549019607843137),
             CIColor(red: 0.0, green: 0.0, blue: 0.5568627450980392)
         ]
+        
+        static let inputSize: CGSize = CGSize(width: 1024, height: 512)
     }
 }
 
