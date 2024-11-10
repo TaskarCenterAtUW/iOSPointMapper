@@ -40,27 +40,23 @@ struct ContentView: View {
     //  that calculates the pixel-wise location using the device location and the depth map.
     var objectLocation = ObjectLocation()
     
-    var screenAspectRatio: CGFloat = Constants.ClassConstants.inputSize.width / Constants.ClassConstants.inputSize.height
-    
     var body: some View {
             VStack {
                 if manager?.dataAvailable ?? false{
                         ZStack {
-//                            VStack {
-                                HostedCameraViewController(session: manager!.controller.captureSession,
-                                                           frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 0)
-                                )
-                                HostedSegmentationViewController(sharedImageData: sharedImageData,
-                                                                 frameRect: VerticalFrame.getColumnFrame(
-                                                                    width: UIScreen.main.bounds.width,
-                                                                    height: UIScreen.main.bounds.height,
-                                                                    row: 1),
-                                    selection: Array(selection), classes: Constants.ClassConstants.classes
-                                )
-//                            }
+                            HostedCameraViewController(session: manager!.controller.captureSession,
+                                                       frameRect: VerticalFrame.getColumnFrame(
+                                                        width: UIScreen.main.bounds.width,
+                                                        height: UIScreen.main.bounds.height,
+                                                        row: 0)
+                            )
+                            HostedSegmentationViewController(sharedImageData: sharedImageData,
+                                                             frameRect: VerticalFrame.getColumnFrame(
+                                                                width: UIScreen.main.bounds.width,
+                                                                height: UIScreen.main.bounds.height,
+                                                                row: 1),
+                                selection: Array(selection), classes: Constants.ClassConstants.classes
+                            )
                         }
                         Button {
                             objectLocation.setLocationAndHeading()
