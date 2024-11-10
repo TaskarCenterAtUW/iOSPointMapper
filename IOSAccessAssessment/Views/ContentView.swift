@@ -40,25 +40,40 @@ struct ContentView: View {
     //  that calculates the pixel-wise location using the device location and the depth map.
     var objectLocation = ObjectLocation()
     
+    var screenAspectRatio: CGFloat = Constants.ClassConstants.inputSize.width / Constants.ClassConstants.inputSize.height
+    
     var body: some View {
             VStack {
                 if manager?.dataAvailable ?? false{
-                    ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
-                    }
-                    Button {
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            navigateToAnnotationView = true
+                        ZStack {
+                            VStack {
+                                HostedCameraViewController(session: manager!.controller.captureSession,
+                                                           frameRect: VerticalFrame.getColumnFrame(
+                                                            width: UIScreen.main.bounds.width,
+                                                            height: UIScreen.main.bounds.height,
+                                                            row: 0)
+                                )
+                                HostedSegmentationViewController(sharedImageData: sharedImageData,
+                                                                 frameRect: VerticalFrame.getColumnFrame(
+                                                                    width: UIScreen.main.bounds.width,
+                                                                    height: UIScreen.main.bounds.height,
+                                                                    row: 1),
+                                    selection: Array(selection), classes: Constants.ClassConstants.classes
+                                )
+                            }
                         }
-                    } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
-                    }
+                        Button {
+                            objectLocation.setLocationAndHeading()
+                            manager?.stopStream()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                navigateToAnnotationView = true
+                            }
+                        } label: {
+                            Image(systemName: "camera.circle.fill")
+                                .resizable()
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(.white)
+                        }
                 }
                 else {
                     VStack {
