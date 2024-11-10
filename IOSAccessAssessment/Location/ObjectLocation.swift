@@ -131,6 +131,7 @@ class ObjectLocation {
                     }
                 }
             }
+            numPixels = numPixels == 0 ? 1 : numPixels
             let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
             let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
             let pixelOffset = Int(gravityY) * bytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
@@ -162,13 +163,17 @@ class ObjectLocation {
         
         context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
         var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
+        
+        var uniqueValues = Set<UInt8>()
         for row in 0..<height {
             for col in 0..<width {
                 let pixelIndex = row * width + col
                 let pixelValue = pixelData[pixelIndex]
                 mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
+                uniqueValues.insert(pixelValue)
             }
         }
+        print("uniqueValues: \(uniqueValues)")
         return mask
     }
 }

@@ -138,7 +138,10 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
-        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.height,
+            height: Constants.ClassConstants.inputSize.width
+        )
         
         // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
         //  and then convert to CIImage/CGIImage where needed.

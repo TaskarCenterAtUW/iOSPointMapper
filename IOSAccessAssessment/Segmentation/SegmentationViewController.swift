@@ -117,7 +117,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.masker.inputImage = self.sharedImageData?.pixelBuffer
             self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+//            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             self.sharedImageData?.classImages[i] = self.masker.outputImage!
 //                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         }
