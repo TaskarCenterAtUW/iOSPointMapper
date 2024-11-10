@@ -46,7 +46,7 @@ struct ContentView: View {
             VStack {
                 if manager?.dataAvailable ?? false{
                         ZStack {
-                            VStack {
+//                            VStack {
                                 HostedCameraViewController(session: manager!.controller.captureSession,
                                                            frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
@@ -60,7 +60,7 @@ struct ContentView: View {
                                                                     row: 1),
                                     selection: Array(selection), classes: Constants.ClassConstants.classes
                                 )
-                            }
+//                            }
                         }
                         Button {
                             objectLocation.setLocationAndHeading()
