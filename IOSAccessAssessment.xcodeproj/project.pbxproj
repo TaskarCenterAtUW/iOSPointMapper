@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -20,6 +20,10 @@
 		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
+		A04059702CE7BA6E002A8FF8 /* cleaning.py in Resources */ = {isa = PBXBuildFile; fileRef = A040596E2CE7BA6E002A8FF8 /* cleaning.py */; };
+		A04059712CE7BA6E002A8FF8 /* merging.py in Resources */ = {isa = PBXBuildFile; fileRef = A040596F2CE7BA6E002A8FF8 /* merging.py */; };
+		A04059732CE7BA92002A8FF8 /* imagery.py in Resources */ = {isa = PBXBuildFile; fileRef = A04059722CE7BA92002A8FF8 /* imagery.py */; };
+		A04059752CE7BA98002A8FF8 /* geospatial.py in Resources */ = {isa = PBXBuildFile; fileRef = A04059742CE7BA98002A8FF8 /* geospatial.py */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
@@ -67,6 +71,10 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		A040596E2CE7BA6E002A8FF8 /* cleaning.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = cleaning.py; sourceTree = "<group>"; };
+		A040596F2CE7BA6E002A8FF8 /* merging.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = merging.py; sourceTree = "<group>"; };
+		A04059722CE7BA92002A8FF8 /* imagery.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = imagery.py; sourceTree = "<group>"; };
+		A04059742CE7BA98002A8FF8 /* geospatial.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = geospatial.py; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -77,6 +85,10 @@
 		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
 		DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrayscaleToColorCIFilter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A04059762CE7BB47002A8FF8 /* SequentialProcessing */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SequentialProcessing; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3222F9132B622DFD0019A079 /* Frameworks */ = {
@@ -126,6 +138,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				A04059762CE7BB47002A8FF8 /* SequentialProcessing */,
 				DAA7F8C62CA76514003666D8 /* ImageProcessing */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
@@ -217,6 +230,7 @@
 		DAA7F8C52CA6858C003666D8 /* Location */ = {
 			isa = PBXGroup;
 			children = (
+				A04059742CE7BA98002A8FF8 /* geospatial.py */,
 				55C2F2832C00078D00B633D7 /* ObjectLocation.swift */,
 			);
 			path = Location;
@@ -225,6 +239,9 @@
 		DAA7F8C62CA76514003666D8 /* ImageProcessing */ = {
 			isa = PBXGroup;
 			children = (
+				A04059722CE7BA92002A8FF8 /* imagery.py */,
+				A040596E2CE7BA6E002A8FF8 /* cleaning.py */,
+				A040596F2CE7BA6E002A8FF8 /* merging.py */,
 				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
 			);
@@ -245,6 +262,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A04059762CE7BB47002A8FF8 /* SequentialProcessing */,
 			);
 			name = IOSAccessAssessment;
 			productName = IOSAccessAssessment;
@@ -336,6 +356,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */,
+				A04059752CE7BA98002A8FF8 /* geospatial.py in Resources */,
+				A04059702CE7BA6E002A8FF8 /* cleaning.py in Resources */,
+				A04059712CE7BA6E002A8FF8 /* merging.py in Resources */,
+				A04059732CE7BA92002A8FF8 /* imagery.py in Resources */,
 				3222F9212B622E090019A079 /* Preview Assets.xcassets in Resources */,
 				3222F91E2B622E090019A079 /* Assets.xcassets in Resources */,
 			);

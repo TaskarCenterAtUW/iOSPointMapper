@@ -89,9 +89,21 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-//        let segMaskGray = outPixelBuffer.pixelBuffer
-//        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
+        
+//        mask = clean_mask(mask, kernel_size=5)
+//        mask = merge_mask(mask, depth_map)
+//        mask = depth_clean_mask(mask, depth_map)
+//
+//        centroid = compute_centroid(mask, depth_map, sidewalk_label=1, dbscan=True)
+//        sidewalk_width = compute_sidewalk_width(mask, depth_map, centroid)
+//        sidewalk_latitude, sidewalk_longitude = get_location(
+//            depth_map,
+//            centroid,
+//            yaw=30,
+//            observer_latitude=latitude,
+//            observer_longitude=longitude,
+//        )
+        
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         self.sharedImageData?.segmentedIndices = selectedIndices
