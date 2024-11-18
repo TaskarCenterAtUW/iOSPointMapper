@@ -11,6 +11,7 @@ struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
     @State private var errorMessage: String?
+    @State private var isLoading: Bool = false
     @Binding var isAuthenticated: Bool
     
     private let authService = AuthService()
@@ -31,25 +32,33 @@ struct LoginView: View {
                     .foregroundColor(.red)
             }
             
-            Button(action: login) {
-                Text("Login")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+            } else {
+                Button(action: login) {
+                    Text("Login")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .disabled(username.isEmpty || password.isEmpty)
             }
-            .disabled(username.isEmpty || password.isEmpty)
         }
         .padding()
     }
     
     private func login() {
         errorMessage = nil
+        isLoading = true
         
         authService.authenticate(username: username, password: password) { result in
             DispatchQueue.main.async {
+                self.isLoading = false
+                
                 switch result {
                 case .success(let response):
                     keychainService.setValue(response.accessToken, for: .accessToken)
