@@ -17,11 +17,13 @@ class ChangesetService {
     static let shared = ChangesetService()
     private init() {}
     
+    private let accessToken = KeychainService().getValue(for: .accessToken)
     private(set) var changesetId: String?
     
     func openChangeset(completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "\(Constants.baseUrl)/changeset/create"),
-              let accessToken = KeychainService().getValue(for: .accessToken) else { return }
+              let accessToken
+        else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -59,6 +61,37 @@ class ChangesetService {
                                             code: -1,
                                             userInfo: [NSLocalizedDescriptionKey: "Failed to open changeset"])))
             }
+        }.resume()
+    }
+    
+    func uploadChanges(latitude: Double, longitude: Double, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let changesetId,
+              let accessToken,
+              let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
+        else { return }
+        
+        let xmlContent =
+        """
+        <osmChange version="0.6" generator="GIG Change generator">
+            <create>
+                <node id="-1" lat="\(latitude)" lon="\(longitude)" changeset="\(changesetId)" />
+            </create>
+        </osmChange>
+        """
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpBody = xmlContent.data(using: .utf8)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            completion(.success(()))
         }.resume()
     }
     
