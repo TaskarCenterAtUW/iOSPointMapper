@@ -60,8 +60,8 @@ struct LoginView: View {
                        let _ = keychainService.getDate(for: .expirationDate) {
                         self.isAuthenticated = true
                     }
-                case .failure(let error):
-                    self.errorMessage = "Login failed: \(error.localizedDescription)"
+                case .failure(let authError):
+                    self.errorMessage = authError.localizedDescription
                 }
             }
         }
