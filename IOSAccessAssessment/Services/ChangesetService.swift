@@ -51,12 +51,8 @@ class ChangesetService {
                 return
             }
             
-            if let data = data,
-                let changesetId = String(data: data, encoding: .utf8)
-            {
-                let changesetId = changesetId.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let data = data, let changesetId = String(data: data, encoding: .utf8) {
                 self.changesetId = changesetId
-                
                 completion(.success(changesetId))
             } else {
                 completion(.failure(NSError(domain: "ChangesetError",
