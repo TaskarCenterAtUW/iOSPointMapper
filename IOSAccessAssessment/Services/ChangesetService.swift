@@ -100,4 +100,25 @@ class ChangesetService {
         }.resume()
     }
     
+    func closeChangeset(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let changesetId, let accessToken else { return }
+        
+        guard let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/close") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            self.changesetId = nil
+            
+            completion(.success(()))
+        }.resume()
+    }
+    
 }
