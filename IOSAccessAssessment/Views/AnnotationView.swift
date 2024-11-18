@@ -157,7 +157,9 @@ struct AnnotationView: View {
               let nodeLongitude = objectLocation.longitude
         else { return }
         
-        ChangesetService.shared.uploadChanges(latitude: nodeLatitude, longitude: nodeLongitude) { result in
+        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude)
+        
+        ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
             switch result {
             case .success:
                 print("Changes uploaded successfully.")

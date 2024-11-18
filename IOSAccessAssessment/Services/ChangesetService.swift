@@ -7,6 +7,11 @@
 
 import Foundation
 
+struct NodeData {
+    let latitude: Double
+    let longitude: Double
+}
+
 class ChangesetService {
     
     private enum Constants {
@@ -64,7 +69,7 @@ class ChangesetService {
         }.resume()
     }
     
-    func uploadChanges(latitude: Double, longitude: Double, completion: @escaping (Result<Void, Error>) -> Void) {
+    func uploadChanges(nodeData: NodeData, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let changesetId,
               let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
@@ -74,7 +79,7 @@ class ChangesetService {
         """
         <osmChange version="0.6" generator="GIG Change generator">
             <create>
-                <node id="-1" lat="\(latitude)" lon="\(longitude)" changeset="\(changesetId)" />
+                <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)" />
             </create>
         </osmChange>
         """
