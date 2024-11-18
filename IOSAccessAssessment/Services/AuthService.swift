@@ -7,6 +7,32 @@
 
 import Foundation
 
+enum AuthError: Error, LocalizedError {
+    case invalidURL
+    case noData
+    case invalidResponse
+    case serverError(message: String)
+    case decodingError
+    case unknownError
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid URL."
+        case .noData:
+            return "No data received from the server."
+        case .invalidResponse:
+            return "Invalid response from the server."
+        case .serverError(let message):
+            return message
+        case .decodingError:
+            return "Failed to decode the response from the server."
+        case .unknownError:
+            return "An unknown error occurred."
+        }
+    }
+}
+
 struct AuthResponse: Decodable {
     let accessToken: String
     let refreshToken: String
@@ -37,26 +63,26 @@ class AuthService {
     func authenticate(
         username: String,
         password: String,
-        completion: @escaping (Result<AuthResponse, Error>) -> Void
+        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
     ) {
         guard let request = createRequest(username: username, password: password) else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 0, userInfo: nil)))
+            completion(.failure(.invalidURL))
             return
         }
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error {
-                completion(.failure(error))
+                completion(.failure(.serverError(message: error.localizedDescription)))
                 return
             }
             
             guard let data else {
-                completion(.failure(NSError(domain: "No data received", code: 0, userInfo: nil)))
+                completion(.failure(.noData))
                 return
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(NSError(domain: "Invalid response", code: 0, userInfo: nil)))
+                completion(.failure(.invalidResponse))
                 return
             }
             
@@ -85,7 +111,7 @@ class AuthService {
     private func handleResponse(
         data: Data,
         httpResponse: HTTPURLResponse,
-        completion: @escaping (Result<AuthResponse, Error>) -> Void
+        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
     ) {
         if (200...299).contains(httpResponse.statusCode) {
             decodeSuccessResponse(data: data,
@@ -99,32 +125,30 @@ class AuthService {
 
     private func decodeSuccessResponse(
         data: Data,
-        completion: @escaping (Result<AuthResponse, Error>) -> Void
+        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
     ) {
         do {
             let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
             completion(.success(authResponse))
         } catch {
-            completion(.failure(error))
+            completion(.failure(.decodingError))
         }
     }
 
     private func decodeErrorResponse(
         data: Data,
         statusCode: Int,
-        completion: @escaping (Result<AuthResponse, Error>) -> Void
+        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
     ) {
         do {
             let errorResponse = try JSONDecoder().decode(ErrorResponse.self, from: data)
-            let errorMessage = errorResponse.errors?.joined(separator: "\n") ?? errorResponse.message
+            let errorMessage = errorResponse.message
+                .appending(": ")
+                .appending(errorResponse.errors?.joined(separator: "\n") ?? "")
             
-            completion(.failure(NSError(domain: "Server Error",
-                                        code: statusCode,
-                                        userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+            completion(.failure(.serverError(message: errorMessage)))
         } catch {
-            completion(.failure(NSError(domain: "Unable to parse error response",
-                                        code: statusCode,
-                                        userInfo: nil)))
+            completion(.failure(.decodingError))
         }
     }
     
