@@ -90,6 +90,7 @@ struct AnnotationView: View {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
                         self.nextSegment()
                         selectedOption = nil
+                        uploadChanges()
                     }) {
                         Text("Next")
                     }
@@ -149,6 +150,21 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.selection.count)
+    }
+    
+    private func uploadChanges() {
+        guard let nodeLatitude = objectLocation.latitude,
+              let nodeLongitude = objectLocation.longitude
+        else { return }
+        
+        ChangesetService.shared.uploadChanges(latitude: nodeLatitude, longitude: nodeLongitude) { result in
+            switch result {
+            case .success:
+                print("Changes uploaded successfully.")
+            case .failure(let error):
+                print("Failed to upload changes: \(error.localizedDescription)")
+            }
+        }
     }
 }
 
