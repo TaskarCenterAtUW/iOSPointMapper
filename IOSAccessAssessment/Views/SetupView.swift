@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct SetupView: View {
+
     @State private var selection = Set<Int>()
+    @State private var showLogoutConfirmation = false
     @EnvironmentObject var userState: UserStateViewModel
     
     var body: some View {
@@ -44,7 +46,7 @@ struct SetupView: View {
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(
                 leading: Button(action: {
-                    userState.logout()
+                    showLogoutConfirmation = true
                 }) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                         .resizable()
@@ -56,6 +58,14 @@ struct SetupView: View {
                     Text("Next").foregroundStyle(Color.white).font(.headline)
                 }
             )
+            .confirmationDialog(
+                "Are you sure you want to log out?",
+                isPresented: $showLogoutConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Log out", role: .destructive) { userState.logout() }
+                Button("Cancel", role: .cancel) { }
+            }
         }.environment(\.colorScheme, .dark)
     }
 }
