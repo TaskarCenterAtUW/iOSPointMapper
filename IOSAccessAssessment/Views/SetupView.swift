@@ -8,6 +8,30 @@
 import SwiftUI
 
 struct SetupView: View {
+    
+    private enum SetupViewConstants {
+        enum Texts {
+            static let setupViewTitle = "Setup"
+            static let selectClassesText = "Select Classes to Identify"
+            static let confirmationDialogTitle = "Are you sure you want to log out?"
+            static let confirmationDialogConfirmText = "Logout"
+            static let confirmationDialogCancelText = "Cancel"
+            static let nextButton = "Next"
+        }
+        
+        enum Images {
+            static let logoutIcon = "rectangle.portrait.and.arrow.right"
+        }
+        
+        enum Colors {
+            static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
+            static let unselectedClass = Color.white
+        }
+        
+        enum Constraints {
+            static let logoutIconSize: CGFloat = 20
+        }
+    }
 
     @State private var selection = Set<Int>()
     @State private var showLogoutConfirmation = false
@@ -16,12 +40,8 @@ struct SetupView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading) {
-                Text("Setup View")
-                    .font(.largeTitle)
-                    .padding(.bottom, 5)
-                
-                Text("Select Classes to Identify")
-                    .font(.headline)
+                Text(SetupViewConstants.Texts.selectClassesText)
+                    .font(.title)
                     .foregroundColor(.gray)
                 
                 List {
@@ -34,39 +54,44 @@ struct SetupView: View {
                             }
                         }) {
                             Text(Constants.ClassConstants.classes[index])
-                                .foregroundColor(self.selection.contains(index) ?
-                                                 Color(red: 187/255, green: 134/255, blue: 252/255) : .white)
+                                .foregroundColor(
+                                    self.selection.contains(index)
+                                    ? SetupViewConstants.Colors.selectedClass
+                                    : SetupViewConstants.Colors.unselectedClass
+                                )
                         }
                     }
                 }
-//                .environment(\.colorScheme, .dark)
             }
             .padding()
-            .navigationBarTitle("Setup View", displayMode: .inline)
+            .navigationBarTitle(SetupViewConstants.Texts.setupViewTitle, displayMode: .inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(
                 leading: Button(action: {
                     showLogoutConfirmation = true
                 }) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                    Image(systemName: SetupViewConstants.Images.logoutIcon)
                         .resizable()
-                        .frame(width: 20, height: 20)
+                        .frame(
+                            width: SetupViewConstants.Constraints.logoutIconSize,
+                            height: SetupViewConstants.Constraints.logoutIconSize
+                        )
                         .foregroundColor(.white)
                         .bold()
                 },
                 trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
-                    Text("Next").foregroundStyle(Color.white).font(.headline)
+                    Text(SetupViewConstants.Texts.nextButton).foregroundStyle(Color.white).font(.headline)
                 }
             )
             .confirmationDialog(
-                "Are you sure you want to log out?",
+                SetupViewConstants.Texts.confirmationDialogTitle,
                 isPresented: $showLogoutConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Log out", role: .destructive) { userState.logout() }
-                Button("Cancel", role: .cancel) { }
+                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) { userState.logout() }
+                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) {}
             }
-        }.environment(\.colorScheme, .dark)
+        }
+        .environment(\.colorScheme, .dark)
     }
 }
-
