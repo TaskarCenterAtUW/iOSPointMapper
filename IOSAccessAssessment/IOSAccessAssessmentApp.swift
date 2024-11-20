@@ -9,9 +9,21 @@ import SwiftUI
 
 @main
 struct IOSAccessAssessmentApp: App {
+    private let keychainService = KeychainService()
+    @State private var isAuthenticated: Bool
+    
+    init() {
+        let isTokenValid = keychainService.isTokenValid()
+        _isAuthenticated = State(initialValue: isTokenValid)
+    }
+    
     var body: some Scene {
         WindowGroup {
-            SetupView()
+            if isAuthenticated {
+                SetupView()
+            } else {
+                LoginView(isAuthenticated: $isAuthenticated)
+            }
         }
     }
 }
