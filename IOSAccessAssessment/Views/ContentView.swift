@@ -41,51 +41,65 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
-            VStack {
-                if manager?.dataAvailable ?? false{
-                    ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
-                    }
-                    Button {
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            navigateToAnnotationView = true
-                        }
-                    } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
-                    }
+        VStack {
+            if manager?.dataAvailable ?? false{
+                ZStack {
+                    HostedCameraViewController(session: manager!.controller.captureSession)
+                    HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
                 }
-                else {
-                    VStack {
-                        SpinnerView()
-                        Text("Camera settings in progress")
-                            .padding(.top, 20)
+                Button {
+                    objectLocation.setLocationAndHeading()
+                    manager?.stopStream()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        navigateToAnnotationView = true
                     }
+                } label: {
+                    Image(systemName: "camera.circle.fill")
+                        .resizable()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.white)
                 }
             }
-            .navigationDestination(isPresented: $navigateToAnnotationView) {
-                AnnotationView(sharedImageData: sharedImageData,
-                               objectLocation: objectLocation,
-                               selection: sharedImageData.segmentedIndices,
-                               classes: Constants.ClassConstants.classes,
-                               selectedClassesIndices: selection
-                )
-            }
-            .navigationBarTitle("Camera View", displayMode: .inline)
-            .onAppear {
-                if (manager == nil) {
-                    manager = CameraManager(sharedImageData: sharedImageData)
-                } else {
-                    manager?.resumeStream()
+            else {
+                VStack {
+                    SpinnerView()
+                    Text("Camera settings in progress")
+                        .padding(.top, 20)
                 }
             }
-            .onDisappear {
-                manager?.stopStream()
+        }
+        .navigationDestination(isPresented: $navigateToAnnotationView) {
+            AnnotationView(sharedImageData: sharedImageData,
+                           objectLocation: objectLocation,
+                           selection: sharedImageData.segmentedIndices,
+                           classes: Constants.ClassConstants.classes,
+                           selectedClassesIndices: selection
+            )
+        }
+        .navigationBarTitle("Camera View", displayMode: .inline)
+        .onAppear {
+            openChangeset()
+            
+            if (manager == nil) {
+                manager = CameraManager(sharedImageData: sharedImageData)
+            } else {
+                manager?.resumeStream()
             }
+        }
+        .onDisappear {
+            manager?.stopStream()
+        }
     }
+    
+    private func openChangeset() {
+        ChangesetService.shared.openChangeset { result in
+            switch result {
+            case .success(let changesetId):
+                print("Opened changeset with ID: \(changesetId)")
+            case .failure(let error):
+                print("Failed to open changeset: \(error.localizedDescription)")
+            }
+        }
+    }
+
 }
