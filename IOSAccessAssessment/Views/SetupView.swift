@@ -41,10 +41,23 @@ struct SetupView: View {
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
             .navigationBarBackButtonHidden(true)
-            .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
-                Text("Next").foregroundStyle(Color.white).font(.headline)
-            })
+            .navigationBarItems(
+                leading: Button(action: logout) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .foregroundColor(.white)
+                        .bold()
+                },
+                trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
+                    Text("Next").foregroundStyle(Color.white).font(.headline)
+                }
+            )
         }.environment(\.colorScheme, .dark)
+    }
+    
+    private func logout() {
+        
     }
 }
 
