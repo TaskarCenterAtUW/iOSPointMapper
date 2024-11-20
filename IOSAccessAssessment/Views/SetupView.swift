@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SetupView: View {
     @State private var selection = Set<Int>()
+    @EnvironmentObject var userState: UserStateViewModel
     
     var body: some View {
         NavigationStack {
@@ -42,7 +43,9 @@ struct SetupView: View {
             .navigationBarTitle("Setup View", displayMode: .inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(
-                leading: Button(action: logout) {
+                leading: Button(action: {
+                    userState.logout()
+                }) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                         .resizable()
                         .frame(width: 20, height: 20)
@@ -54,10 +57,6 @@ struct SetupView: View {
                 }
             )
         }.environment(\.colorScheme, .dark)
-    }
-    
-    private func logout() {
-        
     }
 }
 

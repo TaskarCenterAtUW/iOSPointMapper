@@ -9,20 +9,16 @@ import SwiftUI
 
 @main
 struct IOSAccessAssessmentApp: App {
-    private let keychainService = KeychainService()
-    @State private var isAuthenticated: Bool
-    
-    init() {
-        let isTokenValid = keychainService.isTokenValid()
-        _isAuthenticated = State(initialValue: isTokenValid)
-    }
+    @StateObject private var userState = UserStateViewModel()
     
     var body: some Scene {
         WindowGroup {
-            if isAuthenticated {
+            if userState.isAuthenticated {
                 SetupView()
+                    .environmentObject(userState)
             } else {
-                LoginView(isAuthenticated: $isAuthenticated)
+                LoginView()
+                    .environmentObject(userState)
             }
         }
     }
