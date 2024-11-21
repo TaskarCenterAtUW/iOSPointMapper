@@ -45,27 +45,33 @@ struct Constants {
             CIColor(red: 1.0, green: 0.0, blue: 1.0),      // Magenta
             CIColor(red: 0.5, green: 0.5, blue: 0.5)       // Gray
         ]
+        
+        static let inputSize: CGSize = CGSize(width: 1024, height: 1024)
     }
     
     struct ClassConstants { // CityScapes
-        static let classes: [String] = ["Unlabeled", "Ego vehicle", "Rectification border", "Out of roi", "Static", "Dynamic", "Ground",
-                                        "Road", "Sidewalk", "Parking", "Rail track", "Building", "Wall", "Fence", "Guard rail", "Bridge",
-                                        "Tunnel", "Pole", "Polegroup", "Traffic light", "Traffic sign", "Vegetation", "Terrain", "Sky", "Person",
-                                        "Rider", "Car", "Truck", "Bus", "Caravan", "Trailer", "Train", "Motorcycle", "Bicycle"
-                                        //, "License plate"
+        static let classes: [String] = [
+//            "Unlabeled", "Ego vehicle", "Rectification border", "Out of roi", "Static",
+            "Dynamic", "Ground",
+            "Road", "Sidewalk", "Parking", "Rail track", "Building", "Wall", "Fence", "Guard rail", "Bridge",
+            "Tunnel", "Pole", "Polegroup", "Traffic light", "Traffic sign", "Vegetation", "Terrain", "Sky", "Person",
+            "Rider", "Car", "Truck", "Bus", "Caravan", "Trailer", "Train", "Motorcycle", "Bicycle"
+            //, "License plate"
         ]
         
-        static let grayValues: [Float] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 
-                                          25, 26, 27, 28, 29, 30, 31, 32, 33
-//                                          , -1
+        static let grayValues: [Float] = [
+//            0, 1, 2, 3, 4,
+            5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31, 32, 33
+//            , -1
         ].map{Float($0)/255.0}
         
         static let grayscaleToClassMap: [UInt8: String] = [
-            0: "Unlabeled",
-            1: "Ego vehicle",
-            2: "Rectification border",
-            3: "Out of roi",
-            4: "Static",
+//            0: "Unlabeled",
+//            1: "Ego vehicle",
+//            2: "Rectification border",
+//            3: "Out of roi",
+//            4: "Static",
             5: "Dynamic",
             6: "Ground",
             7: "Road",
@@ -99,11 +105,11 @@ struct Constants {
         ]
         
         static let colors: [CIColor] = [
-            CIColor(red: 0.0, green: 0.0, blue: 0.0),
-            CIColor(red: 0.0, green: 0.0, blue: 0.0),
-            CIColor(red: 0.0, green: 0.0, blue: 0.0),
-            CIColor(red: 0.0, green: 0.0, blue: 0.0),
-            CIColor(red: 0.0, green: 0.0, blue: 0.0),
+//            CIColor(red: 0.0, green: 0.0, blue: 0.0),
+//            CIColor(red: 0.0, green: 0.0, blue: 0.0),
+//            CIColor(red: 0.0, green: 0.0, blue: 0.0),
+//            CIColor(red: 0.0, green: 0.0, blue: 0.0),
+//            CIColor(red: 0.0, green: 0.0, blue: 0.0),
             CIColor(red: 0.43529411764705883, green: 0.2901960784313726, blue: 0.0),
             CIColor(red: 0.3176470588235294, green: 0.0, blue: 0.3176470588235294),
             CIColor(red: 0.5019607843137255, green: 0.25098039215686274, blue: 0.5019607843137255),
@@ -135,5 +141,24 @@ struct Constants {
             CIColor(red: 0.4666666666666667, green: 0.043137254901960784, blue: 0.12549019607843137),
             CIColor(red: 0.0, green: 0.0, blue: 0.5568627450980392)
         ]
+        
+        static let inputSize: CGSize = CGSize(width: 1024, height: 512)
+    }
+}
+
+class Counter {
+    static let shared = Counter()
+    
+    private(set) var count = 0
+    private(set) var lastFrameTime = Date()
+    
+    private init() {}
+    
+    func increment() {
+        self.count += 1
+    }
+    
+    func update() {
+        self.lastFrameTime = Date()
     }
 }

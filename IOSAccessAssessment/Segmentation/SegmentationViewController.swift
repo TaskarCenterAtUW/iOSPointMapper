@@ -15,16 +15,21 @@ import MetalKit
 
 class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var segmentationView: UIImageView! = nil
+    
     var sharedImageData: SharedImageData?
+    
+    var frameRect: CGRect = CGRect()
     var selection:[Int] = []
     var classes: [String] = []
-//    var grayscaleValue:Float = 180 / 255.0
-//    var singleColor:CIColor = CIColor(red: 0.0, green: 0.5, blue: 0.5)
     
+    var grayscaleValues: [Float]  {
+        return self.selection.map { Constants.ClassConstants.grayValues[$0] }
+    }
+    var colorValues: [CIColor] {
+        return self.selection.map { Constants.ClassConstants.colors[$0] }
+    }
     static var requests = [VNRequest]()
     
-    // define the filter that will convert the grayscale prediction to color image
-    //let masker = ColorMasker()
     // TODO: Check if replacing the custom CIFilter with a plain class would help improve performance.
     //  We are not chaining additional filters, thus using CIFilter doesn't seem to make much sense.
     let masker = GrayscaleToColorCIFilter()
@@ -41,7 +46,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = getFrame()
+        segmentationView.frame = self.frameRect
         segmentationView.contentMode = .scaleAspectFill
         self.view.addSubview(segmentationView)
         self.setupVisionModel()
@@ -64,22 +69,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         SegmentationViewController.requests = [segmentationRequest]
     }
     
-    // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
-    private func getFrame() -> CGRect {
-        let screenSize = UIScreen.main.bounds
-        let screenWidth = screenSize.width
-        let screenHeight = screenSize.height
-        
-        // Currently, the app only supports portrait mode
-        // Hence, we can set the size of the square frame relative to screen width
-        // with the screen height acting as a threshold to support other frames and buttons
-        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
-        
-        let xPosition = (screenWidth - sideLength) / 2
-        
-        return CGRect(x: xPosition, y: sideLength, width: sideLength, height: sideLength)
-    }
-    
     func processSegmentationRequest(_ observations: [Any]){
         
         let obs = observations as! [VNPixelBufferObservation]
@@ -89,25 +78,31 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-//        let segMaskGray = outPixelBuffer.pixelBuffer
-//        let selectedGrayscaleValues: [UInt8] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240]
-//        let (selectedGrayscaleValues, selectedColors) = getGrayScaleAndColorsFromSelection(selection: selection, classes: classes, grayscaleToClassMap: Constants.ClassConstants.grayscaleToClassMap, grayValues: Constants.ClassConstants.grayValues)
         let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
-        self.sharedImageData?.segmentedIndices = selectedIndices
+        let selectedIndicesSet = Set(selectedIndices)
+        let segmentedIndices = self.selection.filter{ selectedIndicesSet.contains($0) }
+        self.sharedImageData?.segmentedIndices = segmentedIndices
+        
+        if (Counter.shared.count < 10) {
+            Counter.shared.increment()
+            print("uniqueGrayscaleValues: \(uniqueGrayscaleValues)")
+            print("selectedIndices: \(selectedIndices)")
+            print("selectedIndicesSet: \(selectedIndicesSet)")
+            print("segmentedIndices: \(segmentedIndices)")
+        }
+        
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
-        let ciImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
-        self.sharedImageData?.pixelBuffer = ciImage
-        //pass through the filter that converts grayscale image to different shades of red
-        self.masker.inputImage = ciImage
+        self.sharedImageData?.pixelBuffer = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        
+        self.masker.inputImage = self.sharedImageData?.pixelBuffer
         
         processSegmentationRequestPerClass()
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
-        self.masker.grayscaleValues = Constants.ClassConstants.grayValues
-        self.masker.colorValues =  Constants.ClassConstants.colors
+        self.masker.grayscaleValues = self.grayscaleValues
+        self.masker.colorValues =  self.colorValues
         self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-        //self.masker.count = 12
     }
     
     // Generate segmentation image for each class
@@ -116,18 +111,15 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             return
         }
         
-        // Initialize an array of classImages
         let totalCount = segmentedIndices.count
         self.sharedImageData?.classImages = [CIImage](repeating: CIImage(), count: totalCount)
         // For each class, extract the separate segment
         for i in segmentedIndices.indices {
             let currentClass = segmentedIndices[i]
-            self.masker.inputImage = self.sharedImageData?.pixelBuffer
+//            self.masker.inputImage = self.sharedImageData?.pixelBuffer // No need to set this every time
             self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
-            self.segmentationView.image = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
             self.sharedImageData?.classImages[i] = self.masker.outputImage!
-//                self.sharedImageData?.classImages[i] = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
         }
     }
     
@@ -156,6 +148,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         
         let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
         
+        // MARK: sorting may not be necessary for our use case
         let selectedIndices = uniqueValues.map { UInt8($0) }
             .map {Float($0) / 255.0 }
             .compactMap { valueToIndex[$0]}
@@ -209,7 +202,8 @@ extension SegmentationViewController {
                 let pixel = rowBase.advanced(by: column)
                 let pixelValue = pixel.load(as: UInt8.self)
                 if !selectedValuesSet.contains(pixelValue) {
-                    pixel.storeBytes(of: 0, as: UInt8.self) // Setting unselected values to 0
+                    // Setting unselected values to 0
+                    pixel.storeBytes(of: 0, as: UInt8.self)
                 }
             }
         }
@@ -220,12 +214,13 @@ extension SegmentationViewController {
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
     var sharedImageData: SharedImageData
+    var frameRect: CGRect
     var selection:[Int]
     var classes: [String]
     
     func makeUIViewController(context: Context) -> SegmentationViewController {
         let viewController = SegmentationViewController(sharedImageData: sharedImageData)
-//        viewController.sharedImageData = sharedImageData
+        viewController.frameRect = frameRect
         viewController.selection = selection
         viewController.classes = classes
         return viewController

@@ -44,8 +44,19 @@ struct ContentView: View {
             VStack {
                 if manager?.dataAvailable ?? false{
                     ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession)
-                        HostedSegmentationViewController(sharedImageData: sharedImageData, selection: Array(selection), classes: Constants.ClassConstants.classes)
+                        HostedCameraViewController(session: manager!.controller.captureSession,
+                                                   frameRect: VerticalFrame.getColumnFrame(
+                                                    width: UIScreen.main.bounds.width,
+                                                    height: UIScreen.main.bounds.height,
+                                                    row: 0)
+                        )
+                        HostedSegmentationViewController(sharedImageData: sharedImageData,
+                                                         frameRect: VerticalFrame.getColumnFrame(
+                                                            width: UIScreen.main.bounds.width,
+                                                            height: UIScreen.main.bounds.height,
+                                                            row: 1),
+                            selection: Array(selection), classes: Constants.ClassConstants.classes
+                        )
                     }
                     Button {
                         objectLocation.setLocationAndHeading()
@@ -71,9 +82,8 @@ struct ContentView: View {
             .navigationDestination(isPresented: $navigateToAnnotationView) {
                 AnnotationView(sharedImageData: sharedImageData,
                                objectLocation: objectLocation,
-                               selection: sharedImageData.segmentedIndices,
                                classes: Constants.ClassConstants.classes,
-                               selectedClassesIndices: selection
+                               selection: selection
                 )
             }
             .navigationBarTitle("Camera View", displayMode: .inline)
