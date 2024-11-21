@@ -131,6 +131,9 @@ class ObjectLocation {
                     }
                 }
             }
+            // In case there is not a single pixel of that class
+            // MARK: We would want a better way to handle this edge case, where we do not pass any information about the object
+            // Else, this code will pass the depth info of location (0, 0)
             numPixels = numPixels == 0 ? 1 : numPixels
             let gravityX = floor(Double(sumX) * 4 / Double(numPixels))
             let gravityY = floor(Double(sumY) * 4 / Double(numPixels))
