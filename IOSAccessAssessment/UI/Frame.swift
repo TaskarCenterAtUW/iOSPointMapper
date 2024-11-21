@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct VerticalFrame {
-    // This is a temporary function that is used to assign CGRect to the frame of a layer
+    // MARK: This is a temporary function that is used to assign CGRect to the frame of a layer
+    // Later, we will be refactoring the app with a more AutoLayout reliable solution
     // Currently, goes with the assumption that we want to display frames only in a single column (hence only row is an argument)
     static func getColumnFrame(width: Double, height: Double, row: Int) -> CGRect {
         // Currently, the app only supports portrait mode

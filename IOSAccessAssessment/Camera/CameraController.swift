@@ -138,6 +138,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         var imageRequestHandler: VNImageRequestHandler
         
+        // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.height,
             height: Constants.ClassConstants.inputSize.width
@@ -152,7 +153,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
+        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize)
         guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
         // Get pixel buffer to process depth data,
