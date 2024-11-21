@@ -40,6 +40,7 @@ struct SetupView: View {
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
+            .navigationBarBackButtonHidden(true)
             .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
