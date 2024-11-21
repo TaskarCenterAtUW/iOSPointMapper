@@ -82,9 +82,8 @@ struct ContentView: View {
             .navigationDestination(isPresented: $navigateToAnnotationView) {
                 AnnotationView(sharedImageData: sharedImageData,
                                objectLocation: objectLocation,
-                               segmentedIndices: sharedImageData.segmentedIndices,
                                classes: Constants.ClassConstants.classes,
-                               selectedClassesIndices: selection
+                               selection: selection
                 )
             }
             .navigationBarTitle("Camera View", displayMode: .inline)

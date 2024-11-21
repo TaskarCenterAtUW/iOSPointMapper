@@ -15,8 +15,11 @@ struct AnnotationView: View {
     }
     
     @ObservedObject var sharedImageData: SharedImageData
+    
     var objectLocation: ObjectLocation
-    @State var segmentedIndices: [Int]
+    var classes: [String]
+    var selection: [Int]
+    
     @State private var index = 0
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
@@ -24,8 +27,6 @@ struct AnnotationView: View {
     @State private var tempSelectedClassIndex: Int = 0
     @Environment(\.dismiss) var dismiss
     
-    var classes: [String]
-    var selectedClassesIndices: [Int]
     let options = AnnotationOption.allCases
     
     var body: some View {
@@ -58,7 +59,7 @@ struct AnnotationView: View {
                     }
                     HStack {
                         Spacer()
-                        Text("Selected class: \(classes[segmentedIndices[index]])")
+                        Text("Selected class: \(classes[sharedImageData.segmentedIndices[index]])")
                         Spacer()
                     }
                     
@@ -73,7 +74,7 @@ struct AnnotationView: View {
                                     
                                     if option == .misidentified {
                                         selectedClassIndex = index
-                                        tempSelectedClassIndex = segmentedIndices[index]
+                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
                                         isShowingClassSelectionModal = true
                                     }
                                 }) {
@@ -113,16 +114,17 @@ struct AnnotationView: View {
             }
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
-                    let filteredClasses = selectedClassesIndices.map { classes[$0] }
+                    let filteredClasses = selection.map { classes[$0] }
                     
                     // mapping between filtered and non-filtered
-                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: segmentedIndices[selectedClassIndex]) ?? 0
+                    let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
                     
-                    let selectedClassBinding = Binding(
+                    let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
                         get: { selectedFilteredIndex },
                         set: { newValue in
-                            let originalIndex = selectedClassesIndices[newValue]
-                            segmentedIndices[selectedClassIndex] = originalIndex
+                            let originalIndex = selection[newValue]
+                            // Update the segmentedIndices inside sharedImageData
+                            sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
                         }
                     )
                     
@@ -137,7 +139,7 @@ struct AnnotationView: View {
     }
     
     func isValid() -> Bool {
-        if (self.segmentedIndices.isEmpty || (index >= self.segmentedIndices.count)) {
+        if (self.sharedImageData.segmentedIndices.isEmpty || (index >= self.sharedImageData.segmentedIndices.count)) {
             return false
         }
         return true
@@ -153,7 +155,7 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        return Float(self.index) / Float(self.segmentedIndices.count)
+        return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
 }
 
