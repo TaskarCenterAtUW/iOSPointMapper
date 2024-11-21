@@ -16,7 +16,7 @@ struct AnnotationView: View {
     
     @ObservedObject var sharedImageData: SharedImageData
     var objectLocation: ObjectLocation
-    @State var selection: [Int]
+    @State var segmentedIndices: [Int]
     @State private var index = 0
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
@@ -58,7 +58,7 @@ struct AnnotationView: View {
                     }
                     HStack {
                         Spacer()
-                        Text("Selected class: \(classes[selection[index]])")
+                        Text("Selected class: \(classes[segmentedIndices[index]])")
                         Spacer()
                     }
                     
@@ -73,7 +73,7 @@ struct AnnotationView: View {
                                     
                                     if option == .misidentified {
                                         selectedClassIndex = index
-                                        tempSelectedClassIndex = selection[index]
+                                        tempSelectedClassIndex = segmentedIndices[index]
                                         isShowingClassSelectionModal = true
                                     }
                                 }) {
@@ -116,13 +116,13 @@ struct AnnotationView: View {
                     let filteredClasses = selectedClassesIndices.map { classes[$0] }
                     
                     // mapping between filtered and non-filtered
-                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: selection[selectedClassIndex]) ?? 0
+                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: segmentedIndices[selectedClassIndex]) ?? 0
                     
                     let selectedClassBinding = Binding(
                         get: { selectedFilteredIndex },
                         set: { newValue in
                             let originalIndex = selectedClassesIndices[newValue]
-                            selection[selectedClassIndex] = originalIndex
+                            segmentedIndices[selectedClassIndex] = originalIndex
                         }
                     )
                     
@@ -137,7 +137,7 @@ struct AnnotationView: View {
     }
     
     func isValid() -> Bool {
-        if (self.selection.isEmpty || (index >= self.selection.count)) {
+        if (self.segmentedIndices.isEmpty || (index >= self.segmentedIndices.count)) {
             return false
         }
         return true
@@ -153,7 +153,7 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        return Float(self.index) / Float(self.selection.count)
+        return Float(self.index) / Float(self.segmentedIndices.count)
     }
 }
 

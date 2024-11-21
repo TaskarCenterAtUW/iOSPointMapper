@@ -82,7 +82,7 @@ struct ContentView: View {
             .navigationDestination(isPresented: $navigateToAnnotationView) {
                 AnnotationView(sharedImageData: sharedImageData,
                                objectLocation: objectLocation,
-                               selection: sharedImageData.segmentedIndices,
+                               segmentedIndices: sharedImageData.segmentedIndices,
                                classes: Constants.ClassConstants.classes,
                                selectedClassesIndices: selection
                 )
