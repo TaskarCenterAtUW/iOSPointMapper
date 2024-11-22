@@ -23,6 +23,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     @Published var orientation = UIDevice.current.orientation
     @Published var processingCapturedResult = false
     @Published var dataAvailable = false
+    // MARK: Is there a good reason for sharedImageData to be a Published variable?
     @Published var sharedImageData: SharedImageData?
     
     let controller: CameraController

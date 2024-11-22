@@ -11,7 +11,9 @@ import SwiftUI
 struct Constants {
     // Supported Classes
     struct VOCConstants {
-        static let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable", "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"]
+        static let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable",
+//                              "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"
+        ]
         
         static let grayValues: [Float] = [12, 36, 48, 84, 96, 108, 132, 144, 180, 216, 228, 240].map{Float($0)/255.0}
         
@@ -30,6 +32,8 @@ struct Constants {
             240: "Diningtable"
         ]
         
+        // Note: Do not use black (0, 0, 0) color, as significant portion of object detection relies on
+        //  treating black color as no object in a segmentation mask
         static let colors: [CIColor] = [
             CIColor(red: 1.0, green: 0.0, blue: 0.0),      // Red
             CIColor(red: 0.0, green: 1.0, blue: 0.0),      // Green
@@ -66,6 +70,8 @@ struct Constants {
 //            , -1
         ].map{Float($0)/255.0}
         
+        // Note: Do not use black (0, 0, 0) color, as significant portion of object detection relies on
+        //  treating black color as no object in a segmentation mask
         static let grayscaleToClassMap: [UInt8: String] = [
 //            0: "Unlabeled",
 //            1: "Ego vehicle",
