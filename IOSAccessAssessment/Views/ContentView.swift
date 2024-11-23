@@ -75,7 +75,8 @@ struct ContentView: View {
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
                 if (manager == nil) {
-                    segmentationModel.updateSegmentationRequests(selection: selection)
+                    segmentationModel.updateSegmentationRequest(selection: selection)
+                    segmentationModel.updatePerClassSegmentationRequest(selection: selection)
                     manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
                 } else {
                     manager?.resumeStream()

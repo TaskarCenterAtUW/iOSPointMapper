@@ -37,7 +37,7 @@ class SegmentationModel: ObservableObject {
         self.visionModel = visionModel
     }
     
-    func updateSegmentationRequests(selection: [Int]) {
+    func updateSegmentationRequest(selection: [Int]) {
         let segmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
                 if let results = request.results {
@@ -47,16 +47,6 @@ class SegmentationModel: ObservableObject {
         })
         segmentationRequests.imageCropAndScaleOption = .scaleFill
         self.segmentationRequests = [segmentationRequests]
-        
-        let perClassSegmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
-            DispatchQueue.main.async(execute: {
-                if let results = request.results {
-                    self.processPerClassSegmentationRequest(results, selection)
-                }
-            })
-        })
-        perClassSegmentationRequests.imageCropAndScaleOption = .scaleFill
-        self.perClassSegmentationRequests = [perClassSegmentationRequests]
     }
     
     func processSegmentationRequest(_ observations: [Any], _ selection: [Int]){
@@ -98,6 +88,18 @@ class SegmentationModel: ObservableObject {
 //            self.isSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
+    }
+    
+    func updatePerClassSegmentationRequest(selection: [Int]) {
+        let perClassSegmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
+            DispatchQueue.main.async(execute: {
+                if let results = request.results {
+                    self.processPerClassSegmentationRequest(results, selection)
+                }
+            })
+        })
+        perClassSegmentationRequests.imageCropAndScaleOption = .scaleFill
+        self.perClassSegmentationRequests = [perClassSegmentationRequests]
     }
     
     func processPerClassSegmentationRequest(_ observations: [Any], _ selection: [Int]){
@@ -142,7 +144,10 @@ class SegmentationModel: ObservableObject {
             print("Error performing request: \(error.localizedDescription)")
         }
     }
-    
+}
+
+// Private helper functions
+extension SegmentationModel {
     private func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
         var uniqueValues = Set<UInt8>()
         
@@ -176,12 +181,9 @@ class SegmentationModel: ObservableObject {
             
         return (uniqueValues, selectedIndices)
     }
-}
-
-// Functions not currently in use
-extension SegmentationViewController {
+    
     // Get the grayscale values and the corresponding colors
-    func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+    private func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
         var selectedGrayscaleValues: [UInt8] = []
         var selectedColors: [CIColor] = []
@@ -199,7 +201,7 @@ extension SegmentationViewController {
         return (selectedGrayscaleValues, selectedColors)
     }
     
-    func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
+    private func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
         CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
         let width = CVPixelBufferGetWidth(pixelBuffer)
         let height = CVPixelBufferGetHeight(pixelBuffer)
