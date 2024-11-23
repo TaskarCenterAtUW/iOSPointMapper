@@ -53,13 +53,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer) {
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
-                // TODO: Check if the reason the cameraImage and depthData are being set synchronously
-                // is the AVCaptureDataOutputSynchronizer
-                self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-                self.sharedImageData?.depthData = cvPixel
+                self.sharedImageData?.cameraImage = UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
+                self.sharedImageData?.depthData = depthPixelBuffer
 //                let context = CIContext()
 //                let ciImage = CIImage(cvPixelBuffer: cvPixel)
 //                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }

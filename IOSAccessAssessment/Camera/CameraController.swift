@@ -11,7 +11,7 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -179,7 +179,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         
-        delegate?.onNewData(cgImage: cgImage, cvPixel: finalDepthPixelBuffer)
+        delegate?.onNewData(cameraImage: cgImage, depthPixelBuffer: finalDepthPixelBuffer)
         
         do {
             try imageRequestHandler.perform(SegmentationViewController.requests)
