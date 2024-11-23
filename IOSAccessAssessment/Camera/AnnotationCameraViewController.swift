@@ -46,9 +46,7 @@ class AnnotationCameraViewController: UIViewController {
 }
 
 struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
-//    var cameraImage: UIImage
-//    var segmentationImage: UIImage
-    let sharedImageData: SharedImageData
+    @EnvironmentObject var sharedImageData: SharedImageData
     let index: Int
     var frameRect: CGRect
     

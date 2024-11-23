@@ -12,6 +12,8 @@ import simd
 import AVFoundation
 
 class CameraManager: ObservableObject, CaptureDataReceiver {
+    
+    var sharedImageData: SharedImageData?
 
     @Published var isFilteringDepth: Bool {
         didSet {
@@ -23,20 +25,17 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     @Published var orientation = UIDevice.current.orientation
     @Published var processingCapturedResult = false
     @Published var dataAvailable = false
-    // MARK: Is there a good reason for sharedImageData to be a Published variable?
-    @Published var sharedImageData: SharedImageData?
     
     let controller: CameraController
     var cancellables = Set<AnyCancellable>()
     var session: AVCaptureSession { controller.captureSession }
     
     init(sharedImageData: SharedImageData) {
-        
         self.sharedImageData = sharedImageData
+        
         controller = CameraController()
         isFilteringDepth = true
         controller.startStream()
-//        isFilteringDepth = controller.isFilteringEnabled
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.orientation = UIDevice.current.orientation

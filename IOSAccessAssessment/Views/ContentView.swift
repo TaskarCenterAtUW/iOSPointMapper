@@ -29,7 +29,7 @@ class SharedImageData_: ObservableObject {
 struct ContentView: View {
     var selection: [Int]
     
-    @ObservedObject private var sharedImageData = SharedImageData()
+    @EnvironmentObject var sharedImageData: SharedImageData
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
@@ -50,8 +50,7 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(sharedImageData: sharedImageData,
-                                                         frameRect: VerticalFrame.getColumnFrame(
+                        HostedSegmentationViewController(frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
                                                             row: 1),
@@ -80,8 +79,7 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(isPresented: $navigateToAnnotationView) {
-                AnnotationView(sharedImageData: sharedImageData,
-                               objectLocation: objectLocation,
+                AnnotationView(objectLocation: objectLocation,
                                classes: Constants.ClassConstants.classes,
                                selection: selection
                 )

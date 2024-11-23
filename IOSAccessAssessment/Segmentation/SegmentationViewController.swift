@@ -212,7 +212,7 @@ extension SegmentationViewController {
 }
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
-    var sharedImageData: SharedImageData
+    @EnvironmentObject var sharedImageData: SharedImageData
     var frameRect: CGRect
     var selection:[Int]
     var classes: [String]
