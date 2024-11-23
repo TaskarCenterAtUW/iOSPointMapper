@@ -93,9 +93,8 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
         
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
-        self.sharedImageData?.pixelBuffer = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         
-        self.masker.inputImage = self.sharedImageData?.pixelBuffer
+        self.masker.inputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         
         processSegmentationRequestPerClass()
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image

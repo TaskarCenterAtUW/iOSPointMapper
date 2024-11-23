@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SetupView: View {
     @State private var selection = Set<Int>()
+    @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     
     var body: some View {
         NavigationStack {
@@ -36,7 +37,6 @@ struct SetupView: View {
                         }
                     }
                 }
-//                .environment(\.colorScheme, .dark)
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
@@ -44,7 +44,12 @@ struct SetupView: View {
             .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
-        }.environment(\.colorScheme, .dark)
+            .onAppear {
+                self.sharedImageData.refreshData()
+            }
+        }
+        .environmentObject(self.sharedImageData)
+        .environment(\.colorScheme, .dark)
     }
 }
 

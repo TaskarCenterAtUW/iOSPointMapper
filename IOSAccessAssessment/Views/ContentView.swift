@@ -12,7 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-class SharedImageData: ObservableObject {
+class SharedImageData_: ObservableObject {
     @Published var cameraImage: UIImage?
     @Published var depthData: CVPixelBuffer?
 //    @Published var depthDataImage: UIImage?
@@ -29,7 +29,7 @@ class SharedImageData: ObservableObject {
 struct ContentView: View {
     var selection: [Int]
     
-    @StateObject private var sharedImageData = SharedImageData()
+    @ObservedObject private var sharedImageData = SharedImageData()
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
