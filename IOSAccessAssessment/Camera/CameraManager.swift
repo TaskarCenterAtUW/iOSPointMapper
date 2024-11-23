@@ -14,6 +14,7 @@ import AVFoundation
 class CameraManager: ObservableObject, CaptureDataReceiver {
     
     var sharedImageData: SharedImageData?
+    var segmentationModel: SegmentationModel?
 
     @Published var isFilteringDepth: Bool {
         didSet {
@@ -30,8 +31,9 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     var cancellables = Set<AnyCancellable>()
     var session: AVCaptureSession { controller.captureSession }
     
-    init(sharedImageData: SharedImageData) {
+    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel) {
         self.sharedImageData = sharedImageData
+        self.segmentationModel = segmentationModel
         
         controller = CameraController()
         isFilteringDepth = true

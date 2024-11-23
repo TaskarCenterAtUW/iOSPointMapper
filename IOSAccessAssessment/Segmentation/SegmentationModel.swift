@@ -12,7 +12,7 @@ import CoreML
 // This Segmentation Model can perform two kinds of requests
 // All-class segmentation (only one output image) and Per class segmentation (one image per class)
 class SegmentationModel: ObservableObject {
-    @Published var segmentationResults: Any?
+    @Published var segmentationResults: UIImage?
     // Not in use for the current system. All usages have been commented out
     @Published var isSegmentationProcessing: Bool = false
     private(set) var segmentationRequests: [VNRequest] = []
@@ -175,5 +175,59 @@ class SegmentationModel: ObservableObject {
             .sorted()
             
         return (uniqueValues, selectedIndices)
+    }
+}
+
+// Functions not currently in use
+extension SegmentationViewController {
+    // Get the grayscale values and the corresponding colors
+    func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+        let selectedClasses = selection.map { classes[$0] }
+        var selectedGrayscaleValues: [UInt8] = []
+        var selectedColors: [CIColor] = []
+
+        for (key, value) in grayscaleToClassMap {
+            if !selectedClasses.contains(value) { continue }
+            selectedGrayscaleValues.append(key)
+            // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
+            if let index = grayValues.firstIndex(of: Float(key)) {
+                selectedColors.append(Constants.ClassConstants.colors[index])
+                // Fetch corresponding color using the same index
+            }
+        }
+
+        return (selectedGrayscaleValues, selectedColors)
+    }
+    
+    func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
+        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let buffer = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+        let pixelBufferFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        
+        guard pixelBufferFormat == kCVPixelFormatType_OneComponent8 else {
+            print("Pixel buffer format is not 8-bit grayscale.")
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
+            return
+        }
+
+        let selectedValuesSet = Set(selectedValues) // Improve lookup performance
+        
+        for row in 0..<height {
+            let rowBase = buffer!.advanced(by: row * bytesPerRow)
+            for column in 0..<width {
+                let pixel = rowBase.advanced(by: column)
+                let pixelValue = pixel.load(as: UInt8.self)
+                if !selectedValuesSet.contains(pixelValue) {
+                    // Setting unselected values to 0
+                    pixel.storeBytes(of: 0, as: UInt8.self)
+                }
+            }
+        }
+
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
     }
 }

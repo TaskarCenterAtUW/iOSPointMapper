@@ -16,6 +16,8 @@ struct ContentView: View {
     var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
+    @EnvironmentObject var segmentationModel: SegmentationModel
+    
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
@@ -73,7 +75,8 @@ struct ContentView: View {
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
                 if (manager == nil) {
-                    manager = CameraManager(sharedImageData: sharedImageData)
+                    segmentationModel.updateSegmentationRequests(selection: selection)
+                    manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
                 } else {
                     manager?.resumeStream()
                 }

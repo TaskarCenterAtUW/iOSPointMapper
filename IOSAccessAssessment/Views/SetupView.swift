@@ -10,6 +10,7 @@ import SwiftUI
 struct SetupView: View {
     @State private var selection = Set<Int>()
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
+    @StateObject private var segmentationModel: SegmentationModel = SegmentationModel()
     
     var body: some View {
         NavigationStack {
@@ -49,6 +50,7 @@ struct SetupView: View {
             }
         }
         .environmentObject(self.sharedImageData)
+        .environmentObject(self.segmentationModel)
         .environment(\.colorScheme, .dark)
     }
 }
