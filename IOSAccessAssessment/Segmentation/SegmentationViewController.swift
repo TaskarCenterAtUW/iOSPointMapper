@@ -70,7 +70,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     }
     
     func processSegmentationRequest(_ observations: [Any]){
-        
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
@@ -78,7 +77,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         }
 
         let outPixelBuffer = (obs.first)!
-        let (uniqueGrayscaleValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = self.selection.filter{ selectedIndicesSet.contains($0) }
@@ -113,7 +112,10 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             self.sharedImageData?.classImages[i] = self.masker.outputImage!
         }
     }
-    
+}
+
+// Image Processing Functions
+extension SegmentationViewController {
     func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
         var uniqueValues = Set<UInt8>()
         

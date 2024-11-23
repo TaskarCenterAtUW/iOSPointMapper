@@ -24,6 +24,7 @@
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
+		A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
 		CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA9477A2CDE70D5000C6918 /* KeychainService.swift */; };
@@ -79,6 +80,7 @@
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImageData.swift; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
+		A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModel.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		CAA9477A2CDE70D5000C6918 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
 			isa = PBXGroup;
 			children = (
+				A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */,
 				552D9A3C2BE0378E00E17E70 /* kernel.metal */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 				DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */,
@@ -415,6 +418,7 @@
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
+				A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
