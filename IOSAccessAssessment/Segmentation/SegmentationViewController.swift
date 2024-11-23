@@ -84,14 +84,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         let segmentedIndices = self.selection.filter{ selectedIndicesSet.contains($0) }
         self.sharedImageData?.segmentedIndices = segmentedIndices
         
-        if (Counter.shared.count < 10) {
-            Counter.shared.increment()
-            print("uniqueGrayscaleValues: \(uniqueGrayscaleValues)")
-            print("selectedIndices: \(selectedIndices)")
-            print("selectedIndicesSet: \(selectedIndicesSet)")
-            print("segmentedIndices: \(segmentedIndices)")
-        }
-        
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
         
         self.masker.inputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
