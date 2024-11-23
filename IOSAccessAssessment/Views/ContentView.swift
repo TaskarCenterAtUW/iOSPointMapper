@@ -12,20 +12,6 @@ import Metal
 import CoreImage
 import MetalKit
 
-class SharedImageData_: ObservableObject {
-    @Published var cameraImage: UIImage?
-    @Published var depthData: CVPixelBuffer?
-//    @Published var depthDataImage: UIImage?
-    
-    @Published var pixelBuffer: CIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    
-    @Published var segmentedIndices: [Int] = []
-    // Single segmentation image for each class
-    @Published var classImages: [CIImage] = []
-}
-
 struct ContentView: View {
     var selection: [Int]
     
