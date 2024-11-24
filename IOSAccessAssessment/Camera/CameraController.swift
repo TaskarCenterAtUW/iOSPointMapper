@@ -174,14 +174,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
-//        imageRequestHandler = VNImageRequestHandler(cgImage: cameraImage, orientation: .right, options: [:])
-        
         delegate?.onNewData(cameraImage: cameraImage, depthPixelBuffer: finalDepthPixelBuffer)
-        
-//        do {
-//            try imageRequestHandler.perform(SegmentationViewController.requests)
-//        } catch {
-//            print(error)
-//        }
     }
 }
