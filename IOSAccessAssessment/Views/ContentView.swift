@@ -46,7 +46,7 @@ struct ContentView: View {
                         )
                     }
                     Button {
-                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage)
+                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
 //                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -77,7 +77,8 @@ struct ContentView: View {
             .onAppear {
                 if (manager == nil) {
                     segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
-                    segmentationModel.updatePerClassSegmentationRequest(selection: selection)
+                    segmentationModel.updatePerClassSegmentationRequest(selection: selection,
+                                                                        completion: updatePerClassImageSegmentation)
                     manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
                 } else {
                     manager?.resumeStream()
@@ -97,10 +98,12 @@ struct ContentView: View {
         }
     }
     
-    private func updatePerClassImageSegmentation(result: Result<[CIImage], Error>) -> Void {
+    private func updatePerClassImageSegmentation(result: Result<PerClassSegmentationResultsOutput, Error>) -> Void {
         switch result {
-        case .success(let perClassSegmentationResult):
-            navigateToAnnotationView = true
+        case .success(let output):
+            self.sharedImageData.classImages = output.perClassSegmentationResults
+            self.sharedImageData.segmentedIndices = output.segmentedIndices
+            self.navigateToAnnotationView = true
             return
         case .failure(let error):
             fatalError("Unable to process per-class segmentation \(error.localizedDescription)")

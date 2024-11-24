@@ -23,6 +23,16 @@ enum SegmentationError: Error, LocalizedError {
     }
 }
 
+struct PerClassSegmentationResultsOutput {
+    var perClassSegmentationResults: [CIImage]
+    var segmentedIndices: [Int]
+    
+    init(perClassSegmentationResults: [CIImage], segmentedIndices: [Int]) {
+        self.perClassSegmentationResults = perClassSegmentationResults
+        self.segmentedIndices = segmentedIndices
+    }
+}
+
 // This Segmentation Model can perform two kinds of requests
 // All-class segmentation (only one output image) and Per class segmentation (one image per class)
 class SegmentationModel: ObservableObject {
@@ -113,7 +123,7 @@ class SegmentationModel: ObservableObject {
         }
     }
     
-    func updatePerClassSegmentationRequest(selection: [Int], completion: @escaping (Result<[CIImage], Error>) -> Void) {
+    func updatePerClassSegmentationRequest(selection: [Int], completion: @escaping (Result<PerClassSegmentationResultsOutput, Error>) -> Void) {
         let perClassSegmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
                 if let results = request.results {
@@ -126,7 +136,7 @@ class SegmentationModel: ObservableObject {
     }
     
     func processPerClassSegmentationRequest(_ observations: [Any], _ selection: [Int],
-                                            completion: @escaping (Result<[CIImage], Error>) -> Void){
+                                            completion: @escaping (Result<PerClassSegmentationResultsOutput, Error>) -> Void){
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
@@ -154,7 +164,9 @@ class SegmentationModel: ObservableObject {
         
         self.perClassSegmentationResults = perClassSegmentationResults
         if let perClassSegmentationImages = self.perClassSegmentationResults {
-            completion(.success(perClassSegmentationImages))
+            completion(.success(PerClassSegmentationResultsOutput(
+                perClassSegmentationResults: perClassSegmentationResults, segmentedIndices: segmentedIndices
+            )))
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))
         }
@@ -165,9 +177,10 @@ class SegmentationModel: ObservableObject {
         //        guard !isSegmentationProcessing else { return }
 
         //        isSegmentationProcessing = true
+        print("performPerClassSegmentationRequest")
         let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         do {
-            try handler.perform(self.segmentationRequests)
+            try handler.perform(self.perClassSegmentationRequests)
         } catch {
 //            self.isPerClassSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")

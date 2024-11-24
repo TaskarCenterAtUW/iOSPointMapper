@@ -7,7 +7,10 @@
 import SwiftUI
 
 class SharedImageData: ObservableObject {
-    @Published var cameraImage: UIImage?
+    // MARK: Eventually, move on to using CVPixelBuffer directly
+    // as there is no reason to be using CGImage other than crop to center
+    // we can find CVPixelBuffer-specific method for this as well
+    @Published var cameraImage: CGImage?
     @Published var depthData: CVPixelBuffer?
     
     @Published var segmentedIndices: [Int] = []

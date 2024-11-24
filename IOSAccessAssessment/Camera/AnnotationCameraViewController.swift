@@ -17,7 +17,7 @@ class AnnotationCameraViewController: UIViewController {
     var frameRect: CGRect = CGRect()
     
     init(sharedImageData: SharedImageData, index: Int) {
-        self.cameraImage = sharedImageData.cameraImage
+        self.cameraImage = UIImage(cgImage: sharedImageData.cameraImage!, scale: 1.0, orientation: .right)
         self.segmentationImage = sharedImageData.classImages[index]
         super.init(nibName: nil, bundle: nil)
     }
@@ -57,7 +57,7 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
     }
     
     func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
-        uiViewController.cameraImage = sharedImageData.cameraImage
+        uiViewController.cameraImage = UIImage(cgImage: sharedImageData.cameraImage!, scale: 1.0, orientation: .right)
         uiViewController.segmentationImage = sharedImageData.classImages[index]
         uiViewController.viewDidLoad()
     }
