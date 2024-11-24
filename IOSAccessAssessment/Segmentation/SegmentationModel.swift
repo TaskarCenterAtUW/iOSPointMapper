@@ -9,17 +9,32 @@ import SwiftUI
 import Vision
 import CoreML
 
+enum SegmentationError: Error, LocalizedError {
+    case emptySegmentation
+    case invalidSegmentation
+    
+    var errorDescription: String? {
+        switch self {
+        case .emptySegmentation:
+            return "The Segmentation array is Empty"
+        case .invalidSegmentation:
+            return "The Segmentation is invalid"
+        }
+    }
+}
+
 // This Segmentation Model can perform two kinds of requests
 // All-class segmentation (only one output image) and Per class segmentation (one image per class)
 class SegmentationModel: ObservableObject {
     @Published var segmentationResults: UIImage?
     // Not in use for the current system. All usages have been commented out
-    @Published var isSegmentationProcessing: Bool = false
-    private(set) var segmentationRequests: [VNRequest] = []
+//    @Published
+    var isSegmentationProcessing: Bool = false
+    private(set) var segmentationRequests: [VNRequest] = [VNRequest]()
     
     @Published var perClassSegmentationResults: [Any]?
     @Published var isPerClassSegmentationProcessing: Bool = false
-    private(set) var perClassSegmentationRequests: [VNRequest] = []
+    private(set) var perClassSegmentationRequests: [VNRequest] = [VNRequest]()
     
     @Published var segmentedIndices: [Int] = []
     
@@ -30,18 +45,18 @@ class SegmentationModel: ObservableObject {
     let masker = GrayscaleToColorCIFilter()
 
     init() {
-        let modelURL = Bundle.main.url(forResource: "deeplabv3plus_mobilenet", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
     }
     
-    func updateSegmentationRequest(selection: [Int]) {
+    func updateSegmentationRequest(selection: [Int], completion: @escaping (Result<UIImage, Error>) -> Void) {
         let segmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
                 if let results = request.results {
-                    self.processSegmentationRequest(results, selection)
+                    self.processSegmentationRequest(results, selection, completion: completion)
                 }
             })
         })
@@ -49,10 +64,12 @@ class SegmentationModel: ObservableObject {
         self.segmentationRequests = [segmentationRequests]
     }
     
-    func processSegmentationRequest(_ observations: [Any], _ selection: [Int]){
+    func processSegmentationRequest(_ observations: [Any], _ selection: [Int],
+                                    completion: @escaping (Result<UIImage, Error>) -> Void){
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
+            completion(.failure(SegmentationError.emptySegmentation))
             return
         }
 
@@ -74,14 +91,18 @@ class SegmentationModel: ObservableObject {
         self.segmentedIndices = segmentedIndices
         segmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //        isSegmentationProcessing = false
+        if let segmentationImage = segmentationResults {
+            completion(.success(segmentationImage))
+        } else {
+            completion(.failure(SegmentationError.invalidSegmentation))
+        }
     }
 
-    func performSegmentationRequest(with pixelBuffer: CVPixelBuffer) {
+    func performSegmentationRequest(with cgImage: CGImage) {
 //        guard !isSegmentationProcessing else { return }
 
 //        isSegmentationProcessing = true
-
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.segmentationRequests)
         } catch {

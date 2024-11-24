@@ -16,7 +16,7 @@ import MetalKit
 class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     var segmentationView: UIImageView! = nil
     
-    var sharedImageData: SharedImageData?
+    var segmentationImage: UIImage?
     
     var frameRect: CGRect = CGRect()
     var selection:[Int] = []
@@ -34,9 +34,9 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     //  We are not chaining additional filters, thus using CIFilter doesn't seem to make much sense.
 //    let masker = GrayscaleToColorCIFilter()
     
-    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel) {
-        self.sharedImageData = sharedImageData
-        self.segmentationView.image = segmentationModel.segmentationResults
+    init(segmentationImage: UIImage?) {
+        self.segmentationView = UIImageView()
+        self.segmentationImage = segmentationImage
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -49,6 +49,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
         segmentationView.frame = self.frameRect
         segmentationView.contentMode = .scaleAspectFill
         self.view.addSubview(segmentationView)
+        self.segmentationView.image = self.segmentationImage
 //        self.setupVisionModel()
     }
     
@@ -152,21 +153,17 @@ extension SegmentationViewController {
 }
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
-    @EnvironmentObject var sharedImageData: SharedImageData
-    @EnvironmentObject var segmentationModel: SegmentationModel
+    @Binding var segmentationImage: UIImage?
     var frameRect: CGRect
-    var selection:[Int]
-    var classes: [String]
     
     func makeUIViewController(context: Context) -> SegmentationViewController {
-        let viewController = SegmentationViewController(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
+        let viewController = SegmentationViewController(segmentationImage: segmentationImage)
         viewController.frameRect = frameRect
-        viewController.selection = selection
-        viewController.classes = classes
         return viewController
     }
     
-    func updateUIViewController(_ uiView: SegmentationViewController, context: Context) {
+    func updateUIViewController(_ uiViewController: SegmentationViewController, context: Context) {
+        uiViewController.segmentationView.image = segmentationImage
     }
 }
 

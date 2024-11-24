@@ -10,6 +10,7 @@ import SwiftUI
 import Combine
 import simd
 import AVFoundation
+import Vision
 
 class CameraManager: ObservableObject, CaptureDataReceiver {
     
@@ -55,11 +56,13 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) {
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) -> Void {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
                 self.sharedImageData?.cameraImage = UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthData = depthPixelBuffer
+                
+                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
 //                let context = CIContext()
 //                let ciImage = CIImage(cvPixelBuffer: cvPixel)
 //                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }

@@ -38,11 +38,11 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(frameRect: VerticalFrame.getColumnFrame(
+                        HostedSegmentationViewController(segmentationImage: $segmentationModel.segmentationResults,
+                                                         frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
-                                                            row: 1),
-                            selection: Array(selection), classes: Constants.ClassConstants.classes
+                                                            row: 1)
                         )
                     }
                     Button {
@@ -75,7 +75,7 @@ struct ContentView: View {
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
                 if (manager == nil) {
-                    segmentationModel.updateSegmentationRequest(selection: selection)
+                    segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
                     segmentationModel.updatePerClassSegmentationRequest(selection: selection)
                     manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
                 } else {
@@ -85,5 +85,14 @@ struct ContentView: View {
             .onDisappear {
                 manager?.stopStream()
             }
+    }
+    
+    private func updateSharedImageSegmentation(result: Result<UIImage, Error>) -> Void {
+        switch result {
+        case .success(let segmentationResult):
+            return
+        case .failure(let error):
+            fatalError("Unable to process segmentation \(error.localizedDescription)")
+        }
     }
 }

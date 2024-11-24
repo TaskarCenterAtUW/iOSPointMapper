@@ -136,8 +136,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Retrieve the synchronized depth and sample buffer container objects.
         guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
-        var imageRequestHandler: VNImageRequestHandler
-        
         // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.height,
@@ -176,14 +174,14 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
-        imageRequestHandler = VNImageRequestHandler(cgImage: cameraImage, orientation: .right, options: [:])
+//        imageRequestHandler = VNImageRequestHandler(cgImage: cameraImage, orientation: .right, options: [:])
         
         delegate?.onNewData(cameraImage: cameraImage, depthPixelBuffer: finalDepthPixelBuffer)
         
-        do {
-            try imageRequestHandler.perform(SegmentationViewController.requests)
-        } catch {
-            print(error)
-        }
+//        do {
+//            try imageRequestHandler.perform(SegmentationViewController.requests)
+//        } catch {
+//            print(error)
+//        }
     }
 }

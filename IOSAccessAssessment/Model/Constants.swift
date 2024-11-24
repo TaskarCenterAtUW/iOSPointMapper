@@ -10,7 +10,7 @@ import SwiftUI
 // Constants related to the supported classes
 struct Constants {
     // Supported Classes
-    struct VOCConstants {
+    struct ClassConstants {
         static let classes = ["Background", "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus", "Car", "Cat", "Chair", "Cow", "Diningtable",
 //                              "Dog", "Horse", "Motorbike", "Person", "Pottedplant", "Sheep", "Sofa", "Train", "TV"
         ]
@@ -53,7 +53,7 @@ struct Constants {
         static let inputSize: CGSize = CGSize(width: 1024, height: 1024)
     }
     
-    struct ClassConstants { // CityScapes
+    struct CityScapesConstants { // CityScapes
         static let classes: [String] = [
 //            "Unlabeled", "Ego vehicle", "Rectification border", "Out of roi", "Static",
             "Dynamic", "Ground",
