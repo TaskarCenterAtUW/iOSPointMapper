@@ -14,7 +14,7 @@ struct AnnotationView: View {
         case misidentified = "The class annotation is misidentified"
     }
     
-    @ObservedObject var sharedImageData: SharedImageData
+    @EnvironmentObject var sharedImageData: SharedImageData
     
     var objectLocation: ObjectLocation
     var classes: [String]
@@ -49,7 +49,7 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index,
+                        HostedAnnotationCameraViewController(index: index,
                                                              frameRect: VerticalFrame.getColumnFrame(
                                                                 width: UIScreen.main.bounds.width,
                                                                 height: UIScreen.main.bounds.height,

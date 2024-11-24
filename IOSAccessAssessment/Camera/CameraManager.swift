@@ -10,8 +10,12 @@ import SwiftUI
 import Combine
 import simd
 import AVFoundation
+import Vision
 
 class CameraManager: ObservableObject, CaptureDataReceiver {
+    
+    var sharedImageData: SharedImageData?
+    var segmentationModel: SegmentationModel?
 
     @Published var isFilteringDepth: Bool {
         didSet {
@@ -23,19 +27,18 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     @Published var orientation = UIDevice.current.orientation
     @Published var processingCapturedResult = false
     @Published var dataAvailable = false
-    @Published var sharedImageData: SharedImageData?
     
     let controller: CameraController
     var cancellables = Set<AnyCancellable>()
     var session: AVCaptureSession { controller.captureSession }
     
-    init(sharedImageData: SharedImageData) {
-        
+    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel) {
         self.sharedImageData = sharedImageData
+        self.segmentationModel = segmentationModel
+        
         controller = CameraController()
         isFilteringDepth = true
         controller.startStream()
-//        isFilteringDepth = controller.isFilteringEnabled
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.orientation = UIDevice.current.orientation
@@ -53,17 +56,14 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer) {
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) -> Void {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
-                // TODO: Check if the reason the cameraImage and depthData are being set synchronously
-                // is the AVCaptureDataOutputSynchronizer
-                self.sharedImageData?.cameraImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
-                self.sharedImageData?.depthData = cvPixel
-//                let context = CIContext()
-//                let ciImage = CIImage(cvPixelBuffer: cvPixel)
-//                guard let depthCGImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
-//                self.sharedImageData?.depthDataImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .right)
+                self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
+                self.sharedImageData?.depthData = depthPixelBuffer
+                
+                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
+                
                 if self.dataAvailable == false {
                     self.dataAvailable = true
                 }

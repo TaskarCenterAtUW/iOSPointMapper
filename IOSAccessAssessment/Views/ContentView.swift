@@ -12,24 +12,12 @@ import Metal
 import CoreImage
 import MetalKit
 
-class SharedImageData: ObservableObject {
-    @Published var cameraImage: UIImage?
-    @Published var depthData: CVPixelBuffer?
-//    @Published var depthDataImage: UIImage?
-    
-    @Published var pixelBuffer: CIImage?
-//    @Published var objectSegmentation: CIImage?
-//    @Published var segmentationImage: UIImage?
-    
-    @Published var segmentedIndices: [Int] = []
-    // Single segmentation image for each class
-    @Published var classImages: [CIImage] = []
-}
-
 struct ContentView: View {
     var selection: [Int]
     
-    @StateObject private var sharedImageData = SharedImageData()
+    @EnvironmentObject var sharedImageData: SharedImageData
+    @EnvironmentObject var segmentationModel: SegmentationModel
+    
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
@@ -50,20 +38,20 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(sharedImageData: sharedImageData,
+                        HostedSegmentationViewController(segmentationImage: $segmentationModel.segmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
-                                                            row: 1),
-                            selection: Array(selection), classes: Constants.ClassConstants.classes
+                                                            row: 1)
                         )
                     }
                     Button {
+                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            navigateToAnnotationView = true
-                        }
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+//                            navigateToAnnotationView = true
+//                        }
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -80,8 +68,7 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(isPresented: $navigateToAnnotationView) {
-                AnnotationView(sharedImageData: sharedImageData,
-                               objectLocation: objectLocation,
+                AnnotationView(objectLocation: objectLocation,
                                classes: Constants.ClassConstants.classes,
                                selection: selection
                 )
@@ -89,7 +76,10 @@ struct ContentView: View {
             .navigationBarTitle("Camera View", displayMode: .inline)
             .onAppear {
                 if (manager == nil) {
-                    manager = CameraManager(sharedImageData: sharedImageData)
+                    segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
+                    segmentationModel.updatePerClassSegmentationRequest(selection: selection,
+                                                                        completion: updatePerClassImageSegmentation)
+                    manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
                 } else {
                     manager?.resumeStream()
                 }
@@ -97,5 +87,26 @@ struct ContentView: View {
             .onDisappear {
                 manager?.stopStream()
             }
+    }
+    
+    private func updateSharedImageSegmentation(result: Result<UIImage, Error>) -> Void {
+        switch result {
+        case .success(let segmentationResult):
+            return
+        case .failure(let error):
+            fatalError("Unable to process segmentation \(error.localizedDescription)")
+        }
+    }
+    
+    private func updatePerClassImageSegmentation(result: Result<PerClassSegmentationResultsOutput, Error>) -> Void {
+        switch result {
+        case .success(let output):
+            self.sharedImageData.classImages = output.perClassSegmentationResults
+            self.sharedImageData.segmentedIndices = output.segmentedIndices
+            self.navigateToAnnotationView = true
+            return
+        case .failure(let error):
+            fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
+        }
     }
 }

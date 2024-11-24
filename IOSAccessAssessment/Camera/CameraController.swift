@@ -11,7 +11,7 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -136,8 +136,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Retrieve the synchronized depth and sample buffer container objects.
         guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
-        var imageRequestHandler: VNImageRequestHandler
-        
         // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.height,
@@ -154,7 +152,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         let croppedCIImage = ciImage.croppedToCenter(size: croppedSize)
-        guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
+        guard let cameraImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
@@ -173,18 +171,9 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            finalDepthPixelBuffer = createBlackDepthPixelBuffer(targetSize: croppedSize)!
+            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
-        
-        imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
-        
-        delegate?.onNewData(cgImage: cgImage, cvPixel: finalDepthPixelBuffer)
-        
-        do {
-            try imageRequestHandler.perform(SegmentationViewController.requests)
-        } catch {
-            print(error)
-        }
+        delegate?.onNewData(cameraImage: cameraImage, depthPixelBuffer: finalDepthPixelBuffer)
     }
 }
