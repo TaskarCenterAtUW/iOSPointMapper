@@ -49,9 +49,6 @@ struct ContentView: View {
                         segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-//                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-//                            navigateToAnnotationView = true
-//                        }
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -89,6 +86,7 @@ struct ContentView: View {
             }
     }
     
+    // Callbacks to the SegmentationModel
     private func updateSharedImageSegmentation(result: Result<UIImage, Error>) -> Void {
         switch result {
         case .success(let segmentationResult):

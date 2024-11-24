@@ -46,7 +46,13 @@ struct SetupView: View {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
             .onAppear {
-                self.sharedImageData.refreshData()
+                // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
+                // This kind of delay should be fine, since the very first few frames of capture may not be necessary.
+                // MARK: Discuss on the possibility of having an explicit refresh
+                // instead of always refreshing when we end up in SetupView (could happen accidentally)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    self.sharedImageData.refreshData()
+                })
             }
         }
         .environmentObject(self.sharedImageData)
