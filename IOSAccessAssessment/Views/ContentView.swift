@@ -46,11 +46,12 @@ struct ContentView: View {
                         )
                     }
                     Button {
+                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            navigateToAnnotationView = true
-                        }
+//                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+//                            navigateToAnnotationView = true
+//                        }
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -93,6 +94,16 @@ struct ContentView: View {
             return
         case .failure(let error):
             fatalError("Unable to process segmentation \(error.localizedDescription)")
+        }
+    }
+    
+    private func updatePerClassImageSegmentation(result: Result<[CIImage], Error>) -> Void {
+        switch result {
+        case .success(let perClassSegmentationResult):
+            navigateToAnnotationView = true
+            return
+        case .failure(let error):
+            fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
         }
     }
 }

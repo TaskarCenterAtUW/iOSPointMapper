@@ -32,8 +32,10 @@ class SegmentationModel: ObservableObject {
     var isSegmentationProcessing: Bool = false
     private(set) var segmentationRequests: [VNRequest] = [VNRequest]()
     
-    @Published var perClassSegmentationResults: [Any]?
-    @Published var isPerClassSegmentationProcessing: Bool = false
+    @Published var perClassSegmentationResults: [CIImage]?
+    // Not in use for the current system. All usages have been commented out
+//    @Published
+    var isPerClassSegmentationProcessing: Bool = false
     private(set) var perClassSegmentationRequests: [VNRequest] = [VNRequest]()
     
     @Published var segmentedIndices: [Int] = []
@@ -89,9 +91,9 @@ class SegmentationModel: ObservableObject {
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
-        segmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        self.segmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //        isSegmentationProcessing = false
-        if let segmentationImage = segmentationResults {
+        if let segmentationImage = self.segmentationResults {
             completion(.success(segmentationImage))
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))
@@ -111,11 +113,11 @@ class SegmentationModel: ObservableObject {
         }
     }
     
-    func updatePerClassSegmentationRequest(selection: [Int]) {
+    func updatePerClassSegmentationRequest(selection: [Int], completion: @escaping (Result<[CIImage], Error>) -> Void) {
         let perClassSegmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
                 if let results = request.results {
-                    self.processPerClassSegmentationRequest(results, selection)
+                    self.processPerClassSegmentationRequest(results, selection, completion: completion)
                 }
             })
         })
@@ -123,10 +125,12 @@ class SegmentationModel: ObservableObject {
         self.perClassSegmentationRequests = [perClassSegmentationRequests]
     }
     
-    func processPerClassSegmentationRequest(_ observations: [Any], _ selection: [Int]){
+    func processPerClassSegmentationRequest(_ observations: [Any], _ selection: [Int],
+                                            completion: @escaping (Result<[CIImage], Error>) -> Void){
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
+            completion(.failure(SegmentationError.emptySegmentation))
             return
         }
 
@@ -149,19 +153,23 @@ class SegmentationModel: ObservableObject {
         }
         
         self.perClassSegmentationResults = perClassSegmentationResults
-        isPerClassSegmentationProcessing = false
+        if let perClassSegmentationImages = self.perClassSegmentationResults {
+            completion(.success(perClassSegmentationImages))
+        } else {
+            completion(.failure(SegmentationError.invalidSegmentation))
+        }
+//        isPerClassSegmentationProcessing = false
     }
     
-    func performPerClassSegmentationRequest(with pixelBuffer: CVPixelBuffer) {
-        guard !isPerClassSegmentationProcessing else { return }
+    func performPerClassSegmentationRequest(with cgImage: CGImage) {
+        //        guard !isSegmentationProcessing else { return }
 
-        isPerClassSegmentationProcessing = true
-
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        //        isSegmentationProcessing = true
+        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.segmentationRequests)
         } catch {
-            self.isPerClassSegmentationProcessing = false
+//            self.isPerClassSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
     }
