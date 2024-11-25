@@ -14,7 +14,7 @@ struct SetupView: View {
             static let setupViewTitle = "Setup"
             static let selectClassesText = "Select Classes to Identify"
             static let confirmationDialogTitle = "Are you sure you want to log out?"
-            static let confirmationDialogConfirmText = "Logout"
+            static let confirmationDialogConfirmText = "Log out"
             static let confirmationDialogCancelText = "Cancel"
             static let nextButton = "Next"
         }
