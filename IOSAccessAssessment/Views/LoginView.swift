@@ -51,6 +51,7 @@ struct LoginView: View {
             }
         }
         .padding()
+        .frame(maxWidth: 500)
         .preferredColorScheme(.dark)
     }
     
