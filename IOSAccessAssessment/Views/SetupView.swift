@@ -83,13 +83,14 @@ struct SetupView: View {
                     Text(SetupViewConstants.Texts.nextButton).foregroundStyle(Color.white).font(.headline)
                 }
             )
-            .confirmationDialog(
+            .alert(
                 SetupViewConstants.Texts.confirmationDialogTitle,
-                isPresented: $showLogoutConfirmation,
-                titleVisibility: .visible
+                isPresented: $showLogoutConfirmation
             ) {
-                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) { userState.logout() }
-                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) {}
+                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
+                    userState.logout()
+                }
+                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
         }
         .environment(\.colorScheme, .dark)
