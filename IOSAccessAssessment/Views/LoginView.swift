@@ -12,7 +12,7 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorMessage: String?
     @State private var isLoading: Bool = false
-    @EnvironmentObject var userState: UserStateViewModel
+    @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
     
     private let authService = AuthService()
     private let keychainService = KeychainService()
@@ -59,7 +59,7 @@ struct LoginView: View {
         errorMessage = nil
         isLoading = true
         
-        authService.authenticate(username: username, password: password) { result in
+        authService.login(username: username, password: password) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 
@@ -71,7 +71,7 @@ struct LoginView: View {
                     
                     if let _ = keychainService.getValue(for: .accessToken),
                        let _ = keychainService.getDate(for: .expirationDate) {
-                        userState.loginSuccess()
+                        isAuthenticated = true
                     }
                 case .failure(let authError):
                     self.errorMessage = authError.localizedDescription
