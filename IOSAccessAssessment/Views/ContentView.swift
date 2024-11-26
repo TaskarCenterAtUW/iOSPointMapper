@@ -38,7 +38,7 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(segmentationImage: $segmentationModel.segmentationResults,
+                        HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -49,9 +49,6 @@ struct ContentView: View {
                         segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-//                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-//                            navigateToAnnotationView = true
-//                        }
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -89,9 +86,11 @@ struct ContentView: View {
             }
     }
     
-    private func updateSharedImageSegmentation(result: Result<UIImage, Error>) -> Void {
+    // Callbacks to the SegmentationModel
+    private func updateSharedImageSegmentation(result: Result<SegmentationResultsOutput, Error>) -> Void {
         switch result {
-        case .success(let segmentationResult):
+        case .success(let output):
+            self.sharedImageData.appendFrame(frame: output.segmentationResults)
             return
         case .failure(let error):
             fatalError("Unable to process segmentation \(error.localizedDescription)")

@@ -25,6 +25,7 @@
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */; };
+		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
 		CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA9477A2CDE70D5000C6918 /* KeychainService.swift */; };
@@ -101,6 +102,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +364,9 @@
 				Base,
 			);
 			mainGroup = 3222F90D2B622DFD0019A079;
+			packageReferences = (
+				A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */,
+			);
 			productRefGroup = 3222F9172B622DFD0019A079 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -768,6 +773,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A3C22FD72CF2F0C300533BF7 /* DequeModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = DequeModule;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3222F90E2B622DFD0019A079 /* Project object */;
 }
