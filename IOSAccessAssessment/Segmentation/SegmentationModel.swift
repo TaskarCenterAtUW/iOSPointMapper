@@ -23,6 +23,18 @@ enum SegmentationError: Error, LocalizedError {
     }
 }
 
+struct SegmentationResultsOutput {
+    var segmentationResults: CVPixelBuffer
+    var maskedSegmentationResults: UIImage
+    var segmentedIndices: [Int]
+    
+    init(segmentationResults: CVPixelBuffer, maskedSegmentationResults: UIImage, segmentedIndices: [Int]) {
+        self.segmentationResults = segmentationResults
+        self.maskedSegmentationResults = maskedSegmentationResults
+        self.segmentedIndices = segmentedIndices
+    }
+}
+
 struct PerClassSegmentationResultsOutput {
     var perClassSegmentationResults: [CIImage]
     var segmentedIndices: [Int]
@@ -35,8 +47,10 @@ struct PerClassSegmentationResultsOutput {
 
 // This Segmentation Model can perform two kinds of requests
 // All-class segmentation (only one output image) and Per class segmentation (one image per class)
+// Also saves colored masks of the segmentation results
 class SegmentationModel: ObservableObject {
-    @Published var segmentationResults: UIImage?
+    @Published var segmentationResults: CVPixelBuffer?
+    @Published var maskedSegmentationResults: UIImage?
     // Not in use for the current system. All usages have been commented out
 //    @Published
     var isSegmentationProcessing: Bool = false
@@ -64,7 +78,7 @@ class SegmentationModel: ObservableObject {
         self.visionModel = visionModel
     }
     
-    func updateSegmentationRequest(selection: [Int], completion: @escaping (Result<UIImage, Error>) -> Void) {
+    func updateSegmentationRequest(selection: [Int], completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void) {
         let segmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
                 if let results = request.results {
@@ -77,7 +91,7 @@ class SegmentationModel: ObservableObject {
     }
     
     func processSegmentationRequest(_ observations: [Any], _ selection: [Int],
-                                    completion: @escaping (Result<UIImage, Error>) -> Void){
+                                    completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void){
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")
@@ -101,10 +115,15 @@ class SegmentationModel: ObservableObject {
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
-        self.segmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        self.segmentationResults = outPixelBuffer.pixelBuffer
+        self.maskedSegmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //        isSegmentationProcessing = false
-        if let segmentationImage = self.segmentationResults {
-            completion(.success(segmentationImage))
+        if let segmentationImage = self.segmentationResults,
+            let maskedSegmentationImage = self.maskedSegmentationResults {
+            completion(.success(SegmentationResultsOutput(
+                segmentationResults: segmentationImage,
+                maskedSegmentationResults: maskedSegmentationImage,
+                segmentedIndices: segmentedIndices)))
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))
         }
@@ -165,7 +184,7 @@ class SegmentationModel: ObservableObject {
         self.perClassSegmentationResults = perClassSegmentationResults
         if let perClassSegmentationImages = self.perClassSegmentationResults {
             completion(.success(PerClassSegmentationResultsOutput(
-                perClassSegmentationResults: perClassSegmentationResults, segmentedIndices: segmentedIndices
+                perClassSegmentationResults: perClassSegmentationImages, segmentedIndices: segmentedIndices
             )))
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))

@@ -38,7 +38,7 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(segmentationImage: $segmentationModel.segmentationResults,
+                        HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -87,9 +87,9 @@ struct ContentView: View {
     }
     
     // Callbacks to the SegmentationModel
-    private func updateSharedImageSegmentation(result: Result<UIImage, Error>) -> Void {
+    private func updateSharedImageSegmentation(result: Result<SegmentationResultsOutput, Error>) -> Void {
         switch result {
-        case .success(let segmentationResult):
+        case .success(let output):
             return
         case .failure(let error):
             fatalError("Unable to process segmentation \(error.localizedDescription)")
