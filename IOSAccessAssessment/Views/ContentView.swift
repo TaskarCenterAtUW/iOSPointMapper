@@ -90,6 +90,7 @@ struct ContentView: View {
     private func updateSharedImageSegmentation(result: Result<SegmentationResultsOutput, Error>) -> Void {
         switch result {
         case .success(let output):
+            self.sharedImageData.appendFrame(frame: output.segmentationResults)
             return
         case .failure(let error):
             fatalError("Unable to process segmentation \(error.localizedDescription)")
