@@ -15,7 +15,6 @@ struct LoginView: View {
     @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
     
     private let authService = AuthService()
-    private let keychainService = KeychainService()
     
     var body: some View {
         VStack(spacing: 30) {
@@ -64,15 +63,8 @@ struct LoginView: View {
                 self.isLoading = false
                 
                 switch result {
-                case .success(let response):
-                    keychainService.setValue(response.accessToken, for: .accessToken)
-                    let expirationDate = Date().addingTimeInterval(TimeInterval(response.expiresIn))
-                    keychainService.setDate(expirationDate, for: .expirationDate)
-                    
-                    if let _ = keychainService.getValue(for: .accessToken),
-                       let _ = keychainService.getDate(for: .expirationDate) {
-                        isAuthenticated = true
-                    }
+                case .success:
+                    isAuthenticated = true
                 case .failure(let authError):
                     self.errorMessage = authError.localizedDescription
                 }

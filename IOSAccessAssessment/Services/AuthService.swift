@@ -60,6 +60,8 @@ class AuthService {
         static let serverUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/authenticate"
     }
     
+    private let keychainService = KeychainService()
+    
     func login(
         username: String,
         password: String,
@@ -93,8 +95,8 @@ class AuthService {
     }
     
     func logout() {
-        KeychainService().removeValue(for: .accessToken)
-        KeychainService().removeValue(for: .expirationDate)
+        keychainService.removeValue(for: .accessToken)
+        keychainService.removeValue(for: .expirationDate)
     }
     
     private func createRequest(username: String, password: String) -> URLRequest? {
@@ -134,12 +136,23 @@ class AuthService {
     ) {
         do {
             let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+            storeAuthData(authResponse: authResponse)
             completion(.success(authResponse))
         } catch {
             completion(.failure(.decodingError))
         }
     }
 
+    private func storeAuthData(authResponse: AuthResponse) {
+        keychainService.setValue(authResponse.accessToken, for: .accessToken)
+        let expirationDate = Date().addingTimeInterval(TimeInterval(authResponse.expiresIn))
+        keychainService.setDate(expirationDate, for: .expirationDate)
+        
+        keychainService.setValue(authResponse.refreshToken, for: .refreshToken)
+        let refreshExpirationDate = Date().addingTimeInterval(TimeInterval(authResponse.refreshExpiresIn))
+        keychainService.setDate(refreshExpirationDate, for: .refreshExpirationDate)
+    }
+    
     private func decodeErrorResponse(
         data: Data,
         statusCode: Int,
