@@ -12,10 +12,10 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorMessage: String?
     @State private var isLoading: Bool = false
-    
-    var onLoginSuccess: () -> Void
+    @EnvironmentObject var userState: UserStateViewModel
     
     private let authService = AuthService()
+    private let keychainService = KeychainService()
     
     var body: some View {
         VStack(spacing: 30) {
@@ -64,8 +64,15 @@ struct LoginView: View {
                 self.isLoading = false
                 
                 switch result {
-                case .success:
-                    onLoginSuccess()
+                case .success(let response):
+                    keychainService.setValue(response.accessToken, for: .accessToken)
+                    let expirationDate = Date().addingTimeInterval(TimeInterval(response.expiresIn))
+                    keychainService.setDate(expirationDate, for: .expirationDate)
+                    
+                    if let _ = keychainService.getValue(for: .accessToken),
+                       let _ = keychainService.getDate(for: .expirationDate) {
+                        userState.loginSuccess()
+                    }
                 case .failure(let authError):
                     self.errorMessage = authError.localizedDescription
                 }

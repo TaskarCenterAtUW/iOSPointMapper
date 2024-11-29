@@ -11,7 +11,7 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cgImage: CGImage, cvPixel: CVPixelBuffer)
+    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -27,6 +27,7 @@ class CameraController: NSObject, ObservableObject {
     private let videoDataOutputQueue = DispatchQueue(label: "videoQueue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     
     private(set) var captureSession: AVCaptureSession!
+    private(set) var captureDevice: AVCaptureDevice!
     
     private var isLidarDeviceAvailable: Bool!
     private var depthDataOutput: AVCaptureDepthDataOutput!
@@ -71,11 +72,11 @@ class CameraController: NSObject, ObservableObject {
         // Look up the LiDAR camera. Generally, only present at the back camera
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
         let deviceAndDepthFlag = try getDeviceAndDepthFlag()
-        let device = deviceAndDepthFlag.device
+        captureDevice = deviceAndDepthFlag.device
         isLidarDeviceAvailable = deviceAndDepthFlag.hasLidar
         
         
-        let deviceInput = try AVCaptureDeviceInput(device: device)
+        let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
         captureSession.addInput(deviceInput)
     }
     
@@ -118,6 +119,7 @@ class CameraController: NSObject, ObservableObject {
     func startStream() {
         DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
+            self.captureDevice.configureDesiredFrameRate(5)
         }
     }
     
@@ -134,9 +136,11 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Retrieve the synchronized depth and sample buffer container objects.
         guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
-        var imageRequestHandler: VNImageRequestHandler
-        
-        let croppedSize: CGSize = CGSize(width: 1024, height: 1024)
+        // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.height,
+            height: Constants.ClassConstants.inputSize.width
+        )
         
         // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
         //  and then convert to CIImage/CGIImage where needed.
@@ -147,8 +151,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize) // 1024 \times 1024
-        guard let cgImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
+        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize)
+        guard let cameraImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
@@ -167,18 +171,9 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            finalDepthPixelBuffer = createBlackDepthPixelBuffer(targetSize: croppedSize)!
+            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
-        
-        imageRequestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
-        
-        delegate?.onNewData(cgImage: cgImage, cvPixel: finalDepthPixelBuffer)
-        
-        do {
-            try imageRequestHandler.perform(SegmentationViewController.requests)
-        } catch {
-            print(error)
-        }
+        delegate?.onNewData(cameraImage: cameraImage, depthPixelBuffer: finalDepthPixelBuffer)
     }
 }

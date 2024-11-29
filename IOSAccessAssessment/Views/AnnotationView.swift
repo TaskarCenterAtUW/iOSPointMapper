@@ -14,9 +14,12 @@ struct AnnotationView: View {
         case misidentified = "The class annotation is misidentified"
     }
     
-    @ObservedObject var sharedImageData: SharedImageData
+    @EnvironmentObject var sharedImageData: SharedImageData
+    
     var objectLocation: ObjectLocation
-    @State var selection: [Int]
+    var classes: [String]
+    var selection: [Int]
+    
     @State private var index = 0
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
@@ -24,8 +27,6 @@ struct AnnotationView: View {
     @State private var tempSelectedClassIndex: Int = 0
     @Environment(\.dismiss) var dismiss
     
-    var classes: [String]
-    var selectedClassesIndices: [Int]
     let options = AnnotationOption.allCases
     
     var body: some View {
@@ -48,12 +49,17 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        HostedAnnotationCameraViewController(sharedImageData: sharedImageData, index: index)
+                        HostedAnnotationCameraViewController(index: index,
+                                                             frameRect: VerticalFrame.getColumnFrame(
+                                                                width: UIScreen.main.bounds.width,
+                                                                height: UIScreen.main.bounds.height,
+                                                                row: 0)
+                        )
                         Spacer()
                     }
                     HStack {
                         Spacer()
-                        Text("Selected class: \(classes[selection[index]])")
+                        Text("Selected class: \(classes[sharedImageData.segmentedIndices[index]])")
                         Spacer()
                     }
                     
@@ -68,7 +74,7 @@ struct AnnotationView: View {
                                     
                                     if option == .misidentified {
                                         selectedClassIndex = index
-                                        tempSelectedClassIndex = selection[index]
+                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
                                         isShowingClassSelectionModal = true
                                     }
                                 }) {
@@ -108,16 +114,17 @@ struct AnnotationView: View {
             }
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
-                    let filteredClasses = selectedClassesIndices.map { classes[$0] }
+                    let filteredClasses = selection.map { classes[$0] }
                     
                     // mapping between filtered and non-filtered
-                    let selectedFilteredIndex = selectedClassesIndices.firstIndex(of: selection[selectedClassIndex]) ?? 0
+                    let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
                     
-                    let selectedClassBinding = Binding(
+                    let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
                         get: { selectedFilteredIndex },
                         set: { newValue in
-                            let originalIndex = selectedClassesIndices[newValue]
-                            selection[selectedClassIndex] = originalIndex
+                            let originalIndex = selection[newValue]
+                            // Update the segmentedIndices inside sharedImageData
+                            sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
                         }
                     )
                     
@@ -132,7 +139,7 @@ struct AnnotationView: View {
     }
     
     func isValid() -> Bool {
-        if (self.selection.isEmpty || (index >= self.selection.count)) {
+        if (self.sharedImageData.segmentedIndices.isEmpty || (index >= self.sharedImageData.segmentedIndices.count)) {
             return false
         }
         return true
@@ -148,7 +155,7 @@ struct AnnotationView: View {
     }
 
     func calculateProgress() -> Float {
-        return Float(self.index) / Float(self.selection.count)
+        return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
 }
 
