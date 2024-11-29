@@ -9,14 +9,16 @@ import SwiftUI
 
 @main
 struct IOSAccessAssessmentApp: App {
-    @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
+    @StateObject private var userState = UserStateViewModel()
     
     var body: some Scene {
         WindowGroup {
-            if isAuthenticated {
+            if userState.isAuthenticated {
                 SetupView()
+                    .environmentObject(userState)
             } else {
                 LoginView()
+                    .environmentObject(userState)
             }
         }
     }

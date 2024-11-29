@@ -60,7 +60,7 @@ class AuthService {
         static let serverUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/authenticate"
     }
     
-    func login(
+    func authenticate(
         username: String,
         password: String,
         completion: @escaping (Result<AuthResponse, AuthError>) -> Void
@@ -90,11 +90,6 @@ class AuthService {
                                 httpResponse: httpResponse,
                                 completion: completion)
         }.resume()
-    }
-    
-    func logout() {
-        KeychainService().removeValue(for: .accessToken)
-        KeychainService().removeValue(for: .expirationDate)
     }
     
     private func createRequest(username: String, password: String) -> URLRequest? {

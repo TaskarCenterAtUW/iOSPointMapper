@@ -35,7 +35,7 @@ struct SetupView: View {
 
     @State private var selection = Set<Int>()
     @State private var showLogoutConfirmation = false
-    @AppStorage("isAuthenticated") private var isAuthenticated: Bool = true
+    @EnvironmentObject var userState: UserStateViewModel
     
     var body: some View {
         NavigationStack {
@@ -88,16 +88,11 @@ struct SetupView: View {
                 isPresented: $showLogoutConfirmation
             ) {
                 Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
-                    logout()
+                    userState.logout()
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
         }
         .environment(\.colorScheme, .dark)
-    }
-    
-    private func logout() {
-        AuthService().logout()
-        isAuthenticated = false
     }
 }
