@@ -10,6 +10,8 @@ import AVFoundation
 
 class CameraViewController: UIViewController {
     var session: AVCaptureSession?
+    
+    var frameRect: CGRect = CGRect()
     var rootLayer: CALayer! = nil
     private var previewLayer: AVCaptureVideoPreviewLayer! = nil
 //    var detectionLayer: CALayer! = nil
@@ -32,7 +34,8 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
-        previewLayer.frame = getFrame()
+//        previewLayer.translatesAutoresizingMaskIntoConstraints = false
+        previewLayer.frame = self.frameRect
 //
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
@@ -45,31 +48,16 @@ class CameraViewController: UIViewController {
             //self!.view.layer.addSublayer(self!.detectionLayer)
         }
     }
-    
-    // FIXME: Frame Details should ideally come from the Parent that is calling this ViewController. Try GeometryReader
-    private func getFrame() -> CGRect {
-        let screenSize = UIScreen.main.bounds
-        let screenWidth = screenSize.width
-        let screenHeight = screenSize.height
-        
-        // Currently, the app only supports portrait mode
-        // Hence, we can set the size of the square frame relative to screen width
-        // with the screen height acting as a threshold to support other frames and buttons
-        // FIXME: Make this logic more robust to screen orientation 
-        //  so that we can eventually use other orientations
-        let sideLength = min(screenWidth * 0.95, screenHeight * 0.40)
-        
-        let xPosition = (screenWidth - sideLength) / 2
-        
-        return CGRect(x: xPosition, y: 0, width: sideLength, height: sideLength)
-    }
 }
 
 struct HostedCameraViewController: UIViewControllerRepresentable{
     var session: AVCaptureSession!
+    var frameRect: CGRect
     
     func makeUIViewController(context: Context) -> CameraViewController {
-        return CameraViewController(session: session)
+        let viewController = CameraViewController(session: session)
+        viewController.frameRect = frameRect
+        return viewController
     }
     
     func updateUIViewController(_ uiView: CameraViewController, context: Context) {

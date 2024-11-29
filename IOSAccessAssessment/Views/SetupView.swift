@@ -36,6 +36,8 @@ struct SetupView: View {
     @State private var selection = Set<Int>()
     @State private var showLogoutConfirmation = false
     @EnvironmentObject var userState: UserStateViewModel
+    @StateObject private var sharedImageData: SharedImageData = SharedImageData()
+    @StateObject private var segmentationModel: SegmentationModel = SegmentationModel()
     
     var body: some View {
         NavigationStack {
@@ -92,7 +94,18 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
+            .onAppear {
+                // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
+                // This kind of delay should be fine, since the very first few frames of capture may not be necessary.
+                // MARK: Discuss on the possibility of having an explicit refresh
+                // instead of always refreshing when we end up in SetupView (could happen accidentally)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    self.sharedImageData.refreshData()
+                })
+            }
         }
+        .environmentObject(self.sharedImageData)
+        .environmentObject(self.segmentationModel)
         .environment(\.colorScheme, .dark)
     }
 }
