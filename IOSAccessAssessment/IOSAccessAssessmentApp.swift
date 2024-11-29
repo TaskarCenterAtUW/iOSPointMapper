@@ -10,14 +10,33 @@ import SwiftUI
 @main
 struct IOSAccessAssessmentApp: App {
     @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
-    
+    private let tokenRefreshService = TokenRefreshService()
+
+    init() {
+        isAuthenticated = KeychainService().isTokenValid()
+        if isAuthenticated {
+            tokenRefreshService.startTokenRefresh()
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             if isAuthenticated {
-                SetupView()
+                SetupView(onLogout: handleLogout)
             } else {
-                LoginView()
+                LoginView(onLoginSuccess: handleLoginSuccess)
             }
         }
+    }
+
+    private func handleLoginSuccess() {
+        isAuthenticated = true
+        tokenRefreshService.startTokenRefresh()
+    }
+
+    private func handleLogout() {
+        isAuthenticated = false
+        tokenRefreshService.stopTokenRefresh()
+        AuthService().logout()
     }
 }

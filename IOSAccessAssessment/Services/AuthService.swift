@@ -7,32 +7,6 @@
 
 import Foundation
 
-enum AuthError: Error, LocalizedError {
-    case invalidURL
-    case noData
-    case invalidResponse
-    case serverError(message: String)
-    case decodingError
-    case unknownError
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            return "Invalid URL."
-        case .noData:
-            return "No data received from the server."
-        case .invalidResponse:
-            return "Invalid response from the server."
-        case .serverError(let message):
-            return message
-        case .decodingError:
-            return "Failed to decode the response from the server."
-        case .unknownError:
-            return "An unknown error occurred."
-        }
-    }
-}
-
 struct AuthResponse: Decodable {
     let accessToken: String
     let refreshToken: String
@@ -65,7 +39,7 @@ class AuthService {
     func login(
         username: String,
         password: String,
-        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
+        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
     ) {
         guard let request = createRequest(username: username, password: password) else {
             completion(.failure(.invalidURL))
@@ -97,6 +71,8 @@ class AuthService {
     func logout() {
         keychainService.removeValue(for: .accessToken)
         keychainService.removeValue(for: .expirationDate)
+        keychainService.removeValue(for: .refreshToken)
+        keychainService.removeValue(for: .refreshExpirationDate)
     }
     
     private func createRequest(username: String, password: String) -> URLRequest? {
@@ -118,7 +94,7 @@ class AuthService {
     private func handleResponse(
         data: Data,
         httpResponse: HTTPURLResponse,
-        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
+        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
     ) {
         if (200...299).contains(httpResponse.statusCode) {
             decodeSuccessResponse(data: data,
@@ -132,7 +108,7 @@ class AuthService {
 
     private func decodeSuccessResponse(
         data: Data,
-        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
+        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
     ) {
         do {
             let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
@@ -143,7 +119,7 @@ class AuthService {
         }
     }
 
-    private func storeAuthData(authResponse: AuthResponse) {
+    func storeAuthData(authResponse: AuthResponse) {
         keychainService.setValue(authResponse.accessToken, for: .accessToken)
         let expirationDate = Date().addingTimeInterval(TimeInterval(authResponse.expiresIn))
         keychainService.setDate(expirationDate, for: .expirationDate)
@@ -156,7 +132,7 @@ class AuthService {
     private func decodeErrorResponse(
         data: Data,
         statusCode: Int,
-        completion: @escaping (Result<AuthResponse, AuthError>) -> Void
+        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
     ) {
         do {
             let errorResponse = try JSONDecoder().decode(ErrorResponse.self, from: data)

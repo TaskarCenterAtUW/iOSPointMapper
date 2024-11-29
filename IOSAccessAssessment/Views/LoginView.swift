@@ -12,7 +12,8 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorMessage: String?
     @State private var isLoading: Bool = false
-    @AppStorage("isAuthenticated") private var isAuthenticated: Bool = false
+    
+    var onLoginSuccess: () -> Void
     
     private let authService = AuthService()
     
@@ -64,7 +65,7 @@ struct LoginView: View {
                 
                 switch result {
                 case .success:
-                    isAuthenticated = true
+                    onLoginSuccess()
                 case .failure(let authError):
                     self.errorMessage = authError.localizedDescription
                 }
