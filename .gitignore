@@ -7,3 +7,5 @@
 ## User settings
 xcuserdata/
 
+## Build directory
+.build/
