@@ -12,7 +12,7 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorMessage: String?
     @State private var isLoading: Bool = false
-    @Binding var isAuthenticated: Bool
+    @EnvironmentObject var userState: UserStateViewModel
     
     private let authService = AuthService()
     private let keychainService = KeychainService()
@@ -51,6 +51,8 @@ struct LoginView: View {
             }
         }
         .padding()
+        .frame(maxWidth: 500)
+        .preferredColorScheme(.dark)
     }
     
     private func login() {
@@ -69,7 +71,7 @@ struct LoginView: View {
                     
                     if let _ = keychainService.getValue(for: .accessToken),
                        let _ = keychainService.getDate(for: .expirationDate) {
-                        self.isAuthenticated = true
+                        userState.loginSuccess()
                     }
                 case .failure(let authError):
                     self.errorMessage = authError.localizedDescription
