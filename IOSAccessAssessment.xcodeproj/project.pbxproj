@@ -29,7 +29,6 @@
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
 		CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA9477A2CDE70D5000C6918 /* KeychainService.swift */; };
-		CAF812BA2CF78E7E00D44B84 /* TokenRefreshService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF812B92CF78E7E00D44B84 /* TokenRefreshService.swift */; };
 		CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */; };
 		CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
@@ -88,7 +87,6 @@
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		CAA9477A2CDE70D5000C6918 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
-		CAF812B92CF78E7E00D44B84 /* TokenRefreshService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenRefreshService.swift; sourceTree = "<group>"; };
 		CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkError.swift; sourceTree = "<group>"; };
 		CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserStateViewModel.swift; sourceTree = "<group>"; };
 		DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
@@ -237,7 +235,6 @@
 			isa = PBXGroup;
 			children = (
 				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
-				CAF812B92CF78E7E00D44B84 /* TokenRefreshService.swift */,
 				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
 			);
@@ -455,7 +452,6 @@
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
-				CAF812BA2CF78E7E00D44B84 /* TokenRefreshService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

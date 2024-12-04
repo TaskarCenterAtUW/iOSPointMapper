@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct IOSAccessAssessmentApp: App {
     @StateObject private var userState = UserStateViewModel()
-    private let tokenRefreshService = TokenRefreshService()
+    private let authService = AuthService()
     
     var body: some Scene {
         WindowGroup {
@@ -18,7 +18,7 @@ struct IOSAccessAssessmentApp: App {
                 SetupView()
                     .environmentObject(userState)
                     .onAppear {
-                        tokenRefreshService.refreshToken()
+                        authService.refreshToken()
                     }
             } else {
                 LoginView()
