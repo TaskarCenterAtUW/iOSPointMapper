@@ -59,7 +59,7 @@ struct LoginView: View {
         errorMessage = nil
         isLoading = true
         
-        authService.authenticate(username: username, password: password) { result in
+        authService.login(username: username, password: password) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 
