@@ -103,10 +103,7 @@ class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
         request.httpBody = refreshToken.data(using: .utf8)
-
-        print("request: ", request)
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
