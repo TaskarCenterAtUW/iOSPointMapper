@@ -99,6 +99,16 @@ final class KeychainService {
         
         return false
     }
+    
+    func storeAuthData(authResponse: AuthResponse) {
+        setValue(authResponse.accessToken, for: .accessToken)
+        let expirationDate = Date().addingTimeInterval(TimeInterval(authResponse.expiresIn))
+        setDate(expirationDate, for: .expirationDate)
+        
+        setValue(authResponse.refreshToken, for: .refreshToken)
+        let refreshExpirationDate = Date().addingTimeInterval(TimeInterval(authResponse.refreshExpiresIn))
+        setDate(refreshExpirationDate, for: .refreshExpirationDate)
+    }
 
     private func dateToString(_ date: Date) -> String {
         let formatter = ISO8601DateFormatter()
