@@ -11,6 +11,8 @@ import Security
 enum KeychainKey: String {
     case accessToken
     case expirationDate
+    case refreshToken
+    case refreshExpirationDate
 }
 
 final class KeychainService {
