@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SetupView: View {
     @State private var selection = Set<Int>()
+    @StateObject private var sharedImageData: SharedImageData = SharedImageData()
+    @StateObject private var segmentationModel: SegmentationModel = SegmentationModel()
     
     var body: some View {
         NavigationStack {
@@ -36,7 +38,6 @@ struct SetupView: View {
                         }
                     }
                 }
-//                .environment(\.colorScheme, .dark)
             }
             .padding()
             .navigationBarTitle("Setup View", displayMode: .inline)
@@ -44,7 +45,19 @@ struct SetupView: View {
             .navigationBarItems(trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
                 Text("Next").foregroundStyle(Color.white).font(.headline)
             })
-        }.environment(\.colorScheme, .dark)
+            .onAppear {
+                // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
+                // This kind of delay should be fine, since the very first few frames of capture may not be necessary.
+                // MARK: Discuss on the possibility of having an explicit refresh
+                // instead of always refreshing when we end up in SetupView (could happen accidentally)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    self.sharedImageData.refreshData()
+                })
+            }
+        }
+        .environmentObject(self.sharedImageData)
+        .environmentObject(self.segmentationModel)
+        .environment(\.colorScheme, .dark)
     }
 }
 
