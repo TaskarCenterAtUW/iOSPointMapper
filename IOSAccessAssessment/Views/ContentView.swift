@@ -113,7 +113,6 @@ struct ContentView: View {
     }
     
     private func openChangeset() {
-        print("open a changeset")
         ChangesetService.shared.openChangeset { result in
             switch result {
             case .success(let changesetId):
