@@ -90,6 +90,7 @@ class SegmentationModel: ObservableObject {
         self.segmentationRequests = [segmentationRequests]
     }
     
+    // Should completion really be an escaping closure here? Doesn't look like it.
     func processSegmentationRequest(_ observations: [Any], _ selection: [Int],
                                     completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void){
         let obs = observations as! [VNPixelBufferObservation]
