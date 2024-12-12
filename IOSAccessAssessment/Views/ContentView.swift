@@ -29,61 +29,64 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
-            VStack {
-                if manager?.dataAvailable ?? false{
-                    ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession,
-                                                   frameRect: VerticalFrame.getColumnFrame(
-                                                    width: UIScreen.main.bounds.width,
-                                                    height: UIScreen.main.bounds.height,
-                                                    row: 0)
-                        )
-                        HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
-                                                         frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 1)
-                        )
-                    }
-                    Button {
-                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                    } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
-                    }
+        VStack {
+            if manager?.dataAvailable ?? false{
+                ZStack {
+                    HostedCameraViewController(session: manager!.controller.captureSession,
+                                               frameRect: VerticalFrame.getColumnFrame(
+                                                width: UIScreen.main.bounds.width,
+                                                height: UIScreen.main.bounds.height,
+                                                row: 0)
+                    )
+                    HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
+                                                     frameRect: VerticalFrame.getColumnFrame(
+                                                        width: UIScreen.main.bounds.width,
+                                                        height: UIScreen.main.bounds.height,
+                                                        row: 1)
+                    )
                 }
-                else {
-                    VStack {
-                        SpinnerView()
-                        Text("Camera settings in progress")
-                            .padding(.top, 20)
-                    }
+                Button {
+                    segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
+                    objectLocation.setLocationAndHeading()
+                    manager?.stopStream()
+                } label: {
+                    Image(systemName: "camera.circle.fill")
+                        .resizable()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.white)
                 }
             }
-            .navigationDestination(isPresented: $navigateToAnnotationView) {
-                AnnotationView(objectLocation: objectLocation,
-                               classes: Constants.ClassConstants.classes,
-                               selection: selection
-                )
-            }
-            .navigationBarTitle("Camera View", displayMode: .inline)
-            .onAppear {
-                if (manager == nil) {
-                    segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
-                    segmentationModel.updatePerClassSegmentationRequest(selection: selection,
-                                                                        completion: updatePerClassImageSegmentation)
-                    manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
-                } else {
-                    manager?.resumeStream()
+            else {
+                VStack {
+                    SpinnerView()
+                    Text("Camera settings in progress")
+                        .padding(.top, 20)
                 }
             }
-            .onDisappear {
-                manager?.stopStream()
+        }
+        .navigationDestination(isPresented: $navigateToAnnotationView) {
+            AnnotationView(
+                objectLocation: objectLocation,
+                classes: Constants.ClassConstants.classes,
+                selection: selection
+            )
+        }
+        .navigationBarTitle("Camera View", displayMode: .inline)
+        .onAppear {
+            openChangeset()
+            
+            if (manager == nil) {
+                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
+                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
+                                                                    completion: updatePerClassImageSegmentation)
+                manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
+            } else {
+                manager?.resumeStream()
             }
+        }
+        .onDisappear {
+            manager?.stopStream()
+        }
     }
     
     // Callbacks to the SegmentationModel
@@ -106,6 +109,17 @@ struct ContentView: View {
             return
         case .failure(let error):
             fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
+        }
+    }
+    
+    private func openChangeset() {
+        ChangesetService.shared.openChangeset { result in
+            switch result {
+            case .success(let changesetId):
+                print("Opened changeset with ID: \(changesetId)")
+            case .failure(let error):
+                print("Failed to open changeset: \(error.localizedDescription)")
+            }
         }
     }
 }
