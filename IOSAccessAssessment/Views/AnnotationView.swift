@@ -169,7 +169,11 @@ struct AnnotationView: View {
               let nodeLongitude = objectLocation.longitude
         else { return }
         
-        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude)
+        let tags = [
+           "footway": "sidewalk",
+           "surface": "concrete"
+        ]
+        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         
         ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
             switch result {
