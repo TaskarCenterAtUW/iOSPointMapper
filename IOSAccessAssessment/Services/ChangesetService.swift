@@ -39,8 +39,8 @@ class ChangesetService {
         guard let xmlData = """
             <osm>
                 <changeset>
-                    <tag k="created_by" v="GIG 1.0(4)" />
-                    <tag k="comment" v="iOS OSM client" />
+                    <tag k="created_by" v="iOSPointMapper" />
+                    <tag k="comment" v="" />
                 </changeset>
             </osm>
             """
@@ -77,7 +77,7 @@ class ChangesetService {
         
         let xmlContent =
         """
-        <osmChange version="0.6" generator="GIG Change generator">
+        <osmChange version="0.6" generator="iOSPointMapper Change generator">
             <create>
                 <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)" />
             </create>
