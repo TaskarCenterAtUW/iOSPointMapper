@@ -41,7 +41,7 @@ class ChangesetService {
             <osm>
                 <changeset>
                     <tag k="created_by" v="iOSPointMapper" />
-                    <tag k="comment" v="" />
+                    <tag k="comment" v="iOS OSM client" />
                 </changeset>
             </osm>
             """
