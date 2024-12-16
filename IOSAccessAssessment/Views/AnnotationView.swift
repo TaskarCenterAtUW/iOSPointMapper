@@ -96,12 +96,7 @@ struct AnnotationView: View {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
                         selectedOption = nil
                         uploadChanges()
-                        
-                        if index == selection.count - 1 {
-                            closeChangeset()
-                        } else {
-                            nextSegment()
-                        }
+                        nextSegment()
                     }) {
                         Text(index == selection.count - 1 ? "Finish" : "Next")
                     }
@@ -113,6 +108,9 @@ struct AnnotationView: View {
                 if (!self.isValid()) {
                     self.dismiss()
                 }
+            }
+            .onDisappear {
+                closeChangeset()
             }
             .onChange(of: index) { _ in
                 // Trigger any additional actions when the index changes
