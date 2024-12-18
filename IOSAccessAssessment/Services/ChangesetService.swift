@@ -10,6 +10,7 @@ import Foundation
 struct NodeData {
     let latitude: Double
     let longitude: Double
+    let tags: [String: String]
 }
 
 class ChangesetService {
@@ -39,7 +40,7 @@ class ChangesetService {
         guard let xmlData = """
             <osm>
                 <changeset>
-                    <tag k="created_by" v="GIG 1.0(4)" />
+                    <tag k="created_by" v="iOSPointMapper" />
                     <tag k="comment" v="iOS OSM client" />
                 </changeset>
             </osm>
@@ -75,11 +76,17 @@ class ChangesetService {
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
         else { return }
         
+        let tagElements = nodeData.tags.map { key, value in
+            "<tag k=\"\(key)\" v=\"\(value)\" />"
+        }.joined(separator: "\n")
+        
         let xmlContent =
         """
-        <osmChange version="0.6" generator="GIG Change generator">
+        <osmChange version="0.6" generator="iOSPointMapper Change generator">
             <create>
-                <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)" />
+                <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)">
+                    \(tagElements)
+                </node>
             </create>
         </osmChange>
         """
