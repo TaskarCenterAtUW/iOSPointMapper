@@ -50,7 +50,7 @@ struct Constants {
         // Note: Do not use black (0, 0, 0) color, as significant portion of object detection relies on
         //  treating black color as no object in a segmentation mask
         static let colors: [CIColor] = [
-            CIColor(red: 0.00, green: 0.00, blue: 0.00),
+//            CIColor(red: 0.00, green: 0.00, blue: 0.00),
             CIColor(red: 0.50, green: 0.00, blue: 0.50),
             CIColor(red: 0.00, green: 0.50, blue: 0.00),
             CIColor(red: 0.50, green: 0.50, blue: 0.50),
