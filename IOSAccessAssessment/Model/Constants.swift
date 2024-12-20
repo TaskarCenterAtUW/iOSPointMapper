@@ -7,10 +7,59 @@
 
 import SwiftUI
 
+struct SegmentationClass {
+    let name: String // Name of the segmentation class
+    let grayscaleValue: Float // Grayscale value output for the segmentation class, by the relevant segmentation model
+    let labelValue: UInt8 // Pre-defined label of the segmentation class
+    let color: CIColor // Color to be assigned for visualization of the segmentation class during post-processing
+}
+
+struct SegmentationClassConstants {
+    private let classes: [SegmentationClass]
+    private let inputSize: CGSize
+    
+    init(classes: [SegmentationClass], inputSize: CGSize) {
+        self.classes = classes
+        self.inputSize = inputSize
+    }
+    
+    func getClasses() -> [SegmentationClass] {
+        return classes
+    }
+    
+    func getInputSize() -> CGSize {
+        return inputSize
+    }
+    
+    func getClassNames() -> [String] {
+        return classes.map { $0.name }
+    }
+    
+    func getGrayscaleValues() -> [Float] {
+        return classes.map { $0.grayscaleValue }
+    }
+    
+    // Retrieve grayscale-to-class mapping as [UInt8: String]
+    func getGrayscaleToClassMap() -> [UInt8: String] {
+        var map: [UInt8: String] = [:]
+        for cls in classes {
+            map[cls.labelValue] = cls.name
+        }
+        return map
+    }
+    
+    func getColors() -> [CIColor] {
+        return classes.map { $0.color }
+    }
+}
+
 // Constants related to the supported classes
 struct Constants {
+    
+    
     // Supported Classes
     struct ClassConstants {
+        
         static let classes = [
 //            "Background",
             "Aeroplane", "Bicycle", "Bird", "Boat", "Bottle", "Bus",
