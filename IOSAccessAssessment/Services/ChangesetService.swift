@@ -17,7 +17,7 @@ class ChangesetService {
     
     private enum Constants {
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
-        static let workspaceId = "168"
+        static let workspaceId = "288"
     }
     
     static let shared = ChangesetService()

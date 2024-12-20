@@ -111,7 +111,7 @@ class SegmentationModel: ObservableObject {
         
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
-        self.masker.grayscaleValues = selection.map { Constants.ClassConstants.grayValues[$0] }
+        self.masker.grayscaleValues = selection.map { Constants.ClassConstants.grayscaleValues[$0] }
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
@@ -176,7 +176,7 @@ class SegmentationModel: ObservableObject {
         // For each class, extract the separate segment
         for i in segmentedIndices.indices {
             let currentClass = segmentedIndices[i]
-            self.masker.grayscaleValues = [Constants.ClassConstants.grayValues[currentClass]]
+            self.masker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
             perClassSegmentationResults[i] = self.masker.outputImage!
         }
@@ -232,7 +232,7 @@ extension SegmentationModel {
             }
         }
         
-        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayValues.enumerated().map { ($0.element, $0.offset) })
+        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
         
         // MARK: sorting may not be necessary for our use case
         let selectedIndices = uniqueValues.map { UInt8($0) }
@@ -244,12 +244,12 @@ extension SegmentationModel {
     }
     
     // Get the grayscale values and the corresponding colors
-    private func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], grayscaleToClassMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
+    private func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], labelToClassNameMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
         let selectedClasses = selection.map { classes[$0] }
         var selectedGrayscaleValues: [UInt8] = []
         var selectedColors: [CIColor] = []
 
-        for (key, value) in grayscaleToClassMap {
+        for (key, value) in labelToClassNameMap {
             if !selectedClasses.contains(value) { continue }
             selectedGrayscaleValues.append(key)
             // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
