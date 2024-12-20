@@ -15,32 +15,19 @@ struct SegmentationClass {
 }
 
 struct SegmentationClassConstants {
-    private let classes: [SegmentationClass]
-    private let inputSize: CGSize
+    let classes: [SegmentationClass]
+    let inputSize: CGSize
     
-    init(classes: [SegmentationClass], inputSize: CGSize) {
-        self.classes = classes
-        self.inputSize = inputSize
-    }
-    
-    func getClasses() -> [SegmentationClass] {
-        return classes
-    }
-    
-    func getInputSize() -> CGSize {
-        return inputSize
-    }
-    
-    func getClassNames() -> [String] {
+    var classNames: [String] {
         return classes.map { $0.name }
     }
     
-    func getGrayscaleValues() -> [Float] {
+    var grayscaleValues: [Float] {
         return classes.map { $0.grayscaleValue }
     }
     
     // Retrieve grayscale-to-class mapping as [UInt8: String]
-    func getGrayscaleToClassMap() -> [UInt8: String] {
+    var labelToClassNameMap: [UInt8: String] {
         var map: [UInt8: String] = [:]
         for cls in classes {
             map[cls.labelValue] = cls.name
@@ -48,14 +35,14 @@ struct SegmentationClassConstants {
         return map
     }
     
-    func getColors() -> [CIColor] {
+    var colors: [CIColor] {
         return classes.map { $0.color }
     }
 }
 
 // Constants related to the supported classes
 struct Constants {
-    static let VOCConstants: SegmentationClassConstants = SegmentationClassConstants(
+    static let ClassConstants: SegmentationClassConstants = SegmentationClassConstants(
         classes: [
 //            SegmentationClass(name: "Background", grayscaleValue: 0.0 / 255.0,
 //                              labelValue: 0, color: CIColor(red: 0.000, green: 0.000, blue: 0.000),
@@ -104,7 +91,7 @@ struct Constants {
     )
     
     // Supported Classes
-    struct ClassConstants {
+    struct ClassConstants2 {
         
         static let classes = [
 //            "Background",
@@ -118,7 +105,7 @@ struct Constants {
             12, 24, 36, 48, 60, 72, 84, 96, 108, 120,
             132, 144, 156, 168, 180, 192, 204, 216, 228, 240].map{Float($0)/255.0}
         
-        static let grayscaleToClassMap: [UInt8: String] = [
+        static let labelToClassNameMap: [UInt8: String] = [
 //            0: "Background",
             12: "Aeroplane",
             24: "Bicycle",
@@ -267,7 +254,7 @@ struct Constants {
         
         // Note: Do not use black (0, 0, 0) color, as significant portion of object detection relies on
         //  treating black color as no object in a segmentation mask
-        static let grayscaleToClassMap: [UInt8: String] = [
+        static let labelToClassNameMap: [UInt8: String] = [
 //            0: "Unlabeled",
 //            1: "Ego vehicle",
 //            2: "Rectification border",
