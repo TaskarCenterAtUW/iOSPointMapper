@@ -20,6 +20,10 @@ struct ContentView: View {
     
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
+    @State private var isChangesetOpened = false
+    @State private var showRetryAlert = false
+    @State private var retryMessage = ""
+    
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
     //  means that the current setup is built to handle only one capture at a time.
     //  If we want to allow multiple captures, then we should to pass a different smaller object
@@ -29,7 +33,8 @@ struct ContentView: View {
     var objectLocation = ObjectLocation()
     
     var body: some View {
-            VStack {
+        VStack {
+            if isChangesetOpened {
                 if manager?.dataAvailable ?? false{
                     ZStack {
                         HostedCameraViewController(session: manager!.controller.captureSession,
@@ -63,27 +68,46 @@ struct ContentView: View {
                             .padding(.top, 20)
                     }
                 }
+            } else {
+                SpinnerView()
+                Text("Changeset opening in progress")
+                    .padding(.top, 20)
             }
-            .navigationDestination(isPresented: $navigateToAnnotationView) {
-                AnnotationView(objectLocation: objectLocation,
-                               classes: Constants.ClassConstants.classes,
-                               selection: selection
-                )
+        }
+        .navigationDestination(isPresented: $navigateToAnnotationView) {
+            AnnotationView(
+                objectLocation: objectLocation,
+                classes: Constants.ClassConstants.classNames,
+                selection: selection
+            )
+        }
+        .navigationBarTitle("Camera View", displayMode: .inline)
+        .onAppear {
+            openChangeset()
+            
+            if (manager == nil) {
+                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
+                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
+                                                                    completion: updatePerClassImageSegmentation)
+                manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
+            } else {
+                manager?.resumeStream()
             }
-            .navigationBarTitle("Camera View", displayMode: .inline)
-            .onAppear {
-                if (manager == nil) {
-                    segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
-                    segmentationModel.updatePerClassSegmentationRequest(selection: selection,
-                                                                        completion: updatePerClassImageSegmentation)
-                    manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
-                } else {
-                    manager?.resumeStream()
-                }
+        }
+        .onDisappear {
+            manager?.stopStream()
+        }
+        .alert("Changeset opening error", isPresented: $showRetryAlert) {
+            Button("Retry") {
+                isChangesetOpened = false
+                retryMessage = ""
+                showRetryAlert = false
+                
+                openChangeset()
             }
-            .onDisappear {
-                manager?.stopStream()
-            }
+        } message: {
+            Text(retryMessage)
+        }
     }
     
     // Callbacks to the SegmentationModel
@@ -106,6 +130,20 @@ struct ContentView: View {
             return
         case .failure(let error):
             fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
+        }
+    }
+    
+    private func openChangeset() {
+        ChangesetService.shared.openChangeset { result in
+            switch result {
+            case .success(let changesetId):
+                print("Opened changeset with ID: \(changesetId)")
+                isChangesetOpened = true
+            case .failure(let error):
+                retryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
+                isChangesetOpened = false
+                showRetryAlert = true
+            }
         }
     }
 }

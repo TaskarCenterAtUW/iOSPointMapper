@@ -94,10 +94,11 @@ struct AnnotationView: View {
                     
                     Button(action: {
                         objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
-                        self.nextSegment()
                         selectedOption = nil
+                        uploadChanges()
+                        nextSegment()
                     }) {
-                        Text("Next")
+                        Text(index == selection.count - 1 ? "Finish" : "Next")
                     }
                     .padding()
                 }
@@ -107,6 +108,9 @@ struct AnnotationView: View {
                 if (!self.isValid()) {
                     self.dismiss()
                 }
+            }
+            .onDisappear {
+                closeChangeset()
             }
             .onChange(of: index) { _ in
                 // Trigger any additional actions when the index changes
@@ -157,6 +161,36 @@ struct AnnotationView: View {
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
+    
+    private func uploadChanges() {
+        guard let nodeLatitude = objectLocation.latitude,
+              let nodeLongitude = objectLocation.longitude
+        else { return }
+        
+        let tags: [String: String] = ["demo:class":classes[sharedImageData.segmentedIndices[index]]]
+        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+        
+        ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
+            switch result {
+            case .success:
+                print("Changes uploaded successfully.")
+            case .failure(let error):
+                print("Failed to upload changes: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func closeChangeset() {
+        ChangesetService.shared.closeChangeset { result in
+            switch result {
+            case .success:
+                print("Changeset closed successfully.")
+            case .failure(let error):
+                print("Failed to close changeset: \(error.localizedDescription)")
+            }
+        }
+    }
+
 }
 
 struct ClassSelectionView: View {
