@@ -84,6 +84,7 @@ struct ContentView: View {
         .navigationBarTitle("Camera View", displayMode: .inline)
         .onAppear {
             openChangeset()
+            navigateToAnnotationView = false
             
             if (manager == nil) {
                 segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
