@@ -13,6 +13,7 @@ struct AnnotationView: View {
         case missingInstances = "Annotation is missing some instances of the class"
         case misidentified = "The class annotation is misidentified"
     }
+    let options = AnnotationOption.allCases
     
     @EnvironmentObject var sharedImageData: SharedImageData
     
@@ -21,13 +22,13 @@ struct AnnotationView: View {
     var selection: [Int]
     
     @State private var index = 0
+    
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
-    @Environment(\.dismiss) var dismiss
     
-    let options = AnnotationOption.allCases
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         if (!self.isValid()) {
@@ -150,7 +151,13 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
-        self.index += 1
+        // Ensure that the index does not exceed the length of the sharedImageData classImages count
+        // Do not simply rely on the isValid check in the body. 
+        if (self.index + 1 < sharedImageData.classImages.count) {
+            self.index += 1
+        } else {
+            self.dismiss()
+        }
     }
 
     func refreshView() {
