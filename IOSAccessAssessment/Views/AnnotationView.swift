@@ -105,11 +105,6 @@ struct AnnotationView: View {
                 }
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
-            .onAppear {
-                if (!self.isValid()) {
-                    self.dismiss()
-                }
-            }
             .onDisappear {
                 closeChangeset()
             }

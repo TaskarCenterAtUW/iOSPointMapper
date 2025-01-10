@@ -53,7 +53,7 @@ struct ContentView: View {
                     Button {
                         segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
+//                        manager?.stopStream() // To be done in the performPerClassSegmentationRequest callback
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -84,6 +84,7 @@ struct ContentView: View {
         .navigationBarTitle("Camera View", displayMode: .inline)
         .onAppear {
             openChangeset()
+            navigateToAnnotationView = false
             
             if (manager == nil) {
                 segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
@@ -121,13 +122,18 @@ struct ContentView: View {
         }
     }
     
+    // This function callback currently has control over navigation to the Annotation View
     private func updatePerClassImageSegmentation(result: Result<PerClassSegmentationResultsOutput, Error>) -> Void {
         switch result {
         case .success(let output):
+            // Prevent navigation to AnnotationView if the segmentation results are empty
+            if (output.perClassSegmentationResults.count == 0) {
+                return
+            }
             self.sharedImageData.classImages = output.perClassSegmentationResults
             self.sharedImageData.segmentedIndices = output.segmentedIndices
+            self.manager?.stopStream()
             self.navigateToAnnotationView = true
-            return
         case .failure(let error):
             fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
         }
