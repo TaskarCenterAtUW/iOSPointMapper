@@ -34,6 +34,9 @@ struct SetupView: View {
     }
 
     @State private var selection = Set<Int>()
+    private var isSelectionEmpty: Bool {
+        return (self.selection.count == 0)
+    }
     @State private var showLogoutConfirmation = false
     @EnvironmentObject var userState: UserStateViewModel
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
@@ -81,9 +84,13 @@ struct SetupView: View {
                         .foregroundColor(.white)
                         .bold()
                 },
-                trailing: NavigationLink(destination: ContentView(selection: Array(selection))) {
-                    Text(SetupViewConstants.Texts.nextButton).foregroundStyle(Color.white).font(.headline)
-                }
+                trailing:
+                    NavigationLink(destination: ContentView(selection: Array(selection))) {
+                        Text(SetupViewConstants.Texts.nextButton)
+                            .foregroundStyle(isSelectionEmpty ? Color.gray : Color.white)
+                            .font(.headline)
+                    }
+                    .disabled(isSelectionEmpty)
             )
             .alert(
                 SetupViewConstants.Texts.confirmationDialogTitle,
