@@ -18,7 +18,8 @@ class SharedImageData: ObservableObject {
     // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
     
-    var segmentationFrames: Deque<CVPixelBuffer> = []
+    var segmentationFrames: Deque<CIImage> = []
+    private let processingQueue = DispatchQueue(label: "com.example.sharedimagedata.queue", qos: .utility)
     var maxCapacity: Int
     var thresholdRatio: Float = 0.7
     
@@ -36,16 +37,18 @@ class SharedImageData: ObservableObject {
         self.segmentationFrames = []
     }
     
-    func appendFrame(frame: CVPixelBuffer) {
-        if (Float(self.segmentationFrames.count)/Float(self.maxCapacity) > self.thresholdRatio) {
-            self.dropAlternateFrames()
+    func appendFrame(frame: CIImage) {
+        DispatchQueue.main.async {
+            if (Float(self.segmentationFrames.count)/Float(self.maxCapacity) > self.thresholdRatio) {
+                self.dropAlternateFrames()
+            }
+            self.segmentationFrames.append(frame)
+            print("Current frame count: \(self.segmentationFrames.count)")
         }
-        self.segmentationFrames.append(frame)
-        print(self.segmentationFrames.count)
     }
     
     private func dropAlternateFrames() {
-        var newFrames = Deque<CVPixelBuffer>()
+        var newFrames = Deque<CIImage>()
         for (index, frame) in self.segmentationFrames.enumerated() {
             // Keep every alternate frame (even indices)
             if index % 2 == 0 {
@@ -53,5 +56,13 @@ class SharedImageData: ObservableObject {
             }
         }
         self.segmentationFrames = newFrames
+    }
+    
+    func getFrames() -> [CIImage] {
+        var frames: [CIImage] = []
+        processingQueue.sync {
+            frames = Array(self.segmentationFrames)
+        }
+        return frames
     }
 }

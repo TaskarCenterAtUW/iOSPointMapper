@@ -24,11 +24,11 @@ enum SegmentationError: Error, LocalizedError {
 }
 
 struct SegmentationResultsOutput {
-    var segmentationResults: CVPixelBuffer
+    var segmentationResults: CIImage
     var maskedSegmentationResults: UIImage
     var segmentedIndices: [Int]
     
-    init(segmentationResults: CVPixelBuffer, maskedSegmentationResults: UIImage, segmentedIndices: [Int]) {
+    init(segmentationResults: CIImage, maskedSegmentationResults: UIImage, segmentedIndices: [Int]) {
         self.segmentationResults = segmentationResults
         self.maskedSegmentationResults = maskedSegmentationResults
         self.segmentedIndices = segmentedIndices
@@ -107,7 +107,8 @@ class SegmentationModel: ObservableObject {
         
         // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
         
-        self.masker.inputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        self.masker.inputImage = outputImage
         
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
@@ -121,7 +122,7 @@ class SegmentationModel: ObservableObject {
         if let segmentationImage = self.segmentationResults,
             let maskedSegmentationImage = self.maskedSegmentationResults {
             completion(.success(SegmentationResultsOutput(
-                segmentationResults: segmentationImage,
+                segmentationResults: outputImage,
                 maskedSegmentationResults: maskedSegmentationImage,
                 segmentedIndices: segmentedIndices)))
         } else {
