@@ -156,7 +156,6 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
-				A3F27DB12D34E0400071D6F3 /* Depth */,
 				CAF812C32CFA108100D44B84 /* ViewModel */,
 				A3B070982CE0B6DF0028CAC5 /* UI */,
 				CAA947772CDE7001000C6918 /* Services */,
@@ -203,6 +202,8 @@
 			isa = PBXGroup;
 			children = (
 				DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */,
+				A3F27DB32D34E07C0071D6F3 /* DepthAnythingV2SmallF16P6.mlpackage */,
+				A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
 			path = VisionModel;
@@ -236,15 +237,6 @@
 				A3B070992CE0B6E50028CAC5 /* Frame.swift */,
 			);
 			path = UI;
-			sourceTree = "<group>";
-		};
-		A3F27DB12D34E0400071D6F3 /* Depth */ = {
-			isa = PBXGroup;
-			children = (
-				A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */,
-				A3F27DB32D34E07C0071D6F3 /* DepthAnythingV2SmallF16P6.mlpackage */,
-			);
-			path = Depth;
 			sourceTree = "<group>";
 		};
 		CAA947772CDE7001000C6918 /* Services */ = {
