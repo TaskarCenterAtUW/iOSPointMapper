@@ -8,9 +8,10 @@ import SwiftUI
 import DequeModule
 
 class SharedImageData: ObservableObject {
-    // MARK: Eventually, move on to using CVPixelBuffer directly
+    // MARK: Eventually, move on to using CIImage directly
     // as there is no reason to be using CGImage other than crop to center
-    // we can find CVPixelBuffer-specific method for this as well
+    // we can find CIImage-specific method for this as well,
+    // else we can do a conversion to CVPixelBuffer on the fly when required
     @Published var cameraImage: CGImage?
     @Published var depthData: CVPixelBuffer?
     

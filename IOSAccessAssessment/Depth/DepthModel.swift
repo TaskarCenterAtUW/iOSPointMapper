@@ -5,6 +5,10 @@
 //  Created by Himanshu on 1/15/25.
 //
 import SwiftUI
+import Vision
+import CoreML
+import CoreImage
+import os
 
 enum DepthError: Error, LocalizedError {
     case emptyDepth
@@ -29,7 +33,23 @@ struct DepthResultsOutput {
 }
 
 class DepthModel: ObservableObject {
-    @Published var depthResults: CVPixelBuffer?
+    /// The last image supplied to DepthModel
+    var lastImage = OSAllocatedUnfairLock<CIImage?>(uncheckedState: nil)
     
+    /// The depth model
+    var visionModel: MLModel?
     
+    /// The resulting depth image
+    @Published var depthResults: CIImage?
+    
+    init() {
+        let modelURL = Bundle.main.url(forResource: "DepthAnythingV2SmallF16P6", withExtension: "mlmodelc")
+//        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
+//            fatalError("Cannot load CNN model")
+//        }
+        guard let visionModel = try? MLModel(contentsOf: modelURL!) else {
+            fatalError("Cannot load Depth model")
+        }
+        self.visionModel = visionModel
+    }
 }
