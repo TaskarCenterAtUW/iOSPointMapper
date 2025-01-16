@@ -49,7 +49,7 @@ struct PerClassSegmentationResultsOutput {
 // All-class segmentation (only one output image) and Per class segmentation (one image per class)
 // Also saves colored masks of the segmentation results
 class SegmentationModel: ObservableObject {
-    @Published var segmentationResults: CVPixelBuffer?
+    @Published var segmentationResults: CIImage?
     @Published var maskedSegmentationResults: UIImage?
     // Not in use for the current system. All usages have been commented out
 //    @Published
@@ -116,7 +116,7 @@ class SegmentationModel: ObservableObject {
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
-        self.segmentationResults = outPixelBuffer.pixelBuffer
+        self.segmentationResults = outputImage
         self.maskedSegmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
 //        isSegmentationProcessing = false
         if let segmentationImage = self.segmentationResults,
