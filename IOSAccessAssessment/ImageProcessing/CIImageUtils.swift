@@ -12,7 +12,10 @@ extension CIImage {
         let x = (extent.width - size.width) / 2
         let y = (extent.height - size.height) / 2
         let cropRect = CGRect(x: x, y: y, width: size.width, height: size.height)
-        return cropped(to: cropRect)
+        let croppedImage = cropped(to: cropRect)
+        
+        let centeredImage = croppedImage.transformed(by: CGAffineTransform(translationX: -x, y: -y))
+        return centeredImage
     }
     
     /// Returns a resized image.
