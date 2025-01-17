@@ -45,9 +45,14 @@ struct PerClassSegmentationResultsOutput {
     }
 }
 
-// This Segmentation Model can perform two kinds of requests
-// All-class segmentation (only one output image) and Per class segmentation (one image per class)
-// Also saves colored masks of the segmentation results
+/** A class to handle segmentation of images by loading them in a queue.
+ 
+ # Overview
+ This Segmentation Model can perform two kinds of requests.
+ 1. All-class segmentation (only one output image) and Per class segmentation (one image per class)
+ 2. Also saves colored masks of the segmentation results.
+ 
+ */
 class SegmentationModel: ObservableObject {
     @Published var segmentationResults: CIImage?
     @Published var maskedSegmentationResults: UIImage?

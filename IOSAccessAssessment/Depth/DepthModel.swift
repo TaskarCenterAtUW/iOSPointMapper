@@ -32,24 +32,47 @@ struct DepthResultsOutput {
     }
 }
 
+/**
+ A class to handle depth estimation on demand.
+ 
+ While it performs the depth estimation process asynchronously, it does not queue the requests.
+ */
 class DepthModel: ObservableObject {
-    /// The last image supplied to DepthModel
-    var lastImage = OSAllocatedUnfairLock<CIImage?>(uncheckedState: nil)
+    let context = CIContext()
+    /// A pixel buffer used as input to the model.
+    let inputPixelBuffer: CVPixelBuffer
     
     /// The depth model
-    var visionModel: MLModel?
+    var visionModel: DepthAnythingV2SmallF16?
     
     /// The resulting depth image
     @Published var depthResults: CIImage?
     
     init() {
-        let modelURL = Bundle.main.url(forResource: "DepthAnythingV2SmallF16P6", withExtension: "mlmodelc")
-//        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
-//            fatalError("Cannot load CNN model")
-//        }
-        guard let visionModel = try? MLModel(contentsOf: modelURL!) else {
-            fatalError("Cannot load Depth model")
+        // Create a reusable buffer to avoid allocating memory for every model invocation
+        var buffer: CVPixelBuffer!
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            Int(Constants.DepthConstants.inputSize.width),
+            Int(Constants.DepthConstants.inputSize.height),
+            kCVPixelFormatType_32ARGB,
+            nil,
+            &buffer
+        )
+        guard status == kCVReturnSuccess else {
+            fatalError("Failed to create pixel buffer")
         }
-        self.visionModel = visionModel
+        inputPixelBuffer = buffer
+        
+        do {
+            try loadModel()
+        } catch {
+            print("Failed to load model: \(error.localizedDescription)")
+        }
+    }
+    
+    func loadModel() throws {
+        print("Loading depth model...")
+        visionModel = try DepthAnythingV2SmallF16()
     }
 }
