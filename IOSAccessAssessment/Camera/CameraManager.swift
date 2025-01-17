@@ -60,7 +60,6 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
-//                self.sharedImageData?.appendFrame(frame: cameraImage)
                 self.sharedImageData?.depthImage = depthImage
                 
                 self.segmentationModel?.performSegmentationRequest(with: cameraImage)

@@ -18,8 +18,6 @@ class AnnotationCameraViewController: UIViewController {
     
     init(sharedImageData: SharedImageData, index: Int) {
         self.cameraImage = UIImage(ciImage: sharedImageData.cameraImage!, scale: 1.0, orientation: .right)
-        // Get size of the camera image
-        print("Camera Image Size: \(cameraImage!.size)")
         self.segmentationImage = sharedImageData.classImages[index]
         super.init(nibName: nil, bundle: nil)
     }
