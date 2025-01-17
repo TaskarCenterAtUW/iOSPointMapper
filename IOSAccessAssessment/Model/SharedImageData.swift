@@ -8,12 +8,8 @@ import SwiftUI
 import DequeModule
 
 class SharedImageData: ObservableObject {
-    // MARK: Eventually, move on to using CIImage directly
-    // as there is no reason to be using CGImage other than crop to center
-    // we can find CIImage-specific method for this as well,
-    // else we can do a conversion to CVPixelBuffer on the fly when required
     @Published var cameraImage: CIImage?
-    @Published var depthData: CVPixelBuffer?
+    @Published var depthImage: CIImage?
     
     @Published var segmentedIndices: [Int] = []
     // Single segmentation image for each class
@@ -30,7 +26,7 @@ class SharedImageData: ObservableObject {
     
     func refreshData() {
         self.cameraImage = nil
-        self.depthData = nil
+        self.depthImage = nil
         
         self.segmentedIndices = []
         self.classImages = []
@@ -44,7 +40,7 @@ class SharedImageData: ObservableObject {
                 self.dropAlternateFrames()
             }
             self.segmentationFrames.append(frame)
-            print("Current frame count: \(self.segmentationFrames.count)")
+//            print("Current frame count: \(self.segmentationFrames.count)")
         }
     }
     

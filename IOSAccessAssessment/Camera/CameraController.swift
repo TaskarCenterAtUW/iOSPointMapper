@@ -11,7 +11,7 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cameraImage: CIImage, depthPixelBuffer: CVPixelBuffer)
+    func onNewData(cameraImage: CIImage, depthImage: CIImage)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -154,7 +154,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
         //  perform the resize and crop, then convert back to CVPixelBuffer
-        var finalDepthPixelBuffer: CVPixelBuffer
+//        var finalDepthPixelBuffer: CVPixelBuffer
+        var depthImage: CIImage
         if (isLidarDeviceAvailable) {
             guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
             let depthData = syncedDepthData.depthData
@@ -164,13 +165,16 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             let depthSideLength = min(depthWidth, depthHeight)
             // TODO: Check why does this lead to an error on orientation change
             let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
-            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
-            finalDepthPixelBuffer = croppedDepthPixelBuffer
+            
+            depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale)).croppedToCenter(size: croppedSize)
+//            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
+//            finalDepthPixelBuffer = croppedDepthPixelBuffer
         } else {
             // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
+            depthImage = CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: croppedSize)!)
+//            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
         }
         
-        delegate?.onNewData(cameraImage: cameraImage, depthPixelBuffer: finalDepthPixelBuffer)
+        delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }
 }
