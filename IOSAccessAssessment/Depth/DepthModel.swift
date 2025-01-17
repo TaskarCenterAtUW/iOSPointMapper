@@ -75,4 +75,26 @@ class DepthModel: ObservableObject {
         print("Loading depth model...")
         visionModel = try DepthAnythingV2SmallF16()
     }
+    
+    /**
+     Perform depth estimation on the given image. While this is done asynchronously, it is done on the main thread.
+     
+     - Parameter ciImage: The image for which to perform depth estimation.
+     */
+    func performDepthEstimation(_ ciImage: CIImage) async throws {
+        guard let visionModel else {
+            return
+        }
+        
+        let originalSize: CGSize = ciImage.extent.size
+        let inputImage = ciImage.resized(to: Constants.DepthConstants.inputSize)
+        context.render(inputImage, to: inputPixelBuffer)
+        let result = try visionModel.prediction(image: inputPixelBuffer)
+        let outputImage: CIImage = CIImage(cvPixelBuffer: result.depth)
+            .resized(to: originalSize)
+        
+        self.depthResults = outputImage
+    }
+    
+    
 }
