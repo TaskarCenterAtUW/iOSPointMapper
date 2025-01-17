@@ -12,7 +12,7 @@ class SharedImageData: ObservableObject {
     // as there is no reason to be using CGImage other than crop to center
     // we can find CIImage-specific method for this as well,
     // else we can do a conversion to CVPixelBuffer on the fly when required
-    @Published var cameraImage: CGImage?
+    @Published var cameraImage: CIImage?
     @Published var depthData: CVPixelBuffer?
     
     @Published var segmentedIndices: [Int] = []

@@ -123,7 +123,6 @@ class SegmentationModel: ObservableObject {
         self.segmentedIndices = segmentedIndices
         self.segmentationResults = outputImage
         self.maskedSegmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-//        isSegmentationProcessing = false
         if let segmentationImage = self.segmentationResults,
             let maskedSegmentationImage = self.maskedSegmentationResults {
             completion(.success(SegmentationResultsOutput(
@@ -135,15 +134,11 @@ class SegmentationModel: ObservableObject {
         }
     }
 
-    func performSegmentationRequest(with cgImage: CGImage) {
-//        guard !isSegmentationProcessing else { return }
-
-//        isSegmentationProcessing = true
-        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
+    func performSegmentationRequest(with ciImage: CIImage) {
+        let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.segmentationRequests)
         } catch {
-//            self.isSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
     }
@@ -195,19 +190,14 @@ class SegmentationModel: ObservableObject {
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))
         }
-//        isPerClassSegmentationProcessing = false
     }
     
-    func performPerClassSegmentationRequest(with cgImage: CGImage) {
-        //        guard !isSegmentationProcessing else { return }
-
-        //        isSegmentationProcessing = true
+    func performPerClassSegmentationRequest(with ciImage: CIImage) {
         print("performPerClassSegmentationRequest")
-        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
+        let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.perClassSegmentationRequests)
         } catch {
-//            self.isPerClassSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
     }

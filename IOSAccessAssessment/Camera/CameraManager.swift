@@ -56,7 +56,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) -> Void {
+    func onNewData(cameraImage: CIImage, depthPixelBuffer: CVPixelBuffer) -> Void {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)

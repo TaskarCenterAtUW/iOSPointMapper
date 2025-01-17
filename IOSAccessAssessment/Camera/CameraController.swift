@@ -11,7 +11,7 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer)
+    func onNewData(cameraImage: CIImage, depthPixelBuffer: CVPixelBuffer)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -148,8 +148,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
         let context = CIContext()
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let croppedCIImage = ciImage.croppedToCenter(size: croppedSize)
-        guard let cameraImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
+        let cameraImage = ciImage.croppedToCenter(size: croppedSize)
+//        guard let cameraImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
         // Get pixel buffer to process depth data,
         // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
