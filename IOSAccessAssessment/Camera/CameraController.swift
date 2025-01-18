@@ -11,7 +11,22 @@ import Vision
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
-    func onNewData(cameraImage: CIImage, depthImage: CIImage)
+    /**
+        Called when new data is available from the camera and depth sensor.
+        # Parameters
+        - cameraImage: The image from the camera.
+        - depthImage: The image from the depth sensor.
+     
+        # Discussion
+        The depth image is made optional in case the LiDAR sensor is not present
+            
+     */
+    func onNewData(cameraImage: CIImage, depthImage: CIImage?)
+    
+    /**
+        Called to return info on if the LiDAR sensor is available.
+     */
+    func getLidarAvailability(isLidarAvailable: Bool)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -71,6 +86,8 @@ class CameraController: NSObject, ObservableObject {
         let deviceAndDepthFlag = try getDeviceAndDepthFlag()
         captureDevice = deviceAndDepthFlag.device
         isLidarDeviceAvailable = deviceAndDepthFlag.hasLidar
+        delegate?.getLidarAvailability(isLidarAvailable: deviceAndDepthFlag.hasLidar)
+        
         
         
         let deviceInput = try AVCaptureDeviceInput(device: captureDevice)

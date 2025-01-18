@@ -9,6 +9,8 @@ import DequeModule
 
 class SharedImageData: ObservableObject {
     @Published var cameraImage: CIImage?
+    
+    @Published var isLidarAvailable: Bool = false
     @Published var depthImage: CIImage?
     
     @Published var segmentedIndices: [Int] = []

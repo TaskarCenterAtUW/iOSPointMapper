@@ -56,7 +56,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cameraImage: CIImage, depthImage: CIImage) -> Void {
+    func getLidarAvailability(isLidarAvailable: Bool) {
+        self.sharedImageData?.isLidarAvailable = isLidarAvailable
+    }
+    
+    func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
