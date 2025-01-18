@@ -156,42 +156,26 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             height: Constants.ClassConstants.inputSize.width
         )
         
-        // TODO: Check if it is more performant to use CVPixelBuffer for all the cropping and other conversions
-        //  and then convert to CIImage/CGIImage where needed.
-        // NOTE: The CGIImage is actually never directly used. It is converted to a UIImage.
-        //  Thus, check if we can directly send the CVPixelBuffer instead
-        // Get the image buffer, convert to CIImage to crop, and convert to CGImage to send to vision model
-        // NOTE: CVPixelBuffer may not be appropriate due to it being for video frame data.
-        guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return } //1920 \times 1080
-        let context = CIContext()
+        guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         let cameraImage = ciImage.croppedToCenter(size: croppedSize)
-//        guard let cameraImage = context.createCGImage(croppedCIImage, from: croppedCIImage.extent) else { return }
         
-        // Get pixel buffer to process depth data,
-        // TODO: Conversely, check if it is more convenient to convert the CVPixelBuffer to CIImage,
-        //  perform the resize and crop, then convert back to CVPixelBuffer
-//        var finalDepthPixelBuffer: CVPixelBuffer
-        var depthImage: CIImage
-        if (isLidarDeviceAvailable) {
-            guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
-            let depthData = syncedDepthData.depthData
-            let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-            let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
-            let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-            let depthSideLength = min(depthWidth, depthHeight)
-            // TODO: Check why does this lead to an error on orientation change
-            let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
-            
-            depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale)).croppedToCenter(size: croppedSize)
-//            guard let croppedDepthPixelBuffer = resizeAndCropPixelBuffer(depthPixelBuffer, targetSize: CGSize(width: depthWidth * scale, height: depthHeight * scale), cropSize: croppedSize) else { return }
-//            finalDepthPixelBuffer = croppedDepthPixelBuffer
-        } else {
-            // LiDAR is not available, so create a CVPixelBuffer filled with 0s
-            depthImage = CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: croppedSize)!)
-//            finalDepthPixelBuffer = createBlankDepthPixelBuffer(targetSize: croppedSize)!
+        var depthImage: CIImage? = nil
+        if (!isLidarDeviceAvailable) {
+            delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
+            return
         }
         
+        guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
+        let depthData = syncedDepthData.depthData
+        let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
+        let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
+        let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
+        let depthSideLength = min(depthWidth, depthHeight)
+        // TODO: Check why does this lead to an error on orientation change
+        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+        
+        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale)).croppedToCenter(size: croppedSize)
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }
 }
