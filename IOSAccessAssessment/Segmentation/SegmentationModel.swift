@@ -110,8 +110,6 @@ class SegmentationModel: ObservableObject {
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
         
-        // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
-        
         let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.masker.inputImage = outputImage
         
@@ -123,7 +121,7 @@ class SegmentationModel: ObservableObject {
         self.segmentedIndices = segmentedIndices
         self.segmentationResults = outputImage
         self.maskedSegmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-        if let segmentationImage = self.segmentationResults,
+        if let _ = self.segmentationResults,
             let maskedSegmentationImage = self.maskedSegmentationResults {
             completion(.success(SegmentationResultsOutput(
                 segmentationResults: outputImage,

@@ -17,6 +17,7 @@ struct ContentView: View {
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationModel: SegmentationModel
+    @EnvironmentObject var depthModel: DepthModel
     
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
@@ -122,7 +123,9 @@ struct ContentView: View {
         }
     }
     
-    // This function callback currently has control over navigation to the Annotation View
+    // This function callback currently has control over navigation to the Annotation View.
+    // This is not ideal behavior, this may be alleviated eventually when we use async/await
+    // because at this moment, adding yet another callback to fix this would bloat the code.
     private func updatePerClassImageSegmentation(result: Result<PerClassSegmentationResultsOutput, Error>) -> Void {
         switch result {
         case .success(let output):
@@ -133,6 +136,10 @@ struct ContentView: View {
             self.sharedImageData.classImages = output.perClassSegmentationResults
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.manager?.stopStream()
+            // Perform depth estimation only if LiDAR is not available
+            if (!sharedImageData.isLidarAvailable) {
+                self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
+            }
             self.navigateToAnnotationView = true
         case .failure(let error):
             fatalError("Unable to process per-class segmentation \(error.localizedDescription)")

@@ -35,7 +35,7 @@ struct DepthResultsOutput {
 /**
  A class to handle depth estimation on demand.
  
- While it performs the depth estimation process asynchronously, it does not queue the requests.
+ Currently, it performs the depth estimation process synchronously. This is not recommended for real-time applications.
  */
 class DepthModel: ObservableObject {
     let context = CIContext()
@@ -46,7 +46,7 @@ class DepthModel: ObservableObject {
     var visionModel: DepthAnythingV2SmallF16?
     
     /// The resulting depth image
-    @Published var depthResults: CIImage?
+//    @Published var depthResults: CIImage?
     
     init() {
         // Create a reusable buffer to avoid allocating memory for every model invocation
@@ -77,23 +77,25 @@ class DepthModel: ObservableObject {
     }
     
     /**
-     Perform depth estimation on the given image. While this is done asynchronously, it is done on the main thread.
+     Perform depth estimation on the given image. This is done synchronously.
      
      - Parameter ciImage: The image for which to perform depth estimation.
      */
-    func performDepthEstimation(_ ciImage: CIImage) async throws {
+    func performDepthEstimation(_ ciImage: CIImage) -> CIImage {
+        let originalSize: CGSize = ciImage.extent.size
         guard let visionModel else {
-            return
+            return CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: originalSize)!)
         }
         
-        let originalSize: CGSize = ciImage.extent.size
         let inputImage = ciImage.resized(to: Constants.DepthConstants.inputSize)
         context.render(inputImage, to: inputPixelBuffer)
-        let result = try visionModel.prediction(image: inputPixelBuffer)
+        guard let result = try? visionModel.prediction(image: inputPixelBuffer) else {
+            return CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: originalSize)!)
+        }
         let outputImage: CIImage = CIImage(cvPixelBuffer: result.depth)
             .resized(to: originalSize)
-        
-        self.depthResults = outputImage
+//        self.depthResults = outputImage
+        return outputImage
     }
     
     
