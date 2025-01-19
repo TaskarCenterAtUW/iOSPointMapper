@@ -103,7 +103,7 @@ class ObjectLocation {
     func getDepth(sharedImageData: SharedImageData, index: Int) {
         let objectSegmentation = sharedImageData.classImages[index]
         let mask = createMask(from: objectSegmentation)
-        guard let depthMap = sharedImageData.depthData else { return }
+        guard let depthMap = sharedImageData.depthImage?.pixelBuffer else { return }
 //        var distanceSum: Float = 0
         var sumX = 0
         var sumY = 0

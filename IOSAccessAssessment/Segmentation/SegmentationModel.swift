@@ -45,11 +45,16 @@ struct PerClassSegmentationResultsOutput {
     }
 }
 
-// This Segmentation Model can perform two kinds of requests
-// All-class segmentation (only one output image) and Per class segmentation (one image per class)
-// Also saves colored masks of the segmentation results
+/** A class to handle segmentation of images by loading them in a queue.
+ 
+ # Overview
+ This Segmentation Model can perform two kinds of requests.
+ 1. All-class segmentation (only one output image) and Per class segmentation (one image per class)
+ 2. Also saves colored masks of the segmentation results.
+ 
+ */
 class SegmentationModel: ObservableObject {
-    @Published var segmentationResults: CVPixelBuffer?
+    @Published var segmentationResults: CIImage?
     @Published var maskedSegmentationResults: UIImage?
     // Not in use for the current system. All usages have been commented out
 //    @Published
@@ -105,8 +110,6 @@ class SegmentationModel: ObservableObject {
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
         
-        // FIXME: Save the pixelBuffer instead of the CIImage into sharedImageData, and convert to CIImage on the fly whenever required
-        
         let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.masker.inputImage = outputImage
         
@@ -116,10 +119,9 @@ class SegmentationModel: ObservableObject {
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
-        self.segmentationResults = outPixelBuffer.pixelBuffer
+        self.segmentationResults = outputImage
         self.maskedSegmentationResults = UIImage(ciImage: self.masker.outputImage!, scale: 1.0, orientation: .downMirrored)
-//        isSegmentationProcessing = false
-        if let segmentationImage = self.segmentationResults,
+        if let _ = self.segmentationResults,
             let maskedSegmentationImage = self.maskedSegmentationResults {
             completion(.success(SegmentationResultsOutput(
                 segmentationResults: outputImage,
@@ -130,15 +132,11 @@ class SegmentationModel: ObservableObject {
         }
     }
 
-    func performSegmentationRequest(with cgImage: CGImage) {
-//        guard !isSegmentationProcessing else { return }
-
-//        isSegmentationProcessing = true
-        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
+    func performSegmentationRequest(with ciImage: CIImage) {
+        let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.segmentationRequests)
         } catch {
-//            self.isSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
     }
@@ -190,19 +188,14 @@ class SegmentationModel: ObservableObject {
         } else {
             completion(.failure(SegmentationError.invalidSegmentation))
         }
-//        isPerClassSegmentationProcessing = false
     }
     
-    func performPerClassSegmentationRequest(with cgImage: CGImage) {
-        //        guard !isSegmentationProcessing else { return }
-
-        //        isSegmentationProcessing = true
+    func performPerClassSegmentationRequest(with ciImage: CIImage) {
         print("performPerClassSegmentationRequest")
-        let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .right, options: [:])
+        let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .right, options: [:])
         do {
             try handler.perform(self.perClassSegmentationRequests)
         } catch {
-//            self.isPerClassSegmentationProcessing = false
             print("Error performing request: \(error.localizedDescription)")
         }
     }

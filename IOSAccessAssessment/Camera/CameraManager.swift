@@ -56,12 +56,15 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         processingCapturedResult = false
     }
     
-    func onNewData(cameraImage: CGImage, depthPixelBuffer: CVPixelBuffer) -> Void {
+    func getLidarAvailability(isLidarAvailable: Bool) {
+        self.sharedImageData?.isLidarAvailable = isLidarAvailable
+    }
+    
+    func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
             if !self.processingCapturedResult {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
-//                self.sharedImageData?.appendFrame(frame: cameraImage)
-                self.sharedImageData?.depthData = depthPixelBuffer
+                self.sharedImageData?.depthImage = depthImage
                 
                 self.segmentationModel?.performSegmentationRequest(with: cameraImage)
                 

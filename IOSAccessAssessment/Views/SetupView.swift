@@ -39,8 +39,10 @@ struct SetupView: View {
     }
     @State private var showLogoutConfirmation = false
     @EnvironmentObject var userState: UserStateViewModel
+    
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationModel: SegmentationModel = SegmentationModel()
+    @StateObject private var depthModel: DepthModel = DepthModel()
     
     var body: some View {
         NavigationStack {
@@ -113,6 +115,7 @@ struct SetupView: View {
         }
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationModel)
+        .environmentObject(self.depthModel)
         .environment(\.colorScheme, .dark)
     }
 }

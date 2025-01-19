@@ -166,6 +166,10 @@ struct Constants {
         ],
         inputSize: CGSize(width: 1024, height: 512)
     )
+    
+    struct DepthConstants {
+        static let inputSize: CGSize = CGSize(width: 518, height: 392)
+    }
 }
 
 class Counter {
