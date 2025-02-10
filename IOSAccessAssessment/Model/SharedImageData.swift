@@ -37,7 +37,7 @@ class SharedImageData: ObservableObject {
     }
     
     func appendFrame(frame: CIImage) {
-        DispatchQueue.main.async {
+        processingQueue.async {
             if (Float(self.segmentationFrames.count)/Float(self.maxCapacity) > self.thresholdRatio) {
                 self.dropAlternateFrames()
             }
