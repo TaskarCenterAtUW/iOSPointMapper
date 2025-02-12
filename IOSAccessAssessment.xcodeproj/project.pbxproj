@@ -20,6 +20,8 @@
 		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
+		A3648CDF2D5D060500F03576 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3648CDD2D5D05F200F03576 /* opencv2.framework */; };
+		A3648CE02D5D060500F03576 /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3648CDD2D5D05F200F03576 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
@@ -64,6 +66,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A3648CE12D5D060500F03576 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A3648CE02D5D060500F03576 /* opencv2.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		3222F9162B622DFD0019A079 /* IOSAccessAssessment.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IOSAccessAssessment.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentApp.swift; sourceTree = "<group>"; };
@@ -82,6 +98,7 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		A3648CDD2D5D05F200F03576 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = opencv2.framework; path = /Users/himanshu/Downloads/opencv2.framework; sourceTree = "<absolute>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImageData.swift; sourceTree = "<group>"; };
@@ -112,6 +129,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3648CDF2D5D060500F03576 /* opencv2.framework in Frameworks */,
 				A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -136,6 +154,7 @@
 		3222F90D2B622DFD0019A079 = {
 			isa = PBXGroup;
 			children = (
+				A3648CDC2D5D052700F03576 /* Frameworks */,
 				3222F9182B622DFD0019A079 /* IOSAccessAssessment */,
 				3222F9292B622E0A0019A079 /* IOSAccessAssessmentTests */,
 				3222F9332B622E0A0019A079 /* IOSAccessAssessmentUITests */,
@@ -231,6 +250,14 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		A3648CDC2D5D052700F03576 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A3648CDD2D5D05F200F03576 /* opencv2.framework */,
+			);
+			path = Frameworks;
+			sourceTree = "<group>";
+		};
 		A3B070982CE0B6DF0028CAC5 /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -317,6 +344,7 @@
 				3222F9122B622DFD0019A079 /* Sources */,
 				3222F9132B622DFD0019A079 /* Frameworks */,
 				3222F9142B622DFD0019A079 /* Resources */,
+				A3648CE12D5D060500F03576 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);

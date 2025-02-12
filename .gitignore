@@ -9,3 +9,7 @@ xcuserdata/
 
 ## Build directory
 build/
+
+# Project Specific
+Frameworks/*
+!Frameworks/.gitkeep
