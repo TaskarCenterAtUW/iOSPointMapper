@@ -28,6 +28,7 @@
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3D1272D2D5D0A020081DFF4 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; };
 		A3D1272E2D5D0A020081DFF4 /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
@@ -104,6 +105,9 @@
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModel.swift; sourceTree = "<group>"; };
 		A3D1272B2D5D09F40081DFF4 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = opencv2.framework; sourceTree = "<group>"; };
+		A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpenCVWrapper.h; sourceTree = "<group>"; };
+		A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
+		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
@@ -175,6 +179,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				A3D1272F2D5D0DFE0081DFF4 /* OpenCV */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
 				CAF812C32CFA108100D44B84 /* ViewModel */,
 				A3B070982CE0B6DF0028CAC5 /* UI */,
@@ -264,6 +269,16 @@
 				A3B070992CE0B6E50028CAC5 /* Frame.swift */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		A3D1272F2D5D0DFE0081DFF4 /* OpenCV */ = {
+			isa = PBXGroup;
+			children = (
+				A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */,
+				A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */,
+				A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */,
+			);
+			path = OpenCV;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* Depth */ = {
@@ -403,6 +418,7 @@
 				TargetAttributes = {
 					3222F9152B622DFD0019A079 = {
 						CreatedOnToolsVersion = 15.2;
+						LastSwiftMigration = 1610;
 					};
 					3222F9252B622E0A0019A079 = {
 						CreatedOnToolsVersion = 15.2;
@@ -491,6 +507,7 @@
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
+				A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
@@ -660,6 +677,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
@@ -687,6 +705,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -697,6 +717,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IOSAccessAssessment/Preview Content\"";
@@ -724,6 +745,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
