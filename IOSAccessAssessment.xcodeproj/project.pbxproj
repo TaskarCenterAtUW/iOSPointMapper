@@ -136,6 +136,7 @@
 		3222F90D2B622DFD0019A079 = {
 			isa = PBXGroup;
 			children = (
+				A3648CDC2D5D052700F03576 /* Frameworks */,
 				3222F9182B622DFD0019A079 /* IOSAccessAssessment */,
 				3222F9292B622E0A0019A079 /* IOSAccessAssessmentTests */,
 				3222F9332B622E0A0019A079 /* IOSAccessAssessmentUITests */,
@@ -229,6 +230,13 @@
 				DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A3648CDC2D5D052700F03576 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Frameworks;
 			sourceTree = "<group>";
 		};
 		A3B070982CE0B6DF0028CAC5 /* UI */ = {
