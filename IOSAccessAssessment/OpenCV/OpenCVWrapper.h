@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OpenCVWrapper : NSObject
 
-    + (UIImage *)processImageWithOpenCV:(UIImage*)inputImage;
+    + (UIImage *)grayScaleImageConversion:(UIImage*)inputImage;
 
 @end
 
