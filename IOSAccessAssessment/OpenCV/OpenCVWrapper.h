@@ -14,6 +14,12 @@ NS_ASSUME_NONNULL_BEGIN
 
     + (UIImage *)grayScaleImageConversion:(UIImage*)inputImage;
 
+    + (UIImage *)grayImageConversion:(UIImage*)inputImage;
+
+    + (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage;
+
+    + (UIImage *)setAlphaForPixel:(UIImage*)inputImage;
+
 @end
 
 NS_ASSUME_NONNULL_END
