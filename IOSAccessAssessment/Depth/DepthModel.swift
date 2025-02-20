@@ -65,7 +65,7 @@ class DepthModel: ObservableObject {
         inputPixelBuffer = buffer
         
         do {
-            try loadModel()
+//            try loadModel()
         } catch {
             print("Failed to load model: \(error.localizedDescription)")
         }

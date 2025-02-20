@@ -9,6 +9,9 @@
 #include <iostream>
 #include <fstream>
 
+/**
+    This is a simple function that performs the watershed algorithm using only the mask of a single class (can have multiple instances) and the depth map.
+ */
 cv::Mat watershedMaskAndDepth (cv::Mat mask, cv::Mat depth) {
     std::cout << "Type of mask: " << mask.type() << std::endl;
     // Remove the alpha channel from the mask image
@@ -18,6 +21,8 @@ cv::Mat watershedMaskAndDepth (cv::Mat mask, cv::Mat depth) {
     cv::Mat bg_mask;
     cv::inRange(mask, cv::Scalar(255, 255, 255), cv::Scalar(255, 255, 255), bg_mask);
     mask.setTo(cv::Scalar(0, 0, 0), bg_mask);
+    
+    cv::bitwise_not(bg_mask, bg_mask);
     
     // First, we need to compute the Laplacian of the depth map, to get the edges.
     cv::Mat kernel = (cv::Mat_<float>(3,3) << 1,  1, 1, 1, -8, 1, 1,  1, 1);
