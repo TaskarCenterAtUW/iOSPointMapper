@@ -151,10 +151,6 @@ struct AnnotationView: View {
     func refreshView() {
         // Any additional refresh logic can be placed here
         // Example: fetching new data, triggering animations, sending current data etc.
-        let cameraCGImage = annotationCIContext.createCGImage(
-            sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
-        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
-        
         let depthCGImage = annotationCIContext.createCGImage(
             sharedImageData.depthImage!, from: sharedImageData.depthImage!.extent)!
         let depthUIImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .downMirrored)
@@ -162,11 +158,13 @@ struct AnnotationView: View {
         let segmentationLabelImage = annotationCIContext.createCGImage(
             sharedImageData.segmentationLabelImage!, from: sharedImageData.segmentationLabelImage!.extent)!
         let segmentationLabelUIImage = UIImage(cgImage: segmentationLabelImage, scale: 1.0, orientation: .right)
-        
         let classIndex = sharedImageData.segmentedIndices[index]
-        
         self.segmentationUIImage = OpenCVWrapper.perfor1DWatershed(segmentationLabelUIImage, depthUIImage,
                                         Int32(Constants.ClassConstants.labels[classIndex]))
+        
+        let cameraCGImage = annotationCIContext.createCGImage(
+            sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
+        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
     }
     
     func nextSegment() {
