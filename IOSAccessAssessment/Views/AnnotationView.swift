@@ -28,90 +28,87 @@ struct AnnotationView: View {
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
     
+    @State private var cameraUIImage: UIImage? = nil
+    @State private var segmentationUIImage: UIImage? = nil
+    
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         if (!self.isValid()) {
             Rectangle()
                 .frame(width: 0, height: 0)
-                .onAppear() {
-                    // TODO: Currently, this delay seems to work the best for automatic back navigation
-                    //  Need to figure out a way to programmatically navigate without issues when done synchronously.
-                    //  Currently, when done synchronously, the onAppear of the previous view does not run
-                    //  as the previous view may be considered to have not disappeared.
-                    //  May have to do with the way SwiftUI runs the view lifecycle update. 
-                    // TODO: Alternatively, consider never navigating from ContentView to begin with when segments are empty
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.dismiss()
-                    }
+                .onAppear {
+                    refreshView()
                 }
+            
         } else {
-            ZStack {
-                VStack {
-                    HStack {
-                        Spacer()
-                        HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!,
-                                                                segmentationImage: sharedImageData.classImages[index],
-                                                             frameRect: VerticalFrame.getColumnFrame(
-                                                                width: UIScreen.main.bounds.width,
-                                                                height: UIScreen.main.bounds.height,
-                                                                row: 0)
-                        )
-                        Spacer()
-                    }
-                    HStack {
-                        Spacer()
-                        Text("Selected class: \(classes[sharedImageData.segmentedIndices[index]])")
-                        Spacer()
-                    }
-                    
-                    ProgressBar(value: calculateProgress())
-                    
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 10) {
-                            ForEach(options, id: \.self) { option in
-                                Button(action: {
-                                    selectedOption = (selectedOption == option) ? nil : option
-                                    
-                                    if option == .misidentified {
-                                        selectedClassIndex = index
-                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-                                        isShowingClassSelectionModal = true
-                                    }
-                                }) {
-                                    Text(option.rawValue)
-                                        .font(.subheadline)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(selectedOption == option ? Color.blue : Color.gray)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(10)
+            VStack {
+                HStack {
+                    Spacer()
+                    HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!,
+                                                            segmentationImage: sharedImageData.classImages[index],
+                                                            frameRect: VerticalFrame.getColumnFrame(
+                                                            width: UIScreen.main.bounds.width,
+                                                            height: UIScreen.main.bounds.height,
+                                                            row: 0)
+                    )
+                    Spacer()
+                }
+                HStack {
+                    Spacer()
+                    Text("Selected class: \(classes[sharedImageData.segmentedIndices[index]])")
+                    Spacer()
+                }
+                
+                ProgressBar(value: calculateProgress())
+                
+                HStack {
+                    Spacer()
+                    VStack(spacing: 10) {
+                        ForEach(options, id: \.self) { option in
+                            Button(action: {
+                                selectedOption = (selectedOption == option) ? nil : option
+                                
+                                if option == .misidentified {
+                                    selectedClassIndex = index
+                                    tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+                                    isShowingClassSelectionModal = true
                                 }
+                            }) {
+                                Text(option.rawValue)
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(selectedOption == option ? Color.blue : Color.gray)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
                             }
                         }
-                        Spacer()
                     }
-                    .padding()
-                    
-                    Button(action: {
-                        objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
-                        selectedOption = nil
-                        uploadChanges()
-                        nextSegment()
-                    }) {
-                        Text(index == selection.count - 1 ? "Finish" : "Next")
-                    }
-                    .padding()
+                    Spacer()
                 }
+                .padding()
+                
+                Button(action: {
+                    objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
+                    selectedOption = nil
+                    uploadChanges()
+                    nextSegment()
+                }) {
+                    Text(index == selection.count - 1 ? "Finish" : "Next")
+                }
+                .padding()
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
+            .onAppear {
+                refreshView()
+            }
             .onDisappear {
                 closeChangeset()
             }
-            .onChange(of: index) { _ in
+            .onChange(of: index, initial: true) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
-                self.refreshView()
+                refreshView()
             }
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
@@ -143,6 +140,9 @@ struct AnnotationView: View {
         if (self.sharedImageData.segmentedIndices.isEmpty || (index >= self.sharedImageData.segmentedIndices.count)) {
             return false
         }
+        if (self.cameraUIImage == nil || self.segmentationUIImage == nil) {
+            return false
+        }
         return true
     }
     
@@ -159,6 +159,8 @@ struct AnnotationView: View {
     func refreshView() {
         // Any additional refresh logic can be placed here
         // Example: fetching new data, triggering animations, sending current data etc.
+        self.cameraUIImage = UIImage(ciImage: sharedImageData.cameraImage!, scale: 1.0, orientation: .right)
+        self.segmentationUIImage = UIImage(ciImage: sharedImageData.classImages[index], scale: 1.0, orientation: .downMirrored)
     }
 
     func calculateProgress() -> Float {
