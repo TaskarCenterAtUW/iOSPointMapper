@@ -133,6 +133,7 @@ struct ContentView: View {
             if (output.perClassSegmentationResults.count == 0) {
                 return
             }
+            self.sharedImageData.segmentationLabelImage = output.segmentationLabelResults
             self.sharedImageData.classImages = output.perClassSegmentationResults
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.manager?.stopStream()

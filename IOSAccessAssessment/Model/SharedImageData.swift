@@ -13,6 +13,8 @@ class SharedImageData: ObservableObject {
     @Published var isLidarAvailable: Bool = false
     @Published var depthImage: CIImage?
     
+    // Overall segmentation image with all classes (labels)
+    @Published var segmentationLabelImage: CIImage?
     @Published var segmentedIndices: [Int] = []
     // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
