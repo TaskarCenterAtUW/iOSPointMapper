@@ -9,6 +9,13 @@
 
 @implementation UIImage (OpenCV)
 
+/**
+    Convert UIImage to cv::Mat
+ 
+    The following TODO task is to address the issue where the bitmap info is being hard-coded to only serve segmentation masks. We need to make it more generic.
+    TODO: Later, we would like to use the attributes of the UIImage, such as bitmap data, color space, and alpha channel to create a cv::Mat object.
+        
+ */
 -(cv::Mat)CVMat
 {
     CGColorSpaceRef colorSpace = CGImageGetColorSpace(self.CGImage);
@@ -26,8 +33,8 @@
                                                     8,                          // Bits per component
                                                     cvMat.step[0],              // Bytes per row
                                                     colorSpace,                 // Colorspace
-                                                    kCGImageAlphaNoneSkipLast |
-                                                    kCGBitmapByteOrderDefault); // Bitmap info flags
+                                                    kCGImageAlphaPremultipliedLast |
+                                                    kCGImageByteOrderDefault); // Bitmap info flags
     
     CGContextDrawImage(contextRef, CGRectMake(0, 0, cols, rows), self.CGImage);
     CGContextRelease(contextRef);
@@ -58,7 +65,7 @@
                                                     cvMat.step[0],              // Bytes per row
                                                     colorSpace,                 // Colorspace
                                                     kCGImageAlphaNoneSkipLast |
-                                                    kCGBitmapByteOrderDefault); // Bitmap info flags
+                                                    kCGImageByteOrderDefault); // Bitmap info flags
     
     CGContextDrawImage(contextRef, CGRectMake(0, 0, cols, rows), self.CGImage);
     CGContextRelease(contextRef);
@@ -72,6 +79,13 @@
     return [[UIImage alloc] initWithCVMat:cvMat];
 }
 
+/**
+    Convert cv::Mat to UIImage
+ 
+    The following TODO task is to address the issue where the bitmap info is being hard-coded to only serve segmentation masks. We need to make it more generic.
+    TODO: Later, we would like to use the attributes of the UIImage, such as bitmap data, color space, and alpha channel to create a cv::Mat object.
+        
+ */
 - (id)initWithCVMat:(const cv::Mat&)cvMat
 {
     NSData *data = [NSData dataWithBytes:cvMat.data length:cvMat.elemSize() * cvMat.total()];
@@ -92,7 +106,7 @@
                                         8 * cvMat.elemSize(),                       //bits per pixel
                                         cvMat.step[0],                              //bytesPerRow
                                         colorSpace,                                 //colorspace
-                                        kCGImageAlphaNone|kCGBitmapByteOrderDefault,// bitmap info
+                                        kCGImageAlphaNone|kCGImageByteOrderDefault,// bitmap info
                                         provider,                                   //CGDataProviderRef
                                         NULL,                                       //decode
                                         false,                                      //should interpolate

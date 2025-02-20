@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+/**
+ A class to save image objects to the photo album.
+    Currently only supports UIImage objects.
+ */
 class ImageSaver: NSObject {
     func writeToPhotoAlbum(image: UIImage) {
         UIImageWriteToSavedPhotosAlbum(image, self, #selector(saveCompleted), nil)
