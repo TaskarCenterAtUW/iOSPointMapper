@@ -7,7 +7,8 @@
 
 #ifndef Watershed_hpp
 #define Watershed_hpp
+#include <opencv2/opencv.hpp>
 
-#include <stdio.h>
+cv::Mat watershedMaskAndDepth (cv::Mat mask, cv::Mat depth);
 
 #endif /* Watershed_hpp */
