@@ -18,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
     + (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage;
 
+    + (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue;
+
     + (UIImage *)setAlphaForPixel:(UIImage*)inputImage;
 
 @end

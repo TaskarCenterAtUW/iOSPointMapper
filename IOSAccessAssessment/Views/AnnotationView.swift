@@ -15,13 +15,15 @@ struct AnnotationView: View {
     }
     let options = AnnotationOption.allCases
     
+    let annotationCIContext = CIContext()
+    
     @EnvironmentObject var sharedImageData: SharedImageData
     
-    var objectLocation: ObjectLocation
-    var classes: [String]
-    var selection: [Int]
-    
     @State private var index = 0
+    
+    var objectLocation: ObjectLocation
+    var classes: [String] // Might want to replace this with the global Constants object reference
+    var selection: [Int]
     
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
@@ -45,8 +47,8 @@ struct AnnotationView: View {
             VStack {
                 HStack {
                     Spacer()
-                    HostedAnnotationCameraViewController(cameraImage: sharedImageData.cameraImage!,
-                                                            segmentationImage: sharedImageData.classImages[index],
+                    HostedAnnotationCameraViewController(cameraImage: cameraUIImage!,
+                                                         segmentationImage: segmentationUIImage!,
                                                             frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -146,6 +148,27 @@ struct AnnotationView: View {
         return true
     }
     
+    func refreshView() {
+        // Any additional refresh logic can be placed here
+        // Example: fetching new data, triggering animations, sending current data etc.
+        let cameraCGImage = annotationCIContext.createCGImage(
+            sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
+        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
+        
+        let depthCGImage = annotationCIContext.createCGImage(
+            sharedImageData.depthImage!, from: sharedImageData.depthImage!.extent)!
+        let depthUIImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .downMirrored)
+        
+        let segmentationLabelImage = annotationCIContext.createCGImage(
+            sharedImageData.segmentationLabelImage!, from: sharedImageData.segmentationLabelImage!.extent)!
+        let segmentationLabelUIImage = UIImage(cgImage: segmentationLabelImage, scale: 1.0, orientation: .right)
+        
+        let classIndex = sharedImageData.segmentedIndices[index]
+        
+        self.segmentationUIImage = OpenCVWrapper.perfor1DWatershed(segmentationLabelUIImage, depthUIImage,
+                                        Int32(Constants.ClassConstants.labels[classIndex]))
+    }
+    
     func nextSegment() {
         // Ensure that the index does not exceed the length of the sharedImageData classImages count
         // Do not simply rely on the isValid check in the body. 
@@ -154,13 +177,6 @@ struct AnnotationView: View {
         } else {
             self.dismiss()
         }
-    }
-
-    func refreshView() {
-        // Any additional refresh logic can be placed here
-        // Example: fetching new data, triggering animations, sending current data etc.
-        self.cameraUIImage = UIImage(ciImage: sharedImageData.cameraImage!, scale: 1.0, orientation: .right)
-        self.segmentationUIImage = UIImage(ciImage: sharedImageData.classImages[index], scale: 1.0, orientation: .downMirrored)
     }
 
     func calculateProgress() -> Float {

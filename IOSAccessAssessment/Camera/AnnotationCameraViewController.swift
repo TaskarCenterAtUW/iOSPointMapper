@@ -49,25 +49,19 @@ class AnnotationCameraViewController: UIViewController {
 }
 
 struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
-    let cameraImage: CIImage
-    let segmentationImage: CIImage
+    let cameraImage: UIImage
+    let segmentationImage: UIImage
     var frameRect: CGRect
     
     func makeUIViewController(context: Context) -> AnnotationCameraViewController {
-        let cameraUIImage = UIImage(ciImage: cameraImage, scale: 1.0, orientation: .right)
-        let segmentationUIImage = UIImage(ciImage: segmentationImage, scale: 1.0, orientation: .downMirrored)
-        
-        let viewController = AnnotationCameraViewController(cameraImage: cameraUIImage, segmentationImage: segmentationUIImage)
+        let viewController = AnnotationCameraViewController(cameraImage: cameraImage, segmentationImage: segmentationImage)
         viewController.frameRect = frameRect
         return viewController
     }
     
     func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
-        let cameraUIImage = UIImage(ciImage: cameraImage, scale: 1.0, orientation: .right)
-        let segmentationUIImage = UIImage(ciImage: segmentationImage, scale: 1.0, orientation: .downMirrored)
-        
-        uiViewController.cameraImage = cameraUIImage
-        uiViewController.segmentationImage = segmentationUIImage
+        uiViewController.cameraImage = cameraImage
+        uiViewController.segmentationImage = segmentationImage
         uiViewController.viewDidLoad()
     }
 }
