@@ -11,4 +11,8 @@
 
 cv::Mat watershedMaskAndDepth (cv::Mat mask, cv::Mat depth);
 
+cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue);
+
+cv::Mat eraseBorders (cv::Mat mask, int borderSize);
+
 #endif /* Watershed_hpp */
