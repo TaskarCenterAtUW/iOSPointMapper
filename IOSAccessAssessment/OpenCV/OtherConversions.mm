@@ -9,20 +9,30 @@
 
 @implementation OtherConversions
 
-+ (std::tuple<int, int>) CVPointToTuple:(cv::Point)point {
-    return std::make_tuple(point.x, point.y);
++ (NSArray<NSArray<NSValue *> *> *)cvContoursToNSArray:(const std::vector<std::vector<cv::Point>> &)contours {
+    NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
+    
+    for (const std::vector<cv::Point> &contour : contours) {
+        NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
+        
+        for (const cv::Point &point : contour) {
+            CGPoint cgPoint = CGPointMake(point.x, point.y);
+            [convertedContour addObject:[NSValue valueWithCGPoint:cgPoint]];
+        }
+        [convertedContours addObject:convertedContour];
+    }
+    return convertedContours;
 }
 
-+ (cv::Point) TupleToCVPoint:(std::tuple<int, int>)tuple {
-    return cv::Point(std::get<0>(tuple), std::get<1>(tuple));
-}
-
-+ (std::tuple<int, int, int>) CVVec3bToTuple:(cv::Vec3b)vec {
-    return std::make_tuple(vec[0], vec[1], vec[2]);
-}
-
-+ (cv::Vec3b) TupleToCVVec3b:(std::tuple<int, int, int>)tuple {
-    return cv::Vec3b(std::get<0>(tuple), std::get<1>(tuple), std::get<2>(tuple));
++ (NSArray<NSValue *> *)convertVec3bArray:(const std::vector<cv::Vec3b> &)vecArray {
+    NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
+    
+    for (const cv::Vec3b &vec : vecArray) {
+        // Convert cv::Vec3b to an array of 3 UInt8 values
+        uint8_t values[3] = {vec[0], vec[1], vec[2]};
+        [convertedVec3bArray addObject:[NSValue valueWithBytes:&values objCType:@encode(uint8_t[3])]];
+    }
+    return convertedVec3bArray;
 }
 
 @end

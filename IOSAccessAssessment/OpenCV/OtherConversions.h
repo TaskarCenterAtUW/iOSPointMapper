@@ -22,12 +22,12 @@
 #import <Foundation/Foundation.h>
 @interface OtherConversions : NSObject
 
-+ (std::tuple<int, int>) CVPointToTuple:(cv::Point)point;
++ (NSArray<NSArray<NSValue *> *> *)cvContoursToNSArray:(const std::vector<std::vector<cv::Point>> &)contours;
 
-+ (cv::Point) TupleToCVPoint:(std::tuple<int, int>)tuple;
-
-+ (std::tuple<int, int, int>) CVVec3bToTuple:(cv::Vec3b)vec;
-
-+ (cv::Vec3b) TupleToCVVec3b:(std::tuple<int, int, int>)tuple;
+/**
+    Convert cv::Vec3b to NSArray<NSValue *>.
+    FIXME: This method is not generic and should be refactored.
+ */
++ (NSArray<NSValue *> *)convertVec3bArray:(const std::vector<cv::Vec3b> &)vecArray;
 
 @end

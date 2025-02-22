@@ -18,4 +18,4 @@ cv::Mat makeBackgroundTransparent (cv::Mat mat, cv::Scalar backgroundColor);
 std::tuple<cv::Mat, std::vector<std::vector<cv::Point>>, std::vector<cv::Vec3b>>
 watershed1DMaskAndDepthAndReturnContoursColors (cv::Mat mask, cv::Mat depth, int labelValue);
 
-#endif /* Watershed_hpp */
+#endif /* Watershed_h */
