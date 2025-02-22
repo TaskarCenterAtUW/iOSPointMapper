@@ -9,12 +9,13 @@
 #define Watershed_hpp
 #include <opencv2/opencv.hpp>
 
-cv::Mat watershedMaskAndDepth (cv::Mat mask, cv::Mat depth);
-
 cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue);
 
 cv::Mat eraseBorders (cv::Mat mask, int borderSize);
 
 cv::Mat makeBackgroundTransparent (cv::Mat mat, cv::Scalar backgroundColor);
 
-#endif /* Watershed_hpp */
+std::tuple<cv::Mat, std::vector<std::vector<cv::Point>>, std::vector<cv::Vec3b>>
+watershed1DMaskAndDepthAndReturnContoursColors (cv::Mat mask, cv::Mat depth, int labelValue);
+
+#endif /* Watershed_h */

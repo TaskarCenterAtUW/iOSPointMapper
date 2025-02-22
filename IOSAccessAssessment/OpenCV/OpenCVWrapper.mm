@@ -7,6 +7,7 @@
 
 #import "OpenCVWrapper.h"
 #import "UIImage+OpenCV.h"
+#import "OtherConversions.h"
 #import "Watershed.h"
 #import <iostream>
 
@@ -54,14 +55,6 @@
     // Merge channels back to an RGBA image
     cv::merge(channels, outputMat);
     
-    return [UIImage imageWithCVMat:outputMat];
-}
-
-+ (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage {
-    cv::Mat maskMat = [maskImage CVMat];
-    cv::Mat depthMat = [depthImage CVMat];
-    
-    cv::Mat outputMat = watershedMaskAndDepth(maskMat, depthMat);
     return [UIImage imageWithCVMat:outputMat];
 }
 

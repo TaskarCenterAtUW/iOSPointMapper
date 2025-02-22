@@ -11,6 +11,7 @@
 
 /*
  Importing only the needed features can mitigate against build issues with other parts of openCV
+ FIXME: These are the wrong imports
  */
 #import <opencv2/stitching.hpp>
 #import <opencv2/imgcodecs.hpp>

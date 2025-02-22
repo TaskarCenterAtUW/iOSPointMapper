@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     + (UIImage *)grayImageConversion:(UIImage*)inputImage;
 
-    + (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage;
+    + (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue;
 
     + (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue;
 

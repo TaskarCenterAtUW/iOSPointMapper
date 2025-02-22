@@ -20,6 +20,7 @@
 		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
+		A300C7652D69617E00D54778 /* OtherConversions.mm in Sources */ = {isa = PBXBuildFile; fileRef = A300C7642D69617E00D54778 /* OtherConversions.mm */; };
 		A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */ = {isa = PBXBuildFile; fileRef = A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */; };
 		A30646262D60486900B97D1B /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; };
 		A30646272D60486900B97D1B /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -102,6 +103,8 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
+		A300C7632D69617E00D54778 /* OtherConversions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OtherConversions.h; sourceTree = "<group>"; };
+		A300C7642D69617E00D54778 /* OtherConversions.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OtherConversions.mm; sourceTree = "<group>"; };
 		A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCV.h"; sourceTree = "<group>"; };
 		A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
@@ -289,6 +292,8 @@
 				A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */,
 				A36CF1692D62E5A50081F82E /* Watershed.h */,
 				A36CF16A2D62E5A50081F82E /* Watershed.cpp */,
+				A300C7632D69617E00D54778 /* OtherConversions.h */,
+				A300C7642D69617E00D54778 /* OtherConversions.mm */,
 			);
 			path = OpenCV;
 			sourceTree = "<group>";
@@ -514,6 +519,7 @@
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
+				A300C7652D69617E00D54778 /* OtherConversions.mm in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */,
