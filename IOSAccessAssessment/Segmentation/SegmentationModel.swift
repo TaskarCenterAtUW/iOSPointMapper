@@ -36,10 +36,12 @@ struct SegmentationResultsOutput {
 }
 
 struct PerClassSegmentationResultsOutput {
+    var segmentationLabelResults: CIImage
     var perClassSegmentationResults: [CIImage]
     var segmentedIndices: [Int]
     
-    init(perClassSegmentationResults: [CIImage], segmentedIndices: [Int]) {
+    init(segmentationLabelResults: CIImage, perClassSegmentationResults: [CIImage], segmentedIndices: [Int]) {
+        self.segmentationLabelResults = segmentationLabelResults
         self.perClassSegmentationResults = perClassSegmentationResults
         self.segmentedIndices = segmentedIndices
     }
@@ -168,7 +170,8 @@ class SegmentationModel: ObservableObject {
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
         
-        self.masker.inputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
+        self.masker.inputImage = outputImage
         
         let totalCount = segmentedIndices.count
         var perClassSegmentationResults = [CIImage](repeating: CIImage(), count: totalCount)
@@ -183,6 +186,7 @@ class SegmentationModel: ObservableObject {
         self.perClassSegmentationResults = perClassSegmentationResults
         if let perClassSegmentationImages = self.perClassSegmentationResults {
             completion(.success(PerClassSegmentationResultsOutput(
+                segmentationLabelResults: outputImage,
                 perClassSegmentationResults: perClassSegmentationImages, segmentedIndices: segmentedIndices
             )))
         } else {

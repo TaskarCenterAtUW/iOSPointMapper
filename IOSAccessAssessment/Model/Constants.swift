@@ -26,6 +26,10 @@ struct SegmentationClassConstants {
         return classes.map { $0.grayscaleValue }
     }
     
+    var labels: [UInt8] {
+        return classes.map { $0.labelValue }
+    }
+    
     // Retrieve grayscale-to-class mapping as [UInt8: String]
     var labelToClassNameMap: [UInt8: String] {
         var map: [UInt8: String] = [:]

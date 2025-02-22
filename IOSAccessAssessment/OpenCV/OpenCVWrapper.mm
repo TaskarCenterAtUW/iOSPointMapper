@@ -57,12 +57,11 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
-+ (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage {
++ (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
     cv::Mat maskMat = [maskImage CVMat];
     cv::Mat depthMat = [depthImage CVMat];
     
-    cv::Mat outputMat = watershedMaskAndDepth(maskMat, depthMat);
-    std::cout << "Value at i1 and j1: " << outputMat.at<cv::Vec3b>(0, 0) << std::endl;
+    cv::Mat outputMat = watershed1DMaskAndDepth(maskMat, depthMat, labelValue);
     return [UIImage imageWithCVMat:outputMat];
 }
 
