@@ -7,6 +7,7 @@
 
 #import "OpenCVWrapper.h"
 #import "UIImage+OpenCV.h"
+#import "OtherConversions.h"
 #import "Watershed.h"
 #import <iostream>
 
