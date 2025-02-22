@@ -82,7 +82,8 @@
 /**
     Convert cv::Mat to UIImage
  
-    The following TODO task is to address the issue where the bitmap info is being hard-coded to only serve segmentation masks. We need to make it more generic.
+    The following TODO task is to address the issue where the bitmap info is being hard-coded to only serve segmentation masks with fixed bitmap info and other parameters.
+    We need to make it more generic.
     TODO: Later, we would like to use the attributes of the UIImage, such as bitmap data, color space, and alpha channel to create a cv::Mat object.
         
  */
@@ -90,11 +91,15 @@
 {
     NSData *data = [NSData dataWithBytes:cvMat.data length:cvMat.elemSize() * cvMat.total()];
     CGColorSpaceRef colorSpace;
+    CGBitmapInfo bitmapInfo = kCGImageAlphaNone|kCGImageByteOrderDefault;
     
     if (cvMat.elemSize() == 1) {
         colorSpace = CGColorSpaceCreateDeviceGray();
-    } else {
+    } else if (cvMat.elemSize() == 3) {
         colorSpace = CGColorSpaceCreateDeviceRGB();
+    } else { // Assuming 4 channels
+        colorSpace = CGColorSpaceCreateDeviceRGB();
+        bitmapInfo = kCGImageAlphaLast|kCGImageByteOrderDefault;
     }
     
     CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
@@ -106,7 +111,7 @@
                                         8 * cvMat.elemSize(),                       //bits per pixel
                                         cvMat.step[0],                              //bytesPerRow
                                         colorSpace,                                 //colorspace
-                                        kCGImageAlphaNone|kCGImageByteOrderDefault,// bitmap info
+                                        bitmapInfo,                                 // bitmap info
                                         provider,                                   //CGDataProviderRef
                                         NULL,                                       //decode
                                         false,                                      //should interpolate

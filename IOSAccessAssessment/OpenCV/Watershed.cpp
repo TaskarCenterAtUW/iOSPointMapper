@@ -136,10 +136,9 @@ cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue) {
     cv::Mat bg_mask_inv;
     cv::bitwise_not(bg_mask, bg_mask_inv);
     mask.setTo(cv::Scalar(0, 0, 0), bg_mask_inv);
-    std::cout << "Type of mask: " << mask.type() << std::endl;
     
     // Erase borders from the mask
-    cv::Mat maskEroded = eraseBorders(mask, 10);
+    cv::Mat maskEroded = eraseBorders(mask, 2);
     mask = maskEroded;
     
     // First, we need to compute the Laplacian of the depth map, to get the edges.
@@ -150,10 +149,8 @@ cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue) {
     mask.convertTo(sharp, CV_32F);
     cv::Mat imgResult = sharp - imgLaplacian;
 
-    std::cout << "Type of imgResult: " << imgResult.type() << std::endl;
     // convert back to 8bits gray scale
     imgResult.convertTo(imgResult, CV_8UC3);
-    std::cout << "Type of imgResult: " << imgResult.type() << std::endl;
     imgLaplacian.convertTo(imgLaplacian, CV_8UC3);
     
     cv::Mat bw;
@@ -233,7 +230,8 @@ cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue) {
         }
     }
     
-    return dst;
+    return makeBackgroundTransparent(dst, cv::Scalar(0, 0, 0, 255));
+//    return dst;
 }
 
 /**
@@ -253,3 +251,25 @@ cv::Mat eraseBorders (cv::Mat mat, int borderSize) {
     
     return output;
 }
+
+/**
+    This function makes the background alpha channel of the image to 0.
+ */
+cv::Mat makeBackgroundTransparent (cv::Mat mat, cv::Scalar backgroundColor) {
+    // If the image has 3 channels, we need to convert it to 4 channels
+    if (mat.channels() == 3) {
+        cv::cvtColor(mat, mat, cv::COLOR_BGR2BGRA);
+    }
+    
+    // Create a mask of all the pixels that are not the background color
+    cv::Mat mask;
+    cv::inRange(mat, backgroundColor, backgroundColor, mask);
+    cv::bitwise_not(mask, mask);
+    
+    // Create a transparent mat, and copy the image to it with the mask
+    cv::Mat transparentMat = cv::Mat::zeros(mat.size(), mat.type());
+    mat.copyTo(transparentMat, mask);
+    
+    return transparentMat;
+}
+    

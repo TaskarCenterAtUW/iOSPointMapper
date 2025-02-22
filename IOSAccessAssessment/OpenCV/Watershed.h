@@ -15,4 +15,6 @@ cv::Mat watershed1DMaskAndDepth (cv::Mat mask, cv::Mat depth, int labelValue);
 
 cv::Mat eraseBorders (cv::Mat mask, int borderSize);
 
+cv::Mat makeBackgroundTransparent (cv::Mat mat, cv::Scalar backgroundColor);
+
 #endif /* Watershed_hpp */
