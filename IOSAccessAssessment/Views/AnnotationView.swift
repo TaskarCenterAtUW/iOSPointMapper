@@ -159,8 +159,11 @@ struct AnnotationView: View {
             sharedImageData.segmentationLabelImage!, from: sharedImageData.segmentationLabelImage!.extent)!
         let segmentationLabelUIImage = UIImage(cgImage: segmentationLabelImage, scale: 1.0, orientation: .right)
         let classIndex = sharedImageData.segmentedIndices[index]
-        self.segmentationUIImage = OpenCVWrapper.perfor1DWatershed(segmentationLabelUIImage, depthUIImage,
+//        self.segmentationUIImage = OpenCVWrapper.perform1DWatershed(segmentationLabelUIImage, depthUIImage,
+//                                        Int32(Constants.ClassConstants.labels[classIndex]))
+        let result = OpenCVWrapper.perform1DWatershed(withContoursColors: segmentationLabelUIImage, depthUIImage,
                                         Int32(Constants.ClassConstants.labels[classIndex]))
+        self.segmentationUIImage = result.image
         
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!

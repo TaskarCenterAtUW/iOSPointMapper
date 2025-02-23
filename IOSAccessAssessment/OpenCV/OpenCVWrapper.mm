@@ -7,8 +7,25 @@
 
 #import "OpenCVWrapper.h"
 #import "UIImage+OpenCV.h"
+#import "OtherConversions.h"
 #import "Watershed.h"
 #import <iostream>
+
+@implementation WatershedResult
+
+- (instancetype)initWithImage:(UIImage *)image
+                     contours:(NSArray<NSArray<NSValue *> *> *)contours
+                       colors:(NSArray<NSValue *> *)colors {
+    self = [super init];
+    if (self) {
+        _image = image;
+        _contours = contours;
+        _colors = colors;
+    }
+    return self;
+}
+
+@end
 
 @implementation OpenCVWrapper
 
@@ -57,20 +74,47 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
-+ (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage {
-    cv::Mat maskMat = [maskImage CVMat];
-    cv::Mat depthMat = [depthImage CVMat];
-    
-    cv::Mat outputMat = watershedMaskAndDepth(maskMat, depthMat);
-    return [UIImage imageWithCVMat:outputMat];
-}
-
-+ (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
++ (UIImage *)perform1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
     cv::Mat maskMat = [maskImage CVMat];
     cv::Mat depthMat = [depthImage CVMat];
     
     cv::Mat outputMat = watershed1DMaskAndDepth(maskMat, depthMat, labelValue);
     return [UIImage imageWithCVMat:outputMat];
+}
+
++ (WatershedResult *)perform1DWatershedWithContoursColors:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
+    cv::Mat maskMat = [maskImage CVMat];
+    cv::Mat depthMat = [depthImage CVMat];
+    
+    std::tuple<cv::Mat, std::vector<std::vector<cv::Point>>, std::vector<cv::Vec3b>> output = watershed1DMaskAndDepthAndReturnContoursColors(maskMat, depthMat, labelValue);
+    cv::Mat outputMat = std::get<0>(output);
+    std::vector<std::vector<cv::Point>> contours = std::get<1>(output);
+    std::vector<cv::Vec3b> colors = std::get<2>(output);
+    
+    UIImage *image = [UIImage imageWithCVMat:outputMat];
+    
+    NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
+    for (const std::vector<cv::Point> &contour : contours) {
+        NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
+
+        for (const cv::Point &point : contour) {
+            CGPoint cgPoint = CGPointMake(point.x, point.y);
+            [convertedContour addObject:[NSValue valueWithCGPoint:cgPoint]];
+        }
+        [convertedContours addObject:convertedContour];
+    }
+    
+    NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
+    for (const cv::Vec3b &vec : colors) {
+        // Convert cv::Vec3b to an array of 3 UInt8 values
+        uint8_t values[3] = {vec[0], vec[1], vec[2]};
+        [convertedVec3bArray addObject:[NSValue valueWithBytes:&values objCType:@encode(uint8_t[3])]];
+    }
+    
+    // Create and return an instance of WatershedResult
+    return [[WatershedResult alloc] initWithImage:image contours:convertedContours colors:convertedVec3bArray];
+    
+//    return [UIImage imageWithCVMat:outputMat];
 }
 
 
