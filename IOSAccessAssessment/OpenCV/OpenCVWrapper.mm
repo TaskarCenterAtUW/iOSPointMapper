@@ -74,6 +74,25 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
++ (WatershedResult)perfor1DWatershedWithContoursColors:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
+    cv::Mat maskMat = [maskImage CVMat];
+    cv::Mat depthMat = [depthImage CVMat];
+    
+    std::tuple<cv::Mat, std::vector<std::vector<cv::Point>>, std::vector<cv::Vec3b>> output = watershed1DMaskAndDepthWithContoursColors(maskMat, depthMat, labelValue);
+    cv::Mat outputMat = std::get<0>(output);
+    std::vector<std::vector<cv::Point>> contours = std::get<1>(output);
+    std::vector<cv::Vec3b> colors = std::get<2>(output);
+    
+    WatershedResult result;
+    result.image = [UIImage imageWithCVMat:outputMat];
+    result.contours = [OpenCVWrapper cvContoursToNSArray:contours];
+    result.colors = [OpenCVWrapper convertVec3bArray:colors];
+    
+    return result;
+    
+//    return [UIImage imageWithCVMat:outputMat];
+}
+
 
 + (UIImage *)setAlphaForPixel:(UIImage*)inputImage {
     cv::Mat mat = [inputImage CVMat];
@@ -100,6 +119,33 @@
     std::cout << "Count of non-black pixels: " << countOfNonBlackPixels << std::endl;
     
     return [UIImage imageWithCVMat:mat];
+}
+
++ (NSArray<NSArray<NSValue *> *> *)cvContoursToNSArray:(const std::vector<std::vector<cv::Point>> &)contours {
+    NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
+
+    for (const std::vector<cv::Point> &contour : contours) {
+        NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
+
+        for (const cv::Point &point : contour) {
+            CGPoint cgPoint = CGPointMake(point.x, point.y);
+            [convertedContour addObject:[NSValue valueWithCGPoint:cgPoint]];
+        }
+        [convertedContours addObject:convertedContour];
+    }
+    return convertedContours;
+}
+
++ (NSArray<NSValue *> *)convertVec3bArray:(const std::vector<cv::Vec3b> &)vecArray {
+    for (NSValue *value in array) {
+        uint8_t values[3];
+        [value getValue:&values];
+
+        cv::Vec3b vec(values[0], values[1], values[2]);
+        convertedVec3bArray.push_back(vec);
+    }
+
+    return convertedVec3bArray;
 }
 
 
