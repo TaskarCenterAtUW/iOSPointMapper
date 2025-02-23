@@ -74,15 +74,7 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
-+ (UIImage *)performWatershed:(UIImage*)maskImage:(UIImage*)depthImage {
-    cv::Mat maskMat = [maskImage CVMat];
-    cv::Mat depthMat = [depthImage CVMat];
-    
-    cv::Mat outputMat = watershedMaskAndDepth(maskMat, depthMat);
-    return [UIImage imageWithCVMat:outputMat];
-}
-
-+ (UIImage *)perfor1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
++ (UIImage *)perform1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
     cv::Mat maskMat = [maskImage CVMat];
     cv::Mat depthMat = [depthImage CVMat];
     
