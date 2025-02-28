@@ -159,9 +159,9 @@ struct AnnotationView: View {
             sharedImageData.segmentationLabelImage!, from: sharedImageData.segmentationLabelImage!.extent)!
         let segmentationLabelUIImage = UIImage(cgImage: segmentationLabelImage, scale: 1.0, orientation: .right)
         let classIndex = sharedImageData.segmentedIndices[index]
-//        self.segmentationUIImage = OpenCVWrapper.perform1DWatershed(segmentationLabelUIImage, depthUIImage,
-//                                        Int32(Constants.ClassConstants.labels[classIndex]))
-        let result = OpenCVWrapper.perform1DWatershed(withContoursColors: segmentationLabelUIImage, depthUIImage,
+        self.segmentationUIImage = OpenCVWrapper.perform1DWatershed(segmentationLabelUIImage, depthUIImage,
+                                        Int32(Constants.ClassConstants.labels[classIndex]))
+        let result = OpenCVWrapper.perform1DWatershed(withContoursColors: segmentationLabelUIImage, segmentationLabelUIImage,
                                         Int32(Constants.ClassConstants.labels[classIndex]))
         self.segmentationUIImage = result.image
         
@@ -187,7 +187,10 @@ struct AnnotationView: View {
     private func uploadChanges() {
         guard let nodeLatitude = objectLocation.latitude,
               let nodeLongitude = objectLocation.longitude
-        else { return }
+        else {
+            print("Failed to upload changes: Location not available.")
+            return
+        }
         
         let tags: [String: String] = ["demo:class":classes[sharedImageData.segmentedIndices[index]]]
         let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)

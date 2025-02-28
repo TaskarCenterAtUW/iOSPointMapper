@@ -54,6 +54,8 @@ struct ContentView: View {
                     Button {
                         segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
+                        // MARK: Is it possible for camera to record images further before the per-class segmentation is done?
+                        // If so, we may need to add a check to prevent the camera from recording images until the segmentation is done.
 //                        manager?.stopStream() // To be done in the performPerClassSegmentationRequest callback
                     } label: {
                         Image(systemName: "camera.circle.fill")

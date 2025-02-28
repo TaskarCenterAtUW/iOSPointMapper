@@ -96,3 +96,30 @@ func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     
     return blankPixelBuffer
 }
+
+func extractUniquePixelValues(from pixelBuffer: CVPixelBuffer) -> Set<Float> {
+    var uniqueValues = Set<Float>()
+    
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+    
+    let width = CVPixelBufferGetWidth(pixelBuffer)
+    let height = CVPixelBufferGetHeight(pixelBuffer)
+    let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
+    
+    let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+    let bitDepth = 8 // Assuming 8 bits per component in a grayscale image.
+    
+    let byteBuffer = baseAddress!.assumingMemoryBound(to: Float.self)
+    
+    for row in 0..<height {
+        for col in 0..<width {
+            let offset = row * bytesPerRow + col * (bitDepth / 8)
+            let value = byteBuffer[offset]
+            uniqueValues.insert(value)
+        }
+    }
+    
+    print("Unique values: \(uniqueValues)")
+    return uniqueValues
+}

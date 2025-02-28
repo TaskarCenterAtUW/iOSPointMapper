@@ -99,11 +99,26 @@ class ObjectLocation {
         print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
     }
     
-    // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
+    // FIXME: Improve the depth estimation using methods like trimmed mean, Kalman filters, etc., instead of the normal mean
     func getDepth(sharedImageData: SharedImageData, index: Int) {
         let objectSegmentation = sharedImageData.classImages[index]
         let mask = createMask(from: objectSegmentation)
-        guard let depthMap = sharedImageData.depthImage?.pixelBuffer else { return }
+        if (true) {
+            // Convert depthImage (CIImage) to CVPixelBuffer and then back to CIImage.
+            // This is a workaround to prevent the depthImage.pixelBuffer from being nil when we navigate to the AnnotationView.
+            // First, convert CIImage to CGImage, then convert CGImage to CVPixelBuffer.
+            // Finally, convert CVPixelBuffer to CIImage.
+            let depthCIContext = CIContext()
+            let depthCGImage = depthCIContext.createCGImage(sharedImageData.depthImage!, from: sharedImageData.depthImage!.extent)
+            let depthPixelBuffer = depthCGImage?.pixelBuffer()
+            print("depthPixelBuffer: \(depthPixelBuffer != nil)")
+            sharedImageData.depthImage = CIImage(cvPixelBuffer: depthPixelBuffer!)
+            print("depthImage: \(sharedImageData.depthImage?.pixelBuffer != nil)")
+//            print("depthImage Unique values: \(extractUniqueGrayscaleValues(from: sharedImageData.depthImage?.pixelBuffer!))")
+        }
+        guard let depthMap = sharedImageData.depthImage?.pixelBuffer else {
+            return
+        }
 //        var distanceSum: Float = 0
         var sumX = 0
         var sumY = 0
