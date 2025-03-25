@@ -163,6 +163,7 @@ struct AnnotationView: View {
 //                                        Int32(Constants.ClassConstants.labels[classIndex]))
         let result = OpenCVWrapper.perform1DWatershedWithContoursColors(maskImage: segmentationLabelUIImage, depthImage: depthUIImage, labelValue: Int32(Constants.ClassConstants.labels[classIndex]))
         self.segmentationUIImage = result.image
+        let resultContours = result.contours
         
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!

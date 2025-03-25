@@ -113,15 +113,16 @@
     
     // Convert Vector of cv::Vec3b to NSArray of NSValue of UInt8[3]
     // FIXME: Move this logic to a separate conversions file
-    NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
-    for (const cv::Vec3b &vec : colors) {
-        // Convert cv::Vec3b to an array of 3 UInt8 values
-        uint8_t values[3] = {vec[0], vec[1], vec[2]};
-        [convertedVec3bArray addObject:[NSValue valueWithBytes:&values objCType:@encode(uint8_t[3])]];
-    }
-    
+//    NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
+//    for (const cv::Vec3b &vec : colors) {
+//        // Convert cv::Vec3b to an array of 3 UInt8 values
+//        uint8_t values[3] = {vec[0], vec[1], vec[2]};
+//        [convertedVec3bArray addObject:[NSValue valueWithBytes:&values objCType:@encode(uint8_t[3])]];
+//    }
+    NSArray<NSValue *> *convertedColors = [OtherConversions convertColorsToNSValue:colors];
+
     // Create and return an instance of WatershedResult
-    return [[WatershedResult alloc] initWithImage:image contours:convertedContours colors:convertedVec3bArray];
+    return [[WatershedResult alloc] initWithImage:image contours:convertedContours colors:convertedColors];
     
 //    return [UIImage imageWithCVMat:outputMat];
 }

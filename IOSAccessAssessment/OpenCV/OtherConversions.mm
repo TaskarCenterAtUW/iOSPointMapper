@@ -23,4 +23,14 @@
     return convertedContours;
 }
 
++ (NSArray<NSValue *> *) convertColorsToNSValue:(std::vector<cv::Vec3b>) colors {
+    NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
+    for (const cv::Vec3b &vec : colors) {
+        // Convert cv::Vec3b to an array of 3 UInt8 values
+        uint8_t values[3] = {vec[0], vec[1], vec[2]};
+        [convertedVec3bArray addObject:[NSValue valueWithBytes:&values objCType:@encode(uint8_t[3])]];
+    }
+    return convertedVec3bArray;
+}
+
 @end
