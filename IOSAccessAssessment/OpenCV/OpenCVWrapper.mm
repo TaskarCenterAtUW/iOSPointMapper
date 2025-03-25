@@ -74,7 +74,9 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
-+ (UIImage *)perform1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
++ (UIImage *)perform1DWatershed:(UIImage*)maskImage
+                               depthImage:(UIImage*)depthImage
+                               labelValue:(int)labelValue {
     cv::Mat maskMat = [maskImage CVMat];
     cv::Mat depthMat = [depthImage CVMat];
     
@@ -82,7 +84,9 @@
     return [UIImage imageWithCVMat:outputMat];
 }
 
-+ (WatershedResult *)perform1DWatershedWithContoursColors:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue {
++ (WatershedResult *)perform1DWatershedWithContoursColors:(UIImage*)maskImage
+                                                         depthImage:(UIImage*)depthImage
+                                                         labelValue:(int)labelValue {
     cv::Mat maskMat = [maskImage CVMat];
     cv::Mat depthMat = [depthImage CVMat];
     
@@ -93,6 +97,8 @@
     
     UIImage *image = [UIImage imageWithCVMat:outputMat];
     
+    // Convert Vector of Vectors of cv::Point to NSArray of NSValue of CGPoint
+    // FIXME: Move this logic to a separate conversions file
     NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
     for (const std::vector<cv::Point> &contour : contours) {
         NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
@@ -104,6 +110,8 @@
         [convertedContours addObject:convertedContour];
     }
     
+    // Convert Vector of cv::Vec3b to NSArray of NSValue of UInt8[3]
+    // FIXME: Move this logic to a separate conversions file
     NSMutableArray<NSValue *> *convertedVec3bArray = [NSMutableArray array];
     for (const cv::Vec3b &vec : colors) {
         // Convert cv::Vec3b to an array of 3 UInt8 values
