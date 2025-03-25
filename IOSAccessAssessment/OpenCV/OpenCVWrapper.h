@@ -38,10 +38,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OpenCVWrapper : NSObject
 
-    + (UIImage *)grayScaleImageConversion:(UIImage*)inputImage;
-
-    + (UIImage *)grayImageConversion:(UIImage*)inputImage;
-
     + (UIImage *)perform1DWatershed:(UIImage*)maskImage
                                    depthImage:(UIImage*)depthImage
                                    labelValue:(int)labelValue;
@@ -50,8 +46,6 @@ NS_ASSUME_NONNULL_BEGIN
                                                              depthImage:(UIImage*)depthImage
                                                              labelValue:(int)labelValue
     NS_SWIFT_NAME(perform1DWatershedWithContoursColors(maskImage:depthImage:labelValue:));
-
-    + (UIImage *)setAlphaForPixel:(UIImage*)inputImage;
 
 @end
 
