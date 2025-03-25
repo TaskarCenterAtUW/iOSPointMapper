@@ -5,7 +5,7 @@
 //  Created by Himanshu on 2/16/25.
 //
 
-#include "Watershed.h"
+#include "Watershed.hpp"
 #include <iostream>
 #include <fstream>
 
