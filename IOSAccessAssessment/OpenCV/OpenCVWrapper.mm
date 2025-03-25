@@ -7,8 +7,8 @@
 
 #import "OpenCVWrapper.h"
 #import "UIImage+OpenCV.h"
-#import "OtherConversions.h"
-#import "Watershed.h"
+#import "OtherConversions.hpp"
+#import "Watershed.hpp"
 #import <iostream>
 
 @implementation WatershedResult
@@ -99,16 +99,17 @@
     
     // Convert Vector of Vectors of cv::Point to NSArray of NSValue of CGPoint
     // FIXME: Move this logic to a separate conversions file
-    NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
-    for (const std::vector<cv::Point> &contour : contours) {
-        NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
-
-        for (const cv::Point &point : contour) {
-            CGPoint cgPoint = CGPointMake(point.x, point.y);
-            [convertedContour addObject:[NSValue valueWithCGPoint:cgPoint]];
-        }
-        [convertedContours addObject:convertedContour];
-    }
+//    NSMutableArray<NSMutableArray<NSValue *> *> *convertedContours = [NSMutableArray array];
+//    for (const std::vector<cv::Point> &contour : contours) {
+//        NSMutableArray<NSValue *> *convertedContour = [NSMutableArray array];
+//
+//        for (const cv::Point &point : contour) {
+//            CGPoint cgPoint = CGPointMake(point.x, point.y);
+//            [convertedContour addObject:[NSValue valueWithCGPoint:cgPoint]];
+//        }
+//        [convertedContours addObject:convertedContour];
+//    }
+    NSArray<NSArray<NSValue *> *> *convertedContours = [OtherConversions convertContoursToNSValue:contours];
     
     // Convert Vector of cv::Vec3b to NSArray of NSValue of UInt8[3]
     // FIXME: Move this logic to a separate conversions file
