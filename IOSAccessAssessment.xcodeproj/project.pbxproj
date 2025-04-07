@@ -35,6 +35,7 @@
 		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
+		A3FCC2F62DA497140037AB43 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F52DA497140037AB43 /* bisenetv2.mlpackage */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
@@ -42,7 +43,6 @@
 		CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */; };
 		CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */; };
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
-		DAA2A9942CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
 		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
@@ -121,13 +121,13 @@
 		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
+		A3FCC2F52DA497140037AB43 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		CAA9477A2CDE70D5000C6918 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkError.swift; sourceTree = "<group>"; };
 		CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserStateViewModel.swift; sourceTree = "<group>"; };
-		DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = deeplabv3plus_mobilenet.mlmodel; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
@@ -237,7 +237,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
-				DAA2A9932CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel */,
+				A3FCC2F52DA497140037AB43 /* bisenetv2.mlpackage */,
 				A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
 			);
@@ -532,10 +532,10 @@
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
-				DAA2A9942CD766C400D41D81 /* deeplabv3plus_mobilenet.mlmodel in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
+				A3FCC2F62DA497140037AB43 /* bisenetv2.mlpackage in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,

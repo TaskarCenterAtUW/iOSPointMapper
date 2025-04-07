@@ -78,7 +78,7 @@ class SegmentationModel: ObservableObject {
     let masker = GrayscaleToColorCIFilter()
 
     init() {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "bisenetv2", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Cannot load CNN model")
         }
@@ -117,7 +117,7 @@ class SegmentationModel: ObservableObject {
         
         // TODO: Instead of passing new grayscaleValues and colorValues to the custom CIFilter for every new image
         // Check if you can instead simply pass the constants as the parameters during the filter initialization
-        self.masker.grayscaleValues = selection.map { Constants.ClassConstants.grayscaleValues[$0] }
+        self.masker.grayscaleValues = selection.map { Constants.ClassConstants.labels[$0] }
         self.masker.colorValues =  selection.map { Constants.ClassConstants.colors[$0] }
         
         self.segmentedIndices = segmentedIndices
@@ -178,7 +178,7 @@ class SegmentationModel: ObservableObject {
         // For each class, extract the separate segment
         for i in segmentedIndices.indices {
             let currentClass = segmentedIndices[i]
-            self.masker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[currentClass]]
+            self.masker.grayscaleValues = [Constants.ClassConstants.labels[currentClass]]
             self.masker.colorValues = [Constants.ClassConstants.colors[currentClass]]
             perClassSegmentationResults[i] = self.masker.outputImage!
         }
@@ -230,11 +230,11 @@ extension SegmentationModel {
             }
         }
         
-        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
+        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.labels.enumerated().map { ($0.element, $0.offset) })
         
         // MARK: sorting may not be necessary for our use case
         let selectedIndices = uniqueValues.map { UInt8($0) }
-            .map {Float($0) / 255.0 }
+//            .map {Float($0) / 255.0 }
             .compactMap { valueToIndex[$0]}
             .sorted()
             
