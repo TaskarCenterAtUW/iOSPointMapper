@@ -103,12 +103,12 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
-		A300C7662D6A92DE00D54778 /* OtherConversions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OtherConversions.h; sourceTree = "<group>"; };
+		A300C7662D6A92DE00D54778 /* OtherConversions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = OtherConversions.hpp; sourceTree = "<group>"; };
 		A300C7672D6A92DE00D54778 /* OtherConversions.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OtherConversions.mm; sourceTree = "<group>"; };
 		A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCV.h"; sourceTree = "<group>"; };
 		A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
-		A36CF1692D62E5A50081F82E /* Watershed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Watershed.h; sourceTree = "<group>"; };
+		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
 		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
@@ -290,9 +290,9 @@
 				A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */,
 				A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */,
 				A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */,
-				A36CF1692D62E5A50081F82E /* Watershed.h */,
+				A36CF1692D62E5A50081F82E /* Watershed.hpp */,
 				A36CF16A2D62E5A50081F82E /* Watershed.cpp */,
-				A300C7662D6A92DE00D54778 /* OtherConversions.h */,
+				A300C7662D6A92DE00D54778 /* OtherConversions.hpp */,
 				A300C7672D6A92DE00D54778 /* OtherConversions.mm */,
 			);
 			path = OpenCV;
