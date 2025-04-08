@@ -88,9 +88,14 @@ class SegmentationModel: ObservableObject {
     func updateSegmentationRequest(selection: [Int], completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void) {
         let segmentationRequests = VNCoreMLRequest(model: self.visionModel, completionHandler: {request, error in
             DispatchQueue.main.async(execute: {
+                let start = DispatchTime.now()
                 if let results = request.results {
                     self.processSegmentationRequest(results, selection, completion: completion)
                 }
+                let end = DispatchTime.now()
+                let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+                let timeInterval = Double(nanoTime) / 1_000_000
+                print("Time taken to process segmentation output: \(timeInterval) milliseconds")
             })
         })
         segmentationRequests.imageCropAndScaleOption = .scaleFill
@@ -137,7 +142,13 @@ class SegmentationModel: ObservableObject {
     func performSegmentationRequest(with ciImage: CIImage) {
         let handler = VNImageRequestHandler(ciImage: ciImage, orientation: .right, options: [:])
         do {
+            let start = DispatchTime.now()
             try handler.perform(self.segmentationRequests)
+            let end = DispatchTime.now()
+            
+            let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+            let timeInterval = Double(nanoTime) / 1_000_000
+            print("Time taken to perform segmentation request: \(timeInterval) milliseconds")
         } catch {
             print("Error performing request: \(error.localizedDescription)")
         }

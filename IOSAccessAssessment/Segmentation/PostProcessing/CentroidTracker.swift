@@ -103,7 +103,7 @@ class CentroidTracker {
         let rows = rowMinPairs.sorted(by: { $0.minVal < $1.minVal }).map { $0.row }
         // Step 3: For each sorted row, find the column index of the smallest distance
         let cols: [Int] = rows.map { rowIndex in
-            D[rowIndex].enumerated().min(by: { $0.element < $1.element })?.offset ?? -1
+            distanceMatrix[rowIndex].enumerated().min(by: { $0.element < $1.element })?.offset ?? -1
         }
         let minPairs = zip(rows, cols)
         
@@ -142,9 +142,9 @@ class CentroidTracker {
          */
         for row in unusedRows {
             let objectID = objectIDs[row]
-            self.disappearedObjects[objectID] = self.disappearedObjects[objectID] + 1
+            self.disappearedObjects[objectID] = (self.disappearedObjects[objectID] ?? 0) + 1
             
-            if (self.disappearedObjects[objectID] >= self.maxDisappeared) {
+            if ((self.disappearedObjects[objectID] ?? 0) >= self.maxDisappeared) {
                 self.deregister(objectID: objectID)
             }
         }
