@@ -107,7 +107,8 @@ class SegmentationModel: ObservableObject {
         }
 
         let outPixelBuffer = (obs.first)!
-        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (uniqueValues, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        print("Unique values: \(uniqueValues)")
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
