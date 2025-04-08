@@ -13,7 +13,7 @@ extern "C" kernel void colorMatchingKernel(
     texture2d<float, access::read> inputTexture [[texture(0)]],
     texture2d<float, access::write> outputTexture [[texture(1)]],
 //    constant float* grayscaleValues [[buffer(0)]],
-    constant int* grayscaleValues [[buffer(0)]],
+    constant uchar* grayscaleValues [[buffer(0)]],
     constant float3* colorValues [[buffer(1)]],
     constant uint& grayscaleCount [[buffer(2)]],
     uint2 gid [[thread_position_in_grid]]

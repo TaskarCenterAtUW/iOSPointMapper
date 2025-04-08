@@ -73,7 +73,7 @@ class DepthModel: ObservableObject {
     
     func loadModel() throws {
         print("Loading depth model...")
-        visionModel = try DepthAnythingV2SmallF16()
+//        visionModel = try DepthAnythingV2SmallF16()
     }
     
     /**

@@ -72,8 +72,7 @@ class GrayscaleToColorCIFilter: CIFilter {
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             return nil
         }
-
-//        let grayscaleBuffer = self.device.makeBuffer(bytes: grayscaleValues, length: grayscaleValues.count * MemoryLayout<Float>.size, options: [])
+        
         let grayscaleBuffer = self.device.makeBuffer(bytes: grayscaleValues, length: grayscaleValues.count * MemoryLayout<UInt8>.size, options: [])
         let colorBuffer = self.device.makeBuffer(bytes: colorValues.map { SIMD3<Float>(Float($0.red), Float($0.green), Float($0.blue)) }, length: colorValues.count * MemoryLayout<SIMD3<Float>>.size, options: [])
         
