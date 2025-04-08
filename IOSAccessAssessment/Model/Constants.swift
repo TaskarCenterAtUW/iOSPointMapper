@@ -214,7 +214,7 @@ struct Constants {
             SegmentationClass(name: "Bicycle", grayscaleValue: 18.0 / 255.0, labelValue: 18,
                               color: CIColor(red: 0.467, green: 0.043, blue: 0.125))
         ],
-        inputSize: CGSize(width: 1024, height: 512)
+        inputSize: CGSize(width: 512, height: 256)
     )
     
     struct DepthConstants {
