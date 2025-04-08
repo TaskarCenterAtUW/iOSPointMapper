@@ -22,6 +22,9 @@
  */
 @interface OtherConversions: NSObject
 
++ (NSArray<NSArray<NSValue *> *> *) convertContoursToNSValue:(std::vector<std::vector<cv::Point>>) contours;
+
++ (NSArray<NSValue *> *) convertColorsToNSValue:(std::vector<cv::Vec3b>) colors;
 
 @end
 

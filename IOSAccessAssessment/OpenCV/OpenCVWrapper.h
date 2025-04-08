@@ -38,15 +38,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OpenCVWrapper : NSObject
 
-    + (UIImage *)grayScaleImageConversion:(UIImage*)inputImage;
+    + (UIImage *)perform1DWatershed:(UIImage*)maskImage
+                                   depthImage:(UIImage*)depthImage
+                                   labelValue:(int)labelValue;
 
-    + (UIImage *)grayImageConversion:(UIImage*)inputImage;
-
-    + (UIImage *)perform1DWatershed:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue;
-
-    + (WatershedResult *)perform1DWatershedWithContoursColors:(UIImage*)maskImage:(UIImage*)depthImage:(int)labelValue;
-
-    + (UIImage *)setAlphaForPixel:(UIImage*)inputImage;
+    + (WatershedResult *)perform1DWatershedWithContoursColors:(UIImage*)maskImage
+                                                             depthImage:(UIImage*)depthImage
+                                                             labelValue:(int)labelValue
+    NS_SWIFT_NAME(perform1DWatershedWithContoursColors(maskImage:depthImage:labelValue:));
 
 @end
 
