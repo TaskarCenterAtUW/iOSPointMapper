@@ -150,6 +150,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Retrieve the synchronized depth and sample buffer container objects.
         guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
+        let start = DispatchTime.now()
+        
         // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.height,
@@ -176,6 +178,13 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
         
         depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale)).croppedToCenter(size: croppedSize)
+        
+        let end = DispatchTime.now()
+        
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000
+        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
+        
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }
 }
