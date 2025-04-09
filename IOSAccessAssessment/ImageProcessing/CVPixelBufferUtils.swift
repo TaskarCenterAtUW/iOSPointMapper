@@ -96,3 +96,36 @@ func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     
     return blankPixelBuffer
 }
+
+func extractUniqueGrayscaleValuesAccelerate(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+    
+    guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+        return (Set<UInt8>(), [])
+    }
+    
+    var buffer = vImage_Buffer(data: baseAddress,
+                                 height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
+                                 width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
+                                 rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
+    var histogram = [vImagePixelCount](repeating: 0, count: 256)
+    let error = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
+    
+    var uniqueValues = Set<UInt8>()
+    for i in 0..<histogram.count {
+        if histogram[i] > 0 {
+            uniqueValues.insert(UInt8(i))
+        }
+    }
+    
+    let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
+    
+    // MARK: sorting may not be necessary for our use case
+    let selectedIndices = uniqueValues.map { UInt8($0) }
+        .map {Float($0) / 255.0 }
+        .compactMap { valueToIndex[$0]}
+        .sorted()
+        
+    return (uniqueValues, selectedIndices)
+}

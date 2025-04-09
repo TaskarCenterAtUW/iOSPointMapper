@@ -110,9 +110,29 @@ class SegmentationModel: ObservableObject {
             completion(.failure(SegmentationError.emptySegmentation))
             return
         }
+        
+        let start = DispatchTime.now()
 
         let outPixelBuffer = (obs.first)!
         let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        
+        let end = DispatchTime.now()
+        
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000
+        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
+        print(selectedIndices)
+        
+        let start1 = DispatchTime.now()
+        
+        let (_, selectedIndices1) = extractUniqueGrayscaleValuesAccelerate(from: outPixelBuffer.pixelBuffer)
+        
+        let end1 = DispatchTime.now()
+        
+        let nanoTime1 = end1.uptimeNanoseconds - start1.uptimeNanoseconds
+        let timeInterval1 = Double(nanoTime1) / 1_000_000
+        print("Time taken to perform extraction of grayscale values (SECOND): \(timeInterval1) milliseconds")
+        print(selectedIndices1)
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
