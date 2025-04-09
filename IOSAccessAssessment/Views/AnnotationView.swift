@@ -149,6 +149,7 @@ struct AnnotationView: View {
     }
     
     func refreshView() {
+        let start = DispatchTime.now()
         // Any additional refresh logic can be placed here
         // Example: fetching new data, triggering animations, sending current data etc.
         let depthCGImage = annotationCIContext.createCGImage(
@@ -164,6 +165,12 @@ struct AnnotationView: View {
         let result = OpenCVWrapper.perform1DWatershedWithContoursColors(maskImage: segmentationLabelUIImage, depthImage: depthUIImage, labelValue: Int32(Constants.ClassConstants.labels[classIndex]))
         self.segmentationUIImage = result.image
         let resultContours = result.contours
+        
+        let end = DispatchTime.now()
+        
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000
+        print("Time taken to post-process AnnotationView segments: \(timeInterval) milliseconds")
         
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
