@@ -97,7 +97,7 @@ func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     return blankPixelBuffer
 }
 
-func extractUniqueGrayscaleValuesAccelerate(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
+func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
     

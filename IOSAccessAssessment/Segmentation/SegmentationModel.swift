@@ -110,29 +110,17 @@ class SegmentationModel: ObservableObject {
             completion(.failure(SegmentationError.emptySegmentation))
             return
         }
-        
-        let start = DispatchTime.now()
 
         let outPixelBuffer = (obs.first)!
-        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
+        let start = DispatchTime.now()
+        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         let end = DispatchTime.now()
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
         print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
         print(selectedIndices)
-        
-        let start1 = DispatchTime.now()
-        
-        let (_, selectedIndices1) = extractUniqueGrayscaleValuesAccelerate(from: outPixelBuffer.pixelBuffer)
-        
-        let end1 = DispatchTime.now()
-        
-        let nanoTime1 = end1.uptimeNanoseconds - start1.uptimeNanoseconds
-        let timeInterval1 = Double(nanoTime1) / 1_000_000
-        print("Time taken to perform extraction of grayscale values (SECOND): \(timeInterval1) milliseconds")
-        print(selectedIndices1)
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
@@ -196,10 +184,15 @@ class SegmentationModel: ObservableObject {
         }
 
         let outPixelBuffer = (obs.first)!
-        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         
-        let selectedIndicesSet = Set(selectedIndices)
-        let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
+        let start = DispatchTime.now()
+        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let end = DispatchTime.now()
+        
+        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
+        let timeInterval = Double(nanoTime) / 1_000_000
+        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
+        print(selectedIndices)
         
         let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.masker.inputImage = outputImage
@@ -233,93 +226,5 @@ class SegmentationModel: ObservableObject {
         } catch {
             print("Error performing request: \(error.localizedDescription)")
         }
-    }
-}
-
-// Private helper functions
-extension SegmentationModel {
-    private func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
-        var uniqueValues = Set<UInt8>()
-        
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-        
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)
-        
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        let bitDepth = 8 // Assuming 8 bits per component in a grayscale image.
-        
-        let byteBuffer = baseAddress!.assumingMemoryBound(to: UInt8.self)
-        
-        for row in 0..<height {
-            for col in 0..<width {
-                let offset = row * bytesPerRow + col * (bitDepth / 8)
-                let value = byteBuffer[offset]
-                uniqueValues.insert(value)
-            }
-        }
-        
-        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
-        
-        // MARK: sorting may not be necessary for our use case
-        let selectedIndices = uniqueValues.map { UInt8($0) }
-            .map {Float($0) / 255.0 }
-            .compactMap { valueToIndex[$0]}
-            .sorted()
-            
-        return (uniqueValues, selectedIndices)
-    }
-    
-    // Get the grayscale values and the corresponding colors
-    private func getGrayScaleAndColorsFromSelection(selection: [Int], classes: [String], labelToClassNameMap: [UInt8: String], grayValues: [Float]) -> ([UInt8], [CIColor]) {
-        let selectedClasses = selection.map { classes[$0] }
-        var selectedGrayscaleValues: [UInt8] = []
-        var selectedColors: [CIColor] = []
-
-        for (key, value) in labelToClassNameMap {
-            if !selectedClasses.contains(value) { continue }
-            selectedGrayscaleValues.append(key)
-            // Assuming grayValues contains grayscale/255, find the index of the grayscale value that matches the key
-            if let index = grayValues.firstIndex(of: Float(key)) {
-                selectedColors.append(Constants.ClassConstants.colors[index])
-                // Fetch corresponding color using the same index
-            }
-        }
-
-        return (selectedGrayscaleValues, selectedColors)
-    }
-    
-    private func preprocessPixelBuffer(_ pixelBuffer: CVPixelBuffer, withSelectedGrayscaleValues selectedValues: [UInt8]) {
-        CVPixelBufferLockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-        let width = CVPixelBufferGetWidth(pixelBuffer)
-        let height = CVPixelBufferGetHeight(pixelBuffer)
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-        let buffer = CVPixelBufferGetBaseAddress(pixelBuffer)
-
-        let pixelBufferFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-        
-        guard pixelBufferFormat == kCVPixelFormatType_OneComponent8 else {
-            print("Pixel buffer format is not 8-bit grayscale.")
-            CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
-            return
-        }
-
-        let selectedValuesSet = Set(selectedValues) // Improve lookup performance
-        
-        for row in 0..<height {
-            let rowBase = buffer!.advanced(by: row * bytesPerRow)
-            for column in 0..<width {
-                let pixel = rowBase.advanced(by: column)
-                let pixelValue = pixel.load(as: UInt8.self)
-                if !selectedValuesSet.contains(pixelValue) {
-                    // Setting unselected values to 0
-                    pixel.storeBytes(of: 0, as: UInt8.self)
-                }
-            }
-        }
-
-        CVPixelBufferUnlockBaseAddress(pixelBuffer, CVPixelBufferLockFlags(rawValue: 0))
     }
 }
