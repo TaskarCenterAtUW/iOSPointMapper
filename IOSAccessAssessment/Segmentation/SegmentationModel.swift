@@ -78,7 +78,7 @@ class SegmentationModel: ObservableObject {
     let masker = GrayscaleToColorCIFilter()
 
     init() {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "bisenetv2", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Cannot load CNN model")
         }
