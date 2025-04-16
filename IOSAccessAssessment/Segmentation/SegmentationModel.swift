@@ -120,7 +120,6 @@ class SegmentationModel: ObservableObject {
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
         print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
-        print(selectedIndices)
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
@@ -192,7 +191,6 @@ class SegmentationModel: ObservableObject {
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
         print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
-        print(selectedIndices)
         
         let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.masker.inputImage = outputImage
