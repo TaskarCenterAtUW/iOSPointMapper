@@ -74,9 +74,6 @@ class GrayscaleToColorCIFilter: CIFilter {
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             return nil
         }
-
-//        let grayscaleBuffer = self.device.makeBuffer(bytes: grayscaleValues, length: grayscaleValues.count * MemoryLayout<Float>.size, options: [])
-//        let colorBuffer = self.device.makeBuffer(bytes: colorValues.map { SIMD3<Float>(Float($0.red), Float($0.green), Float($0.blue)) }, length: colorValues.count * MemoryLayout<SIMD3<Float>>.size, options: [])
         
         var grayscaleToColorLUT: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0, 0, 0), count: 256)
         for (i, grayscaleValue) in grayscaleValues.enumerated() {
@@ -89,12 +86,9 @@ class GrayscaleToColorCIFilter: CIFilter {
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
         commandEncoder.setBuffer(grayscaleToColorLUTBuffer, offset: 0, index: 0)
-//        commandEncoder.setBuffer(grayscaleBuffer, offset: 0, index: 0)
-//        commandEncoder.setBuffer(colorBuffer, offset: 0, index: 1)
-//        commandEncoder.setBytes([UInt32(grayscaleValues.count)], length: MemoryLayout<UInt32>.size, index: 2)
         
-        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
-//        let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
+//        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
+        let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
                                    height: (Int(inputImage.extent.height) + threadgroupSize.height - 1) / threadgroupSize.height,
                                    depth: 1)
