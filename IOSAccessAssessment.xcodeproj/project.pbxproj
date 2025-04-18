@@ -26,6 +26,7 @@
 		A30646272D60486900B97D1B /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
+		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
 		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
@@ -111,6 +112,7 @@
 		A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
+		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
 		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
 		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
@@ -352,6 +354,7 @@
 		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
 			isa = PBXGroup;
 			children = (
+				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
 				A3FCC2F72DA4E06A0037AB43 /* PostProcessing */,
 				A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */,
 				552D9A3C2BE0378E00E17E70 /* kernel.metal */,
@@ -523,6 +526,7 @@
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
+				A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
 				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
