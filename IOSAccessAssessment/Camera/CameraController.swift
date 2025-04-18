@@ -183,7 +183,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
-        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
+//        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
         
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }

@@ -42,6 +42,7 @@ struct SetupView: View {
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationModel: SegmentationModel = SegmentationModel()
+    @StateObject private var segmentationPipeline: SegmentationPipeline = SegmentationPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
     var body: some View {
@@ -115,6 +116,7 @@ struct SetupView: View {
         }
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationModel)
+        .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
         .environment(\.colorScheme, .dark)
     }

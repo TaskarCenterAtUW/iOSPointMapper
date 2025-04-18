@@ -28,17 +28,37 @@ class SegmentationPipeline: ObservableObject {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
-        let segmentationRequest = VNCoreMLRequest(model: self.visionModel);
-        configureSegmentationRequest(request: segmentationRequest)
-        self.requests = [VNCoreMLRequest(model: self.visionModel)]
+        let segmentationRequest = createSegmentationRequest()
+        self.requests = [segmentationRequest]
     }
     
-    private func configureSegmentationRequest(request: VNCoreMLRequest) {
+    private func createSegmentationRequest() -> VNCoreMLRequest {
         // TODO: Need to check on the ideal options for this
-        request.imageCropAndScaleOption = .scaleFill
+        let segmentationRequest = VNCoreMLRequest(model: self.visionModel) { [weak self] request, error in
+            guard let self = self else { return }
+            if let results = request.results as? [VNCoreMLFeatureValueObservation] {
+                self.processSegmentationRequestOutput(results.first!)
+            }
+        }
+        segmentationRequest.imageCropAndScaleOption = .scaleFill
+        return segmentationRequest
+    }
+        
+    private func processSegmentationRequestOutput(_ output: VNCoreMLFeatureValueObservation) {
+        guard let segmentationBuffer = output.featureValue.imageBufferValue else { return }
+        let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer)
+        DispatchQueue.main.async {
+            self.result = segmentationImage
+        }
     }
     
     func processRequest(with cIImage: CIImage) {
-        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try self.requestHandler.perform(self.requests, on: cIImage)
+            } catch {
+                print("Error performing request: \(error)")
+            }
+        }
     }
 }

@@ -16,6 +16,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     var sharedImageData: SharedImageData?
     var segmentationModel: SegmentationModel?
+    var segmentationPipeline: SegmentationPipeline?
 
     @Published var isFilteringDepth: Bool {
         didSet {
@@ -32,9 +33,10 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     var cancellables = Set<AnyCancellable>()
     var session: AVCaptureSession { controller.captureSession }
     
-    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel) {
+    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel, segmentationPipeline: SegmentationPipeline) {
         self.sharedImageData = sharedImageData
         self.segmentationModel = segmentationModel
+        self.segmentationPipeline = segmentationPipeline
         
         controller = CameraController()
         isFilteringDepth = true
@@ -67,6 +69,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 self.sharedImageData?.depthImage = depthImage
                 
                 self.segmentationModel?.performSegmentationRequest(with: cameraImage)
+                self.segmentationPipeline?.processRequest(with: cameraImage)
                 
                 if self.dataAvailable == false {
                     self.dataAvailable = true
