@@ -9,6 +9,12 @@ import SwiftUI
 import Vision
 import CoreML
 
+struct DetectedObject {
+    let classLabel: UInt8
+    let centroid: CGPoint
+    let boundingBox: CGRect
+}
+
 /**
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
  */
@@ -23,8 +29,8 @@ class SegmentationPipeline: ObservableObject {
     @Published var segmentationResultUIImage: UIImage?
     
     private var detectContourRequests: [VNDetectContoursRequest] = [VNDetectContoursRequest]()
-    @Published var objects: [VNContour] = []
-    var pointCountThreshold: Int = 200
+    @Published var objects: [DetectedObject] = []
+    var perimeterThreshold: Int = 200
     
 //    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     let binaryMaskProcessor = BinaryMaskProcessor()
@@ -86,7 +92,7 @@ class SegmentationPipeline: ObservableObject {
             var objectList = [VNContour]()
             let contours = contourResult?.topLevelContours
             for contour in contours! {
-                if contour.pointCount < self.pointCountThreshold {continue}
+                if contour.pointCount < self.perimeterThreshold {continue}
                 try objectList.append(contour.polygonApproximation(epsilon: 0.5))
             }
             return objectList
@@ -95,6 +101,61 @@ class SegmentationPipeline: ObservableObject {
             return nil
         }
     }
+    
+    private func computeCentroid(for contour: VNContour) -> CGPoint {
+        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return .zero }
+        
+        var sum: simd_float2 = .zero
+        for point in points {
+            sum.x += point.x
+            sum.y += point.y
+        }
+        var count: Float = Float(points.count)
+        
+        return CGPoint(x: CGFloat(sum.x / count), y: CGFloat(sum.y / count))
+    }
+    
+    private func computeBoundingBox(for contour: VNContour) -> CGRect {
+        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return .zero }
+        
+        var minX = points[0].x
+        var minY = points[0].y
+        var maxX = points[0].x
+        var maxY = points[0].y
+        
+        for point in points {
+            minX = min(minX, point.x)
+            minY = min(minY, point.y)
+            maxX = max(maxX, point.x)
+            maxY = max(maxY, point.y)
+        }
+        
+        return CGRect(x: CGFloat(minX), y: CGFloat(minY),
+                        width: CGFloat(maxX - minX), height: CGFloat(maxY - minY))
+    }
+    
+    private func computePerimeter(for contour: VNContour) -> Float {
+        let points = contour.normalizedPoints
+        guard points.count > 1 else { return 0 }
+        
+        var perimeter: Float = 0.0
+        
+        for i in 0..<(points.count - 1) {
+            let dx = points[i+1].x - points[i].x
+            let dy = points[i+1].y - points[i].y
+            perimeter += sqrt(dx*dx + dy*dy)
+        }
+        
+        // If contour is closed, add distance between last and first
+        let dx = points.first!.x - points.last!.x
+        let dy = points.first!.y - points.last!.y
+        perimeter += sqrt(dx*dx + dy*dy)
+
+        return perimeter
+    }
+
     
     func getObjects(from segmentationImage: CIImage) {
         var objectList: [VNContour] = []
