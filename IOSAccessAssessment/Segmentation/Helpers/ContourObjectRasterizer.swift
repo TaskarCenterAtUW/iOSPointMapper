@@ -20,7 +20,9 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
     let labelToColorMap = Constants.ClassConstants.labelToColorMap
     for object in objects {
         let color = colorForClass(object.classLabel, labelToColorMap: labelToColorMap)
-        context.setFillColor(color.cgColor)
+//        context.setFillColor(color.cgColor)
+        context.setStrokeColor(color.cgColor)
+        context.setLineWidth(4.0)
         
         let path = UIBezierPath()
         guard let firstPoint = object.normalizedPoints.first else { continue }
@@ -35,7 +37,8 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
         path.close()
         
         context.addPath(path.cgPath)
-        context.fillPath()
+//        context.fillPath()
+        context.strokePath()
     }
     let cgImage = UIGraphicsGetImageFromCurrentImageContext()?.cgImage
     UIGraphicsEndImageContext()
