@@ -45,7 +45,8 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
+                        HostedSegmentationViewController(segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
