@@ -14,11 +14,13 @@ import CoreML
  */
 class SegmentationPipeline: ObservableObject {
     var visionModel: VNCoreMLModel
-    private(set) var requests: [VNRequest] = [VNRequest]()
+    private(set) var segmentationRequests: [VNCoreMLRequest] = [VNCoreMLRequest]()
     private let requestHandler = VNSequenceRequestHandler()
+    @Published var segmentationResult: CIImage?
+    @Published var segmentedIndices: [Int] = []
     
-    @Published var result: CIImage?
-    @Published var classIndices: [Int] = []
+    private var detectContourRequests: [VNDetectContoursRequest] = [VNDetectContoursRequest]()
+    @Published var objects: [CGRect] = []
     
     let masker = GrayscaleToColorCIFilter()
     
@@ -30,7 +32,9 @@ class SegmentationPipeline: ObservableObject {
         self.visionModel = visionModel
         let segmentationRequest = VNCoreMLRequest(model: self.visionModel);
         configureSegmentationRequest(request: segmentationRequest)
-        self.requests = [VNCoreMLRequest(model: self.visionModel)]
+        self.segmentationRequests = [segmentationRequest]
+        
+        self.detectContourRequests = [VNDetectContoursRequest()]
     }
     
     private func configureSegmentationRequest(request: VNCoreMLRequest) {
@@ -43,12 +47,12 @@ class SegmentationPipeline: ObservableObject {
     func processRequest(with cIImage: CIImage) {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                try self.requestHandler.perform(self.requests, on: cIImage)
-                if let segmentationResult = self.requests.first?.results as? [VNPixelBufferObservation] {
+                try self.requestHandler.perform(self.segmentationRequests, on: cIImage)
+                if let segmentationResult = self.segmentationRequests.first?.results as? [VNPixelBufferObservation] {
                     let segmentationBuffer = segmentationResult.first?.pixelBuffer
                     let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
                     DispatchQueue.main.async {
-                        self.result = segmentationImage
+                        self.segmentationResult = segmentationImage
                     }
                 }
             } catch {
@@ -56,4 +60,12 @@ class SegmentationPipeline: ObservableObject {
             }
         }
     }
+    
+    private func getContours(for image: CIImage) {
+    }
+    
+    func getObjects(from segmentationImage: CIImage) {
+    }
+    
+    
 }

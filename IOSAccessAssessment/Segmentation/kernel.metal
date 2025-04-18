@@ -61,3 +61,28 @@ void colorMatchingKernelLUT (
     }
     outputTexture.write(pixelColor, gid);
 }
+
+extern "C"
+kernel
+void binaryMaskingKernel (
+      texture2d<float, access::read> inputTexture [[texture(0)]],
+      texture2d<float, access::write> outputTexture [[texture(1)]],
+      constant uint8_t& targetValue [[buffer(0)]],
+      uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= inputTexture.get_width() || gid.y >= inputTexture.get_height())
+        return;
+
+    float4 pixelColor = inputTexture.read(gid);
+    float grayscale = pixelColor.r;
+    
+    // Normalize grayscale to the range of the LUT
+    uint8_t index = min(uint(round(grayscale * 255.0)), 255u);
+    if (index == targetValue) {
+        pixelColor = float4(0.0, 0.0, 0.0, 0.0);
+    } else {
+        pixelColor = float4(1.0, 1.0, 1.0, 1.0);
+    }
+    outputTexture.write(pixelColor, gid);
+}
+
