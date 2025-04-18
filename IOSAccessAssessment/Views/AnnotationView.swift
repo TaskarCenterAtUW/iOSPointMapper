@@ -170,7 +170,7 @@ struct AnnotationView: View {
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
-        print("Time taken to post-process AnnotationView segments: \(timeInterval) milliseconds")
+//        print("Time taken to post-process AnnotationView segments: \(timeInterval) milliseconds")
         
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!

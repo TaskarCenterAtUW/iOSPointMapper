@@ -95,7 +95,7 @@ class SegmentationModel: ObservableObject {
                 let end = DispatchTime.now()
                 let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
                 let timeInterval = Double(nanoTime) / 1_000_000
-                print("Time taken to process segmentation output: \(timeInterval) milliseconds")
+//                print("Time taken to process segmentation output: \(timeInterval) milliseconds")
             })
         })
         segmentationRequests.imageCropAndScaleOption = .scaleFill
@@ -119,7 +119,7 @@ class SegmentationModel: ObservableObject {
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
-        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
+//        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
         
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = selection.filter{ selectedIndicesSet.contains($0) }
@@ -155,7 +155,7 @@ class SegmentationModel: ObservableObject {
             
             let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
             let timeInterval = Double(nanoTime) / 1_000_000
-            print("Time taken to perform segmentation request: \(timeInterval) milliseconds")
+//            print("Time taken to perform segmentation request: \(timeInterval) milliseconds")
         } catch {
             print("Error performing request: \(error.localizedDescription)")
         }
@@ -190,7 +190,7 @@ class SegmentationModel: ObservableObject {
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
-        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
+//        print("Time taken to perform extraction of grayscale values: \(timeInterval) milliseconds")
         
         let outputImage = CIImage(cvPixelBuffer: outPixelBuffer.pixelBuffer)
         self.masker.inputImage = outputImage

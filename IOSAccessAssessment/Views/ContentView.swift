@@ -17,6 +17,7 @@ struct ContentView: View {
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationModel: SegmentationModel
+    @EnvironmentObject var segmentationPipeline: SegmentationPipeline
     @EnvironmentObject var depthModel: DepthModel
     
     @State private var manager: CameraManager?
@@ -44,7 +45,9 @@ struct ContentView: View {
                                                     height: UIScreen.main.bounds.height,
                                                     row: 0)
                         )
-                        HostedSegmentationViewController(segmentationImage: $segmentationModel.maskedSegmentationResults,
+                        HostedSegmentationViewController(
+                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -91,7 +94,8 @@ struct ContentView: View {
                 segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
                 segmentationModel.updatePerClassSegmentationRequest(selection: selection,
                                                                     completion: updatePerClassImageSegmentation)
-                manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel)
+                segmentationPipeline.setSelectionClassLabels(selection.map { Constants.ClassConstants.labels[$0] })
+                manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
             }

@@ -152,7 +152,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let start = DispatchTime.now()
         
-        // FIXME: This temporary solution of inverting the height and the width need to fixed ASAP
+        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.height,
             height: Constants.ClassConstants.inputSize.width
@@ -183,7 +183,7 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
-        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
+//        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
         
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }
