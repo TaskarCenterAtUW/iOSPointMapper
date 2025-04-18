@@ -28,7 +28,8 @@ class SegmentationPipeline: ObservableObject {
     // MARK: Temporary segmentationRequest UIImage
     @Published var segmentationResultUIImage: UIImage?
     
-    private var detectContourRequests: [VNDetectContoursRequest] = [VNDetectContoursRequest]()
+    // MARK: Due to parallel processing, we need to create a separate request for each thread
+//    private var detectContourRequests: [VNDetectContoursRequest] = [VNDetectContoursRequest]()
     @Published var objects: [DetectedObject] = []
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
@@ -52,9 +53,9 @@ class SegmentationPipeline: ObservableObject {
         configureSegmentationRequest(request: segmentationRequest)
         self.segmentationRequests = [segmentationRequest]
         
-        let contourRequest = VNDetectContoursRequest()
-        configureContourRequest(request: contourRequest)
-        self.detectContourRequests = [contourRequest]
+//        let contourRequest = VNDetectContoursRequest()
+//        configureContourRequest(request: contourRequest)
+//        self.detectContourRequests = [contourRequest]
     }
     
     func processRequest(with cIImage: CIImage) {
@@ -82,11 +83,11 @@ class SegmentationPipeline: ObservableObject {
                 self.segmentationResult = segmentationImage
                 
                 // Temporary
-                self.grayscaleToColorMasker.inputImage = segmentationImage
-                self.grayscaleToColorMasker.grayscaleValues = Constants.ClassConstants.grayscaleValues
-                self.grayscaleToColorMasker.colorValues =  Constants.ClassConstants.colors
-                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
-                                                         scale: 1.0, orientation: .downMirrored)
+//                self.grayscaleToColorMasker.inputImage = segmentationImage
+//                self.grayscaleToColorMasker.grayscaleValues = Constants.ClassConstants.grayscaleValues
+//                self.grayscaleToColorMasker.colorValues =  Constants.ClassConstants.colors
+//                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
+//                                                         scale: 1.0, orientation: .downMirrored)
             }
             getObjects(from: segmentationImage)
         } catch {
@@ -101,9 +102,11 @@ class SegmentationPipeline: ObservableObject {
     
     private func getObjectsFromBinaryImage(for binaryImage: CIImage, classLabel: UInt8) -> [DetectedObject]? {
         do {
+            let contourRequest = VNDetectContoursRequest()
+            configureContourRequest(request: contourRequest)
             let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: .right, options: [:])
-            try contourRequestHandler.perform(self.detectContourRequests)
-            guard let contourResults = self.detectContourRequests.first?.results as? [VNContoursObservation] else {return nil}
+            try contourRequestHandler.perform([contourRequest])
+            guard let contourResults = contourRequest.results else {return nil}
             
             let contourResult = contourResults.first
             
@@ -175,12 +178,17 @@ class SegmentationPipeline: ObservableObject {
     func getObjects(from segmentationImage: CIImage) {
         var objectList: [DetectedObject] = []
         let classes = Constants.ClassConstants.labels//[0...2]
+        let lock = NSLock()
         
         let start = DispatchTime.now()
-        for classLabel in classes {
+        DispatchQueue.concurrentPerform(iterations: classes.count) { index in
+            let classLabel = classes[index]
             let mask = binaryMaskProcessor.apply(to: segmentationImage, targetValue: classLabel)
             let objects = getObjectsFromBinaryImage(for: mask!, classLabel: classLabel)
+            
+            lock.lock()
             objectList.append(contentsOf: objects ?? [])
+            lock.unlock()
         }
         let end = DispatchTime.now()
         let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
@@ -189,9 +197,9 @@ class SegmentationPipeline: ObservableObject {
         DispatchQueue.main.async {
             self.objects = objectList
             // Temporary
-//            self.segmentationResultUIImage = UIImage(
-//                ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
-//                scale: 1.0, orientation: .leftMirrored)
+            self.segmentationResultUIImage = UIImage(
+                ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+                scale: 1.0, orientation: .leftMirrored)
         }
     }
 }
