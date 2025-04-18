@@ -31,6 +31,7 @@
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */; };
+		A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */; };
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */; };
@@ -119,6 +120,7 @@
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskProcessor.swift; sourceTree = "<group>"; };
+		A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourObjectRasterizer.swift; sourceTree = "<group>"; };
 		A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImageData.swift; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModel.swift; sourceTree = "<group>"; };
@@ -300,6 +302,14 @@
 			path = Filters;
 			sourceTree = "<group>";
 		};
+		A3BB5AFC2DB2EE1A008673ED /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
 		A3D1272F2D5D0DFE0081DFF4 /* OpenCV */ = {
 			isa = PBXGroup;
 			children = (
@@ -366,6 +376,7 @@
 		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
 			isa = PBXGroup;
 			children = (
+				A3BB5AFC2DB2EE1A008673ED /* Helpers */,
 				A3BB5AF92DB21080008673ED /* Filters */,
 				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
 				A3FCC2F72DA4E06A0037AB43 /* PostProcessing */,
@@ -566,6 +577,7 @@
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
+				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,

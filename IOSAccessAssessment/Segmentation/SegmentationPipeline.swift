@@ -34,13 +34,13 @@ class SegmentationPipeline: ObservableObject {
     var contourEpsilon: Float = 0.5
     // TODO: Check what would be the appropriate value for this
     // For normalized points
-    var perimeterThreshold: Float = 0.05
+    var perimeterThreshold: Float = 0.0001
     
-//    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     let binaryMaskProcessor = BinaryMaskProcessor()
     
     init() {
-        let modelURL = Bundle.main.url(forResource: "bisenetv2", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Cannot load CNN model")
         }
@@ -75,13 +75,15 @@ class SegmentationPipeline: ObservableObject {
             let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
-                self.segmentationResultUIImage = UIImage(ciImage: segmentationImage, scale: 1.0, orientation: .downMirrored)
+                
+                // Temporary
+                self.grayscaleToColorMasker.inputImage = segmentationImage
+                self.grayscaleToColorMasker.grayscaleValues = Constants.ClassConstants.grayscaleValues
+                self.grayscaleToColorMasker.colorValues =  Constants.ClassConstants.colors
+                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
+                                                         scale: 1.0, orientation: .leftMirrored)
             }
-            let start = DispatchTime.now()
             getObjects(from: segmentationImage)
-            let end = DispatchTime.now()
-            let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-            print("Time taken for contour detection: \(timeInterval) ms")
         } catch {
             print("Error processing segmentation request: \(error)")
         }
@@ -95,6 +97,7 @@ class SegmentationPipeline: ObservableObject {
         do {
             try self.requestHandler.perform(self.detectContourRequests, on: image)
             guard let contourResults = self.detectContourRequests.first?.results as? [VNContoursObservation] else {return nil}
+            
             let contourResult = contourResults.first
             
             var objectList = [DetectedObject]()
@@ -159,21 +162,18 @@ class SegmentationPipeline: ObservableObject {
         let dy = points.first!.y - points.last!.y
         perimeter += sqrt(dx*dx + dy*dy)
         
-        print("Centroid: \(centroid), Bounding Box: \(boundingBox), Perimeter: \(perimeter)")
-        
         return (centroid, boundingBox, perimeter)
     }
     
     func getObjects(from segmentationImage: CIImage) {
         var objectList: [DetectedObject] = []
-        let classes = Constants.ClassConstants.labels
+        let classes = Constants.ClassConstants.labels//[0...2]
         
         for classLabel in classes {
             let mask = binaryMaskProcessor.apply(to: segmentationImage, targetValue: classLabel)
             let objects = getObjectsFromBinaryImage(for: mask!, classLabel: classLabel)
             objectList.append(contentsOf: objects ?? [])
         }
-        print("Number of objects detected: \(objectList.count)")
         
         DispatchQueue.main.async {
             self.objects = objectList

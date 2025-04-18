@@ -42,12 +42,20 @@ struct SegmentationClassConstants {
     var colors: [CIColor] {
         return classes.map { $0.color }
     }
+    
+    var labelToColorMap: [UInt8: CIColor] {
+        var map: [UInt8: CIColor] = [:]
+        for cls in classes {
+            map[cls.labelValue] = cls.color
+        }
+        return map
+    }
 }
 
 // Constants related to the supported classes
 struct Constants {
     // Supported Classes
-    static let VOCConstants: SegmentationClassConstants = SegmentationClassConstants(
+    static let ClassConstants: SegmentationClassConstants = SegmentationClassConstants(
         classes: [
 //            SegmentationClass(name: "Background", grayscaleValue: 0.0 / 255.0,
 //                              labelValue: 0, color: CIColor(red: 0.000, green: 0.000, blue: 0.000),
@@ -172,7 +180,7 @@ struct Constants {
     )
     
     // Classes for CityScapes dataset (Main training classes)
-    static let ClassConstants: SegmentationClassConstants = SegmentationClassConstants(
+    static let CityScapesMainConstants: SegmentationClassConstants = SegmentationClassConstants(
         classes: [
             SegmentationClass(name: "Road", grayscaleValue: 0.0 / 255.0, labelValue: 0,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502)),
