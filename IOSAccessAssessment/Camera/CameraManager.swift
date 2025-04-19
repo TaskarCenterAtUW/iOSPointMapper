@@ -26,7 +26,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     // TODO: Currently, the orientation is redundant until we start using other orientation types
     //  It does not seem to be used anywhere currently
     @Published var orientation = UIDevice.current.orientation
-    @Published var processingCapturedResult = false
+    @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
     
     let controller: CameraController
@@ -50,26 +50,40 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     func resumeStream() {
         controller.startStream()
-        processingCapturedResult = false
+        isProcessingCapturedResult = false
     }
     
     func stopStream() {
         controller.stopStream()
-        processingCapturedResult = false
+        isProcessingCapturedResult = false
     }
     
     func getLidarAvailability(isLidarAvailable: Bool) {
         self.sharedImageData?.isLidarAvailable = isLidarAvailable
     }
     
+    private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
+        switch results {
+        case .success(let output):
+            self.sharedImageData?.appendFrame(frame: output.segmentationResult)
+            return
+        case .failure(let error):
+//            fatalError("Unable to process segmentation \(error.localizedDescription)")
+            print("Unable to process segmentation \(error.localizedDescription)")
+            return
+        }
+    }
+    
     func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
-            if !self.processingCapturedResult {
+            if !self.isProcessingCapturedResult {
+                let previousImage = self.sharedImageData?.cameraImage
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 
                 self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage)
+                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
+                                                            completion: self.segmentationPipelineCompletionHandler)
                 
                 if self.dataAvailable == false {
                     self.dataAvailable = true

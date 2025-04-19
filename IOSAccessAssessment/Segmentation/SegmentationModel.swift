@@ -103,7 +103,7 @@ class SegmentationModel: ObservableObject {
     }
     
     func processSegmentationRequest(_ observations: [Any], _ selection: [Int],
-                                    completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void){
+                                    completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void) {
         let obs = observations as! [VNPixelBufferObservation]
         if obs.isEmpty{
             print("The Segmentation array is Empty")

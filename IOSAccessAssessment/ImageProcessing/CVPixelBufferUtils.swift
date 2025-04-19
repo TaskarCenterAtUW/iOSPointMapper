@@ -110,7 +110,8 @@ func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8
                                  width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
                                  rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
     var histogram = [vImagePixelCount](repeating: 0, count: 256)
-    let error = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
+    let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
+    guard histogramError == kvImageNoError else { return (Set<UInt8>(), []) }
     
     var uniqueValues = Set<UInt8>()
     for i in 0..<histogram.count {
