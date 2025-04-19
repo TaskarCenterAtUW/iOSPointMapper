@@ -18,16 +18,15 @@ struct TrackedObject {
 }
 
 class CentroidTracker {
-    
-    private var nextObjectID: Int;
-    private var objects: OrderedDictionary<Int, TrackedObject>;
-    private var disappearedObjects: OrderedDictionary<Int, Int>;
+    private var nextObjectID: UUID;
+    private var objects: OrderedDictionary<UUID, TrackedObject>;
+    private var disappearedObjects: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
     var distanceThreshold: Float;
     
     init(maxDisappeared: Int, distanceThreshold: Float = 50.0) {
-        self.nextObjectID = 0
+        self.nextObjectID = UUID()
         self.objects = OrderedDictionary()
         self.disappearedObjects = OrderedDictionary()
         
@@ -40,16 +39,16 @@ class CentroidTracker {
         self.objects[nextObjectID] = object
         self.disappearedObjects[nextObjectID] = 0
         
-        nextObjectID += 1
+        nextObjectID = UUID()
     }
     
-    func deregister(objectID: Int) {
+    func deregister(objectID: UUID) {
         self.objects.removeValue(forKey: objectID)
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
     func update(objectsList: Array<TrackedObject>) ->
-    (objects: OrderedDictionary<Int, TrackedObject>, disappearedObjects: OrderedDictionary<Int, Int>) {
+    (objects: OrderedDictionary<UUID, TrackedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
         /**
          If object list is empty, increment the disappeared count for each object
          */

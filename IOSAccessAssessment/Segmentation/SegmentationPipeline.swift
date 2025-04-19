@@ -231,7 +231,7 @@ class SegmentationPipeline: ObservableObject {
         
         let count: Float = Float(points.count)
         // For centroid
-        var sum: simd_float2 = .zero
+        var sum: SIMD2<Float> = .zero
         // For bounding box
         var minX = points[0].x
         var minY = points[0].y
