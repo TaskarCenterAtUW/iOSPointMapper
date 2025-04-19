@@ -58,7 +58,6 @@ class SegmentationPipeline: ObservableObject {
     var isProcessing = false
     
     var visionModel: VNCoreMLModel
-    private(set) var segmentationRequests: [VNCoreMLRequest] = [VNCoreMLRequest]()
     @Published var segmentationResult: CIImage?
     @Published var segmentedIndices: [Int] = []
     var selectionClassLabels: [UInt8] = []
@@ -75,6 +74,8 @@ class SegmentationPipeline: ObservableObject {
     // For normalized points
     var perimeterThreshold: Float = 0.01
     
+    @Published var transformedReferenceImage: CIImage?
+    
     // TODO: GrayscaleToColorCIFilter will not be restricted to only the selected classes because we are using the ClassConstants
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     let binaryMaskProcessor = BinaryMaskProcessor()
@@ -85,13 +86,6 @@ class SegmentationPipeline: ObservableObject {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
-        let segmentationRequest = VNCoreMLRequest(model: self.visionModel);
-        configureSegmentationRequest(request: segmentationRequest)
-        self.segmentationRequests = [segmentationRequest]
-        
-//        let contourRequest = VNDetectContoursRequest()
-//        configureContourRequest(request: contourRequest)
-//        self.detectContourRequests = [contourRequest]
     }
     
     func setSelectionClassLabels(_ classLabels: [UInt8]) {
@@ -115,7 +109,7 @@ class SegmentationPipeline: ObservableObject {
                 }
                 return
             }
-            let objectList = self.getObjects(from: segmentationImage!) ?? []
+            let objectList = self.processContourRequest(from: segmentationImage!) ?? []
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
                 self.objects = objectList
@@ -145,10 +139,12 @@ class SegmentationPipeline: ObservableObject {
     // Need to check if this is always guaranteed.
     func processSegmentationRequest(with cIImage: CIImage) -> CIImage? {
         do {
+            let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
+            self.configureSegmentationRequest(request: segmentationRequest)
             // TODO: Check if this is the correct orientation, based on which the UIImage orientation will also be set
             let segmentationRequestHandler = VNImageRequestHandler(ciImage: cIImage, orientation: .right, options: [:])
-            try segmentationRequestHandler.perform(self.segmentationRequests)
-            guard let segmentationResult = self.segmentationRequests.first?.results as? [VNPixelBufferObservation] else {return nil}
+            try segmentationRequestHandler.perform([segmentationRequest])
+            guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
             let segmentationBuffer = segmentationResult.first?.pixelBuffer
             let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
             return segmentationImage
@@ -245,7 +241,7 @@ class SegmentationPipeline: ObservableObject {
         Function to get the detected objects from the segmentation image.
             Processes each class in parallel to get the objects.
      */
-    func getObjects(from segmentationImage: CIImage) -> [DetectedObject]? {
+    func processContourRequest(from segmentationImage: CIImage) -> [DetectedObject]? {
         var objectList: [DetectedObject] = []
         let lock = NSLock()
         
@@ -264,5 +260,9 @@ class SegmentationPipeline: ObservableObject {
         print("Contour detection time: \(timeInterval) ms")
         
         return objectList
+    }
+    
+    func processTransformReferenceImageRequest(with floatingImage: CIImage, referenceImage: CIImage) {
+        
     }
 }
