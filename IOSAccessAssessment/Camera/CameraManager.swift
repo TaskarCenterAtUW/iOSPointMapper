@@ -26,7 +26,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     // TODO: Currently, the orientation is redundant until we start using other orientation types
     //  It does not seem to be used anywhere currently
     @Published var orientation = UIDevice.current.orientation
-    @Published var processingCapturedResult = false
+    @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
     
     let controller: CameraController
@@ -50,12 +50,12 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     func resumeStream() {
         controller.startStream()
-        processingCapturedResult = false
+        isProcessingCapturedResult = false
     }
     
     func stopStream() {
         controller.stopStream()
-        processingCapturedResult = false
+        isProcessingCapturedResult = false
     }
     
     func getLidarAvailability(isLidarAvailable: Bool) {
@@ -64,7 +64,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     
     func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
-            if !self.processingCapturedResult {
+            if !self.isProcessingCapturedResult {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 

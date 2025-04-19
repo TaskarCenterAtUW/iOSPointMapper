@@ -20,6 +20,11 @@ struct DetectedObject {
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
  */
 class SegmentationPipeline: ObservableObject {
+    // TODO: Update this to multiple states (one for each of segmentation, contour detection, etc.)
+    //  to pipeline the processing.
+    //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
+    var isProcessing = false
+    
     var visionModel: VNCoreMLModel
     private(set) var segmentationRequests: [VNCoreMLRequest] = [VNCoreMLRequest]()
     @Published var segmentationResult: CIImage?
@@ -42,9 +47,6 @@ class SegmentationPipeline: ObservableObject {
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     let binaryMaskProcessor = BinaryMaskProcessor()
     
-    var avgContourTime: Float = 0.0
-    var avgContourCount = 0
-    
     init() {
         let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
@@ -65,7 +67,13 @@ class SegmentationPipeline: ObservableObject {
     }
     
     func processRequest(with cIImage: CIImage) {
+        if self.isProcessing {
+            print("Already processing a request. Discarding the new request.")
+            return
+        }
+        
         DispatchQueue.global(qos: .userInitiated).async {
+            self.isProcessing = true
             let segmentationImage = self.processSegmentationRequest(with: cIImage)
             let objectList = self.getObjects(from: segmentationImage!)
             DispatchQueue.main.async {
@@ -84,6 +92,7 @@ class SegmentationPipeline: ObservableObject {
                     ciImage: rasterizeContourObjects(objects: objectList!, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .leftMirrored)
             }
+            self.isProcessing = false
         }
     }
     
