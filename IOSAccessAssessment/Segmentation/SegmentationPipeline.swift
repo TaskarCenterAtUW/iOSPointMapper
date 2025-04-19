@@ -343,11 +343,10 @@ class SegmentationPipeline: ObservableObject {
             try transformRequestHandler.perform([transformRequest])
             guard let transformResult = transformRequest.results else {return nil}
             let transformMatrix = transformResult.first?.warpTransform
-            print("Transform matrix: \(String(describing: transformMatrix))")
             let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
             let end = DispatchTime.now()
             let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-            print("Transform floating image time: \(timeInterval) ms")
+//            print("Transform floating image time: \(timeInterval) ms")
             return transformImage
         }
         catch {
