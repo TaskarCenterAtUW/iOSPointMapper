@@ -68,7 +68,9 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
             self.sharedImageData?.appendFrame(frame: output.segmentationResult)
             return
         case .failure(let error):
-            fatalError("Unable to process segmentation \(error.localizedDescription)")
+//            fatalError("Unable to process segmentation \(error.localizedDescription)")
+            print("Unable to process segmentation \(error.localizedDescription)")
+            return
         }
     }
     

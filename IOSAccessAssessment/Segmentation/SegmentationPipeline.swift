@@ -20,6 +20,7 @@ enum SegmentationPipelineError: Error, LocalizedError {
     case emptySegmentation
     case invalidSegmentation
     case invalidContour
+    case invalidTransform
     
     var errorDescription: String? {
         switch self {
@@ -29,6 +30,8 @@ enum SegmentationPipelineError: Error, LocalizedError {
             return "The Segmentation is invalid"
         case .invalidContour:
             return "The Contour is invalid"
+        case .invalidTransform:
+            return "The Homography Transform is invalid"
         }
     }
 }
@@ -114,6 +117,13 @@ class SegmentationPipeline: ObservableObject {
             if let previousImage = previousImage {
                 transformedFloatingImage = self.processTransformFloatingImageRequest(with: cIImage,
                                                                                    floatingImage: previousImage)
+                guard transformedFloatingImage != nil else {
+                    DispatchQueue.main.async {
+                        self.isProcessing = false
+                        completion(.failure(SegmentationPipelineError.invalidTransform))
+                    }
+                    return
+                }
             }
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
