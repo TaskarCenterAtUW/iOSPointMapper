@@ -16,6 +16,38 @@ struct DetectedObject {
     let normalizedPoints: [simd_float2]
 }
 
+enum SegmentationPipelineError: Error, LocalizedError {
+    case emptySegmentation
+    case invalidSegmentation
+    case invalidContour
+    
+    var errorDescription: String? {
+        switch self {
+        case .emptySegmentation:
+            return "The Segmentation array is Empty"
+        case .invalidSegmentation:
+            return "The Segmentation is invalid"
+        case .invalidContour:
+            return "The Contour is invalid"
+        }
+    }
+}
+
+struct SegmentationPipelineResults {
+    var segmentationResult: CIImage
+    var segmentationResultUIImage: UIImage
+    var segmentedIndices: [Int]
+    var objects: [DetectedObject]
+    
+    init(segmentationResult: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
+         objects: [DetectedObject]) {
+        self.segmentationResult = segmentationResult
+        self.segmentationResultUIImage = segmentationResultUIImage
+        self.segmentedIndices = segmentedIndices
+        self.objects = objects
+    }
+}
+
 /**
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
  */
@@ -66,19 +98,27 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassLabels = classLabels
     }
     
-    func processRequest(with cIImage: CIImage) {
+    func processRequest(with cIImage: CIImage, referenceImage: CIImage?, completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void) {
         if self.isProcessing {
             print("Already processing a request. Discarding the new request.")
+            completion(.failure(SegmentationPipelineError.invalidSegmentation))
             return
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.isProcessing = true
             let segmentationImage = self.processSegmentationRequest(with: cIImage)
-            let objectList = self.getObjects(from: segmentationImage!)
+            guard segmentationImage != nil else {
+                DispatchQueue.main.async {
+                    self.isProcessing = false
+                    completion(.failure(SegmentationPipelineError.emptySegmentation))
+                }
+                return
+            }
+            let objectList = self.getObjects(from: segmentationImage!) ?? []
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
-                self.objects = objectList ?? []
+                self.objects = objectList
                 
                 // Temporary
 //                self.grayscaleToColorMasker.inputImage = segmentationImage
@@ -89,7 +129,7 @@ class SegmentationPipeline: ObservableObject {
                 
                 // Temporary
                 self.segmentationResultUIImage = UIImage(
-                    ciImage: rasterizeContourObjects(objects: objectList!, size: Constants.ClassConstants.inputSize)!,
+                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .leftMirrored)
             }
             self.isProcessing = false
