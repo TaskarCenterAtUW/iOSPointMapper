@@ -13,7 +13,7 @@ struct DetectedObject {
     let classLabel: UInt8
     let centroid: CGPoint
     let boundingBox: CGRect
-    let normalizedPoints: [simd_float2]
+    let normalizedPoints: [SIMD2<Float>]
 }
 
 enum SegmentationPipelineError: Error, LocalizedError {
