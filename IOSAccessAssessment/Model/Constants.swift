@@ -100,7 +100,7 @@ struct Constants {
             SegmentationClass(name: "TV", grayscaleValue: 240.0 / 255.0, labelValue: 240,
                               color: CIColor(red: 0.000, green: 0.250, blue: 0.500))
         ],
-        inputSize: CGSize(width: 1024, height: 1024)
+        inputSize: CGSize(width: 256, height: 256)
     )
     
     static let CityScapesConstants: SegmentationClassConstants = SegmentationClassConstants(

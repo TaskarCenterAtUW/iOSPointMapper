@@ -74,7 +74,7 @@ class SegmentationPipeline: ObservableObject {
     // For normalized points
     var perimeterThreshold: Float = 0.01
     
-    @Published var transformedReferenceImage: CIImage?
+    @Published var transformedFloatingImage: CIImage?
     
     // TODO: GrayscaleToColorCIFilter will not be restricted to only the selected classes because we are using the ClassConstants
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -92,10 +92,10 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassLabels = classLabels
     }
     
-    func processRequest(with cIImage: CIImage, referenceImage: CIImage?, completion: @escaping (Result<SegmentationResultsOutput, Error>) -> Void) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
         if self.isProcessing {
             print("Already processing a request. Discarding the new request.")
-            completion(.failure(SegmentationPipelineError.invalidSegmentation))
+//            completion(.failure(SegmentationPipelineError.invalidSegmentation))
             return
         }
         
@@ -110,6 +110,11 @@ class SegmentationPipeline: ObservableObject {
                 return
             }
             let objectList = self.processContourRequest(from: segmentationImage!) ?? []
+            var transformedFloatingImage: CIImage?
+            if let previousImage = previousImage {
+                transformedFloatingImage = self.processTransformFloatingImageRequest(with: cIImage,
+                                                                                   floatingImage: previousImage)
+            }
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
                 self.objects = objectList
@@ -122,9 +127,25 @@ class SegmentationPipeline: ObservableObject {
 //                                                         scale: 1.0, orientation: .downMirrored)
                 
                 // Temporary
-                self.segmentationResultUIImage = UIImage(
-                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
-                    scale: 1.0, orientation: .leftMirrored)
+//                self.segmentationResultUIImage = UIImage(
+//                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+//                    scale: 1.0, orientation: .leftMirrored)
+//
+                self.transformedFloatingImage = transformedFloatingImage
+                if let transformedFloatingImage = transformedFloatingImage {
+                    self.segmentationResultUIImage = UIImage(ciImage: transformedFloatingImage,
+                                                             scale: 1.0, orientation: .right)
+                }
+                else {
+                    print("No transformed floating image")
+                    self.segmentationResultUIImage = UIImage(ciImage: segmentationImage!,
+                                                             scale: 1.0, orientation: .downMirrored)
+                }
+                completion(.success(SegmentationPipelineResults(
+                    segmentationResult: segmentationImage!,
+                    segmentationResultUIImage: self.segmentationResultUIImage!,
+                    segmentedIndices: self.segmentedIndices,
+                    objects: objectList)))
             }
             self.isProcessing = false
         }
@@ -257,12 +278,81 @@ class SegmentationPipeline: ObservableObject {
         }
         let end = DispatchTime.now()
         let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-        print("Contour detection time: \(timeInterval) ms")
+//        print("Contour detection time: \(timeInterval) ms")
         
         return objectList
     }
     
-    func processTransformReferenceImageRequest(with floatingImage: CIImage, referenceImage: CIImage) {
+    /// This is a quadrilateral defined by four corner points.
+    private struct Quad {
+        let topLeft: CGPoint
+        let topRight: CGPoint
+        let bottomLeft: CGPoint
+        let bottomRight: CGPoint
+    }
+    
+    /// Transforms the input point using the provided warpTransform matrix.
+    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
+        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
+        let vector1 = warpTransform * vector0
+        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
+    }
+    
+    /// Warps the input rectangle using the warpTransform matrix, and returns the warped Quad.
+    private func makeWarpedQuad(for rect: CGRect, using warpTransform: simd_float3x3) -> Quad {
+        let minX = rect.minX
+        let maxX = rect.maxX
+        let minY = rect.minY
+        let maxY = rect.maxY
         
+        let topLeft = CGPoint(x: minX, y: maxY)
+        let topRight = CGPoint(x: maxX, y: maxY)
+        let bottomLeft = CGPoint(x: minX, y: minY)
+        let bottomRight = CGPoint(x: maxX, y: minY)
+        
+        let warpedTopLeft = warpedPoint(topLeft, using: warpTransform)
+        let warpedTopRight = warpedPoint(topRight, using: warpTransform)
+        let warpedBottomLeft = warpedPoint(bottomLeft, using: warpTransform)
+        let warpedBottomRight = warpedPoint(bottomRight, using: warpTransform)
+        
+        return Quad(topLeft: warpedTopLeft,
+                    topRight: warpedTopRight,
+                    bottomLeft: warpedBottomLeft,
+                    bottomRight: warpedBottomRight)
+    }
+    
+    private func transformImage(for floatingImage: CIImage, using transformMatrix: simd_float3x3) -> CIImage? {
+        let quad = makeWarpedQuad(for: floatingImage.extent, using: transformMatrix)
+        // Creates the alignedImage by warping the floating image using the warpTransform from the homographic observation.
+        let transformParameters = [
+            "inputTopLeft": CIVector(cgPoint: quad.topLeft),
+            "inputTopRight": CIVector(cgPoint: quad.topRight),
+            "inputBottomRight": CIVector(cgPoint: quad.bottomRight),
+            "inputBottomLeft": CIVector(cgPoint: quad.bottomLeft)
+        ]
+        
+        let transformedImage = floatingImage.applyingFilter("CIPerspectiveTransform", parameters: transformParameters)
+        return transformedImage
+    }
+    
+    func processTransformFloatingImageRequest(with referenceImage: CIImage, floatingImage: CIImage) -> CIImage? {
+        do {
+            let start = DispatchTime.now()
+            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
+            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
+            try transformRequestHandler.perform([transformRequest])
+            guard let transformResult = transformRequest.results else {return nil}
+            let transformMatrix = transformResult.first?.warpTransform
+            print("Transform matrix: \(String(describing: transformMatrix))")
+            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
+            let end = DispatchTime.now()
+            let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
+            print("Transform floating image time: \(timeInterval) ms")
+            return transformImage
+        }
+        catch {
+            print("Error processing transform floating image request: \(error)")
+        }
+        return nil
     }
 }

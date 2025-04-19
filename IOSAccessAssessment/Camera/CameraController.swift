@@ -160,7 +160,8 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let cameraImage = ciImage.croppedToCenter(size: croppedSize)
+        let cameraImage = ciImage.resized(to: croppedSize)
+//            .croppedToCenter(size: croppedSize)
         
         var depthImage: CIImage? = nil
         if (!isLidarDeviceAvailable) {
@@ -175,9 +176,11 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
         let depthSideLength = min(depthWidth, depthHeight)
         // TODO: Check why does this lead to an error on orientation change
-        let scale: Int = Int(floor(1024 / CGFloat(depthSideLength)) + 1)
+        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
         
-        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale)).croppedToCenter(size: croppedSize)
+        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: croppedSize)
+//            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
+//            .croppedToCenter(size: croppedSize)
         
         let end = DispatchTime.now()
         

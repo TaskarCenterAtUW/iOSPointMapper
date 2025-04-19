@@ -62,10 +62,10 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         self.sharedImageData?.isLidarAvailable = isLidarAvailable
     }
     
-    private func segmentationPipelineCompletionHandler(results: Result<SegmentationResultsOutput, Error>) -> Void {
+    private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
         switch results {
         case .success(let output):
-            self.sharedImageData?.appendFrame(frame: output.segmentationResults)
+            self.sharedImageData?.appendFrame(frame: output.segmentationResult)
             return
         case .failure(let error):
             fatalError("Unable to process segmentation \(error.localizedDescription)")
@@ -75,12 +75,12 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
             if !self.isProcessingCapturedResult {
-                let referenceImage = self.sharedImageData?.cameraImage
+                let previousImage = self.sharedImageData?.cameraImage
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 
                 self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage, referenceImage: referenceImage,
+                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
                                                             completion: self.segmentationPipelineCompletionHandler)
                 
                 if self.dataAvailable == false {
