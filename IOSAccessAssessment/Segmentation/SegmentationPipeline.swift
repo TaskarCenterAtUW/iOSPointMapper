@@ -61,16 +61,18 @@ class SegmentationPipeline: ObservableObject {
     //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
     var isProcessing = false
     
-    var visionModel: VNCoreMLModel
+    var selectionClasses: [Int] = []
     var selectionClassLabels: [UInt8] = []
+    var selectionClassGrayscaleValues: [Float] = []
+    var selectionClassColors: [CIColor] = []
+    
+    var visionModel: VNCoreMLModel
     @Published var segmentationResult: CIImage?
     @Published var segmentedIndices: [Int] = []
     
     // MARK: Temporary segmentationRequest UIImage
     @Published var segmentationResultUIImage: UIImage?
     
-    // MARK: Due to parallel processing, we need to create a separate request for each thread
-//    private var detectContourRequests: [VNDetectContoursRequest] = [VNDetectContoursRequest]()
     @Published var objects: [DetectedObject] = []
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
@@ -94,8 +96,11 @@ class SegmentationPipeline: ObservableObject {
         self.visionModel = visionModel
     }
     
-    func setSelectionClassLabels(_ classLabels: [UInt8]) {
-        self.selectionClassLabels = classLabels
+    func setSelectionClasses(_ selectionClasses: [Int]) {
+        self.selectionClasses = selectionClasses
+        self.selectionClassLabels = selectionClasses.map { Constants.ClassConstants.labels[$0] }
+        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.ClassConstants.grayscaleValues[$0] }
+        self.selectionClassColors = selectionClasses.map { Constants.ClassConstants.colors[$0] }
     }
     
     func processRequest(with cIImage: CIImage, previousImage: CIImage?, previousObjects: [DetectedObject]? = nil,
@@ -133,16 +138,16 @@ class SegmentationPipeline: ObservableObject {
                 self.objects = objectList
                 
                 // Temporary
-//                self.grayscaleToColorMasker.inputImage = segmentationImage
-//                self.grayscaleToColorMasker.grayscaleValues = Constants.ClassConstants.grayscaleValues
-//                self.grayscaleToColorMasker.colorValues =  Constants.ClassConstants.colors
-//                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
-//                                                         scale: 1.0, orientation: .downMirrored)
+                self.grayscaleToColorMasker.inputImage = segmentationImage
+                self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
+                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
+                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
+                                                         scale: 1.0, orientation: .downMirrored)
                 
                 // Temporary
-                self.segmentationResultUIImage = UIImage(
-                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
-                    scale: 1.0, orientation: .leftMirrored)
+//                self.segmentationResultUIImage = UIImage(
+//                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+//                    scale: 1.0, orientation: .leftMirrored)
 //
                 self.transformedFloatingObjects = transformedFloatingObjects
                 completion(.success(SegmentationPipelineResults(
@@ -154,7 +159,13 @@ class SegmentationPipeline: ObservableObject {
             self.isProcessing = false
         }
     }
-    
+}
+
+/**
+    Extension of SegmentationPipeline to handle the segmentation requests.
+    This extension contains functions to configure the request, process the segmentation image, and get the segmentation results.
+ */
+extension SegmentationPipeline {
     private func configureSegmentationRequest(request: VNCoreMLRequest) {
         // TODO: Need to check on the ideal options for this
         request.imageCropAndScaleOption = .scaleFill
@@ -178,7 +189,13 @@ class SegmentationPipeline: ObservableObject {
         }
         return nil
     }
-    
+}
+
+/**
+ Extension of SegmentationPipeline to handle the contour detection requests.
+    This extension contains functions to configure the request, process the binary image, and get the detected objects from the segmentation image.
+ */
+extension SegmentationPipeline {
     private func configureContourRequest(request: VNDetectContoursRequest) {
         request.contrastAdjustment = 1.0
 //        request.maximumImageDimension = 256
@@ -286,6 +303,70 @@ class SegmentationPipeline: ObservableObject {
         
         return objectList
     }
+}
+
+/**
+    Extension of SegmentationPipeline to handle the homography transformation requests.
+    This extension contains the main functions of homography, to warp points, transform object centroids, and compute the homography transform.
+ */
+extension SegmentationPipeline {
+    /// Transforms the input point using the provided warpTransform matrix.
+    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
+        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
+        let vector1 = warpTransform * vector0
+        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
+    }
+    
+    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
+        return objects.map { object in
+            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
+            return DetectedObject(
+                classLabel: object.classLabel,
+                centroid: transformedCentroid,
+                boundingBox: object.boundingBox,
+                normalizedPoints: object.normalizedPoints
+            )
+        }
+    }
+    
+    /// Computes the homography transform for the reference image and the floating image.
+    //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
+    func getHomographyTransform(for referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
+        do {
+            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
+            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
+            try transformRequestHandler.perform([transformRequest])
+            guard let transformResult = transformRequest.results else {return nil}
+            let transformMatrix = transformResult.first?.warpTransform
+            guard let matrix = transformMatrix else {
+                print("Homography transform matrix is nil")
+                return nil
+            }
+            return matrix
+        }
+        catch {
+            print("Error processing homography transform request: \(error)")
+            return nil
+        }
+    }
+    
+    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
+        let start = DispatchTime.now()
+        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
+//            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
+        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
+        let end = DispatchTime.now()
+        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
+//            print("Transform floating image time: \(timeInterval) ms")
+        return transformedObjects
+    }
+}
+
+
+/**
+ Helper functions for the SegmentationPipeline class to warp a given image rectangle using a homographic transform matrix.
+ */
+extension SegmentationPipeline {
     
     /// This is a quadrilateral defined by four corner points.
     private struct Quad {
@@ -293,13 +374,6 @@ class SegmentationPipeline: ObservableObject {
         let topRight: CGPoint
         let bottomLeft: CGPoint
         let bottomRight: CGPoint
-    }
-    
-    /// Transforms the input point using the provided warpTransform matrix.
-    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
-        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
-        let vector1 = warpTransform * vector0
-        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
     }
     
     /// Warps the input rectangle using the warpTransform matrix, and returns the warped Quad.
@@ -339,49 +413,5 @@ class SegmentationPipeline: ObservableObject {
         return transformedImage
     }
     
-    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
-        return objects.map { object in
-            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
-            return DetectedObject(
-                classLabel: object.classLabel,
-                centroid: transformedCentroid,
-                boundingBox: object.boundingBox,
-                normalizedPoints: object.normalizedPoints
-            )
-        }
-    }
-    
-    /// Computes the homography transform for the reference image and the floating image.
-    //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
-    func getHomographyTransform(for referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
-        do {
-            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
-            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
-            try transformRequestHandler.perform([transformRequest])
-            guard let transformResult = transformRequest.results else {return nil}
-            let transformMatrix = transformResult.first?.warpTransform
-            guard let matrix = transformMatrix else {
-                print("Homography transform matrix is nil")
-                return nil
-            }
-            return matrix
-        }
-        catch {
-            print("Error processing homography transform request: \(error)")
-            return nil
-        }
-    }
-        
-        
-    
-    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
-        let start = DispatchTime.now()
-        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
-//            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
-        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
-        let end = DispatchTime.now()
-        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-//            print("Transform floating image time: \(timeInterval) ms")
-        return transformedObjects
-    }
 }
+    

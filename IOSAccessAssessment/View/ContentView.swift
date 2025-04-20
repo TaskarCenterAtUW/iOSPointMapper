@@ -94,7 +94,7 @@ struct ContentView: View {
 //                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
 //                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
 //                                                                    completion: updatePerClassImageSegmentation)
-                segmentationPipeline.setSelectionClassLabels(selection.map { Constants.ClassConstants.labels[$0] })
+                segmentationPipeline.setSelectionClasses(selection)
                 manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
