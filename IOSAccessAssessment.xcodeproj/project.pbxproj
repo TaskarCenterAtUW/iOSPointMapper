@@ -381,10 +381,10 @@
 			children = (
 				A3BB5AFC2DB2EE1A008673ED /* Helpers */,
 				A3BB5AF92DB21080008673ED /* Filters */,
-				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
 				A3FCC2F72DA4E06A0037AB43 /* PostProcessing */,
 				A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
+				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
 			);
 			path = Segmentation;
 			sourceTree = "<group>";

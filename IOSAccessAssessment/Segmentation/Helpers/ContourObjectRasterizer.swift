@@ -8,6 +8,10 @@
 import CoreImage
 import UIKit
 
+/**
+    Rasterizes detected contour objects into a CIImage.
+    A helper function that is not used in the main app currently, but can be useful for debugging or visualization purposes.
+ */
 func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage? {
     func colorForClass(_ classLabel: UInt8, labelToColorMap: [UInt8: CIColor]) -> UIColor {
         let color = labelToColorMap[classLabel] ?? CIColor(red: 0, green: 0, blue: 0)
