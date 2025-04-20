@@ -92,13 +92,13 @@ class CentroidTracker {
         /**
          Get the row and column indices of the minimum distance in the distance matrix.
          */
-        // Step 1: Get the minimum distance in each row and store (rowIndex, minValue)
+        // Get the minimum distance in each row and store (rowIndex, minValue)
         let rowMinPairs: [(row: Int, minVal: Float)] = distanceMatrix.enumerated().map { (i, row) in
             return (i, row.min() ?? Float.infinity)
         }
-        // Step 2: Sort rows based on their min distance values (ascending)
-        let rows = rowMinPairs.sorted(by: { $0.minVal < $1.minVal }).map { $0.row }
-        // Step 3: For each sorted row, find the column index of the smallest distance
+        // Sort rows based on their min distance values (ascending)
+        let rows: [Int] = rowMinPairs.sorted(by: { $0.minVal < $1.minVal }).map { $0.row }
+        // For each sorted row, find the column index of the smallest distance
         let cols: [Int] = rows.map { rowIndex in
             distanceMatrix[rowIndex].enumerated().min(by: { $0.element < $1.element })?.offset ?? -1
         }

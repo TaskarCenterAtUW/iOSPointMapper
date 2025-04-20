@@ -61,9 +61,9 @@ class SegmentationPipeline: ObservableObject {
     var isProcessing = false
     
     var visionModel: VNCoreMLModel
+    var selectionClassLabels: [UInt8] = []
     @Published var segmentationResult: CIImage?
     @Published var segmentedIndices: [Int] = []
-    var selectionClassLabels: [UInt8] = []
     
     // MARK: Temporary segmentationRequest UIImage
     @Published var segmentationResultUIImage: UIImage?
@@ -78,6 +78,7 @@ class SegmentationPipeline: ObservableObject {
     var perimeterThreshold: Float = 0.01
     
     @Published var transformedFloatingImage: CIImage?
+    @Published var transformedFloatingObjects: [DetectedObject] = []
     
     // TODO: GrayscaleToColorCIFilter will not be restricted to only the selected classes because we are using the ClassConstants
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -95,7 +96,8 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassLabels = classLabels
     }
     
-    func processRequest(with cIImage: CIImage, previousImage: CIImage?, completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, previousObjects: [DetectedObject]? = nil,
+                        completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
         if self.isProcessing {
             print("Already processing a request. Discarding the new request.")
 //            completion(.failure(SegmentationPipelineError.invalidSegmentation))
@@ -348,6 +350,7 @@ class SegmentationPipeline: ObservableObject {
     func processTransformFloatingImageRequest(with referenceImage: CIImage, floatingImage: CIImage) -> CIImage? {
         do {
             let start = DispatchTime.now()
+            // MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
             let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
             let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
             try transformRequestHandler.perform([transformRequest])
