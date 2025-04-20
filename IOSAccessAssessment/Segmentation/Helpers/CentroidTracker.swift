@@ -6,20 +6,11 @@
 //
 
 import OrderedCollections
-
-struct TrackedObject {
-    var classLabel: UInt8
-    var centroid: CGPoint
-    var polygon: [SIMD2<Float>] // Using SIMD2<Float> for polygon points because contour detection typically returns points in this format
-    var boundingBox: CGRect?
-//    var location: (Float, Float)
-//    var heading: Float
-//    var width: Float
-}
+import simd
 
 class CentroidTracker {
     private var nextObjectID: UUID;
-    private var objects: OrderedDictionary<UUID, TrackedObject>;
+    private var objects: OrderedDictionary<UUID, DetectedObject>;
     private var disappearedObjects: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
@@ -34,8 +25,8 @@ class CentroidTracker {
         self.distanceThreshold = distanceThreshold
     }
     
-    func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectPolygon: Array<SIMD2<Float>>, objectBoundingBox: CGRect? = nil) {
-        let object = TrackedObject(classLabel: objectClassLabel, centroid: objectCentroid, polygon: objectPolygon, boundingBox: objectBoundingBox)
+    func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>, objectBoundingBox: CGRect) {
+        let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints)
         self.objects[nextObjectID] = object
         self.disappearedObjects[nextObjectID] = 0
         
@@ -47,8 +38,8 @@ class CentroidTracker {
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
-    func update(objectsList: Array<TrackedObject>) ->
-    (objects: OrderedDictionary<UUID, TrackedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
+    func update(objectsList: Array<DetectedObject>, transformationMatrix: simd_float3x3) ->
+    (objects: OrderedDictionary<UUID, DetectedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
         /**
          If object list is empty, increment the disappeared count for each object
          */
@@ -69,7 +60,7 @@ class CentroidTracker {
         if (self.objects.isEmpty) {
             for object in objectsList {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
-                              objectPolygon: object.polygon, objectBoundingBox: object.boundingBox);
+                              objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox);
             }
             return (objects: self.objects, disappearedObjects: self.disappearedObjects)
         }
@@ -151,7 +142,7 @@ class CentroidTracker {
         for col in unusedCols {
             let object = objectsList[col]
             self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
-                          objectPolygon: object.polygon, objectBoundingBox: object.boundingBox)
+                          objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox)
         }
         
         return (objects: self.objects, disappearedObjects: self.disappearedObjects)
@@ -171,4 +162,30 @@ class CentroidTracker {
         }
     }
     
+}
+
+
+/**
+    A convenience method to update the tracker with transformed objects.
+ This method applies a warp transform to the centroids of the detected objects before updating the tracker.
+ This method is redundantly defined here, and will later be moved to a centralized utility class for homography transformations.
+ */
+extension CentroidTracker {
+    /// Transforms the input point using the provided warpTransform matrix.
+    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
+        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
+        let vector1 = warpTransform * vector0
+        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
+    }
+    
+    private func transformObjectCentroids(using transformMatrix: simd_float3x3) {
+        for (objectID, object) in self.objects {
+            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
+            let transformedObject = DetectedObject(classLabel: object.classLabel,
+                                                   centroid: transformedCentroid,
+                                                   boundingBox: object.boundingBox,
+                                                   normalizedPoints: object.normalizedPoints)
+            self.objects[objectID] = transformedObject
+        }
+    }
 }

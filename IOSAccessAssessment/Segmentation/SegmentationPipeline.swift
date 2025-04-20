@@ -8,6 +8,7 @@
 import SwiftUI
 import Vision
 import CoreML
+import simd
 
 struct DetectedObject {
     let classLabel: UInt8
