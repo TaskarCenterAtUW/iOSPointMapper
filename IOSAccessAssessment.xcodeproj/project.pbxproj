@@ -204,19 +204,18 @@
 			children = (
 				A3D1272F2D5D0DFE0081DFF4 /* OpenCV */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
-				CAF812C32CFA108100D44B84 /* ViewModel */,
 				A3B070982CE0B6DF0028CAC5 /* UI */,
-				CAA947772CDE7001000C6918 /* Services */,
-				DAA7F8C62CA76514003666D8 /* ImageProcessing */,
+				CAA947772CDE7001000C6918 /* Service */,
+				DAA7F8C62CA76514003666D8 /* Image */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 				DAA7F8BB2CA67A3C003666D8 /* Camera */,
-				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
 				55659C092BB785EA0094DF01 /* VisionModel */,
 				3222F91D2B622E090019A079 /* Assets.xcassets */,
-				55659C0E2BB786240094DF01 /* Views */,
+				55659C0E2BB786240094DF01 /* View */,
 				55659C0B2BB786050094DF01 /* Model */,
 				3222F91F2B622E090019A079 /* Preview Content */,
+				3222F9192B622DFD0019A079 /* IOSAccessAssessmentApp.swift */,
 			);
 			path = IOSAccessAssessment;
 			sourceTree = "<group>";
@@ -265,7 +264,7 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		55659C0E2BB786240094DF01 /* Views */ = {
+		55659C0E2BB786240094DF01 /* View */ = {
 			isa = PBXGroup;
 			children = (
 				CAA947752CDE6FBB000C6918 /* LoginView.swift */,
@@ -274,8 +273,17 @@
 				55659C132BB786700094DF01 /* AnnotationView.swift */,
 				DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */,
 				DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */,
+				CAF812C32CFA108100D44B84 /* ViewModel */,
 			);
-			path = Views;
+			path = View;
+			sourceTree = "<group>";
+		};
+		A362AEC72DB59577002D7598 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				A30646292D614D9400B97D1B /* ImageSaver.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		A3648CDC2D5D052700F03576 /* Frameworks */ = {
@@ -309,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
+				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -337,15 +346,7 @@
 			path = Depth;
 			sourceTree = "<group>";
 		};
-		A3FCC2F72DA4E06A0037AB43 /* PostProcessing */ = {
-			isa = PBXGroup;
-			children = (
-				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
-			);
-			path = PostProcessing;
-			sourceTree = "<group>";
-		};
-		CAA947772CDE7001000C6918 /* Services */ = {
+		CAA947772CDE7001000C6918 /* Service */ = {
 			isa = PBXGroup;
 			children = (
 				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
@@ -353,7 +354,7 @@
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
 				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
 			);
-			path = Services;
+			path = Service;
 			sourceTree = "<group>";
 		};
 		CAF812C32CFA108100D44B84 /* ViewModel */ = {
@@ -381,7 +382,6 @@
 			children = (
 				A3BB5AFC2DB2EE1A008673ED /* Helpers */,
 				A3BB5AF92DB21080008673ED /* Filters */,
-				A3FCC2F72DA4E06A0037AB43 /* PostProcessing */,
 				A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
@@ -397,15 +397,15 @@
 			path = Location;
 			sourceTree = "<group>";
 		};
-		DAA7F8C62CA76514003666D8 /* ImageProcessing */ = {
+		DAA7F8C62CA76514003666D8 /* Image */ = {
 			isa = PBXGroup;
 			children = (
-				A30646292D614D9400B97D1B /* ImageSaver.swift */,
+				A362AEC72DB59577002D7598 /* Helpers */,
 				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
 				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
 			);
-			path = ImageProcessing;
+			path = Image;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
