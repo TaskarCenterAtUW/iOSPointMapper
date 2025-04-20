@@ -10,8 +10,8 @@ import simd
 
 class CentroidTracker {
     private var nextObjectID: UUID;
-    private var objects: OrderedDictionary<UUID, DetectedObject>;
-    private var disappearedObjects: OrderedDictionary<UUID, Int>;
+    var objects: OrderedDictionary<UUID, DetectedObject>;
+    var disappearedObjects: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
     var distanceThreshold: Float;
@@ -44,13 +44,7 @@ class CentroidTracker {
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
-    func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3) ->
-    (objects: OrderedDictionary<UUID, DetectedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
-        /**
-            If the transform matrix is not identity, we need to transform the centroids of the original objects to the new coordinate system.
-         */
-        transformObjectCentroids(using: transformMatrix);
-        
+    func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
         /**
          If object list is empty, increment the disappeared count for each object
          */
@@ -62,7 +56,17 @@ class CentroidTracker {
                     self.deregister(objectID: objectID);
                 }
             }
-            return (objects: self.objects, disappearedObjects: self.disappearedObjects)
+            return
+        }
+        
+        /**
+            If the transform matrix is not identity, we need to transform the centroids of the original objects to the new coordinate system.
+         */
+        print("Object centroids: ", self.objects.map { $0.value.centroid });
+        if let transformMatrix = transformMatrix {
+            transformObjectCentroids(using: transformMatrix);
+            print("Transform matrix: ", transformMatrix);
+            print("Transformed object centroids: ", self.objects.map { $0.value.centroid });
         }
         
         /**
@@ -73,7 +77,7 @@ class CentroidTracker {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                               objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox);
             }
-            return (objects: self.objects, disappearedObjects: self.disappearedObjects)
+            return
         }
         
         /**
@@ -111,6 +115,7 @@ class CentroidTracker {
         /**
             Loop through the minimum pairs and match the objects
          */
+        var matches: Int = 0
         for (row, col) in minPairs {
             // Check if the row and column are already used
             if (usedRows.contains(row) || usedCols.contains(col)) {
@@ -128,6 +133,7 @@ class CentroidTracker {
             
             usedRows.insert(row)
             usedCols.insert(col)
+            matches += 1
         }
         /**
          Get the unused rows and columns
@@ -155,7 +161,11 @@ class CentroidTracker {
                           objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox)
         }
         
-        return (objects: self.objects, disappearedObjects: self.disappearedObjects)
+//        print("Number of matches: ", matches)
+//        print("Number of objects: ", self.objects.count)
+//        print("Number of objects on track to disappear: ", self.disappearedObjects.count(where: { $0.value > 0 }))
+        
+        return
     }
     
     private func getCentroidDistance(centroid1: CGPoint, centroid2: CGPoint) -> Float {
@@ -191,8 +201,9 @@ extension CentroidTracker {
     }
     
     private func transformObjectCentroids(using transformMatrix: simd_float3x3) {
+        let warpTransform = transformMatrix.transpose
         for (objectID, object) in self.objects {
-            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
+            let transformedCentroid = warpedPoint(object.centroid, using: warpTransform)
             let transformedObject = DetectedObject(classLabel: object.classLabel,
                                                    centroid: transformedCentroid,
                                                    boundingBox: object.boundingBox,

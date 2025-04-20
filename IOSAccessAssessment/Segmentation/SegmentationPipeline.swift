@@ -8,6 +8,8 @@
 import SwiftUI
 import Vision
 import CoreML
+
+import OrderedCollections
 import simd
 
 struct DetectedObject {
@@ -81,8 +83,9 @@ class SegmentationPipeline: ObservableObject {
     // For normalized points
     var perimeterThreshold: Float = 0.01
     
-    @Published var transformedFloatingImage: CIImage?
-    @Published var transformedFloatingObjects: [DetectedObject]? = nil
+    @Published var transformMatrix: simd_float3x3? = nil
+//    @Published var transformedFloatingImage: CIImage?
+//    @Published var transformedFloatingObjects: [DetectedObject]? = nil
     
     // TODO: GrayscaleToColorCIFilter will not be restricted to only the selected classes because we are using the ClassConstants
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -106,8 +109,7 @@ class SegmentationPipeline: ObservableObject {
         self.segmentationResultUIImage = nil
         self.segmentedIndices = []
         self.objects = []
-        self.transformedFloatingImage = nil
-        self.transformedFloatingObjects = nil
+        self.transformMatrix = nil
         // TODO: No reset function for maskers and processors
         self.centroidTracker.reset()
     }
@@ -137,18 +139,15 @@ class SegmentationPipeline: ObservableObject {
                 }
                 return
             }
+            
             let objectList = self.processContourRequest(from: segmentationImage!) ?? []
-            var transformedFloatingObjects: [DetectedObject]? = nil
+            
+            var transformMatrix: simd_float3x3? = nil
             if let previousImage = previousImage {
-                transformedFloatingObjects = self.processTransformFloatingObjectsRequest(referenceImage: cIImage, floatingImage: previousImage, floatingObjects: previousObjects!)
-                guard transformedFloatingObjects != nil else {
-                    DispatchQueue.main.async {
-                        self.isProcessing = false
-                        completion(.failure(SegmentationPipelineError.invalidTransform))
-                    }
-                    return
-                }
+                transformMatrix = self.getHomographyTransform(for: cIImage, floatingImage: previousImage)
             }
+            self.centroidTracker.update(objectsList: objectList, transformMatrix: transformMatrix)
+            
             DispatchQueue.main.async {
                 self.segmentationResult = segmentationImage
                 self.objects = objectList
@@ -165,7 +164,8 @@ class SegmentationPipeline: ObservableObject {
 //                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
 //                    scale: 1.0, orientation: .leftMirrored)
 //
-                self.transformedFloatingObjects = transformedFloatingObjects
+//                self.transformedFloatingObjects = transformedFloatingObjects
+                self.transformMatrix = transformMatrix
                 completion(.success(SegmentationPipelineResults(
                     segmentationResult: segmentationImage!,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
@@ -323,28 +323,9 @@ extension SegmentationPipeline {
 
 /**
     Extension of SegmentationPipeline to handle the homography transformation requests.
-    This extension contains the main functions of homography, to warp points, transform object centroids, and compute the homography transform.
+    This extension contains the main functions of homography.
  */
 extension SegmentationPipeline {
-    /// Transforms the input point using the provided warpTransform matrix.
-    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
-        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
-        let vector1 = warpTransform * vector0
-        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
-    }
-    
-    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
-        return objects.map { object in
-            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
-            return DetectedObject(
-                classLabel: object.classLabel,
-                centroid: transformedCentroid,
-                boundingBox: object.boundingBox,
-                normalizedPoints: object.normalizedPoints
-            )
-        }
-    }
-    
     /// Computes the homography transform for the reference image and the floating image.
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
     func getHomographyTransform(for referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
@@ -365,17 +346,6 @@ extension SegmentationPipeline {
             return nil
         }
     }
-    
-    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
-        let start = DispatchTime.now()
-        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
-//            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
-        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
-        let end = DispatchTime.now()
-        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-//            print("Transform floating image time: \(timeInterval) ms")
-        return transformedObjects
-    }
 }
 
 
@@ -383,6 +353,24 @@ extension SegmentationPipeline {
  Helper functions for the SegmentationPipeline class to warp a given image rectangle using a homographic transform matrix.
  */
 extension SegmentationPipeline {
+    /// Transforms the input point using the provided warpTransform matrix.
+    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
+        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
+        let vector1 = warpTransform * vector0
+        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
+    }
+    
+    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
+        return objects.map { object in
+            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
+            return DetectedObject(
+                classLabel: object.classLabel,
+                centroid: transformedCentroid,
+                boundingBox: object.boundingBox,
+                normalizedPoints: object.normalizedPoints
+            )
+        }
+    }
     
     /// This is a quadrilateral defined by four corner points.
     private struct Quad {
@@ -428,6 +416,17 @@ extension SegmentationPipeline {
         let transformedImage = floatingImage.applyingFilter("CIPerspectiveTransform", parameters: transformParameters)
         return transformedImage
     }
+    
+//    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
+//        let start = DispatchTime.now()
+//        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
+////            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
+//        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
+//        let end = DispatchTime.now()
+//        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
+////            print("Transform floating image time: \(timeInterval) ms")
+//        return transformedObjects
+//    }
     
 }
     
