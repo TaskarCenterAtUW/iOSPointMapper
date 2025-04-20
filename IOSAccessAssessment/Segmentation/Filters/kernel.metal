@@ -86,3 +86,17 @@ void binaryMaskingKernel (
     outputTexture.write(pixelColor, gid);
 }
 
+kernel void warpPointsKernel(
+    device const float2* inputPoints [[buffer(0)]],
+    device float2* outputPoints [[buffer(1)]],
+    constant float3x3& inverseHomography [[buffer(2)]],
+    uint id [[thread_position_in_grid]])
+{
+    float2 point = inputPoints[id];
+    float3 homogeneous = float3(point, 1.0);
+
+    float3 warped = inverseHomography * homogeneous;
+    float2 warpedPoint = warped.xy / warped.z;
+
+    outputPoints[id] = warpedPoint;
+}

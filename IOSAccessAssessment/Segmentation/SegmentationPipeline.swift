@@ -13,7 +13,7 @@ struct DetectedObject {
     let classLabel: UInt8
     let centroid: CGPoint
     let boundingBox: CGRect
-    let normalizedPoints: [simd_float2]
+    let normalizedPoints: [SIMD2<Float>]
 }
 
 enum SegmentationPipelineError: Error, LocalizedError {
@@ -53,6 +53,7 @@ struct SegmentationPipelineResults {
 
 /**
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
+    Currently, a giant monolithic class that handles all the requests. Will be refactored in the future to divide the request types into separate classes.
  */
 class SegmentationPipeline: ObservableObject {
     // TODO: Update this to multiple states (one for each of segmentation, contour detection, etc.)
@@ -61,9 +62,9 @@ class SegmentationPipeline: ObservableObject {
     var isProcessing = false
     
     var visionModel: VNCoreMLModel
+    var selectionClassLabels: [UInt8] = []
     @Published var segmentationResult: CIImage?
     @Published var segmentedIndices: [Int] = []
-    var selectionClassLabels: [UInt8] = []
     
     // MARK: Temporary segmentationRequest UIImage
     @Published var segmentationResultUIImage: UIImage?
@@ -78,10 +79,12 @@ class SegmentationPipeline: ObservableObject {
     var perimeterThreshold: Float = 0.01
     
     @Published var transformedFloatingImage: CIImage?
+    @Published var transformedFloatingObjects: [DetectedObject]? = nil
     
     // TODO: GrayscaleToColorCIFilter will not be restricted to only the selected classes because we are using the ClassConstants
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     let binaryMaskProcessor = BinaryMaskProcessor()
+    let warpPointsProcessor = WarpPointsProcessor()
     
     init() {
         let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
@@ -95,7 +98,8 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassLabels = classLabels
     }
     
-    func processRequest(with cIImage: CIImage, previousImage: CIImage?, completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, previousObjects: [DetectedObject]? = nil,
+                        completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
         if self.isProcessing {
             print("Already processing a request. Discarding the new request.")
 //            completion(.failure(SegmentationPipelineError.invalidSegmentation))
@@ -113,11 +117,10 @@ class SegmentationPipeline: ObservableObject {
                 return
             }
             let objectList = self.processContourRequest(from: segmentationImage!) ?? []
-            var transformedFloatingImage: CIImage?
+            var transformedFloatingObjects: [DetectedObject]? = nil
             if let previousImage = previousImage {
-                transformedFloatingImage = self.processTransformFloatingImageRequest(with: cIImage,
-                                                                                   floatingImage: previousImage)
-                guard transformedFloatingImage != nil else {
+                transformedFloatingObjects = self.processTransformFloatingObjectsRequest(referenceImage: cIImage, floatingImage: previousImage, floatingObjects: previousObjects!)
+                guard transformedFloatingObjects != nil else {
                     DispatchQueue.main.async {
                         self.isProcessing = false
                         completion(.failure(SegmentationPipelineError.invalidTransform))
@@ -137,20 +140,11 @@ class SegmentationPipeline: ObservableObject {
 //                                                         scale: 1.0, orientation: .downMirrored)
                 
                 // Temporary
-//                self.segmentationResultUIImage = UIImage(
-//                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
-//                    scale: 1.0, orientation: .leftMirrored)
+                self.segmentationResultUIImage = UIImage(
+                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+                    scale: 1.0, orientation: .leftMirrored)
 //
-                self.transformedFloatingImage = transformedFloatingImage
-                if let transformedFloatingImage = transformedFloatingImage {
-                    self.segmentationResultUIImage = UIImage(ciImage: transformedFloatingImage,
-                                                             scale: 1.0, orientation: .right)
-                }
-                else {
-                    print("No transformed floating image")
-                    self.segmentationResultUIImage = UIImage(ciImage: segmentationImage!,
-                                                             scale: 1.0, orientation: .downMirrored)
-                }
+                self.transformedFloatingObjects = transformedFloatingObjects
                 completion(.success(SegmentationPipelineResults(
                     segmentationResult: segmentationImage!,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
@@ -231,7 +225,7 @@ class SegmentationPipeline: ObservableObject {
         
         let count: Float = Float(points.count)
         // For centroid
-        var sum: simd_float2 = .zero
+        var sum: SIMD2<Float> = .zero
         // For bounding box
         var minX = points[0].x
         var minY = points[0].y
@@ -345,23 +339,49 @@ class SegmentationPipeline: ObservableObject {
         return transformedImage
     }
     
-    func processTransformFloatingImageRequest(with referenceImage: CIImage, floatingImage: CIImage) -> CIImage? {
+    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
+        return objects.map { object in
+            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
+            return DetectedObject(
+                classLabel: object.classLabel,
+                centroid: transformedCentroid,
+                boundingBox: object.boundingBox,
+                normalizedPoints: object.normalizedPoints
+            )
+        }
+    }
+    
+    /// Computes the homography transform for the reference image and the floating image.
+    //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
+    func getHomographyTransform(for referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
         do {
-            let start = DispatchTime.now()
             let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
             let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
             try transformRequestHandler.perform([transformRequest])
             guard let transformResult = transformRequest.results else {return nil}
             let transformMatrix = transformResult.first?.warpTransform
-            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
-            let end = DispatchTime.now()
-            let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-//            print("Transform floating image time: \(timeInterval) ms")
-            return transformImage
+            guard let matrix = transformMatrix else {
+                print("Homography transform matrix is nil")
+                return nil
+            }
+            return matrix
         }
         catch {
-            print("Error processing transform floating image request: \(error)")
+            print("Error processing homography transform request: \(error)")
+            return nil
         }
-        return nil
+    }
+        
+        
+    
+    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
+        let start = DispatchTime.now()
+        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
+//            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
+        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
+        let end = DispatchTime.now()
+        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
+//            print("Transform floating image time: \(timeInterval) ms")
+        return transformedObjects
     }
 }

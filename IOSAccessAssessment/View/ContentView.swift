@@ -55,7 +55,7 @@ struct ContentView: View {
                         )
                     }
                     Button {
-                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
+//                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
 //                        manager?.stopStream() // To be done in the performPerClassSegmentationRequest callback
                     } label: {
@@ -91,9 +91,9 @@ struct ContentView: View {
             navigateToAnnotationView = false
             
             if (manager == nil) {
-                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
-                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
-                                                                    completion: updatePerClassImageSegmentation)
+//                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
+//                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
+//                                                                    completion: updatePerClassImageSegmentation)
                 segmentationPipeline.setSelectionClassLabels(selection.map { Constants.ClassConstants.labels[$0] })
                 manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel, segmentationPipeline: segmentationPipeline)
             } else {

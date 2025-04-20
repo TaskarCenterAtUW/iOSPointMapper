@@ -8,25 +8,25 @@
 import OrderedCollections
 
 struct TrackedObject {
-    var name: String
-    var centroid: (Int, Int)
-    var polygon: [CGPoint]
-    var location: (Float, Float)
-    var heading: Float
-    var width: Float
+    var classLabel: UInt8
+    var centroid: CGPoint
+    var polygon: [SIMD2<Float>] // Using SIMD2<Float> for polygon points because contour detection typically returns points in this format
+    var boundingBox: CGRect?
+//    var location: (Float, Float)
+//    var heading: Float
+//    var width: Float
 }
 
 class CentroidTracker {
-    
-    private var nextObjectID: Int;
-    private var objects: OrderedDictionary<Int, TrackedObject>;
-    private var disappearedObjects: OrderedDictionary<Int, Int>;
+    private var nextObjectID: UUID;
+    private var objects: OrderedDictionary<UUID, TrackedObject>;
+    private var disappearedObjects: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
     var distanceThreshold: Float;
     
     init(maxDisappeared: Int, distanceThreshold: Float = 50.0) {
-        self.nextObjectID = 0
+        self.nextObjectID = UUID()
         self.objects = OrderedDictionary()
         self.disappearedObjects = OrderedDictionary()
         
@@ -34,23 +34,21 @@ class CentroidTracker {
         self.distanceThreshold = distanceThreshold
     }
     
-    func register(object_name: String, object_centroid: (Int, Int), object_polygon: Array<CGPoint>,
-                  object_location: (Float, Float), object_heading: Float, object_width: Float) {
-        let object = TrackedObject(name: object_name, centroid: object_centroid, polygon: object_polygon,
-                                   location: object_location, heading: object_heading, width: object_width);
+    func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectPolygon: Array<SIMD2<Float>>, objectBoundingBox: CGRect? = nil) {
+        let object = TrackedObject(classLabel: objectClassLabel, centroid: objectCentroid, polygon: objectPolygon, boundingBox: objectBoundingBox)
         self.objects[nextObjectID] = object
         self.disappearedObjects[nextObjectID] = 0
         
-        nextObjectID += 1
+        nextObjectID = UUID()
     }
     
-    func deregister(objectID: Int) {
+    func deregister(objectID: UUID) {
         self.objects.removeValue(forKey: objectID)
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
     func update(objectsList: Array<TrackedObject>) ->
-    (objects: OrderedDictionary<Int, TrackedObject>, disappearedObjects: OrderedDictionary<Int, Int>) {
+    (objects: OrderedDictionary<UUID, TrackedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
         /**
          If object list is empty, increment the disappeared count for each object
          */
@@ -70,9 +68,8 @@ class CentroidTracker {
          */
         if (self.objects.isEmpty) {
             for object in objectsList {
-                self.register(object_name: object.name, object_centroid: object.centroid,
-                              object_polygon: object.polygon, object_location: object.location,
-                              object_heading: object.heading, object_width: object.width);
+                self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
+                              objectPolygon: object.polygon, objectBoundingBox: object.boundingBox);
             }
             return (objects: self.objects, disappearedObjects: self.disappearedObjects)
         }
@@ -95,13 +92,13 @@ class CentroidTracker {
         /**
          Get the row and column indices of the minimum distance in the distance matrix.
          */
-        // Step 1: Get the minimum distance in each row and store (rowIndex, minValue)
-        var rowMinPairs: [(row: Int, minVal: Float)] = distanceMatrix.enumerated().map { (i, row) in
+        // Get the minimum distance in each row and store (rowIndex, minValue)
+        let rowMinPairs: [(row: Int, minVal: Float)] = distanceMatrix.enumerated().map { (i, row) in
             return (i, row.min() ?? Float.infinity)
         }
-        // Step 2: Sort rows based on their min distance values (ascending)
-        let rows = rowMinPairs.sorted(by: { $0.minVal < $1.minVal }).map { $0.row }
-        // Step 3: For each sorted row, find the column index of the smallest distance
+        // Sort rows based on their min distance values (ascending)
+        let rows: [Int] = rowMinPairs.sorted(by: { $0.minVal < $1.minVal }).map { $0.row }
+        // For each sorted row, find the column index of the smallest distance
         let cols: [Int] = rows.map { rowIndex in
             distanceMatrix[rowIndex].enumerated().min(by: { $0.element < $1.element })?.offset ?? -1
         }
@@ -153,21 +150,20 @@ class CentroidTracker {
          */
         for col in unusedCols {
             let object = objectsList[col]
-            self.register(object_name: object.name, object_centroid: object.centroid,
-                          object_polygon: object.polygon, object_location: object.location,
-                          object_heading: object.heading, object_width: object.width);
+            self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
+                          objectPolygon: object.polygon, objectBoundingBox: object.boundingBox)
         }
         
         return (objects: self.objects, disappearedObjects: self.disappearedObjects)
     }
     
-    private func getCentroidDistance(centroid1: (Int, Int), centroid2: (Int, Int)) -> Float {
-        let dx = Float(centroid1.0 - centroid2.0)
-        let dy = Float(centroid1.1 - centroid2.1)
+    private func getCentroidDistance(centroid1: CGPoint, centroid2: CGPoint) -> Float {
+        let dx = Float(centroid1.x - centroid2.x)
+        let dy = Float(centroid1.y - centroid2.y)
         return sqrt(dx * dx + dy * dy)
     }
     
-    private func computeDistanceMatrix(objectCentroids: [(Int, Int)], inputCentroids: [(Int, Int)]) -> [[Float]] {
+    private func computeDistanceMatrix(objectCentroids: [CGPoint], inputCentroids: [CGPoint]) -> [[Float]] {
         return objectCentroids.map { obj in
             inputCentroids.map { input in
                 getCentroidDistance(centroid1: obj, centroid2: input)

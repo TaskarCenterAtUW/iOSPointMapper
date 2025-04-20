@@ -65,6 +65,9 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
         switch results {
         case .success(let output):
+            self.sharedImageData?.segmentationLabelImage = output.segmentationResult
+            self.sharedImageData?.segmentedIndices = output.segmentedIndices
+            self.sharedImageData?.objects = output.objects
             self.sharedImageData?.appendFrame(frame: output.segmentationResult)
             return
         case .failure(let error):
@@ -78,11 +81,12 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         DispatchQueue.main.async {
             if !self.isProcessingCapturedResult {
                 let previousImage = self.sharedImageData?.cameraImage
+                let previousObjects = self.sharedImageData?.objects ?? []
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 
-                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
+//                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
+                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage, previousObjects: previousObjects,
                                                             completion: self.segmentationPipelineCompletionHandler)
                 
                 if self.dataAvailable == false {
