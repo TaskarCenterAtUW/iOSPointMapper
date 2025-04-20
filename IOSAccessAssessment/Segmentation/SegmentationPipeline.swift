@@ -89,12 +89,27 @@ class SegmentationPipeline: ObservableObject {
     let binaryMaskProcessor = BinaryMaskProcessor()
     let warpPointsProcessor = WarpPointsProcessor()
     
+    let centroidTracker = CentroidTracker()
+    
     init() {
         let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
+    }
+    
+    func reset() {
+        self.isProcessing = false
+        self.setSelectionClasses([])
+        self.segmentationResult = nil
+        self.segmentationResultUIImage = nil
+        self.segmentedIndices = []
+        self.objects = []
+        self.transformedFloatingImage = nil
+        self.transformedFloatingObjects = nil
+        // TODO: No reset function for maskers and processors
+        self.centroidTracker.reset()
     }
     
     func setSelectionClasses(_ selectionClasses: [Int]) {

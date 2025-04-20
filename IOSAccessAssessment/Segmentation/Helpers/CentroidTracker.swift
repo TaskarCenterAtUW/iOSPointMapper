@@ -16,13 +16,19 @@ class CentroidTracker {
     var maxDisappeared: Int;
     var distanceThreshold: Float;
     
-    init(maxDisappeared: Int, distanceThreshold: Float = 50.0) {
+    init(maxDisappeared: Int = 5, distanceThreshold: Float = 0.2) {
         self.nextObjectID = UUID()
         self.objects = OrderedDictionary()
         self.disappearedObjects = OrderedDictionary()
         
         self.maxDisappeared = maxDisappeared
         self.distanceThreshold = distanceThreshold
+    }
+    
+    func reset() {
+        self.nextObjectID = UUID()
+        self.objects.removeAll()
+        self.disappearedObjects.removeAll()
     }
     
     func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>, objectBoundingBox: CGRect) {
@@ -38,8 +44,13 @@ class CentroidTracker {
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
-    func update(objectsList: Array<DetectedObject>, transformationMatrix: simd_float3x3) ->
+    func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3) ->
     (objects: OrderedDictionary<UUID, DetectedObject>, disappearedObjects: OrderedDictionary<UUID, Int>) {
+        /**
+            If the transform matrix is not identity, we need to transform the centroids of the original objects to the new coordinate system.
+         */
+        transformObjectCentroids(using: transformMatrix);
+        
         /**
          If object list is empty, increment the disappeared count for each object
          */
@@ -69,14 +80,13 @@ class CentroidTracker {
          Otherwise, we need to match the objects in the current list with the existing objects
          */
         let objectIDs = Array(self.objects.keys);
-        let objectCentroids = Array(self.objects.values.map { $0.centroid });
-        
-        let inputObjectCentroids = Array(objectsList.map { $0.centroid });
         
         /**
          Compute the distance matrix between the existing objects and the new objects.         
          */
-        let distanceMatrix = computeDistanceMatrix(objectCentroids: objectCentroids, inputCentroids: inputObjectCentroids);
+        let objects = Array(self.objects.values.map { $0 });
+        let inputObjects = Array(objectsList.map { $0 });
+        let distanceMatrix = computeDistanceMatrix(objects: objects, inputObjects: inputObjects);
         let rowCount = distanceMatrix.count;
         let colCount = distanceMatrix[0].count;
         
@@ -154,14 +164,16 @@ class CentroidTracker {
         return sqrt(dx * dx + dy * dy)
     }
     
-    private func computeDistanceMatrix(objectCentroids: [CGPoint], inputCentroids: [CGPoint]) -> [[Float]] {
-        return objectCentroids.map { obj in
-            inputCentroids.map { input in
-                getCentroidDistance(centroid1: obj, centroid2: input)
+    private func computeDistanceMatrix(objects: [DetectedObject], inputObjects: [DetectedObject]) -> [[Float]] {
+        return objects.map { obj in
+            inputObjects.map { input in
+                if obj.classLabel != input.classLabel {
+                    return Float.infinity // Different classes, no match
+                }
+                return getCentroidDistance(centroid1: obj.centroid, centroid2: input.centroid)
             }
         }
     }
-    
 }
 
 
