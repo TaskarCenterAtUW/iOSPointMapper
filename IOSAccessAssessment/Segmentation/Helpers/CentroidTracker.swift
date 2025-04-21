@@ -50,6 +50,8 @@ class CentroidTracker {
      
     TODO: To note, the following code has not been well tested. Need to test this logic in a more controlled environment.
      For now, we got with the assumption that this works as expected, and continue with the rest of the implementation
+     
+     TODO: Have a better performance assessment of this update method.
 
      */
     func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
