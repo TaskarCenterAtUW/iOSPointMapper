@@ -136,7 +136,7 @@ struct DepthMapProcessor {
 /**
     Helper functions for creating a pixel buffer from a CIImage. Will be removed in the future.
  */
-extension DepthMap {
+extension DepthMapProcessor {
     func createMask(from image: CIImage, classLabel: UInt8) -> [[Int]] {
         let context = CIContext(options: nil)
         guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }

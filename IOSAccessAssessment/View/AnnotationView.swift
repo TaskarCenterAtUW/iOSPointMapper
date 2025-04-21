@@ -17,7 +17,6 @@ enum AnnotationOption: String, CaseIterable {
 struct AnnotationView: View {
     var selection: [Int]
     var objectLocation: ObjectLocation
-    var depthMapProcessor: DepthMapProcessor
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @Environment(\.dismiss) var dismiss
@@ -28,6 +27,7 @@ struct AnnotationView: View {
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
+    @State private var depthMapProcessor: DepthMapProcessor? = nil
     
     @State private var cameraUIImage: UIImage? = nil
     @State private var segmentationUIImage: UIImage? = nil
@@ -88,9 +88,14 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    let depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
-                                                             depthImage: sharedImageData.depthImage!,
-                                                             classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+                    var depthValue: Float = 0.0
+                    if let depthMapProcessor = depthMapProcessor {
+                        depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                                     depthImage: sharedImageData.depthImage!,
+                                     classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+                    } else {
+                        print("depthMapProcessor is nil. Fallback to 0.0")
+                    }
                     let location = objectLocation.getCalcLocation(depthValue: depthValue)
                     selectedOption = nil
                     uploadChanges(location: location)
@@ -102,6 +107,8 @@ struct AnnotationView: View {
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
             .onAppear {
+                // Initialize the depthMapProcessor with the current depth image
+                depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
                 refreshView()
             }
             .onDisappear {

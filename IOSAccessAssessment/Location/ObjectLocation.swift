@@ -13,11 +13,11 @@ import CoreLocation
 
 // TODO: As pointed out in the TODO for the ContentView objectLocation
 // We would want to separate out device location logic, and pixel-wise location calculation logic
-class ObjectLocation {
+class ObjectLocation: ObservableObject {
     var locationManager: CLLocationManager
-    var longitude: CLLocationDegrees?
-    var latitude: CLLocationDegrees?
-    var headingDegrees: CLLocationDirection?
+    @Published var longitude: CLLocationDegrees?
+    @Published var latitude: CLLocationDegrees?
+    @Published var headingDegrees: CLLocationDirection?
     
     let ciContext = CIContext(options: nil)
     
@@ -87,7 +87,6 @@ extension ObjectLocation {
         let objectLatitude = latitude + (deltaY / metersPerDegree)
         let objectLongitude = longitude + (deltaX / metersPerDegree)
 
-        print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
         return (latitude: CLLocationDegrees(objectLatitude),
                 longitude: CLLocationDegrees(objectLongitude))
     }
