@@ -31,8 +31,9 @@ class CentroidTracker {
         self.disappearedObjects.removeAll()
     }
     
-    func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>, objectBoundingBox: CGRect) {
-        let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints)
+    func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>,
+                  objectBoundingBox: CGRect, isCurrent: Bool) {
+        let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints, isCurrent: isCurrent)
         self.objects[nextObjectID] = object
         self.disappearedObjects[nextObjectID] = 0
         
@@ -79,7 +80,8 @@ class CentroidTracker {
         if (self.objects.isEmpty) {
             for object in objectsList {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
-                              objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox);
+                              objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
+                              isCurrent: object.isCurrent);
             }
             return
         }
@@ -150,6 +152,7 @@ class CentroidTracker {
          */
         for row in unusedRows {
             let objectID = objectIDs[row]
+            self.objects[objectID]?.isCurrent = false // Mark the object as not current
             self.disappearedObjects[objectID] = (self.disappearedObjects[objectID] ?? 0) + 1
             
             if ((self.disappearedObjects[objectID] ?? 0) >= self.maxDisappeared) {
@@ -162,7 +165,8 @@ class CentroidTracker {
         for col in unusedCols {
             let object = objectsList[col]
             self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
-                          objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox)
+                          objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
+                          isCurrent: false) // Mark the object as not current
         }
         
 //        print("Number of matches: ", matches)
@@ -215,7 +219,8 @@ extension CentroidTracker {
             let transformedObject = DetectedObject(classLabel: object.classLabel,
                                                    centroid: transformedCentroid,
                                                    boundingBox: object.boundingBox,
-                                                   normalizedPoints: object.normalizedPoints)
+                                                   normalizedPoints: object.normalizedPoints,
+                                                   isCurrent: object.isCurrent)
             self.objects[objectID] = transformedObject
         }
     }

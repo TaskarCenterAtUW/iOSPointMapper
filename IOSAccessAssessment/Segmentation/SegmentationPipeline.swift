@@ -14,9 +14,10 @@ import simd
 
 struct DetectedObject {
     let classLabel: UInt8
-    let centroid: CGPoint
-    let boundingBox: CGRect
-    let normalizedPoints: [SIMD2<Float>]
+    var centroid: CGPoint
+    var boundingBox: CGRect
+    var normalizedPoints: [SIMD2<Float>]
+    var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
 }
 
 enum SegmentationPipelineError: Error, LocalizedError {
@@ -262,7 +263,8 @@ extension SegmentationPipeline {
                 objectList.append(DetectedObject(classLabel: classLabel,
                                                 centroid: contourDetails.centroid,
                                                 boundingBox: contourDetails.boundingBox,
-                                                normalizedPoints: contourApproximation.normalizedPoints))
+                                                normalizedPoints: contourApproximation.normalizedPoints,
+                                                isCurrent: true))
             }
             return objectList
         } catch {
@@ -389,7 +391,8 @@ extension SegmentationPipeline {
                 classLabel: object.classLabel,
                 centroid: transformedCentroid,
                 boundingBox: object.boundingBox,
-                normalizedPoints: object.normalizedPoints
+                normalizedPoints: object.normalizedPoints,
+                isCurrent: object.isCurrent
             )
         }
     }
