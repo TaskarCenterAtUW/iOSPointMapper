@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var showRetryAlert = false
     @State private var retryMessage = ""
     
+    var isCameraStoppedPayload = ["isStopped": true]
+    
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
     //  means that the current setup is built to handle only one capture at a time.
     //  If we want to allow multiple captures, then we should to pass a different smaller object
@@ -57,7 +59,9 @@ struct ContentView: View {
                     Button {
 //                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
-//                        manager?.stopStream() // To be done in the performPerClassSegmentationRequest callback
+                        manager?.stopStream()
+                        segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
+                                                            additionalPayload: isCameraStoppedPayload)
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
@@ -94,7 +98,8 @@ struct ContentView: View {
 //                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
 //                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
 //                                                                    completion: updatePerClassImageSegmentation)
-                segmentationPipeline.setSelectionClassLabels(selection.map { Constants.ClassConstants.labels[$0] })
+                segmentationPipeline.setSelectionClasses(selection)
+                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
                 manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
@@ -113,6 +118,29 @@ struct ContentView: View {
             }
         } message: {
             Text(retryMessage)
+        }
+    }
+    
+    private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
+        switch results {
+        case .success(let output):
+            self.sharedImageData.segmentationLabelImage = output.segmentationImage
+            self.sharedImageData.segmentedIndices = output.segmentedIndices
+            self.sharedImageData.objects = output.objects
+            print("Objects: ", output.objects.map { ($0.value.centroid, $0.value.isCurrent) })
+            self.sharedImageData.appendFrame(frame: output.segmentationImage)
+            if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {
+                // Perform depth estimation only if LiDAR is not available
+                if (!sharedImageData.isLidarAvailable) {
+                    self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
+                }
+                self.navigateToAnnotationView = true
+            }
+            return
+        case .failure(let error):
+//            fatalError("Unable to process segmentation \(error.localizedDescription)")
+            print("Unable to process segmentation \(error.localizedDescription)")
+            return
         }
     }
     

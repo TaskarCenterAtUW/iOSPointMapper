@@ -97,6 +97,15 @@ func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     return blankPixelBuffer
 }
 
+/**
+ This function extracts unique grayscale values from a pixel buffer,
+ gets the indices of these values from Constants.ClassConstants.grayscaleValues,
+    and returns both the unique values and their corresponding indices.
+ 
+ TODO: The function does more than just extracting unique grayscale values.
+ It also returns the indices of these values from Constants.ClassConstants.grayscaleValues.
+ This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
+ */
 func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
     CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }

@@ -180,7 +180,7 @@ struct AnnotationView: View {
     func nextSegment() {
         // Ensure that the index does not exceed the length of the sharedImageData classImages count
         // Do not simply rely on the isValid check in the body. 
-        if (self.index + 1 < sharedImageData.classImages.count) {
+        if (self.index + 1 < sharedImageData.segmentedIndices.count) {
             self.index += 1
         } else {
             self.dismiss()
