@@ -22,11 +22,6 @@ protocol CaptureDataReceiver: AnyObject {
             
      */
     func onNewData(cameraImage: CIImage, depthImage: CIImage?)
-    
-    /**
-        Called to return info on if the LiDAR sensor is available.
-     */
-    func getLidarAvailability(isLidarAvailable: Bool)
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -41,7 +36,7 @@ class CameraController: NSObject, ObservableObject {
     private(set) var captureSession: AVCaptureSession!
     private(set) var captureDevice: AVCaptureDevice!
     
-    private var isLidarDeviceAvailable: Bool!
+    private var isLidarDeviceAvailable: Bool = false
     private var depthDataOutput: AVCaptureDepthDataOutput!
     private var videoDataOutput: AVCaptureVideoDataOutput!
     private var outputVideoSync: AVCaptureDataOutputSynchronizer!
@@ -83,31 +78,14 @@ class CameraController: NSObject, ObservableObject {
     private func setupCaptureInput() throws {
         // Look up the LiDAR camera. Generally, only present at the back camera
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
-        let deviceAndDepthFlag = try getDeviceAndDepthFlag()
-        captureDevice = deviceAndDepthFlag.device
-        isLidarDeviceAvailable = deviceAndDepthFlag.hasLidar
-        delegate?.getLidarAvailability(isLidarAvailable: deviceAndDepthFlag.hasLidar)
-        
-        
+        captureDevice = getCameraDevice()
+        guard let captureDevice = captureDevice else {
+            throw ConfigurationError.requiredDeviceUnavailable
+        }
+        isLidarDeviceAvailable = checkLidarAvailability()
         
         let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
         captureSession.addInput(deviceInput)
-    }
-    
-    // Get the best available device
-    private func getDeviceAndDepthFlag() throws -> (device: AVCaptureDevice, hasLidar: Bool) {
-        let deviceTypes: [(AVCaptureDevice.DeviceType, Bool)] = [
-                (.builtInLiDARDepthCamera, true),
-                (.builtInTripleCamera, false),
-                (.builtInDualCamera, false),
-                (.builtInWideAngleCamera, false)
-        ]
-        for (deviceType, hasLidar) in deviceTypes {
-            if let device = AVCaptureDevice.default(deviceType, for: .video, position: .back) {
-                return (device: device, hasLidar: hasLidar)
-            }
-        }
-        throw ConfigurationError.requiredDeviceUnavailable
     }
     
     private func setupCaptureOutputs() {

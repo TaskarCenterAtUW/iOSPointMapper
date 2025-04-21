@@ -37,6 +37,8 @@ class SharedImageData: ObservableObject {
         self.classImages = []
         
         self.segmentationFrames = []
+        
+        self.isLidarAvailable = checkLidarAvailability()
     }
     
     func appendFrame(frame: CIImage) {
