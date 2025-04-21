@@ -26,7 +26,7 @@ struct ContentView: View {
     @State private var showRetryAlert = false
     @State private var retryMessage = ""
     
-    var isStoppedPayload = ["isStopped": true]
+    var isCameraStoppedPayload = ["isStopped": true]
     
     // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
     //  means that the current setup is built to handle only one capture at a time.
@@ -61,7 +61,7 @@ struct ContentView: View {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
                         segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                            additionalPayload: isStoppedPayload)
+                                                            additionalPayload: isCameraStoppedPayload)
                     } label: {
                         Image(systemName: "camera.circle.fill")
                             .resizable()
