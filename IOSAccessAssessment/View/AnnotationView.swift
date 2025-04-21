@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 enum AnnotationOption: String, CaseIterable {
     case agree = "I agree with this class annotation"
@@ -86,10 +87,10 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    objectLocation.calcLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                    let location = objectLocation.getLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
                                                 depthImage: sharedImageData.depthImage!, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
                     selectedOption = nil
-                    uploadChanges()
+                    uploadChanges(location: location)
                     nextSegment()
                 }) {
                     Text(index == selection.count - 1 ? "Finish" : "Next")
@@ -173,9 +174,9 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
-    private func uploadChanges() {
-        guard let nodeLatitude = objectLocation.latitude,
-              let nodeLongitude = objectLocation.longitude
+    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+        guard let nodeLatitude = location?.latitude,
+              let nodeLongitude = location?.longitude
         else { return }
         
         let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]

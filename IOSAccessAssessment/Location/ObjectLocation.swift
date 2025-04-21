@@ -64,13 +64,9 @@ class ObjectLocation {
         }
     }
     
-    func calcLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) {
+    func getLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8)
+    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         let depthValue = getDepth(segmentationLabelImage: segmentationLabelImage, depthImage: depthImage, classLabel: classLabel)
-//        guard depthValue != 0.0 else {
-//            print("depth: nil")
-//            return
-//        }
-        print("depth: \(depthValue)")
         
         // FIXME: Setting the location for every segment means that there is potential for errors
         //  If the user moves while validating each segment, would every segment get different device location?
@@ -79,7 +75,7 @@ class ObjectLocation {
 
         guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
-            return
+            return nil
         }
 
         // Calculate the object's coordinates assuming a flat plane
@@ -97,12 +93,13 @@ class ObjectLocation {
         let objectLongitude = longitude + (deltaX / metersPerDegree)
 
         print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
+        return (latitude: CLLocationDegrees(objectLatitude),
+                longitude: CLLocationDegrees(objectLongitude))
     }
 }
 
 /**
  Helper functions for calculating the depth value of the object at the centroid of the segmented image.
- Will be replaced with a function that utilizes obtained object polyons to calculate the depth value at the centroid of the polygon.
  */
 extension ObjectLocation {
     // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
@@ -143,9 +140,6 @@ extension ObjectLocation {
         let depthWidth = CVPixelBufferGetWidth(depthMap)
         let depthHeight = CVPixelBufferGetHeight(depthMap)
         
-        print("segmentationLabelWidth: \(segmentationLabelWidth), segmentationLabelHeight: \(segmentationLabelHeight)")
-        print("depthWidth: \(depthWidth), depthHeight: \(depthHeight)")
-        
         guard segmentationLabelWidth == depthWidth && segmentationLabelHeight == depthHeight else {
             print("Segmentation label image and depth image dimensions do not match")
             return 0.0
@@ -181,11 +175,14 @@ extension ObjectLocation {
         let gravityX = floor(Double(sumX) / Double(numPixels))
         let gravityY = floor(Double(sumY) / Double(numPixels))
         let gravityPixelOffset = Int(gravityY) * depthBytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
-        print("gravityX: \(gravityX), gravityY: \(gravityY), numPixels: \(numPixels)")
-        print("gravityPixelOffset: \(gravityPixelOffset). Depth Value at centroid: \(depthBuffer[gravityPixelOffset])")
         return depthBuffer[gravityPixelOffset]
     }
-    
+}
+
+/**
+    Helper functions for creating a pixel buffer from a CIImage. Will be removed in the future.
+ */
+extension ObjectLocation {
     func createMask(from image: CIImage, classLabel: UInt8) -> [[Int]] {
         let context = CIContext(options: nil)
         guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
