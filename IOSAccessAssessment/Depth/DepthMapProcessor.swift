@@ -5,23 +5,23 @@
 //  Created by Himanshu on 4/21/25.
 //
 
-struct DepthMap {
+struct DepthMapProcessor {
+    var depthImage: CIImage
     
     private let ciContext = CIContext(options: nil)
     
     private var depthMap: CVPixelBuffer? = nil
     private var depthMapWidth: Int = 0
     private var depthMapHeight: Int = 0
-    var depthImage: CIImage? = nil {
-        didSet {
-            guard let depthImage = depthImage else { return }
-            let width = Int(depthImage.extent.width)
-            let height = Int(depthImage.extent.height)
-            self.depthMap = createPixelBuffer(width: width, height: height)
-            ciContext.render(depthImage, to: self.depthMap!)
-            self.depthMapWidth = width
-            self.depthMapHeight = height
-        }
+    
+    init(depthImage: CIImage) {
+        self.depthImage = depthImage
+        let width = Int(depthImage.extent.width)
+        let height = Int(depthImage.extent.height)
+        self.depthMap = createPixelBuffer(width: width, height: height)
+        ciContext.render(depthImage, to: self.depthMap!)
+        self.depthMapWidth = width
+        self.depthMapHeight = height
     }
     
     // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean

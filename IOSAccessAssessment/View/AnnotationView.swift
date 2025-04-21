@@ -15,8 +15,9 @@ enum AnnotationOption: String, CaseIterable {
 }
 
 struct AnnotationView: View {
-    var objectLocation: ObjectLocation
     var selection: [Int]
+    var objectLocation: ObjectLocation
+    var depthMapProcessor: DepthMapProcessor
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @Environment(\.dismiss) var dismiss
@@ -87,7 +88,7 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    let depthValue = objectLocation.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                    let depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
                                                              depthImage: sharedImageData.depthImage!,
                                                              classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
                     let location = objectLocation.getCalcLocation(depthValue: depthValue)

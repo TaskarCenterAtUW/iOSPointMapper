@@ -84,8 +84,9 @@ struct ContentView: View {
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
+                selection: selection,
                 objectLocation: objectLocation,
-                selection: selection
+                depthMapProcessor: DepthMapProcessor(depthImage: sharedImageData.depthImage!)
             )
         }
         .navigationBarTitle("Camera View", displayMode: .inline)
