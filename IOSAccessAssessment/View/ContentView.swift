@@ -124,10 +124,10 @@ struct ContentView: View {
     private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
         switch results {
         case .success(let output):
-            self.sharedImageData.segmentationLabelImage = output.segmentationResult
+            self.sharedImageData.segmentationLabelImage = output.segmentationImage
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.sharedImageData.objects = output.objects
-            self.sharedImageData.appendFrame(frame: output.segmentationResult)
+            self.sharedImageData.appendFrame(frame: output.segmentationImage)
             if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
                 if (!sharedImageData.isLidarAvailable) {

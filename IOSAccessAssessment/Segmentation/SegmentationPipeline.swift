@@ -43,15 +43,15 @@ enum SegmentationPipelineError: Error, LocalizedError {
 }
 
 struct SegmentationPipelineResults {
-    var segmentationResult: CIImage
+    var segmentationImage: CIImage
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
     var objects: [DetectedObject]
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
-    init(segmentationResult: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
+    init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
          objects: [DetectedObject], additionalPayload: [String: Any] = [:]) {
-        self.segmentationResult = segmentationResult
+        self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.objects = objects
@@ -76,7 +76,7 @@ class SegmentationPipeline: ObservableObject {
     var selectionClassColors: [CIColor] = []
     
     var visionModel: VNCoreMLModel
-    @Published var segmentationResult: CIImage?
+    @Published var segmentationImage: CIImage?
     @Published var segmentedIndices: [Int] = []
     
     // MARK: Temporary segmentationRequest UIImage
@@ -111,7 +111,7 @@ class SegmentationPipeline: ObservableObject {
     func reset() {
         self.isProcessing = false
         self.setSelectionClasses([])
-        self.segmentationResult = nil
+        self.segmentationImage = nil
         self.segmentationResultUIImage = nil
         self.segmentedIndices = []
         self.objects = []
@@ -142,17 +142,17 @@ class SegmentationPipeline: ObservableObject {
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.isProcessing = true
-            let segmentationImage = self.processSegmentationRequest(with: cIImage)
-            guard segmentationImage != nil else {
+            let segmentationResults = self.processSegmentationRequest(with: cIImage)
+            guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
                     self.isProcessing = false
                     self.completionHandler?(.failure(SegmentationPipelineError.invalidSegmentation))
                 }
                 return
             }
-            
-            let objectList = self.processContourRequest(from: segmentationImage!) ?? []
-            
+//            
+            let objectList = self.processContourRequest(from: segmentationImage) ?? []
+
             var transformMatrix: simd_float3x3? = nil
             if let previousImage = previousImage {
                 transformMatrix = self.getHomographyTransform(referenceImage: cIImage, floatingImage: previousImage)
@@ -160,7 +160,8 @@ class SegmentationPipeline: ObservableObject {
             self.centroidTracker.update(objectsList: objectList, transformMatrix: transformMatrix)
             
             DispatchQueue.main.async {
-                self.segmentationResult = segmentationImage
+                self.segmentationImage = segmentationResults?.segmentationImage
+                self.segmentedIndices = segmentationResults?.segmentedIndices ?? []
                 self.objects = objectList
                 
                 // Temporary
@@ -178,7 +179,7 @@ class SegmentationPipeline: ObservableObject {
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
                 self.completionHandler?(.success(SegmentationPipelineResults(
-                    segmentationResult: segmentationImage!,
+                    segmentationImage: segmentationImage,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
                     objects: objectList,
@@ -202,17 +203,24 @@ extension SegmentationPipeline {
     
     // MARK: Currently we are relying on the synchronous nature of the request handler
     // Need to check if this is always guaranteed.
-    func processSegmentationRequest(with cIImage: CIImage) -> CIImage? {
+    func processSegmentationRequest(with cIImage: CIImage) -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
         do {
             let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
             self.configureSegmentationRequest(request: segmentationRequest)
             // TODO: Check if this is the correct orientation, based on which the UIImage orientation will also be set
             let segmentationRequestHandler = VNImageRequestHandler(ciImage: cIImage, orientation: .right, options: [:])
             try segmentationRequestHandler.perform([segmentationRequest])
+            
             guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
             let segmentationBuffer = segmentationResult.first?.pixelBuffer
+            
+            let (_, selectedIndices) = extractUniqueGrayscaleValues(from: segmentationBuffer!)
+            let selectedIndicesSet = Set(selectedIndices)
+            let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
+            
             let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
-            return segmentationImage
+            
+            return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
         } catch {
             print("Error processing segmentation request: \(error)")
         }
