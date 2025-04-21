@@ -45,7 +45,7 @@ class ObjectLocation {
     private func setHeading() {
         if let heading = locationManager.heading {
             self.headingDegrees = heading.magneticHeading
-//            headingStatus = "Heading: \(headingDegrees) degrees"
+            //            headingStatus = "Heading: \(headingDegrees) degrees"
         }
     }
     
@@ -63,11 +63,11 @@ class ObjectLocation {
             return
         }
     }
-    
-    func getCalcLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8)
-    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        let depthValue = getDepth(segmentationLabelImage: segmentationLabelImage, depthImage: depthImage, classLabel: classLabel)
+}
 
+extension ObjectLocation {
+    func getCalcLocation(depthValue: Float)
+    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
@@ -140,7 +140,7 @@ extension ObjectLocation {
             return 0.0
         }
         
-        /// Create a mask from the segmentation label image
+        /// Create a mask from the segmentation label image and the depth image
         guard let segmentationLabelBaseAddress = CVPixelBufferGetBaseAddress(segmentationLabelMap),
                 let depthBaseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
             return 0.0
@@ -169,9 +169,51 @@ extension ObjectLocation {
         numPixels = numPixels == 0 ? 1 : numPixels
         let gravityX = floor(Double(sumX) / Double(numPixels))
         let gravityY = floor(Double(sumY) / Double(numPixels))
+        print("gravityX: \(gravityX), gravityY: \(gravityY)")
         let gravityPixelOffset = Int(gravityY) * depthBytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
         return depthBuffer[gravityPixelOffset]
     }
+    
+    /**
+     This function calculates the depth value of the object at the centroid of the segmented image.
+     
+     NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.
+     */
+    func getDepth(segmentationLabelImage: CIImage, object: DetectedObject, depthImage: CIImage, classLabel: UInt8) -> Float {
+        /// Create depthMap which is not backed by a pixel buffer
+        guard let depthMap = createPixelBuffer(width: Int(depthImage.extent.width), height: Int(depthImage.extent.height)) else {
+            print("Depth image pixel buffer is nil")
+            return 0.0
+        }
+        ciContext.render(depthImage, to: depthMap)
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let segmentationLabelWidth = segmentationLabelImage.extent.width
+        let segmentationLabelHeight = segmentationLabelImage.extent.height
+        
+        let depthWidth = depthImage.extent.width
+        let depthHeight = depthImage.extent.height
+        
+        guard segmentationLabelWidth == depthWidth && segmentationLabelHeight == depthHeight else {
+            print("Segmentation label image and depth image dimensions do not match")
+            return 0.0
+        }
+        
+        guard let depthBaseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
+            return 0.0
+        }
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
+        
+        let objectGravityPoint: CGPoint = CGPoint(x: object.centroid.x * segmentationLabelWidth,
+                                              y: object.centroid.y * segmentationLabelHeight)
+        print("objectCentroid: \(objectGravityPoint)")
+        let gravityPixelOffset = Int(objectGravityPoint.y) * depthBytesPerRow / MemoryLayout<Float>.size + Int(objectGravityPoint.x)
+        return depthBuffer[gravityPixelOffset]
+    }
+        
 }
 
 /**
