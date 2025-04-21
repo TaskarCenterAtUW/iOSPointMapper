@@ -20,6 +20,7 @@ struct DetectedObject {
 }
 
 enum SegmentationPipelineError: Error, LocalizedError {
+    case isProcessingTrue
     case emptySegmentation
     case invalidSegmentation
     case invalidContour
@@ -27,6 +28,8 @@ enum SegmentationPipelineError: Error, LocalizedError {
     
     var errorDescription: String? {
         switch self {
+        case .isProcessingTrue:
+            return "The SegmentationPipeline is already processing a request."
         case .emptySegmentation:
             return "The Segmentation array is Empty"
         case .invalidSegmentation:
@@ -44,13 +47,15 @@ struct SegmentationPipelineResults {
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
     var objects: [DetectedObject]
+    var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationResult: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         objects: [DetectedObject]) {
+         objects: [DetectedObject], additionalPayload: [String: Any] = [:]) {
         self.segmentationResult = segmentationResult
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.objects = objects
+        self.additionalPayload = additionalPayload
     }
 }
 
@@ -63,6 +68,7 @@ class SegmentationPipeline: ObservableObject {
     //  to pipeline the processing.
     //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
     var isProcessing = false
+    var completionHandler: ((Result<SegmentationPipelineResults, Error>) -> Void)?
     
     var selectionClasses: [Int] = []
     var selectionClassLabels: [UInt8] = []
@@ -121,11 +127,16 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassColors = selectionClasses.map { Constants.ClassConstants.colors[$0] }
     }
     
+    func setCompletionHandler(_ completionHandler: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
+        self.completionHandler = completionHandler
+    }
+    
     func processRequest(with cIImage: CIImage, previousImage: CIImage?, previousObjects: [DetectedObject]? = nil,
-                        completion: @escaping (Result<SegmentationPipelineResults, Error>) -> Void) {
+                        additionalPayload: [String: Any] = [:]) {
         if self.isProcessing {
-            print("Already processing a request. Discarding the new request.")
-//            completion(.failure(SegmentationPipelineError.invalidSegmentation))
+            DispatchQueue.main.async {
+                self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
+            }
             return
         }
         
@@ -135,7 +146,7 @@ class SegmentationPipeline: ObservableObject {
             guard segmentationImage != nil else {
                 DispatchQueue.main.async {
                     self.isProcessing = false
-                    completion(.failure(SegmentationPipelineError.emptySegmentation))
+                    self.completionHandler?(.failure(SegmentationPipelineError.invalidSegmentation))
                 }
                 return
             }
@@ -144,7 +155,7 @@ class SegmentationPipeline: ObservableObject {
             
             var transformMatrix: simd_float3x3? = nil
             if let previousImage = previousImage {
-                transformMatrix = self.getHomographyTransform(for: cIImage, floatingImage: previousImage)
+                transformMatrix = self.getHomographyTransform(referenceImage: cIImage, floatingImage: previousImage)
             }
             self.centroidTracker.update(objectsList: objectList, transformMatrix: transformMatrix)
             
@@ -166,11 +177,13 @@ class SegmentationPipeline: ObservableObject {
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
-                completion(.success(SegmentationPipelineResults(
+                self.completionHandler?(.success(SegmentationPipelineResults(
                     segmentationResult: segmentationImage!,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
-                    objects: objectList)))
+                    objects: objectList,
+                    additionalPayload: additionalPayload
+                )))
             }
             self.isProcessing = false
         }
@@ -328,7 +341,7 @@ extension SegmentationPipeline {
 extension SegmentationPipeline {
     /// Computes the homography transform for the reference image and the floating image.
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
-    func getHomographyTransform(for referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
+    func getHomographyTransform(referenceImage referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
         do {
             let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
             let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])

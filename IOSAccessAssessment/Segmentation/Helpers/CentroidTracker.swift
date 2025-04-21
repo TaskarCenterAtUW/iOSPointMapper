@@ -44,6 +44,13 @@ class CentroidTracker {
         self.disappearedObjects.removeValue(forKey: objectID)
     }
     
+    /**
+        Updates the tracker with the current list of detected objects.
+     
+    TODO: To note, the following code has not been well tested. Need to test this logic in a more controlled environment.
+     For now, we got with the assumption that this works as expected, and continue with the rest of the implementation
+
+     */
     func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
         /**
          If object list is empty, increment the disappeared count for each object
@@ -62,11 +69,8 @@ class CentroidTracker {
         /**
             If the transform matrix is not identity, we need to transform the centroids of the original objects to the new coordinate system.
          */
-        print("Object centroids: ", self.objects.map { $0.value.centroid });
         if let transformMatrix = transformMatrix {
             transformObjectCentroids(using: transformMatrix);
-            print("Transform matrix: ", transformMatrix);
-            print("Transformed object centroids: ", self.objects.map { $0.value.centroid });
         }
         
         /**
@@ -201,6 +205,10 @@ extension CentroidTracker {
     }
     
     private func transformObjectCentroids(using transformMatrix: simd_float3x3) {
+        /*
+            Applies a warp transform to the centroids of the detected objects.
+         Need to transpose the matrix to apply it correctly to the centroids since SIMD3 is column-major order.
+         */
         let warpTransform = transformMatrix.transpose
         for (objectID, object) in self.objects {
             let transformedCentroid = warpedPoint(object.centroid, using: warpTransform)
