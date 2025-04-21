@@ -1,102 +1,29 @@
 //
-//  ObjectLocation.swift
+//  DepthMap.swift
 //  IOSAccessAssessment
 //
-//  Created by Kohei Matsushima on 2024/04/29.
+//  Created by Himanshu on 4/21/25.
 //
 
-import SwiftUI
-import UIKit
-import AVFoundation
-import CoreImage
-import CoreLocation
-
-// TODO: As pointed out in the TODO for the ContentView objectLocation
-// We would want to separate out device location logic, and pixel-wise location calculation logic
-class ObjectLocation {
-    var locationManager: CLLocationManager
-    var longitude: CLLocationDegrees?
-    var latitude: CLLocationDegrees?
-    var headingDegrees: CLLocationDirection?
+struct DepthMap {
     
-    let ciContext = CIContext(options: nil)
+    private let ciContext = CIContext(options: nil)
     
-    init() {
-        self.locationManager = CLLocationManager()
-        self.longitude = nil
-        self.latitude = nil
-        self.headingDegrees = nil
-        self.setupLocationManager()
-    }
-    
-    private func setupLocationManager() {
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
-    }
-    
-    private func setLocation() {
-        if let location = locationManager.location {
-            self.latitude = location.coordinate.latitude
-            self.longitude = location.coordinate.longitude
+    private var depthMap: CVPixelBuffer? = nil
+    private var depthMapWidth: Int = 0
+    private var depthMapHeight: Int = 0
+    var depthImage: CIImage? = nil {
+        didSet {
+            guard let depthImage = depthImage else { return }
+            let width = Int(depthImage.extent.width)
+            let height = Int(depthImage.extent.height)
+            self.depthMap = createPixelBuffer(width: width, height: height)
+            ciContext.render(depthImage, to: self.depthMap!)
+            self.depthMapWidth = width
+            self.depthMapHeight = height
         }
     }
     
-    private func setHeading() {
-        if let heading = locationManager.heading {
-            self.headingDegrees = heading.magneticHeading
-            //            headingStatus = "Heading: \(headingDegrees) degrees"
-        }
-    }
-    
-    func setLocationAndHeading() {
-        setLocation()
-        setHeading()
-        
-        guard let _ = self.latitude, let _ = self.longitude else {
-            print("latitude or longitude: nil")
-            return
-        }
-        
-        guard let _ = self.headingDegrees else {
-            print("heading: nil")
-            return
-        }
-    }
-}
-
-extension ObjectLocation {
-    func getCalcLocation(depthValue: Float)
-    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
-            print("latitude, longitude, or heading: nil")
-            return nil
-        }
-
-        // Calculate the object's coordinates assuming a flat plane
-        let distance = depthValue
-        let bearing = heading * .pi / 180.0 // Convert to radians
-
-        // Calculate the change in coordinates
-        let deltaX = Double(distance) * cos(Double(bearing))
-        let deltaY = Double(distance) * sin(Double(bearing))
-
-        // Assuming 1 degree of latitude and longitude is approximately 111,000 meters
-        let metersPerDegree = 111_000.0
-
-        let objectLatitude = latitude + (deltaY / metersPerDegree)
-        let objectLongitude = longitude + (deltaX / metersPerDegree)
-
-        print("Object coordinates: latitude: \(objectLatitude), longitude: \(objectLongitude)")
-        return (latitude: CLLocationDegrees(objectLatitude),
-                longitude: CLLocationDegrees(objectLongitude))
-    }
-}
-
-/**
- Helper functions for calculating the depth value of the object at the centroid of the segmented image.
- */
-extension ObjectLocation {
     // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
     /**
         This function calculates the depth value of the object at the centroid of the segmented image.
@@ -106,18 +33,15 @@ extension ObjectLocation {
         depthImage: The depth image (pixel format: kCVPixelFormatType_DepthFloat32)
      */
     func getDepth(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) -> Float {
+        guard let depthMap = self.depthMap else {
+            print("Depth image pixel buffer is nil")
+            return 0.0
+        }
         guard let segmentationLabelMap = segmentationLabelImage.pixelBuffer else {
             print("Segmentation label image pixel buffer is nil")
             return 0.0
         }
-        /// Create depthMap which is not backed by a pixel buffer
-        guard let depthMap = createPixelBuffer(width: Int(depthImage.extent.width), height: Int(depthImage.extent.height)) else {
-            print("Depth image pixel buffer is nil")
-            return 0.0
-        }
-        ciContext.render(depthImage, to: depthMap)
-            
-//        var distanceSum: Float = 0
+        
         var sumX = 0
         var sumY = 0
         var numPixels = 0
@@ -132,10 +56,7 @@ extension ObjectLocation {
         let segmentationLabelWidth = CVPixelBufferGetWidth(segmentationLabelMap)
         let segmentationLabelHeight = CVPixelBufferGetHeight(segmentationLabelMap)
         
-        let depthWidth = CVPixelBufferGetWidth(depthMap)
-        let depthHeight = CVPixelBufferGetHeight(depthMap)
-        
-        guard segmentationLabelWidth == depthWidth && segmentationLabelHeight == depthHeight else {
+        guard segmentationLabelWidth == depthMapWidth && segmentationLabelHeight == depthMapHeight else {
             print("Segmentation label image and depth image dimensions do not match")
             return 0.0
         }
@@ -163,9 +84,10 @@ extension ObjectLocation {
             }
         }
         
-        // In case there is not a single pixel of that class
-        // MARK: We would want a better way to handle this edge case, where we do not pass any information about the object
-        // Else, this code will pass the depth info of location (0, 0)
+        guard numPixels > 0 else {
+            print("No pixels found for class label \(classLabel)")
+            return 0.0
+        }
         numPixels = numPixels == 0 ? 1 : numPixels
         let gravityX = floor(Double(sumX) / Double(numPixels))
         let gravityY = floor(Double(sumY) / Double(numPixels))
@@ -180,12 +102,10 @@ extension ObjectLocation {
      NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.
      */
     func getDepth(segmentationLabelImage: CIImage, object: DetectedObject, depthImage: CIImage, classLabel: UInt8) -> Float {
-        /// Create depthMap which is not backed by a pixel buffer
-        guard let depthMap = createPixelBuffer(width: Int(depthImage.extent.width), height: Int(depthImage.extent.height)) else {
+        guard let depthMap = self.depthMap else {
             print("Depth image pixel buffer is nil")
             return 0.0
         }
-        ciContext.render(depthImage, to: depthMap)
         
         CVPixelBufferLockBaseAddress(depthMap, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
@@ -193,10 +113,7 @@ extension ObjectLocation {
         let segmentationLabelWidth = segmentationLabelImage.extent.width
         let segmentationLabelHeight = segmentationLabelImage.extent.height
         
-        let depthWidth = depthImage.extent.width
-        let depthHeight = depthImage.extent.height
-        
-        guard segmentationLabelWidth == depthWidth && segmentationLabelHeight == depthHeight else {
+        guard Int(segmentationLabelWidth) == depthMapWidth && Int(segmentationLabelHeight) == depthMapHeight else {
             print("Segmentation label image and depth image dimensions do not match")
             return 0.0
         }
@@ -214,4 +131,47 @@ extension ObjectLocation {
         return depthBuffer[gravityPixelOffset]
     }
         
+}
+
+/**
+    Helper functions for creating a pixel buffer from a CIImage. Will be removed in the future.
+ */
+extension DepthMap {
+    func createMask(from image: CIImage, classLabel: UInt8) -> [[Int]] {
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
+        
+        let width = cgImage.width
+        let height = cgImage.height
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let bytesPerPixel = 1
+        let bytesPerRow = bytesPerPixel * width
+        let bitsPerComponent = 8
+        var pixelData = [UInt8](repeating: 0, count: width * height)
+        
+        guard let context = CGContext(data: &pixelData,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: bitsPerComponent,
+                                      bytesPerRow: bytesPerRow,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+            return []
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var mask = [[Int]](repeating: [Int](repeating: 0, count: width), count: height)
+        
+        var uniqueValues = Set<UInt8>()
+        for row in 0..<height {
+            for col in 0..<width {
+                let pixelIndex = row * width + col
+                let pixelValue = pixelData[pixelIndex]
+                mask[row][col] = pixelValue == classLabel ? 0 : 1
+                uniqueValues.insert(pixelValue)
+            }
+        }
+        print("uniqueValues: \(uniqueValues)")
+        return mask
+    }
 }
