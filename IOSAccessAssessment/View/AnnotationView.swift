@@ -149,7 +149,6 @@ struct AnnotationView: View {
         self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
 //        self.cameraUIImage = UIImage(ciImage: sharedImageData.depthImage!, scale: 1.0, orientation: .right)
         
-//        self.segmentationUIImage = result.image
         guard index < sharedImageData.segmentedIndices.count else {
             print("Index out of bounds for segmentedIndices in AnnotationView")
             return

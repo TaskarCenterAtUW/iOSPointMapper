@@ -79,14 +79,27 @@ func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, 
     return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
 }
 
+func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
+    var pixelBuffer: CVPixelBuffer?
+    let attrs = [
+        kCVPixelBufferCGImageCompatibilityKey: true,
+        kCVPixelBufferCGBitmapContextCompatibilityKey: true
+    ] as CFDictionary
+    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
+    if status != kCVReturnSuccess {
+        print("Failed to create pixel buffer")
+        return nil
+    }
+    return pixelBuffer
+}
+
 func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
     let width = Int(targetSize.width)
     let height = Int(targetSize.height)
     
-    var pixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_DepthFloat32, nil, &pixelBuffer)
+    var pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
     
-    guard status == kCVReturnSuccess, let blankPixelBuffer = pixelBuffer else { return nil }
+    guard let blankPixelBuffer = pixelBuffer else { return nil }
     
     CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
     let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!

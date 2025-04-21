@@ -19,6 +19,8 @@ class ObjectLocation {
     var latitude: CLLocationDegrees?
     var headingDegrees: CLLocationDirection?
     
+    let ciContext = CIContext(options: nil)
+    
     init() {
         self.locationManager = CLLocationManager()
         self.longitude = nil
@@ -112,11 +114,16 @@ extension ObjectLocation {
         depthImage: The depth image (pixel format: kCVPixelFormatType_DepthFloat32)
      */
     func getDepth(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) -> Float {
-        guard let segmentationLabelMap = segmentationLabelImage.pixelBuffer,
-              let depthMap = depthImage.pixelBuffer else {
+        guard let segmentationLabelMap = segmentationLabelImage.pixelBuffer else {
             print("Segmentation label image pixel buffer is nil")
             return 0.0
         }
+        /// Create depthMap which is not backed by a pixel buffer
+        guard let depthMap = createPixelBuffer(width: Int(depthImage.extent.width), height: Int(depthImage.extent.height)) else {
+            print("Depth image pixel buffer is nil")
+            return 0.0
+        }
+        ciContext.render(depthImage, to: depthMap)
             
 //        var distanceSum: Float = 0
         var sumX = 0
