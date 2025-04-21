@@ -64,8 +64,8 @@ class ObjectLocation {
         }
     }
     
-    func calcLocation(sharedImageData: SharedImageData, index: Int) {
-        getDepth(sharedImageData: sharedImageData, index: index)
+    func calcLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) {
+        getDepth(segmentationLabelImage: segmentationLabelImage, depthImage: depthImage, classLabel: classLabel)
         guard let depth = self.depthValue else {
             print("depth: nil")
             return
@@ -100,10 +100,12 @@ class ObjectLocation {
     }
     
     // FIXME: Use something like trimmed mean to eliminate outliers, instead of the normal mean
-    func getDepth(sharedImageData: SharedImageData, index: Int) {
-        let objectSegmentation = sharedImageData.classImages[index]
-        let mask = createMask(from: objectSegmentation)
-        guard let depthMap = sharedImageData.depthImage?.pixelBuffer else { return }
+    /**
+        This function calculates the depth value of the object at the centroid of the segmented image.
+     */
+    func getDepth(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) {
+        let mask = createMask(from: segmentationLabelImage, classLabel: classLabel)
+        guard let depthMap = depthImage.pixelBuffer else { return }
 //        var distanceSum: Float = 0
         var sumX = 0
         var sumY = 0
@@ -142,7 +144,7 @@ class ObjectLocation {
         }
     }
     
-    func createMask(from image: CIImage) -> [[Int]] {
+    func createMask(from image: CIImage, classLabel: UInt8) -> [[Int]] {
         let context = CIContext(options: nil)
         guard let cgImage = context.createCGImage(image, from: image.extent) else { return [] }
         
@@ -172,7 +174,7 @@ class ObjectLocation {
             for col in 0..<width {
                 let pixelIndex = row * width + col
                 let pixelValue = pixelData[pixelIndex]
-                mask[row][col] = Int(pixelValue) == 0 ? 0 : 1
+                mask[row][col] = pixelValue == classLabel ? 0 : 1
                 uniqueValues.insert(pixelValue)
             }
         }

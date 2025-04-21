@@ -86,7 +86,8 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    objectLocation.calcLocation(sharedImageData: sharedImageData, index: index)
+                    objectLocation.calcLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                                                depthImage: sharedImageData.depthImage!, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
                     selectedOption = nil
                     uploadChanges()
                     nextSegment()
@@ -148,6 +149,10 @@ struct AnnotationView: View {
         self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
         
 //        self.segmentationUIImage = result.image
+        guard index < sharedImageData.segmentedIndices.count else {
+            print("Index out of bounds for segmentedIndices in AnnotationView")
+            return
+        }
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
