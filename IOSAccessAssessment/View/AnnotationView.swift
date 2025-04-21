@@ -143,37 +143,21 @@ struct AnnotationView: View {
     }
     
     func refreshView() {
-        let start = DispatchTime.now()
-        // Any additional refresh logic can be placed here
-        // Example: fetching new data, triggering animations, sending current data etc.
-        let depthCGImage = annotationCIContext.createCGImage(
-            sharedImageData.depthImage!, from: sharedImageData.depthImage!.extent)!
-        let depthUIImage = UIImage(cgImage: depthCGImage, scale: 1.0, orientation: .downMirrored)
-        
-        let segmentationLabelImage = annotationCIContext.createCGImage(
-            sharedImageData.segmentationLabelImage!, from: sharedImageData.segmentationLabelImage!.extent)!
-        let segmentationLabelUIImage = UIImage(cgImage: segmentationLabelImage, scale: 1.0, orientation: .right)
-        let classIndex = sharedImageData.segmentedIndices[index]
-//        self.segmentationUIImage = OpenCVWrapper.perform1DWatershed(segmentationLabelUIImage, depthUIImage,
-//                                        Int32(Constants.ClassConstants.labels[classIndex]))
-        let result = OpenCVWrapper.perform1DWatershedWithContoursColors(maskImage: segmentationLabelUIImage, depthImage: depthUIImage, labelValue: Int32(Constants.ClassConstants.labels[classIndex]))
-        self.segmentationUIImage = result.image
-        let resultContours = result.contours
-        
-        let end = DispatchTime.now()
-        
-        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-        let timeInterval = Double(nanoTime) / 1_000_000
-//        print("Time taken to post-process AnnotationView segments: \(timeInterval) milliseconds")
-        
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
         self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
+        
+//        self.segmentationUIImage = result.image
+        self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
+        self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
+        self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
+                                           scale: 1.0, orientation: .downMirrored)
     }
     
     func nextSegment() {
-        // Ensure that the index does not exceed the length of the sharedImageData classImages count
-        // Do not simply rely on the isValid check in the body. 
+        // Ensure that the index does not exceed the length of the sharedImageData segmentedIndices count
+        // Do not simply rely on the isValid check in the body.
         if (self.index + 1 < sharedImageData.segmentedIndices.count) {
             self.index += 1
         } else {
