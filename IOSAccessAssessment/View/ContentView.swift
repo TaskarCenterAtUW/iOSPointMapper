@@ -85,7 +85,6 @@ struct ContentView: View {
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
                 objectLocation: objectLocation,
-                classes: Constants.ClassConstants.classNames,
                 selection: selection
             )
         }

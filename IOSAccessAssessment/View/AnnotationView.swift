@@ -6,24 +6,21 @@
 //
 
 import SwiftUI
+
+enum AnnotationOption: String, CaseIterable {
+    case agree = "I agree with this class annotation"
+    case missingInstances = "Annotation is missing some instances of the class"
+    case misidentified = "The class annotation is misidentified"
+}
+
 struct AnnotationView: View {
-    
-    enum AnnotationOption: String, CaseIterable {
-        case agree = "I agree with this class annotation"
-        case missingInstances = "Annotation is missing some instances of the class"
-        case misidentified = "The class annotation is misidentified"
-    }
-    let options = AnnotationOption.allCases
-    
-    let annotationCIContext = CIContext()
+    var objectLocation: ObjectLocation
+    var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
+    @Environment(\.dismiss) var dismiss
     
     @State private var index = 0
-    
-    var objectLocation: ObjectLocation
-    var classes: [String] // Might want to replace this with the global Constants object reference
-    var selection: [Int]
     
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
@@ -33,16 +30,13 @@ struct AnnotationView: View {
     @State private var cameraUIImage: UIImage? = nil
     @State private var segmentationUIImage: UIImage? = nil
     
-    @Environment(\.dismiss) var dismiss
+    let annotationCIContext = CIContext()
+    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    let options = AnnotationOption.allCases
     
     var body: some View {
         if (!self.isValid()) {
-            Rectangle()
-                .frame(width: 0, height: 0)
-                .onAppear {
-                    refreshView()
-                }
-            
+            Rectangle().frame(width: 0, height: 0).onAppear {refreshView()}
         } else {
             VStack {
                 HStack {
@@ -58,7 +52,7 @@ struct AnnotationView: View {
                 }
                 HStack {
                     Spacer()
-                    Text("Selected class: \(classes[sharedImageData.segmentedIndices[index]])")
+                    Text("Selected class: \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
                     Spacer()
                 }
                 
@@ -114,7 +108,7 @@ struct AnnotationView: View {
             }
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
-                    let filteredClasses = selection.map { classes[$0] }
+                    let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
                     
                     // mapping between filtered and non-filtered
                     let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
@@ -196,7 +190,7 @@ struct AnnotationView: View {
               let nodeLongitude = objectLocation.longitude
         else { return }
         
-        let tags: [String: String] = ["demo:class":classes[sharedImageData.segmentedIndices[index]]]
+        let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
         let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         
         ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
