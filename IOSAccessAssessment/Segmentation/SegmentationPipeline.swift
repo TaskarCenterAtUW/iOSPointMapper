@@ -46,11 +46,11 @@ struct SegmentationPipelineResults {
     var segmentationImage: CIImage
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
-    var objects: [DetectedObject]
+    var objects: [UUID: DetectedObject]
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         objects: [DetectedObject], additionalPayload: [String: Any] = [:]) {
+         objects: [UUID: DetectedObject], additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
@@ -82,12 +82,14 @@ class SegmentationPipeline: ObservableObject {
     // MARK: Temporary segmentationRequest UIImage
     @Published var segmentationResultUIImage: UIImage?
     
-    @Published var objects: [DetectedObject] = []
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
     // TODO: Check what would be the appropriate value for this
     // For normalized points
     var perimeterThreshold: Float = 0.01
+    // While the contour detection logic gives us an array of DetectedObject
+    // we get the objects as a dictionary with UUID as the key, from the centroid tracker.
+    @Published var objects: [UUID: DetectedObject] = [:]
     
     @Published var transformMatrix: simd_float3x3? = nil
 //    @Published var transformedFloatingImage: CIImage?
@@ -114,7 +116,7 @@ class SegmentationPipeline: ObservableObject {
         self.segmentationImage = nil
         self.segmentationResultUIImage = nil
         self.segmentedIndices = []
-        self.objects = []
+        self.objects = [:]
         self.transformMatrix = nil
         // TODO: No reset function for maskers and processors
         self.centroidTracker.reset()
@@ -131,8 +133,7 @@ class SegmentationPipeline: ObservableObject {
         self.completionHandler = completionHandler
     }
     
-    func processRequest(with cIImage: CIImage, previousImage: CIImage?, previousObjects: [DetectedObject]? = nil,
-                        additionalPayload: [String: Any] = [:]) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, additionalPayload: [String: Any] = [:]) {
         if self.isProcessing {
             DispatchQueue.main.async {
                 self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
@@ -162,7 +163,7 @@ class SegmentationPipeline: ObservableObject {
             DispatchQueue.main.async {
                 self.segmentationImage = segmentationResults?.segmentationImage
                 self.segmentedIndices = segmentationResults?.segmentedIndices ?? []
-                self.objects = objectList
+                self.objects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
                 
                 // Temporary
                 self.grayscaleToColorMasker.inputImage = segmentationImage
@@ -182,7 +183,7 @@ class SegmentationPipeline: ObservableObject {
                     segmentationImage: segmentationImage,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
-                    objects: objectList,
+                    objects: self.objects,
                     additionalPayload: additionalPayload
                 )))
             }

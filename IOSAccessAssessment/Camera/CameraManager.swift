@@ -66,12 +66,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         DispatchQueue.main.async {
             if !self.isProcessingCapturedResult {
                 let previousImage = self.sharedImageData?.cameraImage
-                let previousObjects = self.sharedImageData?.objects ?? []
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 
 //                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage, previousObjects: previousObjects)
+                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage)
                 
                 if self.dataAvailable == false {
                     self.dataAvailable = true

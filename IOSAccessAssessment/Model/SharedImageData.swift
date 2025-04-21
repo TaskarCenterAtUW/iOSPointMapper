@@ -16,7 +16,7 @@ class SharedImageData: ObservableObject {
     // Overall segmentation image with all classes (labels)
     @Published var segmentationLabelImage: CIImage?
     @Published var segmentedIndices: [Int] = []
-    @Published var objects: [DetectedObject] = []
+    @Published var objects: [UUID: DetectedObject] = [:]
     // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
     
