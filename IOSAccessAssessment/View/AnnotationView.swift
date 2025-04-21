@@ -87,7 +87,7 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    let location = objectLocation.getLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                    let location = objectLocation.getCalcLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
                                                 depthImage: sharedImageData.depthImage!, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
                     selectedOption = nil
                     uploadChanges(location: location)

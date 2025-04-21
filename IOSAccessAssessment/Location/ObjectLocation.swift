@@ -64,14 +64,9 @@ class ObjectLocation {
         }
     }
     
-    func getLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8)
+    func getCalcLocation(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         let depthValue = getDepth(segmentationLabelImage: segmentationLabelImage, depthImage: depthImage, classLabel: classLabel)
-        
-        // FIXME: Setting the location for every segment means that there is potential for errors
-        //  If the user moves while validating each segment, would every segment get different device location?
-        setLocation()
-        setHeading()
 
         guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
