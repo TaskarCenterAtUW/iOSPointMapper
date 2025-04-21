@@ -131,6 +131,7 @@ struct ContentView: View {
             if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
                 if (!sharedImageData.isLidarAvailable) {
+                    print("Performing depth estimation because LiDAR is not available.")
                     self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
                 }
                 self.navigateToAnnotationView = true

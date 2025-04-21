@@ -147,6 +147,7 @@ struct AnnotationView: View {
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
         self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
+//        self.cameraUIImage = UIImage(ciImage: sharedImageData.depthImage!, scale: 1.0, orientation: .right)
         
 //        self.segmentationUIImage = result.image
         guard index < sharedImageData.segmentedIndices.count else {
@@ -156,8 +157,7 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
-        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
-                                           scale: 1.0, orientation: .downMirrored)
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
     }
     
     func nextSegment() {
