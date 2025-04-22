@@ -24,10 +24,8 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
     let labelToColorMap = Constants.ClassConstants.labelToColorMap
     for object in objects {
         let color = colorForClass(object.classLabel, labelToColorMap: labelToColorMap)
-//        context.setFillColor(color.cgColor)
-        context.setStrokeColor(color.cgColor)
-        context.setLineWidth(4.0)
         
+        /// First, draw the contour
         let path = UIBezierPath()
         guard let firstPoint = object.normalizedPoints.first else { continue }
         
@@ -40,9 +38,31 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
         }
         path.close()
         
+//        context.setFillColor(color.cgColor)
+        context.setStrokeColor(color.cgColor)
+        context.setLineWidth(4.0)
         context.addPath(path.cgPath)
 //        context.fillPath()
         context.strokePath()
+        
+        /// Then, draw the bounding box
+        let boundingBox = object.boundingBox
+        let boundingBoxRect = CGRect(x: CGFloat(boundingBox.origin.x) * size.width,
+                                        y: (1 - CGFloat(boundingBox.origin.y + boundingBox.size.height)) * size.height,
+                                        width: CGFloat(boundingBox.size.width) * size.width,
+                                        height: CGFloat(boundingBox.size.height) * size.height)
+        
+        context.setStrokeColor(color.cgColor)
+        context.setLineWidth(2.0)
+        context.addRect(boundingBoxRect)
+        context.strokePath()
+        
+        /// Lastly, circle the center point
+        let centroid = object.centroid
+        let centroidPoint = CGPoint(x: CGFloat(centroid.x) * size.width, y: (1 - CGFloat(centroid.y)) * size.height)
+        context.setFillColor(color.cgColor)
+        context.addEllipse(in: CGRect(x: centroidPoint.x - 5, y: centroidPoint.y - 5, width: 10, height: 10))
+        context.fillPath()
     }
     let cgImage = UIGraphicsGetImageFromCurrentImageContext()?.cgImage
     UIGraphicsEndImageContext()
