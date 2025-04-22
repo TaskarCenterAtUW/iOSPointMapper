@@ -156,16 +156,16 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
-//        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
         
-        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
-                                            height: sharedImageData.segmentationLabelImage!.extent.height)
-        let segmentationObjects = sharedImageData.objects.filter { objectID, object in
-            object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]] &&
-            object.isCurrent == true
-        } .map({ $0.value })
-        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
-        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .leftMirrored)
+//        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
+//                                            height: sharedImageData.segmentationLabelImage!.extent.height)
+//        let segmentationObjects = sharedImageData.objects.filter { objectID, object in
+//            object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]] &&
+//            object.isCurrent == true
+//        } .map({ $0.value })
+//        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
+//        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .leftMirrored)
     }
     
     func confirmAnnotation() {
@@ -176,16 +176,16 @@ struct AnnotationView: View {
                          classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
             
             // MARK: Experimentation with detected object
-            let detectedObject = sharedImageData.objects.filter { objectID, object in
-                object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]]
-            }
-            if let object = detectedObject.first {
-                let depthValueObject = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
-                                                                  object: object.value,
-                                                                  depthImage: sharedImageData.depthImage!,
-                                                                  classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-                print("Depth Value for Label: \(depthValue) Object: \(depthValueObject)")
-            }
+//            let detectedObject = sharedImageData.objects.filter { objectID, object in
+//                object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]]
+//            }
+//            if let object = detectedObject.first {
+//                let depthValueObject = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+//                                                                  object: object.value,
+//                                                                  depthImage: sharedImageData.depthImage!,
+//                                                                  classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+//                print("Depth Value for Label: \(depthValue) Object: \(depthValueObject)")
+//            }
         } else {
             print("depthMapProcessor is nil. Fallback to 0.0")
         }

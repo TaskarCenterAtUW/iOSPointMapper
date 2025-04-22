@@ -91,7 +91,7 @@ struct DepthMapProcessor {
         numPixels = numPixels == 0 ? 1 : numPixels
         let gravityX = floor(Double(sumX) / Double(numPixels))
         let gravityY = floor(Double(sumY) / Double(numPixels))
-        print("gravityX: \(gravityX), gravityY: \(gravityY)")
+//        print("gravityX: \(gravityX), gravityY: \(gravityY)")
         let gravityPixelOffset = Int(gravityY) * depthBytesPerRow / MemoryLayout<Float>.size + Int(gravityX)
         return depthBuffer[gravityPixelOffset]
     }
@@ -126,7 +126,7 @@ struct DepthMapProcessor {
         
         let objectGravityPoint: CGPoint = CGPoint(x: object.centroid.x * segmentationLabelWidth,
                                               y: object.centroid.y * segmentationLabelHeight)
-        print("objectCentroid: \(objectGravityPoint)")
+//        print("objectCentroid: \(objectGravityPoint)")
         let gravityPixelOffset = Int(objectGravityPoint.y) * depthBytesPerRow / MemoryLayout<Float>.size + Int(objectGravityPoint.x)
         return depthBuffer[gravityPixelOffset]
     }
