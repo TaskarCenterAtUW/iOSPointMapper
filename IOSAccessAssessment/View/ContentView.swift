@@ -20,6 +20,8 @@ struct ContentView: View {
     @EnvironmentObject var segmentationPipeline: SegmentationPipeline
     @EnvironmentObject var depthModel: DepthModel
     
+    @StateObject var objectLocation = ObjectLocation()
+    
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     @State private var isChangesetOpened = false
@@ -27,14 +29,6 @@ struct ContentView: View {
     @State private var retryMessage = ""
     
     var isCameraStoppedPayload = ["isStopped": true]
-    
-    // TODO: The fact that we are passing only one instance of objectLocation to AnnotationView
-    //  means that the current setup is built to handle only one capture at a time.
-    //  If we want to allow multiple captures, then we should to pass a different smaller object
-    //  that only contains the device location details.
-    //  There should be a separate class (possibly this ObjectLocation without the logic to get location details)
-    //  that calculates the pixel-wise location using the device location and the depth map.
-    var objectLocation = ObjectLocation()
     
     var body: some View {
         VStack {
@@ -84,8 +78,8 @@ struct ContentView: View {
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
-                objectLocation: objectLocation,
-                selection: selection
+                selection: selection,
+                objectLocation: objectLocation
             )
         }
         .navigationBarTitle("Camera View", displayMode: .inline)

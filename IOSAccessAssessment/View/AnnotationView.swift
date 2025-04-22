@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreLocation
 
 enum AnnotationOption: String, CaseIterable {
     case agree = "I agree with this class annotation"
@@ -14,8 +15,8 @@ enum AnnotationOption: String, CaseIterable {
 }
 
 struct AnnotationView: View {
-    var objectLocation: ObjectLocation
     var selection: [Int]
+    var objectLocation: ObjectLocation
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @Environment(\.dismiss) var dismiss
@@ -26,6 +27,7 @@ struct AnnotationView: View {
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
+    @State private var depthMapProcessor: DepthMapProcessor? = nil
     
     @State private var cameraUIImage: UIImage? = nil
     @State private var segmentationUIImage: UIImage? = nil
@@ -86,11 +88,7 @@ struct AnnotationView: View {
                 .padding()
                 
                 Button(action: {
-                    objectLocation.calcLocation(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
-                                                depthImage: sharedImageData.depthImage!, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-                    selectedOption = nil
-                    uploadChanges()
-                    nextSegment()
+                    confirmAnnotation()
                 }) {
                     Text(index == selection.count - 1 ? "Finish" : "Next")
                 }
@@ -98,6 +96,8 @@ struct AnnotationView: View {
             }
             .navigationBarTitle("Annotation View", displayMode: .inline)
             .onAppear {
+                // Initialize the depthMapProcessor with the current depth image
+                depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
                 refreshView()
             }
             .onDisappear {
@@ -157,6 +157,42 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        
+//        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
+//                                            height: sharedImageData.segmentationLabelImage!.extent.height)
+//        let segmentationObjects = sharedImageData.objects.filter { objectID, object in
+//            object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]] &&
+//            object.isCurrent == true
+//        } .map({ $0.value })
+//        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
+//        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .leftMirrored)
+    }
+    
+    func confirmAnnotation() {
+        var depthValue: Float = 0.0
+        if let depthMapProcessor = depthMapProcessor {
+            depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+                         depthImage: sharedImageData.depthImage!,
+                         classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            
+            // MARK: Experimentation with detected object
+//            let detectedObject = sharedImageData.objects.filter { objectID, object in
+//                object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]]
+//            }
+//            if let object = detectedObject.first {
+//                let depthValueObject = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
+//                                                                  object: object.value,
+//                                                                  depthImage: sharedImageData.depthImage!,
+//                                                                  classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+//                print("Depth Value for Label: \(depthValue) Object: \(depthValueObject)")
+//            }
+        } else {
+            print("depthMapProcessor is nil. Fallback to 0.0")
+        }
+        let location = objectLocation.getCalcLocation(depthValue: depthValue)
+        selectedOption = nil
+        uploadChanges(location: location)
+        nextSegment()
     }
     
     func nextSegment() {
@@ -173,9 +209,9 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
-    private func uploadChanges() {
-        guard let nodeLatitude = objectLocation.latitude,
-              let nodeLongitude = objectLocation.longitude
+    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+        guard let nodeLatitude = location?.latitude,
+              let nodeLongitude = location?.longitude
         else { return }
         
         let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
