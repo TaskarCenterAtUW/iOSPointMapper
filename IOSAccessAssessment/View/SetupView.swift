@@ -121,3 +121,7 @@ struct SetupView: View {
         .environment(\.colorScheme, .dark)
     }
 }
+
+#Preview {
+    SetupView()
+}
