@@ -20,17 +20,12 @@
 		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
-		A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */ = {isa = PBXBuildFile; fileRef = A300C7672D6A92DE00D54778 /* OtherConversions.mm */; };
-		A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */ = {isa = PBXBuildFile; fileRef = A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */; };
-		A30646262D60486900B97D1B /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; };
-		A30646272D60486900B97D1B /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
 		A362AEC62DB48DED002D7598 /* WarpPointsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AEC52DB48DED002D7598 /* WarpPointsProcessor.swift */; };
 		A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AEC82DB638AB002D7598 /* CameraUtils.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
-		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */; };
@@ -39,7 +34,6 @@
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
-		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -86,7 +80,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				A30646272D60486900B97D1B /* opencv2.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -111,18 +104,12 @@
 		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
-		A300C7662D6A92DE00D54778 /* OtherConversions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = OtherConversions.hpp; sourceTree = "<group>"; };
-		A300C7672D6A92DE00D54778 /* OtherConversions.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OtherConversions.mm; sourceTree = "<group>"; };
-		A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCV.h"; sourceTree = "<group>"; };
-		A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
 		A362AEC52DB48DED002D7598 /* WarpPointsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarpPointsProcessor.swift; sourceTree = "<group>"; };
 		A362AEC82DB638AB002D7598 /* CameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraUtils.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapProcessor.swift; sourceTree = "<group>"; };
-		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
-		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskProcessor.swift; sourceTree = "<group>"; };
@@ -131,9 +118,6 @@
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModel.swift; sourceTree = "<group>"; };
 		A3D1272B2D5D09F40081DFF4 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = opencv2.framework; sourceTree = "<group>"; };
-		A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpenCVWrapper.h; sourceTree = "<group>"; };
-		A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
-		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -159,7 +143,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A30646262D60486900B97D1B /* opencv2.framework in Frameworks */,
 				A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */,
 				A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */,
 			);
@@ -206,7 +189,6 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
-				A3D1272F2D5D0DFE0081DFF4 /* OpenCV */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
 				A3B070982CE0B6DF0028CAC5 /* UI */,
 				CAA947772CDE7001000C6918 /* Service */,
@@ -324,22 +306,6 @@
 				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 			);
 			path = Helpers;
-			sourceTree = "<group>";
-		};
-		A3D1272F2D5D0DFE0081DFF4 /* OpenCV */ = {
-			isa = PBXGroup;
-			children = (
-				A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */,
-				A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */,
-				A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */,
-				A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */,
-				A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */,
-				A36CF1692D62E5A50081F82E /* Watershed.hpp */,
-				A36CF16A2D62E5A50081F82E /* Watershed.cpp */,
-				A300C7662D6A92DE00D54778 /* OtherConversions.hpp */,
-				A300C7672D6A92DE00D54778 /* OtherConversions.mm */,
-			);
-			path = OpenCV;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* Depth */ = {
@@ -551,7 +517,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskProcessor.swift in Sources */,
-				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
@@ -571,7 +536,6 @@
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
 				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
-				A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				A3C22FD52CF1A97700533BF7 /* SegmentationModel.swift in Sources */,
@@ -580,13 +544,11 @@
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
-				A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
-				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,
 				A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */,
@@ -771,8 +733,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -812,8 +774,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
