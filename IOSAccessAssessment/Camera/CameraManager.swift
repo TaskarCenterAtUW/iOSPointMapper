@@ -72,8 +72,8 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 
                 let cameraCGImage = self.ciContext.createCGImage(cameraImage, from: cameraImage.extent)
                 let depthCGImage = self.ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
-                self.cameraUIImage = UIImage(cgImage: cameraCGImage!, scale: 1.0, orientation: .right)
-                self.depthUIImage = UIImage(cgImage: depthCGImage!, scale: 1.0, orientation: .right)
+                self.cameraUIImage = UIImage(cgImage: cameraCGImage!, scale: 1.0, orientation: .up)
+                self.depthUIImage = UIImage(cgImage: depthCGImage!, scale: 1.0, orientation: .up)
                 
 //                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
                 self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage)

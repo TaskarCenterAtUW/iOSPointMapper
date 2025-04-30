@@ -134,15 +134,15 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         guard let cameraPixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
         let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
         
-        var depthImage: CIImage? = nil
         if (!isLidarDeviceAvailable) {
-            delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
+            delegate?.onNewData(cameraImage: cameraImage, depthImage: nil)
             return
         }
+        
         guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
         let depthData = syncedDepthData.depthData
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        depthImage = orientAndFixDepthFrame(depthPixelBuffer)
+        let depthImage = orientAndFixDepthFrame(depthPixelBuffer)
         
         let end = DispatchTime.now()
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
@@ -151,7 +151,10 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
     }
-    
+}
+
+// Functions to orient and fix the camera and depth frames
+extension CameraController {
     func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
         // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
@@ -159,10 +162,10 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             height: Constants.ClassConstants.inputSize.height
         )
         let ciImage = CIImage(cvPixelBuffer: frame)
-        let cameraImage = ciImage
-            .resized(to: croppedSize)
+//        let cameraImage = ciImage
+//            .resized(to: croppedSize)
 //            .croppedToCenter(size: croppedSize)
-        return cameraImage
+        return resizeAspectAndFill(ciImage, to: croppedSize)
     }
     
     func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
@@ -171,16 +174,39 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
             width: Constants.ClassConstants.inputSize.width,
             height: Constants.ClassConstants.inputSize.height
         )
-        let depthWidth = CVPixelBufferGetWidth(frame)
-        let depthHeight = CVPixelBufferGetHeight(frame)
-        let depthSideLength = min(depthWidth, depthHeight)
+//        let depthWidth = CVPixelBufferGetWidth(frame)
+//        let depthHeight = CVPixelBufferGetHeight(frame)
+//        let depthSideLength = min(depthWidth, depthHeight)
         // TODO: Check why does this lead to an error on orientation change
-        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
+//        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
         
-        var depthImage = CIImage(cvPixelBuffer: frame)
+        let depthImage = CIImage(cvPixelBuffer: frame)
 //            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
 //            .croppedToCenter(size: croppedSize)
-        depthImage = depthImage.resized(to: croppedSize)
-        return depthImage
+//        depthImage = depthImage.resized(to: croppedSize)
+        return resizeAspectAndFill(depthImage, to: croppedSize)
+    }
+    
+    private func resizeAspectAndFill(_ image: CIImage, to size: CGSize) -> CIImage {
+        let sourceAspect = image.extent.width / image.extent.height
+        let destAspect = size.width / size.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect > destAspect {
+            let scale = size.height / image.extent.height
+            let newWidth = image.extent.width * scale
+            let xOffset = (size.width - newWidth) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = size.width / image.extent.width
+            let newHeight = image.extent.height * scale
+            let yOffset = (size.height - newHeight) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        let newImage = image.transformed(by: transform)
+        let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
+        return croppedImage
     }
 }
