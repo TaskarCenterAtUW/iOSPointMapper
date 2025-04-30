@@ -143,17 +143,18 @@ struct ContentView: View {
         let verticalFrameWidth = verticalFrameHeight * inputAspectRatio
         let verticalFrameArea = verticalFrameWidth * verticalFrameHeight
         
-        
         let horizontalFrameWidth = screenWidth / 2
         let horizontalFrameHeight = horizontalFrameWidth / inputAspectRatio
         let horizontalFrameArea = horizontalFrameWidth * horizontalFrameHeight
         
 //        print("Vertical Frame Area: \(verticalFrameArea), Horizontal Frame Area: \(horizontalFrameArea)")
         let isStackVertical = verticalFrameArea >= horizontalFrameArea
-        var frameSize = isStackVertical ? CGSize(width: verticalFrameWidth, height: verticalFrameHeight) : CGSize(width: horizontalFrameWidth, height: horizontalFrameHeight)
-        // Reduce the frame size by 20% to avoid clipping
-        frameSize.width *= 0.9
-        frameSize.height *= 0.9
+        let frameWidth = (isStackVertical ? verticalFrameWidth : horizontalFrameWidth)*0.9
+        let frameHeight = (isStackVertical ? verticalFrameHeight : horizontalFrameHeight)*0.9
+        var frameSize = CGSize(width: frameWidth, height: frameHeight)
+        
+        print("Frame Size: \(frameSize)")
+//        return (true, CGSize(width: 256, height: 256))
         return (isStackVertical, frameSize)
     }
         
