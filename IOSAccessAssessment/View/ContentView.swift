@@ -34,33 +34,18 @@ struct ContentView: View {
         VStack {
             if isChangesetOpened {
                 if manager?.dataAvailable ?? false{
-                    ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession,
-                                                   frameRect: VerticalFrame.getColumnFrame(
-                                                    width: UIScreen.main.bounds.width,
-                                                    height: UIScreen.main.bounds.height,
-                                                    row: 0)
-                        )
-                        HostedSegmentationViewController(
-                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
-                                                         frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 1)
-                        )
-                    }
-                    Button {
-//                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                        segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                            additionalPayload: isCameraStoppedPayload)
-                    } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
+                    GeometryReader { geometry in
+                        let isVertical = isStackVertical(screenWidth: geometry.size.width, screenHeight: geometry.size.height)
+                        
+                        if isVertical {
+                            VStack {
+                                mainView()
+                            }
+                        } else {
+                            HStack {
+                                mainView()
+                            }
+                        }
                     }
                 }
                 else {
@@ -113,6 +98,62 @@ struct ContentView: View {
             Text(retryMessage)
         }
     }
+    
+    @ViewBuilder
+    private func mainView() -> some View {
+        ZStack {
+            HostedCameraViewController(session: manager!.controller.captureSession,
+                                       frameRect: VerticalFrame.getColumnFrame(
+                                        width: UIScreen.main.bounds.width,
+                                        height: UIScreen.main.bounds.height,
+                                        row: 0)
+            )
+            HostedSegmentationViewController(
+                segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+                //                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+                frameRect: VerticalFrame.getColumnFrame(
+                    width: UIScreen.main.bounds.width,
+                    height: UIScreen.main.bounds.height,
+                    row: 1)
+            )
+        }
+        Button {
+            //                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
+            objectLocation.setLocationAndHeading()
+            manager?.stopStream()
+            segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
+                                                additionalPayload: isCameraStoppedPayload)
+        } label: {
+            Image(systemName: "camera.circle.fill")
+                .resizable()
+                .frame(width: 60, height: 60)
+                .foregroundColor(.white)
+        }
+    }
+    
+    /**
+     This function is used to determine if the stack will be horizontal or vertical
+     */
+    private func isStackVertical(screenWidth: CGFloat, screenHeight: CGFloat) -> Bool {
+        print("Screen Width: \(screenWidth), Screen Height: \(screenHeight)")
+        let inputWidth = Constants.ClassConstants.inputSize.width
+        let inputHeight = Constants.ClassConstants.inputSize.height
+        let inputAspectRatio = inputWidth / inputHeight
+        
+        let verticalFrameHeight = screenHeight / 2
+        let verticalFrameWidth = verticalFrameHeight * inputAspectRatio
+        let verticalFrameArea = verticalFrameWidth * verticalFrameHeight
+        
+        
+        let horizontalFrameWidth = screenWidth / 2
+        let horizontalFrameHeight = horizontalFrameWidth / inputAspectRatio
+        let horizontalFrameArea = horizontalFrameWidth * horizontalFrameHeight
+        
+//        print("Vertical Frame Area: \(verticalFrameArea), Horizontal Frame Area: \(horizontalFrameArea)")
+        return verticalFrameArea >= horizontalFrameArea
+    }
+        
+        
     
     private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
         switch results {
