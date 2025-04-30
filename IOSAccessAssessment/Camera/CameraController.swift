@@ -8,6 +8,7 @@
 import AVFoundation
 import UIKit
 import Vision
+import CoreGraphics
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
@@ -132,14 +133,17 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.height,
-            height: Constants.ClassConstants.inputSize.width
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
         )
         
         guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let cameraImage = ciImage.resized(to: croppedSize)
+        print("cameraImage: \(ciImage.extent)")
+        let cameraImage = ciImage
+            .resized(to: croppedSize)
 //            .croppedToCenter(size: croppedSize)
+        print("cameraImage post: \(cameraImage.extent)")
         
         var depthImage: CIImage? = nil
         if (!isLidarDeviceAvailable) {
@@ -156,9 +160,11 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // TODO: Check why does this lead to an error on orientation change
         let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
         
-        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: croppedSize)
+        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer)
 //            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
 //            .croppedToCenter(size: croppedSize)
+        print("depthImage: \(depthImage?.extent)")
+        depthImage = depthImage!.resized(to: croppedSize)
         
         let end = DispatchTime.now()
         

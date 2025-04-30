@@ -143,6 +143,10 @@ class SegmentationPipeline: ObservableObject {
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
+            // Resize the ciImage
+            let resizedImage = cIImage.resized(to: CGSize(width: Constants.ClassConstants.inputSize.width,
+                                                            height: Constants.ClassConstants.inputSize.height))
+            
             self.isProcessing = true
             let segmentationResults = self.processSegmentationRequest(with: cIImage)
             guard let segmentationImage = segmentationResults?.segmentationImage else {

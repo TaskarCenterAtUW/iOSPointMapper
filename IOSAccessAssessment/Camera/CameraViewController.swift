@@ -34,9 +34,10 @@ class CameraViewController: UIViewController {
     private func setUp(session: AVCaptureSession) {
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         // MARK: Temporary changes to align the camera and segmentation frames
-        previewLayer.videoGravity = AVLayerVideoGravity.resize//.resizeAspectFill
+        previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
 //        previewLayer.translatesAutoresizingMaskIntoConstraints = false
         previewLayer.frame = self.frameRect
+        print(self.frameRect)
 //
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)

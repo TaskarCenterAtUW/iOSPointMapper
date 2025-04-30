@@ -35,14 +35,36 @@ struct ContentView: View {
             if isChangesetOpened {
                 if manager?.dataAvailable ?? false{
                     ZStack {
-                        HostedCameraViewController(session: manager!.controller.captureSession,
-                                                   frameRect: VerticalFrame.getColumnFrame(
-                                                    width: UIScreen.main.bounds.width,
-                                                    height: UIScreen.main.bounds.height,
-                                                    row: 0)
+//                        HostedCameraViewController(session: manager!.controller.captureSession,
+//                                                   frameRect: VerticalFrame.getColumnFrame(
+//                                                    width: UIScreen.main.bounds.width,
+//                                                    height: UIScreen.main.bounds.height,
+//                                                    row: 0)
+//                        )
+//                        HostedSegmentationViewController(
+//                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+////                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+//                                                         frameRect: VerticalFrame.getColumnFrame(
+//                                                            width: UIScreen.main.bounds.width,
+//                                                            height: UIScreen.main.bounds.height,
+//                                                            row: 1)
+//                        )
+                        HostedSegmentationViewController(
+                            segmentationImage: Binding(
+                                get: { manager?.cameraUIImage ?? UIImage() },
+                                set: { manager?.cameraUIImage = $0 }
+                            ),
+//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+                                                         frameRect: VerticalFrame.getColumnFrame(
+                                                            width: UIScreen.main.bounds.width,
+                                                            height: UIScreen.main.bounds.height,
+                                                            row: 0)
                         )
                         HostedSegmentationViewController(
-                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+                            segmentationImage: Binding(
+                                get: { manager?.depthUIImage ?? UIImage() },
+                                set: { manager?.depthUIImage = $0 }
+                            ),
 //                            segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,

@@ -29,6 +29,10 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
     
+    // Temporary image data
+    @Published var cameraUIImage: UIImage?
+    @Published var depthUIImage: UIImage?
+    
     let controller: CameraController
     var cancellables = Set<AnyCancellable>()
     var session: AVCaptureSession { controller.captureSession }
@@ -61,9 +65,15 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
             if !self.isProcessingCapturedResult {
-                let previousImage = self.sharedImageData?.cameraImage
+                let previousImage = self.sharedImageData?.depthImage
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
+                
+                let ciContext = CIContext()
+                let cameraCGImage = ciContext.createCGImage(cameraImage, from: cameraImage.extent)
+                let depthCGImage = ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
+                self.cameraUIImage = UIImage(cgImage: cameraCGImage!, scale: 1.0, orientation: .right)
+                self.depthUIImage = UIImage(cgImage: depthCGImage!, scale: 1.0, orientation: .right)
                 
 //                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
                 self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage)
