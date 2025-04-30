@@ -30,6 +30,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     @Published var dataAvailable = false
     
     // Temporary image data
+    var ciContext = CIContext()
     @Published var cameraUIImage: UIImage?
     @Published var depthUIImage: UIImage?
     
@@ -69,9 +70,8 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 
-                let ciContext = CIContext()
-                let cameraCGImage = ciContext.createCGImage(cameraImage, from: cameraImage.extent)
-                let depthCGImage = ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
+                let cameraCGImage = self.ciContext.createCGImage(cameraImage, from: cameraImage.extent)
+                let depthCGImage = self.ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
                 self.cameraUIImage = UIImage(cgImage: cameraCGImage!, scale: 1.0, orientation: .right)
                 self.depthUIImage = UIImage(cgImage: depthCGImage!, scale: 1.0, orientation: .right)
                 

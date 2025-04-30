@@ -131,47 +131,56 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let start = DispatchTime.now()
         
-        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
-        let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
-        )
-        
-        guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        print("cameraImage: \(ciImage.extent)")
-        let cameraImage = ciImage
-            .resized(to: croppedSize)
-//            .croppedToCenter(size: croppedSize)
-        print("cameraImage post: \(cameraImage.extent)")
+        guard let cameraPixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
+        let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
         
         var depthImage: CIImage? = nil
         if (!isLidarDeviceAvailable) {
             delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
             return
         }
-        
         guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
         let depthData = syncedDepthData.depthData
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
-        let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-        let depthSideLength = min(depthWidth, depthHeight)
-        // TODO: Check why does this lead to an error on orientation change
-        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
-        
-        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer)
-//            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
-//            .croppedToCenter(size: croppedSize)
-        print("depthImage: \(depthImage?.extent)")
-        depthImage = depthImage!.resized(to: croppedSize)
+        depthImage = orientAndFixDepthFrame(depthPixelBuffer)
         
         let end = DispatchTime.now()
-        
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
 //        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
         
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
+    }
+    
+    func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
+        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
+        )
+        let ciImage = CIImage(cvPixelBuffer: frame)
+        let cameraImage = ciImage
+            .resized(to: croppedSize)
+//            .croppedToCenter(size: croppedSize)
+        return cameraImage
+    }
+    
+    func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
+        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
+        )
+        let depthWidth = CVPixelBufferGetWidth(frame)
+        let depthHeight = CVPixelBufferGetHeight(frame)
+        let depthSideLength = min(depthWidth, depthHeight)
+        // TODO: Check why does this lead to an error on orientation change
+        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
+        
+        var depthImage = CIImage(cvPixelBuffer: frame)
+//            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
+//            .croppedToCenter(size: croppedSize)
+        depthImage = depthImage.resized(to: croppedSize)
+        return depthImage
     }
 }
