@@ -35,15 +35,15 @@ struct ContentView: View {
             if isChangesetOpened {
                 if manager?.dataAvailable ?? false{
                     GeometryReader { geometry in
-                        let isVertical = isStackVertical(screenWidth: geometry.size.width, screenHeight: geometry.size.height)
+                        let (isVertical, frameSize) = getIsStackVerticalandFrameSize(screenWidth: geometry.size.width, screenHeight: geometry.size.height)
                         
                         if isVertical {
                             VStack {
-                                mainView()
+                                mainView(frameSize: frameSize)
                             }
                         } else {
                             HStack {
-                                mainView()
+                                mainView(frameSize: frameSize)
                             }
                         }
                     }
@@ -100,7 +100,7 @@ struct ContentView: View {
     }
     
     @ViewBuilder
-    private func mainView() -> some View {
+    private func mainView(frameSize: CGSize) -> some View {
         ZStack {
             HostedCameraViewController(session: manager!.controller.captureSession,
                                        frameRect: VerticalFrame.getColumnFrame(
@@ -133,8 +133,9 @@ struct ContentView: View {
     
     /**
      This function is used to determine if the stack will be horizontal or vertical
+     MARK: This may be too complex for just a layout decision
      */
-    private func isStackVertical(screenWidth: CGFloat, screenHeight: CGFloat) -> Bool {
+    private func getIsStackVerticalandFrameSize(screenWidth: CGFloat, screenHeight: CGFloat) -> (Bool, CGSize) {
         print("Screen Width: \(screenWidth), Screen Height: \(screenHeight)")
         let inputWidth = Constants.ClassConstants.inputSize.width
         let inputHeight = Constants.ClassConstants.inputSize.height
@@ -150,7 +151,9 @@ struct ContentView: View {
         let horizontalFrameArea = horizontalFrameWidth * horizontalFrameHeight
         
 //        print("Vertical Frame Area: \(verticalFrameArea), Horizontal Frame Area: \(horizontalFrameArea)")
-        return verticalFrameArea >= horizontalFrameArea
+        let isStackVertical = verticalFrameArea >= horizontalFrameArea
+        let frameSize = isStackVertical ? CGSize(width: verticalFrameWidth, height: verticalFrameHeight) : CGSize(width: horizontalFrameWidth, height: horizontalFrameHeight)
+        return (isStackVertical, frameSize)
     }
         
         
