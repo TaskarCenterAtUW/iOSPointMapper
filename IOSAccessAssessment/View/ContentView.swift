@@ -31,12 +31,11 @@ struct ContentView: View {
     var isCameraStoppedPayload = ["isStopped": true]
     
     var body: some View {
-        VStack {
-            if isChangesetOpened {
-                if manager?.dataAvailable ?? false{
-                    GeometryReader { geometry in
-                        let (isVertical, frameSize) = getIsStackVerticalandFrameSize(screenWidth: geometry.size.width, screenHeight: geometry.size.height)
-                        
+        GeometryReader { geometry in
+            let (isVertical, frameSize) = getIsStackVerticalandFrameSize(screenWidth: geometry.size.width, screenHeight: geometry.size.height)
+            ZStack {
+                if isChangesetOpened {
+                    if manager?.dataAvailable ?? false {
                         if isVertical {
                             VStack {
                                 mainView(frameSize: frameSize)
@@ -47,19 +46,21 @@ struct ContentView: View {
                             }
                         }
                     }
-                }
-                else {
+                    else {
+                        VStack {
+                            SpinnerView()
+                            Text("Camera settings in progress")
+                                .padding(.top, 20)
+                        }
+                    }
+                } else {
                     VStack {
                         SpinnerView()
-                        Text("Camera settings in progress")
+                        Text("Changeset opening in progress")
                             .padding(.top, 20)
                     }
                 }
-            } else {
-                SpinnerView()
-                Text("Changeset opening in progress")
-                    .padding(.top, 20)
-            }
+            }.frame(width: geometry.size.width, height: geometry.size.height)
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
@@ -101,22 +102,20 @@ struct ContentView: View {
     
     @ViewBuilder
     private func mainView(frameSize: CGSize) -> some View {
-        ZStack {
-            HostedCameraViewController(session: manager!.controller.captureSession,
-                                       frameRect: VerticalFrame.getColumnFrame(
-                                        width: UIScreen.main.bounds.width,
-                                        height: UIScreen.main.bounds.height,
-                                        row: 0)
-            )
-            HostedSegmentationViewController(
-                segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-                //                            segmentationImage: $segmentationModel.maskedSegmentationResults,
-                frameRect: VerticalFrame.getColumnFrame(
-                    width: UIScreen.main.bounds.width,
-                    height: UIScreen.main.bounds.height,
-                    row: 1)
-            )
-        }
+        HostedCameraViewController(session: manager!.controller.captureSession,
+                                   frameRect: VerticalFrame.getColumnFrame(
+                                    width: UIScreen.main.bounds.width,
+                                    height: UIScreen.main.bounds.height,
+                                    row: 0)
+        ).frame(width: frameSize.width, height: frameSize.height)
+        HostedSegmentationViewController(
+            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+            //                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+            frameRect: VerticalFrame.getColumnFrame(
+                width: UIScreen.main.bounds.width,
+                height: UIScreen.main.bounds.height,
+                row: 1)
+        ).frame(width: frameSize.width, height: frameSize.height)
         Button {
             //                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
             objectLocation.setLocationAndHeading()
@@ -136,7 +135,6 @@ struct ContentView: View {
      MARK: This may be too complex for just a layout decision
      */
     private func getIsStackVerticalandFrameSize(screenWidth: CGFloat, screenHeight: CGFloat) -> (Bool, CGSize) {
-        print("Screen Width: \(screenWidth), Screen Height: \(screenHeight)")
         let inputWidth = Constants.ClassConstants.inputSize.width
         let inputHeight = Constants.ClassConstants.inputSize.height
         let inputAspectRatio = inputWidth / inputHeight
@@ -152,7 +150,10 @@ struct ContentView: View {
         
 //        print("Vertical Frame Area: \(verticalFrameArea), Horizontal Frame Area: \(horizontalFrameArea)")
         let isStackVertical = verticalFrameArea >= horizontalFrameArea
-        let frameSize = isStackVertical ? CGSize(width: verticalFrameWidth, height: verticalFrameHeight) : CGSize(width: horizontalFrameWidth, height: horizontalFrameHeight)
+        var frameSize = isStackVertical ? CGSize(width: verticalFrameWidth, height: verticalFrameHeight) : CGSize(width: horizontalFrameWidth, height: horizontalFrameHeight)
+        // Reduce the frame size by 20% to avoid clipping
+        frameSize.width *= 0.9
+        frameSize.height *= 0.9
         return (isStackVertical, frameSize)
     }
         

@@ -34,10 +34,15 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = self.frameRect
+//        segmentationView.frame = self.frameRect
         segmentationView.contentMode = .scaleAspectFill
         self.view.addSubview(segmentationView)
         self.segmentationView.image = self.segmentationImage
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        segmentationView.frame = view.bounds
     }
 }
 

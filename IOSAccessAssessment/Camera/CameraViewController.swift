@@ -36,7 +36,7 @@ class CameraViewController: UIViewController {
         // MARK: Temporary changes to align the camera and segmentation frames
         previewLayer.videoGravity = AVLayerVideoGravity.resize//.resizeAspectFill
 //        previewLayer.translatesAutoresizingMaskIntoConstraints = false
-        previewLayer.frame = self.frameRect
+//        previewLayer.frame = self.frameRect
 //
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)
@@ -48,6 +48,11 @@ class CameraViewController: UIViewController {
             self!.view.layer.addSublayer(self!.previewLayer)
             //self!.view.layer.addSublayer(self!.detectionLayer)
         }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer.frame = view.bounds
     }
 }
 
