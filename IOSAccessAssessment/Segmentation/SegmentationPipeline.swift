@@ -134,7 +134,8 @@ class SegmentationPipeline: ObservableObject {
         self.completionHandler = completionHandler
     }
     
-    func processRequest(with cIImage: CIImage, previousImage: CIImage?, additionalPayload: [String: Any] = [:]) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, deviceOrientation: UIDeviceOrientation = .portrait,
+                        additionalPayload: [String: Any] = [:]) {
         if self.isProcessing {
             DispatchQueue.main.async {
                 self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
@@ -144,7 +145,10 @@ class SegmentationPipeline: ObservableObject {
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.isProcessing = true
-            let segmentationResults = self.processSegmentationRequest(with: cIImage)
+            let segmentationResults = self.processSegmentationRequest(
+                with: cIImage,
+                orientation: CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: deviceOrientation)
+            )
             guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
                     self.isProcessing = false
@@ -167,16 +171,23 @@ class SegmentationPipeline: ObservableObject {
                 self.objects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
                 
                 // Temporary
-                self.grayscaleToColorMasker.inputImage = segmentationImage
-                self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
-                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
-                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
-                                                         scale: 1.0, orientation: .downMirrored)
+//                self.grayscaleToColorMasker.inputImage = segmentationImage
+//                self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
+//                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
+//                self.segmentationResultUIImage = UIImage(
+//                    ciImage: self.grayscaleToColorMasker.outputImage!,
+//                    scale: 1.0, orientation: .up) // Orientation is handles in processSegmentationRequest
                 
                 // Temporary
-//                self.segmentationResultUIImage = UIImage(
-//                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
-//                    scale: 1.0, orientation: .leftMirrored)
+                self.segmentationResultUIImage = UIImage(
+                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+                    scale: 1.0, orientation: .up)
+                
+//                if transformMatrix != nil {
+//                    self.segmentationResultUIImage = UIImage(
+//                        ciImage: self.transformImage(for: previousImage!, using: transformMatrix!)!,
+//                        scale: 1.0, orientation: .right)
+//                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
@@ -205,12 +216,16 @@ extension SegmentationPipeline {
     
     // MARK: Currently we are relying on the synchronous nature of the request handler
     // Need to check if this is always guaranteed.
-    func processSegmentationRequest(with cIImage: CIImage) -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
+    func processSegmentationRequest(with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up)
+    -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
         do {
             let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
             self.configureSegmentationRequest(request: segmentationRequest)
             // TODO: Check if this is the correct orientation, based on which the UIImage orientation will also be set
-            let segmentationRequestHandler = VNImageRequestHandler(ciImage: cIImage, orientation: .right, options: [:])
+            let segmentationRequestHandler = VNImageRequestHandler(
+                ciImage: cIImage,
+                orientation: orientation,
+                options: [:])
             try segmentationRequestHandler.perform([segmentationRequest])
             
             guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
@@ -247,7 +262,7 @@ extension SegmentationPipeline {
         do {
             let contourRequest = VNDetectContoursRequest()
             self.configureContourRequest(request: contourRequest)
-            let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: .right, options: [:])
+            let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: .up, options: [:])
             try contourRequestHandler.perform([contourRequest])
             guard let contourResults = contourRequest.results else {return nil}
             
@@ -352,10 +367,10 @@ extension SegmentationPipeline {
 extension SegmentationPipeline {
     /// Computes the homography transform for the reference image and the floating image.
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
-    func getHomographyTransform(referenceImage referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
+    func getHomographyTransform(referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
         do {
             let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
-            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
+            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .up, options: [:])
             try transformRequestHandler.perform([transformRequest])
             guard let transformResult = transformRequest.results else {return nil}
             let transformMatrix = transformResult.first?.warpTransform

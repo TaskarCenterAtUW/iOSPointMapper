@@ -8,6 +8,7 @@
 import AVFoundation
 import UIKit
 import Vision
+import CoreGraphics
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
@@ -48,6 +49,8 @@ class CameraController: NSObject, ObservableObject {
             depthDataOutput?.isFilteringEnabled = isFilteringEnabled
         }
     }
+    
+    let ciContext = CIContext(options: nil)
     
     override init() {
         super.init()
@@ -130,42 +133,69 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         let start = DispatchTime.now()
         
-        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
-        let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.height,
-            height: Constants.ClassConstants.inputSize.width
-        )
+        guard let cameraPixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
+        let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
         
-        guard let pixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let cameraImage = ciImage.resized(to: croppedSize)
-//            .croppedToCenter(size: croppedSize)
-        
-        var depthImage: CIImage? = nil
         if (!isLidarDeviceAvailable) {
-            delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
+            delegate?.onNewData(cameraImage: cameraImage, depthImage: nil)
             return
         }
         
         guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
         let depthData = syncedDepthData.depthData
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        let depthWidth = CVPixelBufferGetWidth(depthPixelBuffer)
-        let depthHeight = CVPixelBufferGetHeight(depthPixelBuffer)
-        let depthSideLength = min(depthWidth, depthHeight)
-        // TODO: Check why does this lead to an error on orientation change
-        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
-        
-        depthImage = CIImage(cvPixelBuffer: depthPixelBuffer).resized(to: croppedSize)
-//            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
-//            .croppedToCenter(size: croppedSize)
+        let depthImage = orientAndFixDepthFrame(depthPixelBuffer)
         
         let end = DispatchTime.now()
-        
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
         let timeInterval = Double(nanoTime) / 1_000_000
 //        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
         
         delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
+    }
+}
+
+// Functions to orient and fix the camera and depth frames
+extension CameraController {
+    func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
+        )
+        let ciImage = CIImage(cvPixelBuffer: frame)
+        return resizeAspectAndFill(ciImage, to: croppedSize)
+    }
+    
+    func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
+        )
+        
+        let depthImage = CIImage(cvPixelBuffer: frame)
+        return resizeAspectAndFill(depthImage, to: croppedSize)
+    }
+    
+    private func resizeAspectAndFill(_ image: CIImage, to size: CGSize) -> CIImage {
+        let sourceAspect = image.extent.width / image.extent.height
+        let destAspect = size.width / size.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect > destAspect {
+            let scale = size.height / image.extent.height
+            let newWidth = image.extent.width * scale
+            let xOffset = (size.width - newWidth) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = size.width / image.extent.width
+            let newHeight = image.extent.height * scale
+            let yOffset = (size.height - newHeight) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        let newImage = image.transformed(by: transform)
+        let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
+        return croppedImage
     }
 }
