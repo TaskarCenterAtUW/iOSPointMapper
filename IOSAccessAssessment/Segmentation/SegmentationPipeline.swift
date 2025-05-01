@@ -134,7 +134,8 @@ class SegmentationPipeline: ObservableObject {
         self.completionHandler = completionHandler
     }
     
-    func processRequest(with cIImage: CIImage, previousImage: CIImage?, additionalPayload: [String: Any] = [:]) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, orientation: UIDeviceOrientation = .portrait,
+                        additionalPayload: [String: Any] = [:]) {
         if self.isProcessing {
             DispatchQueue.main.async {
                 self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
@@ -143,12 +144,8 @@ class SegmentationPipeline: ObservableObject {
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
-            // Resize the ciImage
-            let resizedImage = cIImage.resized(to: CGSize(width: Constants.ClassConstants.inputSize.width,
-                                                            height: Constants.ClassConstants.inputSize.height))
-            
             self.isProcessing = true
-            let segmentationResults = self.processSegmentationRequest(with: cIImage)
+            let segmentationResults = self.processSegmentationRequest(with: cIImage, orientation: orientation)
             guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
                     self.isProcessing = false
@@ -209,12 +206,16 @@ extension SegmentationPipeline {
     
     // MARK: Currently we are relying on the synchronous nature of the request handler
     // Need to check if this is always guaranteed.
-    func processSegmentationRequest(with cIImage: CIImage) -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
+    func processSegmentationRequest(with cIImage: CIImage, orientation: UIDeviceOrientation = .portrait)
+    -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
         do {
             let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
             self.configureSegmentationRequest(request: segmentationRequest)
             // TODO: Check if this is the correct orientation, based on which the UIImage orientation will also be set
-            let segmentationRequestHandler = VNImageRequestHandler(ciImage: cIImage, orientation: .right, options: [:])
+            let segmentationRequestHandler = VNImageRequestHandler(
+                ciImage: cIImage,
+                orientation: CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: orientation),
+                options: [:])
             try segmentationRequestHandler.perform([segmentationRequest])
             
             guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}

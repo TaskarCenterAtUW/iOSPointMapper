@@ -25,7 +25,11 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     }
     // TODO: Currently, the orientation is redundant until we start using other orientation types
     //  It does not seem to be used anywhere currently
-    @Published var orientation = UIDevice.current.orientation
+    @Published var orientation = UIDevice.current.orientation {
+        didSet {
+            
+        }
+    }
     @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
     
@@ -49,7 +53,6 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.orientation = UIDevice.current.orientation
-            print("Orientation changed to: \(self.orientation)")
         }.store(in: &cancellables)
         controller.delegate = self
     }
@@ -73,11 +76,16 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
                 
                 let cameraCGImage = self.ciContext.createCGImage(cameraImage, from: cameraImage.extent)
                 let depthCGImage = self.ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
-                self.cameraUIImage = UIImage(cgImage: cameraCGImage!, scale: 1.0, orientation: .up)
-                self.depthUIImage = UIImage(cgImage: depthCGImage!, scale: 1.0, orientation: .up)
+                self.cameraUIImage = UIImage(
+                    cgImage: cameraCGImage!, scale: 1.0,
+                    orientation: CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.orientation))
+                self.depthUIImage = UIImage(
+                    cgImage: depthCGImage!, scale: 1.0,
+                    orientation: CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.orientation))
                 
 //                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage)
+                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
+                                                          orientation: self.orientation)
                 
                 if self.dataAvailable == false {
                     self.dataAvailable = true
@@ -85,7 +93,5 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
             }
         }
     }
-
    
 }
-
