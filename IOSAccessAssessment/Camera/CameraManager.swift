@@ -27,7 +27,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     //  It does not seem to be used anywhere currently
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
-            print("Orientation changed to \(deviceOrientation)")
+//            print("Orientation changed to \(deviceOrientation)")
         }
     }
     @Published var isProcessingCapturedResult = false

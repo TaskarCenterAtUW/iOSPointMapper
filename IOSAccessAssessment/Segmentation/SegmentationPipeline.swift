@@ -182,6 +182,12 @@ class SegmentationPipeline: ObservableObject {
                 self.segmentationResultUIImage = UIImage(
                     ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .up)
+                
+//                if transformMatrix != nil {
+//                    self.segmentationResultUIImage = UIImage(
+//                        ciImage: self.transformImage(for: previousImage!, using: transformMatrix!)!,
+//                        scale: 1.0, orientation: .right)
+//                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
@@ -361,10 +367,10 @@ extension SegmentationPipeline {
 extension SegmentationPipeline {
     /// Computes the homography transform for the reference image and the floating image.
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
-    func getHomographyTransform(referenceImage referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
+    func getHomographyTransform(referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
         do {
             let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
-            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
+            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .up, options: [:])
             try transformRequestHandler.perform([transformRequest])
             guard let transformResult = transformRequest.results else {return nil}
             let transformMatrix = transformResult.first?.warpTransform
