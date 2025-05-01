@@ -49,6 +49,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.orientation = UIDevice.current.orientation
+            print("Orientation changed to: \(self.orientation)")
         }.store(in: &cancellables)
         controller.delegate = self
     }

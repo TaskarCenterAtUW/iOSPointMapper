@@ -41,14 +41,14 @@ struct ContentView: View {
 //                                                    height: UIScreen.main.bounds.height,
 //                                                    row: 0)
 //                        )
-//                        HostedSegmentationViewController(
-//                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-////                            segmentationImage: $segmentationModel.maskedSegmentationResults,
-//                                                         frameRect: VerticalFrame.getColumnFrame(
-//                                                            width: UIScreen.main.bounds.width,
-//                                                            height: UIScreen.main.bounds.height,
-//                                                            row: 1)
-//                        )
+                        HostedSegmentationViewController(
+                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+                                                         frameRect: VerticalFrame.getColumnFrame(
+                                                            width: UIScreen.main.bounds.width,
+                                                            height: UIScreen.main.bounds.height,
+                                                            row: 1)
+                        )
                         HostedSegmentationViewController(
                             segmentationImage: Binding(
                                 get: { manager?.cameraUIImage ?? UIImage() },
@@ -60,17 +60,17 @@ struct ContentView: View {
                                                             height: UIScreen.main.bounds.height,
                                                             row: 0)
                         )
-                        HostedSegmentationViewController(
-                            segmentationImage: Binding(
-                                get: { manager?.depthUIImage ?? UIImage() },
-                                set: { manager?.depthUIImage = $0 }
-                            ),
-//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
-                                                         frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 1)
-                        )
+//                        HostedSegmentationViewController(
+//                            segmentationImage: Binding(
+//                                get: { manager?.depthUIImage ?? UIImage() },
+//                                set: { manager?.depthUIImage = $0 }
+//                            ),
+////                            segmentationImage: $segmentationModel.maskedSegmentationResults,
+//                                                         frameRect: VerticalFrame.getColumnFrame(
+//                                                            width: UIScreen.main.bounds.width,
+//                                                            height: UIScreen.main.bounds.height,
+//                                                            row: 1)
+//                        )
                     }
                     Button {
 //                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)

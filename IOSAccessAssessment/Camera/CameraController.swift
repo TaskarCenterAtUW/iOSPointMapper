@@ -50,6 +50,8 @@ class CameraController: NSObject, ObservableObject {
         }
     }
     
+    let ciContext = CIContext(options: nil)
+    
     override init() {
         super.init()
         do {
@@ -156,34 +158,21 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
 // Functions to orient and fix the camera and depth frames
 extension CameraController {
     func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
-        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.width,
             height: Constants.ClassConstants.inputSize.height
         )
         let ciImage = CIImage(cvPixelBuffer: frame)
-//        let cameraImage = ciImage
-//            .resized(to: croppedSize)
-//            .croppedToCenter(size: croppedSize)
         return resizeAspectAndFill(ciImage, to: croppedSize)
     }
     
     func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
-        // FIXME: The temporary solution (mostly for iPad) of inverting the height and the width need to fixed ASAP
         let croppedSize: CGSize = CGSize(
             width: Constants.ClassConstants.inputSize.width,
             height: Constants.ClassConstants.inputSize.height
         )
-//        let depthWidth = CVPixelBufferGetWidth(frame)
-//        let depthHeight = CVPixelBufferGetHeight(frame)
-//        let depthSideLength = min(depthWidth, depthHeight)
-        // TODO: Check why does this lead to an error on orientation change
-//        let scale: Int = Int(floor(256 / CGFloat(depthSideLength)) + 1)
         
         let depthImage = CIImage(cvPixelBuffer: frame)
-//            .resized(to: CGSize(width: depthWidth * scale, height: depthHeight * scale))
-//            .croppedToCenter(size: croppedSize)
-//        depthImage = depthImage.resized(to: croppedSize)
         return resizeAspectAndFill(depthImage, to: croppedSize)
     }
     
