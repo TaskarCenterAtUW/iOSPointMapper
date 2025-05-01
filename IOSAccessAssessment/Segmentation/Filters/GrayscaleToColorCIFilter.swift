@@ -98,6 +98,6 @@ class GrayscaleToColorCIFilter: CIFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])?.oriented(.downMirrored)
+        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])//?.oriented(.downMirrored)
     }
 }

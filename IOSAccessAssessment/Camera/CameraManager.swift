@@ -27,7 +27,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     //  It does not seem to be used anywhere currently
     @Published var orientation = UIDevice.current.orientation {
         didSet {
-            
+            print("Orientation changed to \(orientation)")
         }
     }
     @Published var isProcessingCapturedResult = false
@@ -70,7 +70,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
         DispatchQueue.main.async {
             if !self.isProcessingCapturedResult {
-                let previousImage = self.sharedImageData?.depthImage
+                let previousImage = self.sharedImageData?.cameraImage
                 self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
                 self.sharedImageData?.depthImage = depthImage
                 

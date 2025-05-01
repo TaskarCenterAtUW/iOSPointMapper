@@ -171,8 +171,9 @@ class SegmentationPipeline: ObservableObject {
                 self.grayscaleToColorMasker.inputImage = segmentationImage
                 self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
                 self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
-                self.segmentationResultUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!,
-                                                         scale: 1.0, orientation: .downMirrored)
+                self.segmentationResultUIImage = UIImage(
+                    ciImage: self.grayscaleToColorMasker.outputImage!,
+                    scale: 1.0, orientation: .up)
                 
                 // Temporary
 //                self.segmentationResultUIImage = UIImage(
