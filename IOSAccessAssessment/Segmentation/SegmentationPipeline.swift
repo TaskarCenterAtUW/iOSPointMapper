@@ -369,8 +369,8 @@ extension SegmentationPipeline {
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
     func getHomographyTransform(referenceImage: CIImage, floatingImage: CIImage) -> simd_float3x3? {
         do {
-            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage)
-            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .up, options: [:])
+            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage, orientation: .right)
+            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: .right, options: [:])
             try transformRequestHandler.perform([transformRequest])
             guard let transformResult = transformRequest.results else {return nil}
             let transformMatrix = transformResult.first?.warpTransform
