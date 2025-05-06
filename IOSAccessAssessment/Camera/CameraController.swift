@@ -22,7 +22,21 @@ protocol CaptureDataReceiver: AnyObject {
         The depth image is made optional in case the LiDAR sensor is not present
             
      */
-    func onNewData(cameraImage: CIImage, depthImage: CIImage?)
+    func onNewData(cameraPixelBuffer: CVPixelBuffer, depthPixelBuffer: CVPixelBuffer?)
+}
+
+enum CameraControllerError: Error, LocalizedError {
+    case cameraUnavailable
+    case depthDataUnavailable
+    
+    var errorDescription: String? {
+        switch self {
+        case .cameraUnavailable:
+            return "Camera is unavailable."
+        case .depthDataUnavailable:
+            return "Depth data is unavailable."
+        }
+    }
 }
 
 class CameraController: NSObject, ObservableObject {
@@ -49,8 +63,6 @@ class CameraController: NSObject, ObservableObject {
             depthDataOutput?.isFilteringEnabled = isFilteringEnabled
         }
     }
-    
-    let ciContext = CIContext(options: nil)
     
     override init() {
         super.init()
@@ -131,71 +143,19 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         // Retrieve the synchronized depth and sample buffer container objects.
         guard let syncedVideoData = synchronizedDataCollection.synchronizedData(for: videoDataOutput) as? AVCaptureSynchronizedSampleBufferData else { return }
         
-        let start = DispatchTime.now()
-        
         guard let cameraPixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
-        let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
+//        let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
         
         if (!isLidarDeviceAvailable) {
-            delegate?.onNewData(cameraImage: cameraImage, depthImage: nil)
+            delegate?.onNewData(cameraPixelBuffer: cameraPixelBuffer, depthPixelBuffer: nil)
             return
         }
         
         guard let syncedDepthData = synchronizedDataCollection.synchronizedData(for: depthDataOutput) as? AVCaptureSynchronizedDepthData else { return }
         let depthData = syncedDepthData.depthData
         let depthPixelBuffer = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32).depthDataMap
-        let depthImage = orientAndFixDepthFrame(depthPixelBuffer)
+//        let depthImage = orientAndFixDepthFrame(depthPixelBuffer)
         
-        let end = DispatchTime.now()
-        let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-        let timeInterval = Double(nanoTime) / 1_000_000
-//        print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
-        
-        delegate?.onNewData(cameraImage: cameraImage, depthImage: depthImage)
-    }
-}
-
-// Functions to orient and fix the camera and depth frames
-extension CameraController {
-    func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
-        let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
-        )
-        let ciImage = CIImage(cvPixelBuffer: frame)
-        return resizeAspectAndFill(ciImage, to: croppedSize)
-    }
-    
-    func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
-        let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
-        )
-        
-        let depthImage = CIImage(cvPixelBuffer: frame)
-        return resizeAspectAndFill(depthImage, to: croppedSize)
-    }
-    
-    private func resizeAspectAndFill(_ image: CIImage, to size: CGSize) -> CIImage {
-        let sourceAspect = image.extent.width / image.extent.height
-        let destAspect = size.width / size.height
-        
-        var transform: CGAffineTransform = .identity
-        if sourceAspect > destAspect {
-            let scale = size.height / image.extent.height
-            let newWidth = image.extent.width * scale
-            let xOffset = (size.width - newWidth) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = size.width / image.extent.width
-            let newHeight = image.extent.height * scale
-            let yOffset = (size.height - newHeight) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
-        }
-        let newImage = image.transformed(by: transform)
-        let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
-        return croppedImage
+        delegate?.onNewData(cameraPixelBuffer: cameraPixelBuffer, depthPixelBuffer: depthPixelBuffer)
     }
 }

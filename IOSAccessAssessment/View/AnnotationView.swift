@@ -156,7 +156,7 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
-        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
         
 //        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
 //                                            height: sharedImageData.segmentationLabelImage!.extent.height)

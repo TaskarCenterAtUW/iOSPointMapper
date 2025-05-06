@@ -147,7 +147,7 @@ class SegmentationPipeline: ObservableObject {
             self.isProcessing = true
             let segmentationResults = self.processSegmentationRequest(
                 with: cIImage,
-                orientation: CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: deviceOrientation)
+                orientation: .up//CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: deviceOrientation)
             )
             guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
@@ -176,18 +176,18 @@ class SegmentationPipeline: ObservableObject {
 //                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
 //                self.segmentationResultUIImage = UIImage(
 //                    ciImage: self.grayscaleToColorMasker.outputImage!,
-//                    scale: 1.0, orientation: .up) // Orientation is handles in processSegmentationRequest
+//                    scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
                 
                 // Temporary
                 self.segmentationResultUIImage = UIImage(
                     ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .up)
                 
-//                if transformMatrix != nil {
-//                    self.segmentationResultUIImage = UIImage(
-//                        ciImage: self.transformImage(for: previousImage!, using: transformMatrix!)!,
-//                        scale: 1.0, orientation: .right)
-//                }
+                if transformMatrix != nil {
+                    self.segmentationResultUIImage = UIImage(
+                        ciImage: self.transformImage(for: previousImage!, using: transformMatrix!)!,
+                        scale: 1.0, orientation: .right)
+                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
@@ -258,11 +258,12 @@ extension SegmentationPipeline {
     /**
         Function to rasterize the detected objects on the image. Creates a unique request and handler since it is run on a separate thread
     */
-    private func getObjectsFromBinaryImage(for binaryImage: CIImage, classLabel: UInt8) -> [DetectedObject]? {
+    private func getObjectsFromBinaryImage(for binaryImage: CIImage, classLabel: UInt8,
+                                           orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
         do {
             let contourRequest = VNDetectContoursRequest()
             self.configureContourRequest(request: contourRequest)
-            let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: .up, options: [:])
+            let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: orientation, options: [:])
             try contourRequestHandler.perform([contourRequest])
             guard let contourResults = contourRequest.results else {return nil}
             
@@ -338,7 +339,7 @@ extension SegmentationPipeline {
         Function to get the detected objects from the segmentation image.
             Processes each class in parallel to get the objects.
      */
-    func processContourRequest(from segmentationImage: CIImage) -> [DetectedObject]? {
+    func processContourRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
         var objectList: [DetectedObject] = []
         let lock = NSLock()
         
@@ -346,7 +347,7 @@ extension SegmentationPipeline {
         DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
             let classLabel = self.selectionClassLabels[index]
             let mask = self.binaryMaskProcessor.apply(to: segmentationImage, targetValue: classLabel)
-            let objects = self.getObjectsFromBinaryImage(for: mask!, classLabel: classLabel)
+            let objects = self.getObjectsFromBinaryImage(for: mask!, classLabel: classLabel, orientation: orientation)
             
             lock.lock()
             objectList.append(contentsOf: objects ?? [])
