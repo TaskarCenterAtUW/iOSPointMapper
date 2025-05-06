@@ -11,7 +11,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-class WarpPointsProcessor {
+struct WarpPointsProcessor {
     var inputImage: CIImage?
     
     // Metal-related properties
@@ -34,9 +34,9 @@ class WarpPointsProcessor {
         self.pipeline = pipeline
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+//    required init?(coder: NSCoder) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
 
     func apply(to inputPoints: [SIMD2<Float>], transformMatrix: simd_float3x3) -> [SIMD2<Float>]? {
         let inputBuffer = device.makeBuffer(bytes: inputPoints,

@@ -34,6 +34,9 @@
 		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
+		A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */; };
+		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
+		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */; };
 		A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */; };
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
@@ -127,6 +130,9 @@
 		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
+		A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
+		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
+		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskProcessor.swift; sourceTree = "<group>"; };
 		A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourObjectRasterizer.swift; sourceTree = "<group>"; };
 		A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImageData.swift; sourceTree = "<group>"; };
@@ -308,6 +314,16 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		A3B2DDBB2DC99212003416FB /* Functions */ = {
+			isa = PBXGroup;
+			children = (
+				A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */,
+				A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */,
+				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
+			);
+			path = Functions;
+			sourceTree = "<group>";
+		};
 		A3BB5AF92DB21080008673ED /* Filters */ = {
 			isa = PBXGroup;
 			children = (
@@ -388,6 +404,7 @@
 		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
 			isa = PBXGroup;
 			children = (
+				A3B2DDBB2DC99212003416FB /* Functions */,
 				A3BB5AFC2DB2EE1A008673ED /* Helpers */,
 				A3BB5AF92DB21080008673ED /* Filters */,
 				A3C22FD42CF1A97300533BF7 /* SegmentationModel.swift */,
@@ -554,7 +571,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskProcessor.swift in Sources */,
+				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
 				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
+				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
+				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,

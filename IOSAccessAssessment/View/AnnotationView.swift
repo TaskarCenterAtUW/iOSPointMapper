@@ -146,8 +146,8 @@ struct AnnotationView: View {
     func refreshView() {
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
-        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .right)
-//        self.cameraUIImage = UIImage(ciImage: sharedImageData.depthImage!, scale: 1.0, orientation: .right)
+        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
+//        self.cameraUIImage = UIImage(ciImage: sharedImageData.depthImage!, scale: 1.0, orientation: .up)
         
         guard index < sharedImageData.segmentedIndices.count else {
             print("Index out of bounds for segmentedIndices in AnnotationView")
@@ -156,27 +156,29 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
-        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .downMirrored)
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
         
 //        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
 //                                            height: sharedImageData.segmentationLabelImage!.extent.height)
-//        let segmentationObjects = sharedImageData.objects.filter { objectID, object in
+//        let segmentationObjects = sharedImageData.detectedObjects.filter { objectID, object in
 //            object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]] &&
 //            object.isCurrent == true
 //        } .map({ $0.value })
 //        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
-//        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .leftMirrored)
+//        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .up)
     }
     
     func confirmAnnotation() {
         var depthValue: Float = 0.0
-        if let depthMapProcessor = depthMapProcessor {
-            depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
-                         depthImage: sharedImageData.depthImage!,
+        if let depthMapProcessor = depthMapProcessor,
+           let segmentationLabelImage = sharedImageData.segmentationLabelImage,
+           let depthImage = sharedImageData.depthImage {
+            depthValue = depthMapProcessor.getDepth(segmentationLabelImage: segmentationLabelImage,
+                         depthImage: depthImage,
                          classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
             
             // MARK: Experimentation with detected object
-//            let detectedObject = sharedImageData.objects.filter { objectID, object in
+//            let detectedObject = sharedImageData.detectedObjects.filter { objectID, object in
 //                object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]]
 //            }
 //            if let object = detectedObject.first {
@@ -187,7 +189,7 @@ struct AnnotationView: View {
 //                print("Depth Value for Label: \(depthValue) Object: \(depthValueObject)")
 //            }
         } else {
-            print("depthMapProcessor is nil. Fallback to 0.0")
+            print("depthMapProcessor or segmentationLabelImage is nil. Falling back to default depth value.")
         }
         let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil

@@ -8,185 +8,192 @@
 import UIKit
 import Accelerate
 
-// TODO: Check if any of the methods can be sped up using GPU
-// TODO: Check if the forced unwrapping used all over the functions is safe in the given context
-func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
-    let width = CVPixelBufferGetWidth(pixelBuffer)
-    let height = CVPixelBufferGetHeight(pixelBuffer)
-    let cropX = (Float(width) - Float(cropSize.width)) / 2
-    let cropY = (Float(height) - Float(cropSize.height)) / 2
-    var croppedPixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(cropSize.width), Int(cropSize.height), CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &croppedPixelBuffer)
-    guard status == kCVReturnSuccess, let outputBuffer = croppedPixelBuffer else { return nil }
-
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferLockBaseAddress(outputBuffer, [])
-
-    let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
-    let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
-
-    let inputBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-    let outputBytesPerRow = CVPixelBufferGetBytesPerRow(outputBuffer)
-
-    let cropXOffset = Int(cropX) * 4
-    let cropYOffset = Int(cropY) * inputBytesPerRow
-    for y in 0..<Int(cropSize.height) {
-        let inputRow = inputBaseAddress.advanced(by: cropYOffset + cropXOffset + y * inputBytesPerRow)
-        let outputRow = outputBaseAddress.advanced(by: y * outputBytesPerRow)
-        memcpy(outputRow, inputRow, Int(cropSize.width) * 4)
-    }
-
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferUnlockBaseAddress(outputBuffer, [])
-
-    return outputBuffer
-}
-
-func resizePixelBuffer(_ pixelBuffer: CVPixelBuffer, width: Int, height: Int) -> CVPixelBuffer? {
-    var resizedPixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &resizedPixelBuffer)
-    guard status == kCVReturnSuccess, let outputBuffer = resizedPixelBuffer else { return nil }
-
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferLockBaseAddress(outputBuffer, [])
-
-    let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
-    let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
-
-    var inBuffer = vImage_Buffer(data: inputBaseAddress,
-                                 height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
-                                 width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
-                                 rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
-
-    var outBuffer = vImage_Buffer(data: outputBaseAddress,
-                                  height: vImagePixelCount(height),
-                                  width: vImagePixelCount(width),
-                                  rowBytes: CVPixelBufferGetBytesPerRow(outputBuffer))
-
-    let scaleError = vImageScale_ARGB8888(&inBuffer, &outBuffer, nil, vImage_Flags(0))
-    guard scaleError == kvImageNoError else { return nil }
-
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
-    CVPixelBufferUnlockBaseAddress(outputBuffer, [])
-
-    return outputBuffer
-}
-
-func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, cropSize: CGSize) -> CVPixelBuffer? {
-    guard let resizedPixelBuffer = resizePixelBuffer(pixelBuffer, width: Int(targetSize.width), height: Int(targetSize.height)) else {
-        return nil
-    }
-    return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
-}
-
-func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
-    var pixelBuffer: CVPixelBuffer?
-    let attrs = [
-        kCVPixelBufferCGImageCompatibilityKey: true,
-        kCVPixelBufferCGBitmapContextCompatibilityKey: true
-    ] as CFDictionary
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
-    if status != kCVReturnSuccess {
-        print("Failed to create pixel buffer")
-        return nil
-    }
-    return pixelBuffer
-}
-
-func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
-    let width = Int(targetSize.width)
-    let height = Int(targetSize.height)
+struct CVPixelBufferUtils {
     
-    var pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
-    
-    guard let blankPixelBuffer = pixelBuffer else { return nil }
-    
-    CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
-    let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!
-    let blankBufferPointer = blankBaseAddress.bindMemory(to: Float.self, capacity: width * height)
-    vDSP_vclr(blankBufferPointer, 1, vDSP_Length(width * height))
-    CVPixelBufferUnlockBaseAddress(blankPixelBuffer, [])
-    
-    return blankPixelBuffer
-}
+    // TODO: Check if any of the methods can be sped up using GPU
+    // TODO: Check if the forced unwrapping used all over the functions is safe in the given context
+    static func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let cropX = (Float(width) - Float(cropSize.width)) / 2
+        let cropY = (Float(height) - Float(cropSize.height)) / 2
+        var croppedPixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, Int(cropSize.width), Int(cropSize.height), CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &croppedPixelBuffer)
+        guard status == kCVReturnSuccess, let outputBuffer = croppedPixelBuffer else { return nil }
 
-/// Temporary function to get the average value of a pixel in a depth image
-/// Only used for debugging purposes
-func averagePixelBufferValue(in pixelBuffer: CVPixelBuffer) -> Float32? {
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    defer {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        CVPixelBufferLockBaseAddress(outputBuffer, [])
+
+        let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
+        let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
+
+        let inputBytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let outputBytesPerRow = CVPixelBufferGetBytesPerRow(outputBuffer)
+
+        let cropXOffset = Int(cropX) * 4
+        let cropYOffset = Int(cropY) * inputBytesPerRow
+        for y in 0..<Int(cropSize.height) {
+            let inputRow = inputBaseAddress.advanced(by: cropYOffset + cropXOffset + y * inputBytesPerRow)
+            let outputRow = outputBaseAddress.advanced(by: y * outputBytesPerRow)
+            memcpy(outputRow, inputRow, Int(cropSize.width) * 4)
+        }
+
         CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+        CVPixelBufferUnlockBaseAddress(outputBuffer, [])
+
+        return outputBuffer
     }
 
-    guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-        return nil
-    }
-    
-    let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
-    guard pixelFormat == kCVPixelFormatType_DepthFloat32 else {
-        print("Unsupported pixel format: \(pixelFormat)")
-        return nil
+    static func resizePixelBuffer(_ pixelBuffer: CVPixelBuffer, width: Int, height: Int) -> CVPixelBuffer? {
+        var resizedPixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &resizedPixelBuffer)
+        guard status == kCVReturnSuccess, let outputBuffer = resizedPixelBuffer else { return nil }
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        CVPixelBufferLockBaseAddress(outputBuffer, [])
+
+        let inputBaseAddress = CVPixelBufferGetBaseAddress(pixelBuffer)!
+        let outputBaseAddress = CVPixelBufferGetBaseAddress(outputBuffer)!
+
+        var inBuffer = vImage_Buffer(data: inputBaseAddress,
+                                     height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
+                                     width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
+                                     rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
+
+        var outBuffer = vImage_Buffer(data: outputBaseAddress,
+                                      height: vImagePixelCount(height),
+                                      width: vImagePixelCount(width),
+                                      rowBytes: CVPixelBufferGetBytesPerRow(outputBuffer))
+
+        let scaleError = vImageScale_ARGB8888(&inBuffer, &outBuffer, nil, vImage_Flags(0))
+        guard scaleError == kvImageNoError else { return nil }
+
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+        CVPixelBufferUnlockBaseAddress(outputBuffer, [])
+
+        return outputBuffer
     }
 
-    let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-    let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
-
-    let width = CVPixelBufferGetWidth(pixelBuffer)
-    let height = CVPixelBufferGetHeight(pixelBuffer)
-    
-    let totalPixels = width * height
-    var sum: Float32 = 0
-    for y in 0..<height {
-        for x in 0..<width {
-            let index = y * bytesPerRow / MemoryLayout<Float32>.size + x
-            sum += floatBuffer[index]
+    static func resizeAndCropPixelBuffer(_ pixelBuffer: CVPixelBuffer, targetSize: CGSize, cropSize: CGSize) -> CVPixelBuffer? {
+        guard let resizedPixelBuffer = resizePixelBuffer(pixelBuffer, width: Int(targetSize.width), height: Int(targetSize.height)) else {
+            return nil
         }
+        return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
     }
-    
-    return sum / Float32(totalPixels)
-}
 
-/**
- This function extracts unique grayscale values from a pixel buffer,
- gets the indices of these values from Constants.ClassConstants.grayscaleValues,
-    and returns both the unique values and their corresponding indices.
- 
- TODO: The function does more than just extracting unique grayscale values.
- It also returns the indices of these values from Constants.ClassConstants.grayscaleValues.
- This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
- */
-func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
-    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-    defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-    
-    guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-        return (Set<UInt8>(), [])
-    }
-    
-    var buffer = vImage_Buffer(data: baseAddress,
-                                 height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
-                                 width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
-                                 rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
-    var histogram = [vImagePixelCount](repeating: 0, count: 256)
-    let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
-    guard histogramError == kvImageNoError else { return (Set<UInt8>(), []) }
-    
-    var uniqueValues = Set<UInt8>()
-    for i in 0..<histogram.count {
-        if histogram[i] > 0 {
-            uniqueValues.insert(UInt8(i))
+    /**
+     TODO: Currently, this function is quite hardcoded. For example, it uses a fixed pixel format and attributes.
+        It would be better to make it more flexible by allowing the caller to specify the pixel format and attributes.
+     */
+    static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
+        var pixelBuffer: CVPixelBuffer?
+        let attrs = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true
+        ] as CFDictionary
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
+        if status != kCVReturnSuccess {
+            print("Failed to create pixel buffer")
+            return nil
         }
+        return pixelBuffer
     }
-    
-    let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
-    
-    // MARK: sorting may not be necessary for our use case
-    let selectedIndices = uniqueValues.map { UInt8($0) }
-        .map {Float($0) / 255.0 }
-        .compactMap { valueToIndex[$0]}
-        .sorted()
+
+    static func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
+        let width = Int(targetSize.width)
+        let height = Int(targetSize.height)
         
-    return (uniqueValues, selectedIndices)
+        var pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
+        
+        guard let blankPixelBuffer = pixelBuffer else { return nil }
+        
+        CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
+        let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!
+        let blankBufferPointer = blankBaseAddress.bindMemory(to: Float.self, capacity: width * height)
+        vDSP_vclr(blankBufferPointer, 1, vDSP_Length(width * height))
+        CVPixelBufferUnlockBaseAddress(blankPixelBuffer, [])
+        
+        return blankPixelBuffer
+    }
+
+    /// Temporary function to get the average value of a pixel in a depth image
+    /// Only used for debugging purposes
+    static func averagePixelBufferValue(in pixelBuffer: CVPixelBuffer) -> Float32? {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer {
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+        }
+
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            return nil
+        }
+        
+        let pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer)
+        guard pixelFormat == kCVPixelFormatType_DepthFloat32 else {
+            print("Unsupported pixel format: \(pixelFormat)")
+            return nil
+        }
+
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
+
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        
+        let totalPixels = width * height
+        var sum: Float32 = 0
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = y * bytesPerRow / MemoryLayout<Float32>.size + x
+                sum += floatBuffer[index]
+            }
+        }
+        
+        return sum / Float32(totalPixels)
+    }
+
+    /**
+     This function extracts unique grayscale values from a pixel buffer,
+     gets the indices of these values from Constants.ClassConstants.grayscaleValues,
+        and returns both the unique values and their corresponding indices.
+     
+     TODO: The function does more than just extracting unique grayscale values.
+     It also returns the indices of these values from Constants.ClassConstants.grayscaleValues.
+     This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
+     */
+    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            return (Set<UInt8>(), [])
+        }
+        
+        var buffer = vImage_Buffer(data: baseAddress,
+                                     height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
+                                     width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
+                                     rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
+        var histogram = [vImagePixelCount](repeating: 0, count: 256)
+        let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
+        guard histogramError == kvImageNoError else { return (Set<UInt8>(), []) }
+        
+        var uniqueValues = Set<UInt8>()
+        for i in 0..<histogram.count {
+            if histogram[i] > 0 {
+                uniqueValues.insert(UInt8(i))
+            }
+        }
+        
+        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
+        
+        // MARK: sorting may not be necessary for our use case
+        let selectedIndices = uniqueValues.map { UInt8($0) }
+            .map {Float($0) / 255.0 }
+            .compactMap { valueToIndex[$0]}
+            .sorted()
+            
+        return (uniqueValues, selectedIndices)
+    }
 }
 
 extension CVPixelBuffer {

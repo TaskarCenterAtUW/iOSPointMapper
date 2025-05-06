@@ -18,7 +18,7 @@ struct DepthMapProcessor {
         self.depthImage = depthImage
         let width = Int(depthImage.extent.width)
         let height = Int(depthImage.extent.height)
-        self.depthMap = createPixelBuffer(width: width, height: height)
+        self.depthMap = CVPixelBufferUtils.createPixelBuffer(width: width, height: height)
         ciContext.render(depthImage, to: self.depthMap!)
         self.depthMapWidth = width
         self.depthMapHeight = height
@@ -30,7 +30,7 @@ struct DepthMapProcessor {
      
         segmentationLabelImage: The segmentation label image (pixel format: kCVPixelFormatType_OneComponent8)
 
-        depthImage: The depth image (pixel format: kCVPixelFormatType_DepthFloat32)
+        depthImage: The depth image (pixel format: kCVPixelFormatType_DepthFloat32). Not used in this function.
      */
     func getDepth(segmentationLabelImage: CIImage, depthImage: CIImage, classLabel: UInt8) -> Float {
         guard let depthMap = self.depthMap else {
@@ -99,7 +99,9 @@ struct DepthMapProcessor {
     /**
      This function calculates the depth value of the object at the centroid of the segmented image.
      
-     NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.
+     NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.\
+     
+        The depth image is not used in this function.
      */
     func getDepth(segmentationLabelImage: CIImage, object: DetectedObject, depthImage: CIImage, classLabel: UInt8) -> Float {
         guard let depthMap = self.depthMap else {

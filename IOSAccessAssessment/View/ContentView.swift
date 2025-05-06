@@ -141,7 +141,7 @@ struct ContentView: View {
         case .success(let output):
             self.sharedImageData.segmentationLabelImage = output.segmentationImage
             self.sharedImageData.segmentedIndices = output.segmentedIndices
-            self.sharedImageData.objects = output.objects
+            self.sharedImageData.detectedObjects = output.detectedObjects
 //            print("Objects: ", output.objects.map { ($0.value.centroid, $0.value.isCurrent) })
             self.sharedImageData.appendFrame(frame: output.segmentationImage)
             if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {

@@ -114,7 +114,7 @@ class SegmentationModel: ObservableObject {
         let outPixelBuffer = (obs.first)!
         
         let start = DispatchTime.now()
-        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (_, selectedIndices) = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         let end = DispatchTime.now()
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
@@ -185,7 +185,7 @@ class SegmentationModel: ObservableObject {
         let outPixelBuffer = (obs.first)!
         
         let start = DispatchTime.now()
-        let (_, selectedIndices) = extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let (_, selectedIndices) = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
         let end = DispatchTime.now()
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
