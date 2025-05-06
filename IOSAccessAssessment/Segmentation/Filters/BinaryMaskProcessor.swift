@@ -11,7 +11,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-class BinaryMaskProcessor {
+struct BinaryMaskProcessor {
     var inputImage: CIImage?
     
     // Metal-related properties
@@ -40,9 +40,9 @@ class BinaryMaskProcessor {
         self.pipeline = pipeline
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+//    required init?(coder: NSCoder) {
+//        fatalError("init(coder:) has not been implemented")
+//    }
 
     func apply(to inputImage: CIImage, targetValue: UInt8) -> CIImage? {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
