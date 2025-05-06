@@ -7,7 +7,9 @@
 import Vision
 import simd
 
-struct HomographyRequestProcessor {    
+struct HomographyRequestProcessor {
+//    let warpPointsProcessor = WarpPointsProcessor()
+    
     /// Computes the homography transform for the reference image and the floating image.
     //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
     func getHomographyTransform(referenceImage: CIImage, floatingImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> simd_float3x3? {

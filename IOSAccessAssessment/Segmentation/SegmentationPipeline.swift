@@ -76,7 +76,6 @@ class SegmentationPipeline: ObservableObject {
     var selectionClassGrayscaleValues: [Float] = []
     var selectionClassColors: [CIColor] = []
     
-    var visionModel: VNCoreMLModel
     @Published var segmentationImage: CIImage?
     @Published var segmentedIndices: [Int] = []
     
@@ -96,19 +95,16 @@ class SegmentationPipeline: ObservableObject {
 //    @Published var transformedFloatingImage: CIImage?
 //    @Published var transformedFloatingObjects: [DetectedObject]? = nil
     
-    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
-    let warpPointsProcessor = WarpPointsProcessor()
+//    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     
+    var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyRequestProcessor: HomographyRequestProcessor?
     let centroidTracker = CentroidTracker()
     
     init() {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
-        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
-            fatalError("Cannot load CNN model")
-        }
-        self.visionModel = visionModel
+        self.segmentationModelRequestProcessor = SegmentationModelRequestProcessor(
+            selectionClasses: self.selectionClasses)
         self.contourRequestProcessor = ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
@@ -134,6 +130,7 @@ class SegmentationPipeline: ObservableObject {
         self.selectionClassGrayscaleValues = selectionClasses.map { Constants.ClassConstants.grayscaleValues[$0] }
         self.selectionClassColors = selectionClasses.map { Constants.ClassConstants.colors[$0] }
         
+        self.segmentationModelRequestProcessor?.setSelectionClasses(self.selectionClasses)
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
@@ -156,7 +153,7 @@ class SegmentationPipeline: ObservableObject {
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.isProcessing = true
-            let segmentationResults = self.processSegmentationRequest(with: cIImage)
+            let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
             guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
                     self.isProcessing = false
@@ -192,11 +189,11 @@ class SegmentationPipeline: ObservableObject {
                     ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .up)
                 
-                if transformMatrix != nil {
-                    self.segmentationResultUIImage = UIImage(
-                        ciImage: (self.homographyRequestProcessor?.transformImage(for: previousImage!, using: transformMatrix!))!,
-                        scale: 1.0, orientation: .up)
-                }
+//                if transformMatrix != nil {
+//                    self.segmentationResultUIImage = UIImage(
+//                        ciImage: (self.homographyRequestProcessor?.transformImage(for: previousImage!, using: transformMatrix!))!,
+//                        scale: 1.0, orientation: .up)
+//                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
@@ -210,45 +207,5 @@ class SegmentationPipeline: ObservableObject {
             }
             self.isProcessing = false
         }
-    }
-}
-
-/**
-    Extension of SegmentationPipeline to handle the segmentation requests.
-    This extension contains functions to configure the request, process the segmentation image, and get the segmentation results.
- */
-extension SegmentationPipeline {
-    private func configureSegmentationRequest(request: VNCoreMLRequest) {
-        // TODO: Need to check on the ideal options for this
-        request.imageCropAndScaleOption = .scaleFill
-    }
-    
-    // MARK: Currently we are relying on the synchronous nature of the request handler
-    // Need to check if this is always guaranteed.
-    func processSegmentationRequest(with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up)
-    -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
-        do {
-            let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
-            self.configureSegmentationRequest(request: segmentationRequest)
-            let segmentationRequestHandler = VNImageRequestHandler(
-                ciImage: cIImage,
-                orientation: orientation,
-                options: [:])
-            try segmentationRequestHandler.perform([segmentationRequest])
-            
-            guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
-            let segmentationBuffer = segmentationResult.first?.pixelBuffer
-            
-            let (_, selectedIndices) = extractUniqueGrayscaleValues(from: segmentationBuffer!)
-            let selectedIndicesSet = Set(selectedIndices)
-            let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
-            
-            let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
-            
-            return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
-        } catch {
-            print("Error processing segmentation request: \(error)")
-        }
-        return nil
     }
 }
