@@ -46,7 +46,7 @@ struct SegmentationModelRequestProcessor {
             guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
             let segmentationBuffer = segmentationResult.first?.pixelBuffer
             
-            let (_, selectedIndices) = extractUniqueGrayscaleValues(from: segmentationBuffer!)
+            let (_, selectedIndices) = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
             let selectedIndicesSet = Set(selectedIndices)
             let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
             

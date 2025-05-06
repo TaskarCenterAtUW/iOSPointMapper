@@ -18,7 +18,7 @@ struct DepthMapProcessor {
         self.depthImage = depthImage
         let width = Int(depthImage.extent.width)
         let height = Int(depthImage.extent.height)
-        self.depthMap = createPixelBuffer(width: width, height: height)
+        self.depthMap = CVPixelBufferUtils.createPixelBuffer(width: width, height: height)
         ciContext.render(depthImage, to: self.depthMap!)
         self.depthMapWidth = width
         self.depthMapHeight = height

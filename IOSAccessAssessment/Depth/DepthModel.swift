@@ -84,13 +84,13 @@ class DepthModel: ObservableObject {
     func performDepthEstimation(_ ciImage: CIImage) -> CIImage {
         let originalSize: CGSize = ciImage.extent.size
         guard let visionModel else {
-            return CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: originalSize)!)
+            return CIImage(cvPixelBuffer: CVPixelBufferUtils.createBlankDepthPixelBuffer(targetSize: originalSize)!)
         }
         
         let inputImage = ciImage.resized(to: Constants.DepthConstants.inputSize)
         context.render(inputImage, to: inputPixelBuffer)
         guard let result = try? visionModel.prediction(image: inputPixelBuffer) else {
-            return CIImage(cvPixelBuffer: createBlankDepthPixelBuffer(targetSize: originalSize)!)
+            return CIImage(cvPixelBuffer: CVPixelBufferUtils.createBlankDepthPixelBuffer(targetSize: originalSize)!)
         }
         let outputImage: CIImage = CIImage(cvPixelBuffer: result.depth)
             .resized(to: originalSize)
