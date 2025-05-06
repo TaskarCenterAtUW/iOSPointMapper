@@ -170,9 +170,11 @@ struct AnnotationView: View {
     
     func confirmAnnotation() {
         var depthValue: Float = 0.0
-        if let depthMapProcessor = depthMapProcessor {
-            depthValue = depthMapProcessor.getDepth(segmentationLabelImage: sharedImageData.segmentationLabelImage!,
-                         depthImage: sharedImageData.depthImage!,
+        if let depthMapProcessor = depthMapProcessor,
+           let segmentationLabelImage = sharedImageData.segmentationLabelImage,
+           let depthImage = sharedImageData.depthImage {
+            depthValue = depthMapProcessor.getDepth(segmentationLabelImage: segmentationLabelImage,
+                         depthImage: depthImage,
                          classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
             
             // MARK: Experimentation with detected object
@@ -187,7 +189,7 @@ struct AnnotationView: View {
 //                print("Depth Value for Label: \(depthValue) Object: \(depthValueObject)")
 //            }
         } else {
-            print("depthMapProcessor is nil. Fallback to 0.0")
+            print("depthMapProcessor or segmentationLabelImage is nil. Falling back to default depth value.")
         }
         let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil

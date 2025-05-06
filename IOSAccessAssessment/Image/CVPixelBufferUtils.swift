@@ -81,6 +81,10 @@ struct CVPixelBufferUtils {
         return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
     }
 
+    /**
+     TODO: Currently, this function is quite hardcoded. For example, it uses a fixed pixel format and attributes.
+        It would be better to make it more flexible by allowing the caller to specify the pixel format and attributes.
+     */
     static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
         var pixelBuffer: CVPixelBuffer?
         let attrs = [
