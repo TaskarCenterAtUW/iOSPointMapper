@@ -23,7 +23,9 @@ enum CameraManagerError: Error, LocalizedError {
     }
 }
 
-
+/**
+    CameraManager is responsible for managing the camera stream and processing the captured frames.
+ */
 class CameraManager: ObservableObject, CaptureDataReceiver {
     
     var sharedImageData: SharedImageData?
@@ -91,69 +93,28 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     }
     
     func onNewData(cameraPixelBuffer: CVPixelBuffer, depthPixelBuffer: CVPixelBuffer?) {
+        let cameraImage = self.orientAndFixCameraFrame(cameraPixelBuffer)
+        let depthImage = self.isFilteringDepth ? self.orientAndFixDepthFrame(depthPixelBuffer!) : nil
         DispatchQueue.main.async {
-            if !self.isProcessingCapturedResult {
-                let start = DispatchTime.now()
-                let cameraImage = self.orientAndFixCameraFrame(cameraPixelBuffer)
-                let depthImage = self.isFilteringDepth ? self.orientAndFixDepthFrame(depthPixelBuffer!) : nil
-                let end = DispatchTime.now()
-                let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-                let timeInterval = Double(nanoTime) / 1_000_000
-                print("Time taken to perform camera and depth frame post-processing: \(timeInterval) milliseconds")
-                
-                let previousImage = self.sharedImageData?.cameraImage
-                self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
-                self.sharedImageData?.depthImage = depthImage
-                
-                let cameraCGImage = self.ciContext.createCGImage(cameraImage, from: cameraImage.extent)
-                let depthCGImage = self.ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
-                self.cameraUIImage = UIImage(
-                    cgImage: cameraCGImage!, scale: 1.0,
-                    orientation: .up//CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
-                )
-                self.depthUIImage = UIImage(
-                    cgImage: depthCGImage!, scale: 1.0,
-                    orientation: .up//CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
-                )
-                
+            if self.isProcessingCapturedResult {
+                return
+            }
+            let previousImage = self.sharedImageData?.cameraImage
+            self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
+            self.sharedImageData?.depthImage = depthImage
+            
+            self.cameraUIImage = UIImage(ciImage: cameraImage)
+            self.depthUIImage = UIImage(ciImage: depthImage!)
+            
 //                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
-                                                          deviceOrientation: self.deviceOrientation)
-                
-                if self.dataAvailable == false {
-                    self.dataAvailable = true
-                }
+            self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
+                                                      deviceOrientation: self.deviceOrientation)
+            
+            if self.dataAvailable == false {
+                self.dataAvailable = true
             }
         }
     }
-    
-//    func onNewData(cameraImage: CIImage, depthImage: CIImage?) -> Void {
-//        DispatchQueue.main.async {
-//            if !self.isProcessingCapturedResult {
-//                let previousImage = self.sharedImageData?.cameraImage
-//                self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
-//                self.sharedImageData?.depthImage = depthImage
-//                
-//                let cameraCGImage = self.ciContext.createCGImage(cameraImage, from: cameraImage.extent)
-//                let depthCGImage = self.ciContext.createCGImage(depthImage ?? cameraImage, from: cameraImage.extent)
-//                self.cameraUIImage = UIImage(
-//                    cgImage: cameraCGImage!, scale: 1.0,
-//                    orientation: CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation))
-//                self.depthUIImage = UIImage(
-//                    cgImage: depthCGImage!, scale: 1.0,
-//                    orientation: CameraOrientation.getUIImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation))
-//                
-////                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
-//                self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
-//                                                          deviceOrientation: self.deviceOrientation)
-//                
-//                if self.dataAvailable == false {
-//                    self.dataAvailable = true
-//                }
-//            }
-//        }
-//    }
-   
 }
 
 // Functions to orient and fix the camera and depth frames

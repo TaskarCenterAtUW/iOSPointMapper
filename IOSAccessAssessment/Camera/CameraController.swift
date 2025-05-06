@@ -39,6 +39,9 @@ enum CameraControllerError: Error, LocalizedError {
     }
 }
 
+/**
+ CameraController is responsible for managing the camera and depth data capture session.
+ */
 class CameraController: NSObject, ObservableObject {
     
     enum ConfigurationError: Error {
@@ -145,7 +148,6 @@ extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
         
         guard let cameraPixelBuffer = syncedVideoData.sampleBuffer.imageBuffer else { return }
 //        let cameraImage = orientAndFixCameraFrame(cameraPixelBuffer)
-        
         if (!isLidarDeviceAvailable) {
             delegate?.onNewData(cameraPixelBuffer: cameraPixelBuffer, depthPixelBuffer: nil)
             return
