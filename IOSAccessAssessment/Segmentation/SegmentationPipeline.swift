@@ -47,15 +47,15 @@ struct SegmentationPipelineResults {
     var segmentationImage: CIImage
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
-    var objects: [UUID: DetectedObject]
+    var detectedObjects: [UUID: DetectedObject]
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         objects: [UUID: DetectedObject], additionalPayload: [String: Any] = [:]) {
+         detectedObjects: [UUID: DetectedObject], additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
-        self.objects = objects
+        self.detectedObjects = detectedObjects
         self.additionalPayload = additionalPayload
     }
 }
@@ -89,7 +89,7 @@ class SegmentationPipeline: ObservableObject {
     var perimeterThreshold: Float = 0.01
     // While the contour detection logic gives us an array of DetectedObject
     // we get the objects as a dictionary with UUID as the key, from the centroid tracker.
-    @Published var objects: [UUID: DetectedObject] = [:]
+    @Published var detectedObjects: [UUID: DetectedObject] = [:]
     
     @Published var transformMatrix: simd_float3x3? = nil
 //    @Published var transformedFloatingImage: CIImage?
@@ -118,7 +118,7 @@ class SegmentationPipeline: ObservableObject {
         self.segmentationImage = nil
         self.segmentationResultUIImage = nil
         self.segmentedIndices = []
-        self.objects = [:]
+        self.detectedObjects = [:]
         self.transformMatrix = nil
         // TODO: No reset function for maskers and processors
         self.centroidTracker.reset()
@@ -174,7 +174,7 @@ class SegmentationPipeline: ObservableObject {
             DispatchQueue.main.async {
                 self.segmentationImage = segmentationResults?.segmentationImage
                 self.segmentedIndices = segmentationResults?.segmentedIndices ?? []
-                self.objects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
+                self.detectedObjects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
                 
                 // Temporary
 //                self.grayscaleToColorMasker.inputImage = segmentationImage
@@ -201,7 +201,7 @@ class SegmentationPipeline: ObservableObject {
                     segmentationImage: segmentationImage,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
-                    objects: self.objects,
+                    detectedObjects: self.detectedObjects,
                     additionalPayload: additionalPayload
                 )))
             }
