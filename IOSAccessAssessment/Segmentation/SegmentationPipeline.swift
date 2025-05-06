@@ -100,6 +100,7 @@ class SegmentationPipeline: ObservableObject {
     let warpPointsProcessor = WarpPointsProcessor()
     
     var contourRequestProcessor: ContourRequestProcessor?
+    var homographyRequestProcessor: HomographyRequestProcessor?
     let centroidTracker = CentroidTracker()
     
     init() {
@@ -108,9 +109,11 @@ class SegmentationPipeline: ObservableObject {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
-        self.contourRequestProcessor = ContourRequestProcessor(contourEpsilon: self.contourEpsilon,
-                                                               perimeterThreshold: self.perimeterThreshold,
-                                                               selectionClassLabels: self.selectionClassLabels)
+        self.contourRequestProcessor = ContourRequestProcessor(
+            contourEpsilon: self.contourEpsilon,
+            perimeterThreshold: self.perimeterThreshold,
+            selectionClassLabels: self.selectionClassLabels)
+        self.homographyRequestProcessor = HomographyRequestProcessor()
     }
     
     func reset() {
@@ -167,7 +170,7 @@ class SegmentationPipeline: ObservableObject {
 
             var transformMatrix: simd_float3x3? = nil
             if let previousImage = previousImage {
-                transformMatrix = self.getHomographyTransform(referenceImage: cIImage, floatingImage: previousImage)
+                transformMatrix = self.homographyRequestProcessor?.getHomographyTransform(referenceImage: cIImage, floatingImage: previousImage) ?? nil
             }
             self.centroidTracker.update(objectsList: objectList, transformMatrix: transformMatrix)
             
@@ -189,11 +192,11 @@ class SegmentationPipeline: ObservableObject {
                     ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .up)
                 
-//                if transformMatrix != nil {
-//                    self.segmentationResultUIImage = UIImage(
-//                        ciImage: self.transformImage(for: previousImage!, using: transformMatrix!)!,
-//                        scale: 1.0, orientation: .up)
-//                }
+                if transformMatrix != nil {
+                    self.segmentationResultUIImage = UIImage(
+                        ciImage: (self.homographyRequestProcessor?.transformImage(for: previousImage!, using: transformMatrix!))!,
+                        scale: 1.0, orientation: .up)
+                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
                 self.transformMatrix = transformMatrix
@@ -249,114 +252,3 @@ extension SegmentationPipeline {
         return nil
     }
 }
-
-/**
-    Extension of SegmentationPipeline to handle the homography transformation requests.
-    This extension contains the main functions of homography.
- */
-extension SegmentationPipeline {
-    /// Computes the homography transform for the reference image and the floating image.
-    //      MARK: It seems like the Homography transformation is done the other way around. (floatingImage is the target)
-    func getHomographyTransform(referenceImage: CIImage, floatingImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> simd_float3x3? {
-        do {
-            let transformRequest = VNHomographicImageRegistrationRequest(targetedCIImage: referenceImage, orientation: orientation)
-            let transformRequestHandler = VNImageRequestHandler(ciImage: floatingImage, orientation: orientation, options: [:])
-            try transformRequestHandler.perform([transformRequest])
-            guard let transformResult = transformRequest.results else {return nil}
-            let transformMatrix = transformResult.first?.warpTransform
-            guard let matrix = transformMatrix else {
-                print("Homography transform matrix is nil")
-                return nil
-            }
-            return matrix
-        }
-        catch {
-            print("Error processing homography transform request: \(error)")
-            return nil
-        }
-    }
-}
-
-
-/**
- Helper functions for the SegmentationPipeline class to warp a given image rectangle using a homographic transform matrix.
- */
-extension SegmentationPipeline {
-    /// Transforms the input point using the provided warpTransform matrix.
-    private func warpedPoint(_ point: CGPoint, using warpTransform: simd_float3x3) -> CGPoint {
-        let vector0 = SIMD3<Float>(x: Float(point.x), y: Float(point.y), z: 1)
-        let vector1 = warpTransform * vector0
-        return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
-    }
-    
-    private func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
-        return objects.map { object in
-            let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
-            return DetectedObject(
-                classLabel: object.classLabel,
-                centroid: transformedCentroid,
-                boundingBox: object.boundingBox,
-                normalizedPoints: object.normalizedPoints,
-                isCurrent: object.isCurrent
-            )
-        }
-    }
-    
-    /// This is a quadrilateral defined by four corner points.
-    private struct Quad {
-        let topLeft: CGPoint
-        let topRight: CGPoint
-        let bottomLeft: CGPoint
-        let bottomRight: CGPoint
-    }
-    
-    /// Warps the input rectangle using the warpTransform matrix, and returns the warped Quad.
-    private func makeWarpedQuad(for rect: CGRect, using warpTransform: simd_float3x3) -> Quad {
-        let minX = rect.minX
-        let maxX = rect.maxX
-        let minY = rect.minY
-        let maxY = rect.maxY
-        
-        let topLeft = CGPoint(x: minX, y: maxY)
-        let topRight = CGPoint(x: maxX, y: maxY)
-        let bottomLeft = CGPoint(x: minX, y: minY)
-        let bottomRight = CGPoint(x: maxX, y: minY)
-        
-        let warpedTopLeft = warpedPoint(topLeft, using: warpTransform)
-        let warpedTopRight = warpedPoint(topRight, using: warpTransform)
-        let warpedBottomLeft = warpedPoint(bottomLeft, using: warpTransform)
-        let warpedBottomRight = warpedPoint(bottomRight, using: warpTransform)
-        
-        return Quad(topLeft: warpedTopLeft,
-                    topRight: warpedTopRight,
-                    bottomLeft: warpedBottomLeft,
-                    bottomRight: warpedBottomRight)
-    }
-    
-    private func transformImage(for floatingImage: CIImage, using transformMatrix: simd_float3x3) -> CIImage? {
-        let quad = makeWarpedQuad(for: floatingImage.extent, using: transformMatrix)
-        // Creates the alignedImage by warping the floating image using the warpTransform from the homographic observation.
-        let transformParameters = [
-            "inputTopLeft": CIVector(cgPoint: quad.topLeft),
-            "inputTopRight": CIVector(cgPoint: quad.topRight),
-            "inputBottomRight": CIVector(cgPoint: quad.bottomRight),
-            "inputBottomLeft": CIVector(cgPoint: quad.bottomLeft)
-        ]
-        
-        let transformedImage = floatingImage.applyingFilter("CIPerspectiveTransform", parameters: transformParameters)
-        return transformedImage
-    }
-    
-//    func processTransformFloatingObjectsRequest(referenceImage: CIImage, floatingImage: CIImage, floatingObjects: [DetectedObject]) -> [DetectedObject]? {
-//        let start = DispatchTime.now()
-//        let transformMatrix = self.getHomographyTransform(for: referenceImage, floatingImage: floatingImage)
-////            let transformImage = self.transformImage(for: floatingImage, using: transformMatrix!)
-//        let transformedObjects = self.transformObjectCentroids(for: floatingObjects, using: transformMatrix!)
-//        let end = DispatchTime.now()
-//        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-////            print("Transform floating image time: \(timeInterval) ms")
-//        return transformedObjects
-//    }
-    
-}
-    
