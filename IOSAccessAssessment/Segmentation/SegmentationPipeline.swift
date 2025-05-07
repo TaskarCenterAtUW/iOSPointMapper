@@ -186,7 +186,10 @@ class SegmentationPipeline: ObservableObject {
                 
                 // Temporary
                 self.segmentationResultUIImage = UIImage(
-                    ciImage: rasterizeContourObjects(objects: objectList, size: Constants.ClassConstants.inputSize)!,
+                    ciImage: rasterizeContourObjects(
+//                        objects: objectList,
+                        objects: self.centroidTracker.objects.values.map { $0 },
+                        size: Constants.ClassConstants.inputSize)!,
                     scale: 1.0, orientation: .up)
                 
 //                if transformMatrix != nil {
