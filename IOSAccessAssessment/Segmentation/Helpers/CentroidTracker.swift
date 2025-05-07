@@ -14,9 +14,12 @@ class CentroidTracker {
     var disappearedObjects: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
+    // TODO: Currently, the distance threshold is very arbitrary.
+    // We need to figure out a more systemative way to determine this.
+    // It would ideally depend upon not just the distance between the centroids, but also the size of the objects.
     var distanceThreshold: Float;
     
-    init(maxDisappeared: Int = 5, distanceThreshold: Float = 0.2) {
+    init(maxDisappeared: Int = 5, distanceThreshold: Float = 0.5) {
         self.nextObjectID = UUID()
         self.objects = OrderedDictionary()
         self.disappearedObjects = OrderedDictionary()
@@ -210,12 +213,21 @@ extension CentroidTracker {
         return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
     }
     
+    /**
+     FIXME: There is a risk with this method: For the objects that are not mapped to the new objects, we do not retain consistent details.
+     While the centroid is updated, the bounding box and normalized points are not updated.
+     Not to mention, we do not know which image they belong to.
+     For now, this is not a problem since we will not be using these objects for any further processing.
+     */
     private func transformObjectCentroids(using transformMatrix: simd_float3x3) {
         /*
             Applies a warp transform to the centroids of the detected objects.
          Need to transpose the matrix to apply it correctly to the centroids since SIMD3 is column-major order.
+         Also, the homography matrix is in pixel coordinates, while the centroids are in normalized coordinates.
+         So we need to make the transformation in normalized coordinates.
          */
-        let warpTransform = transformMatrix.transpose
+        let scaledTransform = self.normalizeHomographyMatrix(transformMatrix)
+        let warpTransform = scaledTransform.transpose
         for (objectID, object) in self.objects {
             let transformedCentroid = warpedPoint(object.centroid, using: warpTransform)
             let transformedObject = DetectedObject(classLabel: object.classLabel,
@@ -225,5 +237,27 @@ extension CentroidTracker {
                                                    isCurrent: object.isCurrent)
             self.objects[objectID] = transformedObject
         }
+    }
+    
+    private func normalizeHomographyMatrix(_ matrix: simd_float3x3) -> simd_float3x3 {
+        let width = Float(Constants.ClassConstants.inputSize.width)
+        let height = Float(Constants.ClassConstants.inputSize.height)
+        
+        // S: scales normalized → pixel coordinates
+        let S = simd_float3x3(rows: [
+            SIMD3<Float>(width,     0,     0),
+            SIMD3<Float>(    0, height,     0),
+            SIMD3<Float>(    0,     0,     1)
+        ])
+        
+        // S_inv: scales pixel → normalized coordinates
+        let S_inv = simd_float3x3(rows: [
+            SIMD3<Float>(1/width,       0,     0),
+            SIMD3<Float>(      0, 1/height,     0),
+            SIMD3<Float>(      0,       0,     1)
+        ])
+        
+        let normalizedMatrix = S_inv * matrix * S
+        return normalizedMatrix
     }
 }
