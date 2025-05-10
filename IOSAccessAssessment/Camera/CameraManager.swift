@@ -29,7 +29,6 @@ enum CameraManagerError: Error, LocalizedError {
 class CameraManager: ObservableObject, CaptureDataReceiver {
     
     var sharedImageData: SharedImageData?
-    var segmentationModel: SegmentationModel?
     var segmentationPipeline: SegmentationPipeline?
 
     @Published var isFilteringDepth: Bool {
@@ -61,9 +60,8 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
     var depthPixelBufferPool: CVPixelBufferPool? = nil
     var depthColorSpace: CGColorSpace? = nil
     
-    init(sharedImageData: SharedImageData, segmentationModel: SegmentationModel, segmentationPipeline: SegmentationPipeline) {
+    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationPipeline) {
         self.sharedImageData = sharedImageData
-        self.segmentationModel = segmentationModel
         self.segmentationPipeline = segmentationPipeline
         
         controller = CameraController()
@@ -106,7 +104,6 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
             self.cameraUIImage = UIImage(ciImage: cameraImage)
             self.depthUIImage = UIImage(ciImage: depthImage!)
             
-//                self.segmentationModel?.performSegmentationRequest(with: cameraImage)
             self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
                                                       deviceOrientation: self.deviceOrientation)
             

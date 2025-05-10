@@ -16,7 +16,6 @@ struct ContentView: View {
     var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
-    @EnvironmentObject var segmentationModel: SegmentationModel
     @EnvironmentObject var segmentationPipeline: SegmentationPipeline
     @EnvironmentObject var depthModel: DepthModel
     
@@ -43,7 +42,6 @@ struct ContentView: View {
 //                        )
                         HostedSegmentationViewController(
                             segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -54,7 +52,6 @@ struct ContentView: View {
                                 get: { manager?.cameraUIImage ?? UIImage() },
                                 set: { manager?.cameraUIImage = $0 }
                             ),
-//                            segmentationImage: $segmentationModel.maskedSegmentationResults,
                                                          frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -73,7 +70,6 @@ struct ContentView: View {
 //                        )
                     }
                     Button {
-//                        segmentationModel.performPerClassSegmentationRequest(with: sharedImageData.cameraImage!)
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
                         segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
@@ -110,12 +106,9 @@ struct ContentView: View {
             navigateToAnnotationView = false
             
             if (manager == nil) {
-//                segmentationModel.updateSegmentationRequest(selection: selection, completion: updateSharedImageSegmentation)
-//                segmentationModel.updatePerClassSegmentationRequest(selection: selection,
-//                                                                    completion: updatePerClassImageSegmentation)
                 segmentationPipeline.setSelectionClasses(selection)
                 segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
-                manager = CameraManager(sharedImageData: sharedImageData, segmentationModel: segmentationModel, segmentationPipeline: segmentationPipeline)
+                manager = CameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
             }
@@ -157,41 +150,6 @@ struct ContentView: View {
 //            fatalError("Unable to process segmentation \(error.localizedDescription)")
             print("Unable to process segmentation \(error.localizedDescription)")
             return
-        }
-    }
-    
-    // Callbacks to the SegmentationModel
-    private func updateSharedImageSegmentation(result: Result<SegmentationResultsOutput, Error>) -> Void {
-        switch result {
-        case .success(let output):
-            self.sharedImageData.appendFrame(frame: output.segmentationResults)
-            return
-        case .failure(let error):
-            fatalError("Unable to process segmentation \(error.localizedDescription)")
-        }
-    }
-    
-    // This function callback currently has control over navigation to the Annotation View.
-    // This is not ideal behavior, this may be alleviated eventually when we use async/await
-    // because at this moment, adding yet another callback to fix this would bloat the code.
-    private func updatePerClassImageSegmentation(result: Result<PerClassSegmentationResultsOutput, Error>) -> Void {
-        switch result {
-        case .success(let output):
-            // Prevent navigation to AnnotationView if the segmentation results are empty
-            if (output.perClassSegmentationResults.count == 0) {
-                return
-            }
-            self.sharedImageData.segmentationLabelImage = output.segmentationLabelResults
-            self.sharedImageData.classImages = output.perClassSegmentationResults
-            self.sharedImageData.segmentedIndices = output.segmentedIndices
-            self.manager?.stopStream()
-            // Perform depth estimation only if LiDAR is not available
-            if (!sharedImageData.isLidarAvailable) {
-                self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
-            }
-            self.navigateToAnnotationView = true
-        case .failure(let error):
-            fatalError("Unable to process per-class segmentation \(error.localizedDescription)")
         }
     }
     
