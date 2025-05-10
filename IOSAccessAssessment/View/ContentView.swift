@@ -138,14 +138,11 @@ struct ContentView: View {
 //            print("Objects: ", output.objects.map { ($0.value.centroid, $0.value.isCurrent) })
             
             // Saving history
-            // Update the transform matrix for the previous image
-            if let previousImageData = sharedImageData.getPreviousImageData() {
-                previousImageData.transformMatrixToNextFrame = output.transformMatrix
-            }
             self.sharedImageData.recordImageData(imageData: ImageData(
                 cameraImage: nil, depthImage: nil,
                 segmentationLabelImage: output.segmentationImage,
-                segmentedIndices: output.segmentedIndices, detectedObjects: output.detectedObjects
+                segmentedIndices: output.segmentedIndices, detectedObjects: output.detectedObjects,
+                transformMatrixToPreviousFrame: output.transformMatrix?.inverse
             ))
             self.sharedImageData.appendFrame(frame: output.segmentationImage)
             

@@ -17,32 +17,41 @@ class ImageData {
     var detectedObjects: [UUID: DetectedObject]?
     
     var transformMatrixToNextFrame: simd_float3x3?
+    var transformMatrixToPreviousFrame: simd_float3x3?
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
          segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
-         detectedObjects: [UUID: DetectedObject]? = nil, transformMatrixToNextFrame: simd_float3x3? = nil) {
+         detectedObjects: [UUID: DetectedObject]? = nil,
+         transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjects = detectedObjects
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
+        self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
     }
 }
 
+/**
+    SharedImageData is a "singleton" class that holds the camera image, depth image, segmentation label image,
+    segmented indices, detected objects, and the history of images.
+ 
+    It is used to share data between different parts of the app, such as the camera view and the segmentation pipeline.
+ 
+    Currently, while it is an ObservableObject, it is not used as a state object in the app. It is merely used as a global data store.
+ */
 class SharedImageData: ObservableObject {
-    @Published var cameraImage: CIImage?
+    var cameraImage: CIImage?
     
-    @Published var isLidarAvailable: Bool = false
-    @Published var depthImage: CIImage?
+    var isLidarAvailable: Bool = false
+    var depthImage: CIImage?
     
     // Overall segmentation image with all classes (labels)
-    @Published var segmentationLabelImage: CIImage?
+    var segmentationLabelImage: CIImage?
     // Indices of all the classes that were detected in the segmentation image
-    @Published var segmentedIndices: [Int] = []
-    @Published var detectedObjects: [UUID: DetectedObject] = [:]
-    // Single segmentation image for each class
-    @Published var classImages: [CIImage] = []
+    var segmentedIndices: [Int] = []
+    var detectedObjects: [UUID: DetectedObject] = [:]
     
     var history: Deque<ImageData> = []
     private let historyQueue = DispatchQueue(label: "com.example.sharedimagedata.history.queue", qos: .utility)
@@ -65,7 +74,6 @@ class SharedImageData: ObservableObject {
         
         self.segmentationLabelImage = nil
         self.segmentedIndices = []
-        self.classImages = []
         self.detectedObjects = [:]
         
         self.history.removeAll()
