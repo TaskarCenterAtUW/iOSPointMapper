@@ -7,6 +7,25 @@
 import SwiftUI
 import DequeModule
 
+class ImageData {
+    var cameraImage: CIImage
+    var depthImage: CIImage?
+    
+    var segmentationLabelImage: CIImage
+    var segmentedIndices: [Int]
+    var detectedObjects: [UUID: DetectedObject]
+    
+    init(cameraImage: CIImage, depthImage: CIImage?,
+            segmentationLabelImage: CIImage, segmentedIndices: [Int],
+         detectedObjects: [UUID: DetectedObject]) {
+        self.cameraImage = cameraImage
+        self.depthImage = depthImage
+        self.segmentationLabelImage = segmentationLabelImage
+        self.segmentedIndices = segmentedIndices
+        self.detectedObjects = detectedObjects
+    }
+}
+
 class SharedImageData: ObservableObject {
     @Published var cameraImage: CIImage?
     
@@ -21,23 +40,32 @@ class SharedImageData: ObservableObject {
     // Single segmentation image for each class
     @Published var classImages: [CIImage] = []
     
+    var history: Deque<ImageData> = []
+    private let historyQueue = DispatchQueue(label: "com.example.sharedimagedata.history.queue", qos: .utility)
+    var historyMaxCapacity: Int = 5
+        
     var segmentationFrames: Deque<CIImage> = []
     private let processingQueue = DispatchQueue(label: "com.example.sharedimagedata.queue", qos: .utility)
     var maxCapacity: Int
     var thresholdRatio: Float = 0.7
     
-    init(maxCapacity: Int = 100, thresholdRatio: Float = 0.7) {
+    init(maxCapacity: Int = 100, thresholdRatio: Float = 0.7, historyMaxCapacity: Int = 5) {
         self.maxCapacity = maxCapacity
+        self.thresholdRatio = thresholdRatio
+        self.historyMaxCapacity = historyMaxCapacity
     }
     
     func refreshData() {
         self.cameraImage = nil
         self.depthImage = nil
         
+        self.segmentationLabelImage = nil
         self.segmentedIndices = []
         self.classImages = []
+        self.detectedObjects = [:]
         
-        self.segmentationFrames = []
+        self.history.removeAll()
+        self.segmentationFrames.removeAll()
         
         self.isLidarAvailable = checkLidarAvailability()
     }
