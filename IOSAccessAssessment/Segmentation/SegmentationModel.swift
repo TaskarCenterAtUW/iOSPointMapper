@@ -47,6 +47,10 @@ struct PerClassSegmentationResultsOutput {
     }
 }
 
+
+/**
+ NOTE: This file has been removed from the app. It is only stored currently for reference.
+ */
 /** A class to handle segmentation of images by loading them in a queue.
  
  # Overview
