@@ -27,13 +27,16 @@ struct AnnotationView: View {
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
-    @State private var depthMapProcessor: DepthMapProcessor? = nil
     
     @State private var cameraUIImage: UIImage? = nil
     @State private var segmentationUIImage: UIImage? = nil
     
     let annotationCIContext = CIContext()
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    @State private var depthMapProcessor: DepthMapProcessor? = nil
+    let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
+    
+    
     let options = AnnotationOption.allCases
     
     var body: some View {
@@ -153,7 +156,14 @@ struct AnnotationView: View {
             print("Index out of bounds for segmentedIndices in AnnotationView")
             return
         }
+        
+        let images: [CIImage]? = annotationSegmentationPipeline.processRequest(imageDataHistory: sharedImageData.getImageDataHistory())
+        
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
+        if let images = images, !images.isEmpty {
+//            print("Unique grayscale values: ", CVPixelBufferUtils.extractUniqueGrayscaleValues(from: images[0].pixelBuffer!))
+            self.grayscaleToColorMasker.inputImage = images[0]
+        }
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)

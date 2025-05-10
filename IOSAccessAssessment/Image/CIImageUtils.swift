@@ -29,3 +29,35 @@ extension CIImage {
         return outputImage
     }
 }
+
+struct CIImageUtils {
+    static func toPixelBuffer(_ ciImage: CIImage, pixelFormat: OSType = kCVPixelFormatType_32BGRA) -> CVPixelBuffer? {
+        let width = Int(ciImage.extent.width)
+        let height = Int(ciImage.extent.height)
+        
+        var pixelBuffer: CVPixelBuffer?
+        let attrs: [CFString: Any] = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
+            kCVPixelBufferMetalCompatibilityKey: true
+        ]
+        
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            width,
+            height,
+            pixelFormat,
+            attrs as CFDictionary,
+            &pixelBuffer
+        )
+        
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            return nil
+        }
+        
+        let context = CIContext()
+        context.render(ciImage, to: buffer)
+        
+        return buffer
+    }
+}

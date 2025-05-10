@@ -59,7 +59,7 @@ class AnnotationSegmentationPipeline {
     
     func processRequest(imageDataHistory: [ImageData]) -> [CIImage]? {
         if self.isProcessing {
-            print("Already processing a request.")
+            print("Unable to process Annotation-based segmentation. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
         }
         guard let homographyTransformFilter = self.homographyTransformFilter else {
@@ -89,16 +89,24 @@ class AnnotationSegmentationPipeline {
             let currentImageData = imageDataHistory[i]
             let nextImageData = imageDataHistory[i+1]
             transformMatrix = (nextImageData.transformMatrixToNextFrame?.inverse ?? matrix_identity_float3x3) * transformMatrix
+            if currentImageData.segmentationLabelImage == nil {
+                continue
+            }
+            let buffer0 = CIImageUtils.toPixelBuffer(currentImageData.segmentationLabelImage!, pixelFormat: kCVPixelFormatType_OneComponent8)
+            print("Unique grayscale values of original: \(CVPixelBufferUtils.extractUniqueGrayscaleValues(from: buffer0!))")
             // Apply the homography transform to the current image
-            var transformedImage = homographyTransformFilter.apply(
+            let transformedImage = homographyTransformFilter.apply(
                 to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrix)
             if let transformedSegmentationLabelImage = transformedImage {
+                let buffer = CIImageUtils.toPixelBuffer(transformedSegmentationLabelImage, pixelFormat: kCVPixelFormatType_OneComponent8)
+                print("Unique grayscale values of transformed: \(CVPixelBufferUtils.extractUniqueGrayscaleValues(from: buffer!))")
                 transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
             } else {
                 print("Failed to apply homography transform to the image.")
             }
         }
         
+        self.isProcessing = false
         return transformedSegmentationLabelImages
     }
 }

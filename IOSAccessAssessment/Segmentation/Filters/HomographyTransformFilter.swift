@@ -66,7 +66,7 @@ struct HomographyTransformFilter {
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
-        commandEncoder.setBytes(&transformMatrixLocal, length: MemoryLayout<simd_float3x3>.size, index: 2)
+        commandEncoder.setBytes(&transformMatrixLocal, length: MemoryLayout<simd_float3x3>.size, index: 0)
         
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
