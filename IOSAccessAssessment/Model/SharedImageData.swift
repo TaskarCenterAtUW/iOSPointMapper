@@ -70,25 +70,50 @@ class SharedImageData: ObservableObject {
         self.isLidarAvailable = checkLidarAvailability()
     }
     
+    func recordImageData(imageData: ImageData) {
+        historyQueue.async {
+            if self.history.count >= self.historyMaxCapacity {
+                self.history.removeFirst()
+            }
+            self.history.append(imageData)
+        }
+    }
+    
+    func getLastImageData() -> ImageData? {
+        var lastImageData: ImageData?
+        historyQueue.sync {
+            lastImageData = self.history.last
+        }
+        return lastImageData
+    }
+    
+    func getImageDataHistory() -> [ImageData] {
+        var imageDataHistory: [ImageData] = []
+        historyQueue.sync {
+            imageDataHistory = Array(self.history)
+        }
+        return imageDataHistory
+    }
+    
     func appendFrame(frame: CIImage) {
+        func dropAlternateFrames() {
+            var newFrames = Deque<CIImage>()
+            for (index, frame) in self.segmentationFrames.enumerated() {
+                // Keep every alternate frame (even indices)
+                if index % 2 == 0 {
+                    newFrames.append(frame)
+                }
+            }
+            self.segmentationFrames = newFrames
+        }
+        
         processingQueue.async {
             if (Float(self.segmentationFrames.count)/Float(self.maxCapacity) > self.thresholdRatio) {
-                self.dropAlternateFrames()
+                dropAlternateFrames()
             }
             self.segmentationFrames.append(frame)
 //            print("Current frame count: \(self.segmentationFrames.count)")
         }
-    }
-    
-    private func dropAlternateFrames() {
-        var newFrames = Deque<CIImage>()
-        for (index, frame) in self.segmentationFrames.enumerated() {
-            // Keep every alternate frame (even indices)
-            if index % 2 == 0 {
-                newFrames.append(frame)
-            }
-        }
-        self.segmentationFrames = newFrames
     }
     
     func getFrames() -> [CIImage] {
