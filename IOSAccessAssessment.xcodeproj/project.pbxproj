@@ -43,6 +43,7 @@
 		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
+		A3DC22EF2DCF119A0020CE84 /* HomographyTransformProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformProcessor.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -140,6 +141,7 @@
 		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
+		A3DC22EE2DCF11970020CE84 /* HomographyTransformProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformProcessor.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -325,6 +327,7 @@
 		A3BB5AF92DB21080008673ED /* Filters */ = {
 			isa = PBXGroup;
 			children = (
+				A3DC22EE2DCF11970020CE84 /* HomographyTransformProcessor.swift */,
 				A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */,
 				A3DC22EC2DCF10050020CE84 /* Homography.metal */,
 				A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */,
@@ -610,6 +613,7 @@
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,
 				A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
+				A3DC22EF2DCF119A0020CE84 /* HomographyTransformProcessor.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,

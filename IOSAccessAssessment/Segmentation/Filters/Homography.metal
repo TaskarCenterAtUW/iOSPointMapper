@@ -11,13 +11,13 @@ using namespace metal;
 kernel void homographyWarpKernel(
     texture2d<float, access::read> inputTexture [[texture(0)]],
     texture2d<float, access::write> outputTexture [[texture(1)]],
-    constant float3x3& inverseHomography [[buffer(0)]],
+    constant float3x3& transformMatrix [[buffer(0)]],
     uint2 gid [[thread_position_in_grid]])
 {
     float2 outputCoord = float2(gid);
     
     float3 pos = float3(outputCoord, 1.0);
-    float3 warped = inverseHomography * pos;
+    float3 warped = transformMatrix * pos;
     float2 pixelCoord = warped.xy / warped.z;
     
     float2 inputImageSize = float2(inputTexture.get_width(), inputTexture.get_height());
