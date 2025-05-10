@@ -129,7 +129,7 @@ class CameraController: NSObject, ObservableObject {
     func startStream() {
         DispatchQueue.global(qos: .userInitiated).async {
             self.captureSession.startRunning()
-            self.captureDevice.configureDesiredFrameRate(15)
+            self.captureDevice.configureDesiredFrameRate(5)
         }
     }
     

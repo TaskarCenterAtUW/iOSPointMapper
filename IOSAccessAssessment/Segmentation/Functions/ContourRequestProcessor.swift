@@ -16,7 +16,7 @@ struct ContourRequestProcessor {
     var perimeterThreshold: Float = 0.01
     var selectionClassLabels: [UInt8] = []
     
-    let binaryMaskProcessor = BinaryMaskProcessor()
+    let binaryMaskFilter = BinaryMaskFilter()
     
     init(contourEpsilon: Float = 0.01,
                 perimeterThreshold: Float = 0.01,
@@ -127,7 +127,7 @@ struct ContourRequestProcessor {
 //        let start = DispatchTime.now()
         DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
             let classLabel = self.selectionClassLabels[index]
-            guard let mask = self.binaryMaskProcessor.apply(to: segmentationImage, targetValue: classLabel) else {
+            guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
                 print("Failed to generate mask for class label \(classLabel)")
                 return
             }

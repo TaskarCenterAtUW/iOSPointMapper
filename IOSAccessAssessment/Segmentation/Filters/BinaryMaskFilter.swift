@@ -11,9 +11,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-struct BinaryMaskProcessor {
-    var inputImage: CIImage?
-    
+struct BinaryMaskFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
