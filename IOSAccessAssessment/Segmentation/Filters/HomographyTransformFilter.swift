@@ -10,9 +10,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-struct HomographyTransformProcessor {
-    var inputImage: CIImage?
-    
+struct HomographyTransformFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
