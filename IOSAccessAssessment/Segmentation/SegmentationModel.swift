@@ -47,6 +47,10 @@ struct PerClassSegmentationResultsOutput {
     }
 }
 
+
+/**
+ NOTE: This file has been removed from the app. It is only stored currently for reference.
+ */
 /** A class to handle segmentation of images by loading them in a queue.
  
  # Overview
@@ -114,7 +118,9 @@ class SegmentationModel: ObservableObject {
         let outPixelBuffer = (obs.first)!
         
         let start = DispatchTime.now()
-        let (_, selectedIndices) = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let grayscaleValuesToIndex = Constants.ClassConstants.labelToIndexMap
+        let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
         let end = DispatchTime.now()
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
@@ -185,7 +191,9 @@ class SegmentationModel: ObservableObject {
         let outPixelBuffer = (obs.first)!
         
         let start = DispatchTime.now()
-        let (_, selectedIndices) = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: outPixelBuffer.pixelBuffer)
+        let grayscaleValuesToIndex = Constants.ClassConstants.labelToIndexMap
+        let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
         let end = DispatchTime.now()
         
         let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
