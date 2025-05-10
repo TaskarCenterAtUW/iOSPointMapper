@@ -62,6 +62,7 @@ void colorMatchingKernelLUT (
     outputTexture.write(pixelColor, gid);
 }
 
+// This kernel is used to create a binary mask based on a target value.
 extern "C"
 kernel
 void binaryMaskingKernel (

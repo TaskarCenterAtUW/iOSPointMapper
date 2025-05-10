@@ -13,7 +13,6 @@
 		3222F92B2B622E0A0019A079 /* IOSAccessAssessmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F92A2B622E0A0019A079 /* IOSAccessAssessmentTests.swift */; };
 		3222F9352B622E0A0019A079 /* IOSAccessAssessmentUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */; };
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
-		552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */ = {isa = PBXBuildFile; fileRef = 552D9A3C2BE0378E00E17E70 /* kernel.metal */; };
 		55659C082BB785CB0094DF01 /* CameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C072BB785CB0094DF01 /* CameraController.swift */; };
 		55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0C2BB786100094DF01 /* CameraManager.swift */; };
 		55659C102BB7863F0094DF01 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0F2BB7863F0094DF01 /* SetupView.swift */; };
@@ -28,7 +27,6 @@
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
-		A362AEC62DB48DED002D7598 /* WarpPointsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AEC52DB48DED002D7598 /* WarpPointsProcessor.swift */; };
 		A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AEC82DB638AB002D7598 /* CameraUtils.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
 		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
@@ -43,6 +41,7 @@
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
+		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -107,7 +106,6 @@
 		3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITests.swift; sourceTree = "<group>"; };
 		3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = espnetv2_pascal_256.mlmodel; sourceTree = "<group>"; };
-		552D9A3C2BE0378E00E17E70 /* kernel.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = kernel.metal; sourceTree = "<group>"; };
 		55659C072BB785CB0094DF01 /* CameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
 		55659C0C2BB786100094DF01 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		55659C0F2BB7863F0094DF01 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
@@ -122,7 +120,6 @@
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
-		A362AEC52DB48DED002D7598 /* WarpPointsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarpPointsProcessor.swift; sourceTree = "<group>"; };
 		A362AEC82DB638AB002D7598 /* CameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraUtils.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapProcessor.swift; sourceTree = "<group>"; };
 		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
@@ -140,6 +137,7 @@
 		A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpenCVWrapper.h; sourceTree = "<group>"; };
 		A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
+		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -325,9 +323,8 @@
 		A3BB5AF92DB21080008673ED /* Filters */ = {
 			isa = PBXGroup;
 			children = (
+				A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */,
 				A3BB5AFA2DB210A8008673ED /* BinaryMaskProcessor.swift */,
-				A362AEC52DB48DED002D7598 /* WarpPointsProcessor.swift */,
-				552D9A3C2BE0378E00E17E70 /* kernel.metal */,
 				DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */,
 			);
 			path = Filters;
@@ -587,11 +584,10 @@
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
-				A362AEC62DB48DED002D7598 /* WarpPointsProcessor.swift in Sources */,
 				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
-				552D9A3D2BE0378E00E17E70 /* kernel.metal in Sources */,
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
+				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,

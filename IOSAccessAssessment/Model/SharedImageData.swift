@@ -52,6 +52,7 @@ class SharedImageData: ObservableObject {
     // Indices of all the classes that were detected in the segmentation image
     var segmentedIndices: [Int] = []
     var detectedObjects: [UUID: DetectedObject] = [:]
+    var transformMatrixToPreviousFrame: simd_float3x3? = nil
     
     var history: Deque<ImageData> = []
     private let historyQueue = DispatchQueue(label: "com.example.sharedimagedata.history.queue", qos: .utility)
