@@ -13,7 +13,7 @@ import MetalKit
 
 /**
     A struct that processes warp points using Metal.
-    NOTE: Currently, not in use. 
+    NOTE: This file has been removed from the app. It is only stored currently for reference.
  */
 struct WarpPointsProcessor {
     var inputImage: CIImage?
