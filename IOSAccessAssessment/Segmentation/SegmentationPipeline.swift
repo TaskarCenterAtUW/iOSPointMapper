@@ -48,14 +48,17 @@ struct SegmentationPipelineResults {
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
     var detectedObjects: [UUID: DetectedObject]
+    var transformMatrix: simd_float3x3? = nil
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         detectedObjects: [UUID: DetectedObject], additionalPayload: [String: Any] = [:]) {
+         detectedObjects: [UUID: DetectedObject], transformMatrix: simd_float3x3? = nil,
+         additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjects = detectedObjects
+        self.transformMatrix = transformMatrix
         self.additionalPayload = additionalPayload
     }
 }
@@ -205,6 +208,7 @@ class SegmentationPipeline: ObservableObject {
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
                     detectedObjects: self.detectedObjects,
+                    transformMatrix: transformMatrix,
                     additionalPayload: additionalPayload
                 )))
             }

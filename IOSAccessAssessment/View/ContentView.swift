@@ -136,7 +136,19 @@ struct ContentView: View {
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.sharedImageData.detectedObjects = output.detectedObjects
 //            print("Objects: ", output.objects.map { ($0.value.centroid, $0.value.isCurrent) })
+            
+            // Saving history
+            // Update the transform matrix for the previous image
+            if let previousImageData = sharedImageData.getPreviousImageData() {
+                previousImageData.transformMatrixToNextFrame = output.transformMatrix
+            }
+            self.sharedImageData.recordImageData(imageData: ImageData(
+                cameraImage: nil, depthImage: nil,
+                segmentationLabelImage: output.segmentationImage,
+                segmentedIndices: output.segmentedIndices, detectedObjects: output.detectedObjects
+            ))
             self.sharedImageData.appendFrame(frame: output.segmentationImage)
+            
             if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
                 if (!sharedImageData.isLidarAvailable) {

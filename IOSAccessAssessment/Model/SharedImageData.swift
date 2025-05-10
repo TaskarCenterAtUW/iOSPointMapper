@@ -6,23 +6,27 @@
 //
 import SwiftUI
 import DequeModule
+import simd
 
 class ImageData {
-    var cameraImage: CIImage
+    var cameraImage: CIImage?
     var depthImage: CIImage?
     
-    var segmentationLabelImage: CIImage
-    var segmentedIndices: [Int]
-    var detectedObjects: [UUID: DetectedObject]
+    var segmentationLabelImage: CIImage?
+    var segmentedIndices: [Int]?
+    var detectedObjects: [UUID: DetectedObject]?
     
-    init(cameraImage: CIImage, depthImage: CIImage?,
-            segmentationLabelImage: CIImage, segmentedIndices: [Int],
-         detectedObjects: [UUID: DetectedObject]) {
+    var transformMatrixToNextFrame: simd_float3x3?
+    
+    init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
+         segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
+         detectedObjects: [UUID: DetectedObject]? = nil, transformMatrixToNextFrame: simd_float3x3? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjects = detectedObjects
+        self.transformMatrixToNextFrame = transformMatrixToNextFrame
     }
 }
 
@@ -79,7 +83,7 @@ class SharedImageData: ObservableObject {
         }
     }
     
-    func getLastImageData() -> ImageData? {
+    func getPreviousImageData() -> ImageData? {
         var lastImageData: ImageData?
         historyQueue.sync {
             lastImageData = self.history.last
