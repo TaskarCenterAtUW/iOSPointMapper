@@ -27,7 +27,9 @@ kernel void homographyWarpKernel(
     
     if (all(pixelCoord >= float2(0.0)) && all(pixelCoord < inputImageSize)) {
         // Only read if inside bounds
-        color = inputTexture.read(uint2(pixelCoord));
+        float4 colorValue = inputTexture.read(uint2(pixelCoord));
+//        color = float4(colorValue, colorValue, colorValue, 1.0);
+        color = colorValue;
     }
 
     outputTexture.write(color, gid);

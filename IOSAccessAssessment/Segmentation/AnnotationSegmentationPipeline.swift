@@ -94,12 +94,14 @@ class AnnotationSegmentationPipeline {
             }
             let buffer0 = CIImageUtils.toPixelBuffer(currentImageData.segmentationLabelImage!, pixelFormat: kCVPixelFormatType_OneComponent8)
             print("Unique grayscale values of original: \(CVPixelBufferUtils.extractUniqueGrayscaleValues(from: buffer0!))")
+            print("orignal format: \(buffer0?.pixelFormatName())")
             // Apply the homography transform to the current image
             let transformedImage = homographyTransformFilter.apply(
                 to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrix)
             if let transformedSegmentationLabelImage = transformedImage {
                 let buffer = CIImageUtils.toPixelBuffer(transformedSegmentationLabelImage, pixelFormat: kCVPixelFormatType_OneComponent8)
                 print("Unique grayscale values of transformed: \(CVPixelBufferUtils.extractUniqueGrayscaleValues(from: buffer!))")
+                print("transformed format: \(buffer?.pixelFormatName())")
                 transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
             } else {
                 print("Failed to apply homography transform to the image.")

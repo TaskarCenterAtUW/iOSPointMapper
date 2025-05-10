@@ -28,7 +28,7 @@ struct HomographyTransformFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -53,6 +53,9 @@ struct HomographyTransformFilter {
         guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
             return nil
         }
+//        guard let inputTexture = self.renderCIImageToTexture(inputImage, on: self.device, context: self.ciContext) else {
+//            return nil
+//        }
 
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
@@ -78,6 +81,20 @@ struct HomographyTransformFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])
+        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
     }
+    
+//    private func renderCIImageToTexture(_ ciImage: CIImage, on device: MTLDevice, context: CIContext) -> MTLTexture? {
+//        let width = Int(ciImage.extent.width)
+//        let height = Int(ciImage.extent.height)
+//
+//        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: width, height: height, mipmapped: false)
+//        descriptor.usage = [.shaderRead, .shaderWrite]
+//
+//        guard let texture = device.makeTexture(descriptor: descriptor) else { return nil }
+//
+//        context.render(ciImage, to: texture, commandBuffer: nil, bounds: ciImage.extent, colorSpace: CGColorSpaceCreateDeviceGray())
+//        return texture
+//    }
+
 }
