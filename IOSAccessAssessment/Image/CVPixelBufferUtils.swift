@@ -161,12 +161,12 @@ struct CVPixelBufferUtils {
      It also returns the indices of these values from Constants.ClassConstants.grayscaleValues.
      This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
      */
-    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> (Set<UInt8>, [Int]) {
+    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
         
         guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-            return (Set<UInt8>(), [])
+            return Set<UInt8>()
         }
         
         var buffer = vImage_Buffer(data: baseAddress,
@@ -175,7 +175,7 @@ struct CVPixelBufferUtils {
                                      rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
         var histogram = [vImagePixelCount](repeating: 0, count: 256)
         let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
-        guard histogramError == kvImageNoError else { return (Set<UInt8>(), []) }
+        guard histogramError == kvImageNoError else { return Set<UInt8>() }
         
         var uniqueValues = Set<UInt8>()
         for i in 0..<histogram.count {
@@ -183,16 +183,7 @@ struct CVPixelBufferUtils {
                 uniqueValues.insert(UInt8(i))
             }
         }
-        
-        let valueToIndex = Dictionary(uniqueKeysWithValues: Constants.ClassConstants.grayscaleValues.enumerated().map { ($0.element, $0.offset) })
-        
-        // MARK: sorting may not be necessary for our use case
-        let selectedIndices = uniqueValues.map { UInt8($0) }
-            .map {Float($0) / 255.0 }
-            .compactMap { valueToIndex[$0]}
-            .sorted()
-            
-        return (uniqueValues, selectedIndices)
+        return uniqueValues
     }
 }
 
