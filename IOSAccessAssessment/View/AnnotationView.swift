@@ -150,7 +150,7 @@ struct AnnotationView: View {
     }
     
     func initializeView() {
-        self.transformedLabelImages = annotationSegmentationPipeline.processTransformationsRequest(
+        self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
             imageDataHistory: sharedImageData.getImageDataHistory())
     }
     
@@ -168,6 +168,7 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         if let transformedLabelImages = self.transformedLabelImages, !transformedLabelImages.isEmpty {
             self.grayscaleToColorMasker.inputImage = transformedLabelImages.last
+            self.annotationSegmentationPipeline.processUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
         }
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]

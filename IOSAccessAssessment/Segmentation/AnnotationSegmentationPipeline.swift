@@ -44,6 +44,7 @@ class AnnotationSegmentationPipeline {
     
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
+    var unionOfMasksProcessor: UnionOfMasksProcessor?
     
     init() {
         self.contourRequestProcessor = ContourRequestProcessor(
@@ -51,6 +52,7 @@ class AnnotationSegmentationPipeline {
             perimeterThreshold: self.perimeterThreshold,
             selectionClassLabels: self.selectionClassLabels)
         self.homographyTransformFilter = HomographyTransformFilter()
+        self.unionOfMasksProcessor = UnionOfMasksProcessor()
     }
     
     func reset() {
@@ -121,6 +123,12 @@ class AnnotationSegmentationPipeline {
     }
     
     func processUnionOfMasksRequest(segmentationLabelImages: [CIImage]) -> CIImage? {
+        if self.isProcessing {
+            print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
+            return nil
+        }
+        
+        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
         return nil
     }
 }
