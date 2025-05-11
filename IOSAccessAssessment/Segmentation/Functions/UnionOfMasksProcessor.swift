@@ -9,6 +9,8 @@ import Metal
 import CoreImage
 import MetalKit
 
+// TODO: Check if a plain union of masks runs the risk of accummulating too many false positives
+// Would a voting system be better?
 struct UnionOfMasksProcessor {
     // Metal-related properties
     private let device: MTLDevice

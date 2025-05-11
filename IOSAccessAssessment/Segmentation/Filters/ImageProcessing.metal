@@ -87,6 +87,35 @@ void binaryMaskingKernel (
     outputTexture.write(pixelColor, gid);
 }
 
+extern "C"
+kernel
+void dimensionBasedMaskingKernel (
+    texture2d<float, access::read> inputTexture [[texture(0)]],
+    texture2d<float, access::write> outputTexture [[texture(1)]],
+    constant float& minX [[buffer(0)]],
+    constant float& minY [[buffer(1)]],
+    constant float& maxX [[buffer(2)]],
+    constant float& maxY [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= inputTexture.get_width() || gid.y >= inputTexture.get_height())
+        return;
+
+    float4 pixelColor = inputTexture.read(gid);
+    float2 pixelCoord = float2(gid);
+
+    // Check if the pixel is within the specified bounds
+    if (pixelCoord.x < (minX * inputTexture.get_width()) ||
+        pixelCoord.x > (maxX * inputTexture.get_width()) ||
+        pixelCoord.y < (minY * inputTexture.get_height()) ||
+        pixelCoord.y > (maxY * inputTexture.get_height())) {
+        pixelColor = float4(0.0, 0.0, 0.0, 0.0); // Set to transparent
+    }
+    
+    outputTexture.write(pixelColor, gid);
+}
+                                  
+                                  
 kernel void warpPointsKernel(
     device const float2* inputPoints [[buffer(0)]],
     device float2* outputPoints [[buffer(1)]],
