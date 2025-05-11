@@ -14,9 +14,9 @@ import simd
 
 struct AnnotationSegmentationPipelineResults {
     var segmentationImage: CIImage
-    var detectedObjects: [UUID: DetectedObject]
+    var detectedObjects: [DetectedObject]
     
-    init(segmentationImage: CIImage, detectedObjects: [UUID: DetectedObject]) {
+    init(segmentationImage: CIImage, detectedObjects: [DetectedObject]) {
         self.segmentationImage = segmentationImage
         self.detectedObjects = detectedObjects
     }
@@ -40,7 +40,7 @@ class AnnotationSegmentationPipeline {
     var contourEpsilon: Float = 0.01
     // TODO: Check what would be the appropriate value for this
     // For normalized points
-    var perimeterThreshold: Float = 0.01
+    var perimeterThreshold: Float = 0.2
     
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
@@ -123,14 +123,10 @@ class AnnotationSegmentationPipeline {
     }
     
     func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) {
-//        if self.isProcessing {
-//            print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
-//            return
-//        }
         self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(targetValue: UInt8) -> CIImage? {
+    func processUnionOfMasksRequest(targetValue: UInt8) -> AnnotationSegmentationPipelineResults? {
         if self.isProcessing {
             print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
@@ -143,7 +139,18 @@ class AnnotationSegmentationPipeline {
         }
         
         let unionImage = unionOfMasksProcessor.apply(targetValue: targetValue)
+        guard unionImage != nil else {
+            print("Failed to apply union of masks.")
+            self.isProcessing = false
+            return nil
+        }
+        self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
+        let objectList = self.contourRequestProcessor?.processRequest(from: unionImage!) ?? []
+        
         self.isProcessing = false
-        return unionImage
+        return AnnotationSegmentationPipelineResults(
+            segmentationImage: unionImage!,
+            detectedObjects: objectList
+        )
     }
 }

@@ -42,7 +42,7 @@ struct UnionOfMasksProcessor {
         self.pipeline = pipeline
     }
     
-    mutating func setArrayTexture(images: [CIImage]) {
+    mutating func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
         let imageCount = images.count
         guard imageCount > 0 else {
             print("Error: No images provided")
@@ -50,7 +50,6 @@ struct UnionOfMasksProcessor {
         }
         let inputImage = images[0]
         
-        let format: MTLPixelFormat = .rgba8Unorm
         let width = Int(inputImage.extent.width)
         let height = Int(inputImage.extent.height)
         
@@ -105,6 +104,7 @@ struct UnionOfMasksProcessor {
     
     func apply(targetValue: UInt8) -> CIImage? {
         guard let inputImages = self.arrayTexture else {
+            print("Error: No input images provided")
             return nil
         }
         
@@ -165,85 +165,4 @@ struct UnionOfMasksProcessor {
         }
     }
 
-}
-
-extension UnionOfMasksProcessor {
-//    func ciImagesToTexture2DArray(ciImages: [CIImage],
-//                                   context: CIContext,
-//                                   device: MTLDevice,
-//                                   width: Int,
-//                                   height: Int,
-//                                   pixelFormat: MTLPixelFormat = .r8Unorm) -> MTLTexture? {
-//        // 1. Create destination texture2D array
-//        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat,
-//                                                                  width: width,
-//                                                                  height: height,
-//                                                                  mipmapped: false)
-//        descriptor.textureType = .type2DArray
-//        descriptor.usage = [.shaderRead, .shaderWrite]
-//        descriptor.arrayLength = ciImages.count
-//
-//        guard let textureArray = device.makeTexture(descriptor: descriptor) else {
-//            return nil
-//        }
-//
-//        // 2. Create temporary CVPixelBuffer (grayscale format for mask)
-//        let attrs: [CFString: Any] = [
-//            kCVPixelBufferCGImageCompatibilityKey: true,
-//            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
-//            kCVPixelBufferMetalCompatibilityKey: true
-//        ]
-//
-//        let pixelBufferOptions = attrs as CFDictionary
-//
-//        for (i, image) in ciImages.enumerated() {
-//            var pixelBuffer: CVPixelBuffer?
-//            CVPixelBufferCreate(kCFAllocatorDefault, width, height,
-//                                kCVPixelFormatType_OneComponent8,
-//                                pixelBufferOptions,
-//                                &pixelBuffer)
-//
-//            guard let buffer = pixelBuffer else { continue }
-//
-//            // 3. Render CIImage into pixel buffer
-//            context.render(image, to: buffer)
-//
-//            // 4. Create a temporary MTLTexture from pixel buffer
-//            var cvTextureOut: CVMetalTexture?
-//            let textureCache: CVMetalTextureCache
-//            var cache: CVMetalTextureCache?
-//            CVMetalTextureCacheCreate(nil, nil, device, nil, &cache)
-//            guard let texCache = cache else { return nil }
-//            textureCache = texCache
-//
-//            CVMetalTextureCacheCreateTextureFromImage(nil, textureCache,
-//                                                      buffer,
-//                                                      nil,
-//                                                      pixelFormat,
-//                                                      width,
-//                                                      height,
-//                                                      0,
-//                                                      &cvTextureOut)
-//
-//            guard let cvTex = cvTextureOut,
-//                  let srcTexture = CVMetalTextureGetTexture(cvTex) else {
-//                continue
-//            }
-//
-//            // 5. Copy the rendered result into the correct slice
-//            let region = MTLRegionMake2D(0, 0, width, height)
-//            var data = [UInt8](repeating: 0, count: width * height)
-//            srcTexture.getBytes(&data,
-//                                bytesPerRow: width,
-//                                from: region,
-//                                mipmapLevel: 0)
-//            textureArray.replace(region: region,
-//                                 mipmapLevel: 0,
-//                                 slice: i,
-//                                 withBytes: data,
-//                                 bytesPerRow: width)
-//        }
-//
-//        return textureArray
-//    }
 }

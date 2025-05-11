@@ -103,7 +103,7 @@ struct AnnotationView: View {
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
-                initializeView()
+                initializeAnnotationSegmentationPipeline()
                 refreshView()
             }
             .onDisappear {
@@ -149,16 +149,11 @@ struct AnnotationView: View {
         return true
     }
     
-    func initializeView() {
-        self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
-            imageDataHistory: sharedImageData.getImageDataHistory())
-        if let transformedLabelImages = transformedLabelImages {
-            print("Transformed label images count: \(transformedLabelImages.count)")
-            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
-        }
-    }
-    
     func refreshView() {
+        if self.transformedLabelImages == nil {
+            self.initializeAnnotationSegmentationPipeline()
+        }
+        
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
         self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
@@ -169,26 +164,24 @@ struct AnnotationView: View {
             return
         }
         
-        self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
-//        if let transformedLabelImages = self.transformedLabelImages, !transformedLabelImages.isEmpty {
-////            self.grayscaleToColorMasker.inputImage = transformedLabelImages.last
-//            let unionImage = self.annotationSegmentationPipeline.processUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
-//            if let unionImage = unionImage {
-//                self.grayscaleToColorMasker.inputImage = unionImage
-//            } else {
-//                print("Failed to create union image")
-//            }
-//        }
-        let unionOfMasksImage = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
+        var inputImage = sharedImageData.segmentationLabelImage
+        let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
             targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-        if let unionImage = unionOfMasksImage {
-            self.grayscaleToColorMasker.inputImage = unionImage
+        var unionOfMasksObjectList: [DetectedObject] = []
+        if let unionOfMasksResults = unionOfMasksResults {
+            inputImage = unionOfMasksResults.segmentationImage
+            unionOfMasksObjectList = unionOfMasksResults.detectedObjects
         } else {
             print("Failed to create union image")
         }
+        self.grayscaleToColorMasker.inputImage = inputImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        if unionOfMasksObjectList.count > 0 {
+            self.segmentationUIImage = UIImage(ciImage: rasterizeContourObjects(objects: unionOfMasksObjectList,
+                size: Constants.ClassConstants.inputSize)!, scale: 1.0, orientation: .up)
+        }
         
 //        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
 //                                            height: sharedImageData.segmentationLabelImage!.extent.height)
@@ -198,6 +191,15 @@ struct AnnotationView: View {
 //        } .map({ $0.value })
 //        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
 //        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .up)
+    }
+    
+    private func initializeAnnotationSegmentationPipeline() {
+        self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
+            imageDataHistory: sharedImageData.getImageDataHistory())
+        if let transformedLabelImages = transformedLabelImages {
+            print("Transformed label images count: \(transformedLabelImages.count)")
+            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+        }
     }
     
     func confirmAnnotation() {
