@@ -125,6 +125,9 @@ extension CameraManager {
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
             kCVPixelBufferWidthKey as String: Constants.ClassConstants.inputSize.width,
             kCVPixelBufferHeightKey as String: Constants.ClassConstants.inputSize.height,
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
+            kCVPixelBufferMetalCompatibilityKey as String: true,
             kCVPixelBufferIOSurfacePropertiesKey as String: [:]
         ]
         let cameraStatus = CVPixelBufferPoolCreate(
@@ -146,6 +149,9 @@ extension CameraManager {
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_DepthFloat32,
             kCVPixelBufferWidthKey as String: Constants.ClassConstants.inputSize.width,
             kCVPixelBufferHeightKey as String: Constants.ClassConstants.inputSize.height,
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
+            kCVPixelBufferMetalCompatibilityKey as String: true,
             kCVPixelBufferIOSurfacePropertiesKey as String: [:]
         ]
         let depthStatus = CVPixelBufferPoolCreate(

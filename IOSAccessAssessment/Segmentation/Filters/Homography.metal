@@ -23,11 +23,13 @@ kernel void homographyWarpKernel(
     float2 inputImageSize = float2(inputTexture.get_width(), inputTexture.get_height());
 
 //    float4 color = float4(pixelCoord.x, pixelCoord.y, 0.0, 1.0);
-    float4 color = float4(0.0, 0.0, 0.0, 0.0); // Default color
+    float4 color = float4(1.0, 1.0, 1.0, 1.0); // Default color
     
     if (all(pixelCoord >= float2(0.0)) && all(pixelCoord < inputImageSize)) {
         // Only read if inside bounds
-        color = inputTexture.read(uint2(pixelCoord));
+        float4 colorValue = inputTexture.read(uint2(pixelCoord));
+//        color = float4(colorValue, colorValue, colorValue, 1.0);
+        color = colorValue;
     }
 
     outputTexture.write(color, gid);

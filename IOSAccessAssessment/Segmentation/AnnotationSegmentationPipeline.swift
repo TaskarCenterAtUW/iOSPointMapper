@@ -12,6 +12,16 @@ import CoreML
 import OrderedCollections
 import simd
 
+struct AnnotationSegmentationPipelineResults {
+    var segmentationImage: CIImage
+    var detectedObjects: [DetectedObject]
+    
+    init(segmentationImage: CIImage, detectedObjects: [DetectedObject]) {
+        self.segmentationImage = segmentationImage
+        self.detectedObjects = detectedObjects
+    }
+}
+
 /**
  A class to handle the segmentation pipeline for annotation purposes.
  Unlike the main SegmentationPipeline, this class processes images and returns the results synchronously.
@@ -30,10 +40,11 @@ class AnnotationSegmentationPipeline {
     var contourEpsilon: Float = 0.01
     // TODO: Check what would be the appropriate value for this
     // For normalized points
-    var perimeterThreshold: Float = 0.01
+    var perimeterThreshold: Float = 0.2
     
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
+    var unionOfMasksProcessor: UnionOfMasksProcessor?
     
     init() {
         self.contourRequestProcessor = ContourRequestProcessor(
@@ -41,6 +52,7 @@ class AnnotationSegmentationPipeline {
             perimeterThreshold: self.perimeterThreshold,
             selectionClassLabels: self.selectionClassLabels)
         self.homographyTransformFilter = HomographyTransformFilter()
+        self.unionOfMasksProcessor = UnionOfMasksProcessor()
     }
     
     func reset() {
@@ -57,9 +69,9 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
-    func processRequest(imageDataHistory: [ImageData]) -> [CIImage]? {
+    func processTransformationsRequest(imageDataHistory: [ImageData]) -> [CIImage]? {
         if self.isProcessing {
-            print("Already processing a request.")
+            print("Unable to process Annotation-based segmentation. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
         }
         guard let homographyTransformFilter = self.homographyTransformFilter else {
@@ -84,14 +96,21 @@ class AnnotationSegmentationPipeline {
          Process each image by applying the homography transforms of the successive images.
          */
         // Identity matrix for the first image
-        var transformMatrix: simd_float3x3 = matrix_identity_float3x3
-        for i in (0..<imageDataHistory.count-1).reversed() {
+        var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
+        for i in (0..<imageDataHistory.count).reversed() {
             let currentImageData = imageDataHistory[i]
-            let nextImageData = imageDataHistory[i+1]
-            transformMatrix = (nextImageData.transformMatrixToNextFrame?.inverse ?? matrix_identity_float3x3) * transformMatrix
+            if currentImageData.segmentationLabelImage == nil {
+                transformMatrixToNextFrame = (
+                    currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
+                ) * transformMatrixToNextFrame
+                continue
+            }
             // Apply the homography transform to the current image
-            var transformedImage = homographyTransformFilter.apply(
-                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrix)
+            let transformedImage = homographyTransformFilter.apply(
+                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
+            transformMatrixToNextFrame = (
+                currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
+            ) * transformMatrixToNextFrame
             if let transformedSegmentationLabelImage = transformedImage {
                 transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
             } else {
@@ -99,6 +118,39 @@ class AnnotationSegmentationPipeline {
             }
         }
         
+        self.isProcessing = false
         return transformedSegmentationLabelImages
+    }
+    
+    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) {
+        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
+    }
+    
+    func processUnionOfMasksRequest(targetValue: UInt8) -> AnnotationSegmentationPipelineResults? {
+        if self.isProcessing {
+            print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
+            return nil
+        }
+        self.isProcessing = true
+        
+        guard let unionOfMasksProcessor = self.unionOfMasksProcessor else {
+            print("Union of masks processor is not initialized.")
+            return nil
+        }
+        
+        let unionImage = unionOfMasksProcessor.apply(targetValue: targetValue)
+        guard unionImage != nil else {
+            print("Failed to apply union of masks.")
+            self.isProcessing = false
+            return nil
+        }
+        self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
+        let objectList = self.contourRequestProcessor?.processRequest(from: unionImage!) ?? []
+        
+        self.isProcessing = false
+        return AnnotationSegmentationPipelineResults(
+            segmentationImage: unionImage!,
+            detectedObjects: objectList
+        )
     }
 }
