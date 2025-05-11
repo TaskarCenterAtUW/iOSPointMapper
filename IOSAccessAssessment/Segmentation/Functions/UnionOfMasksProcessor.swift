@@ -125,8 +125,8 @@ struct UnionOfMasksProcessor {
         var targetValueLocal = targetValue
         
         commandEncoder.setComputePipelineState(self.pipeline)
-//        commandEncoder.setTexture(inputImages, index: 0)
-        commandEncoder.setTexture(outputTexture, index: 0)
+        commandEncoder.setTexture(inputImages, index: 0)
+        commandEncoder.setTexture(outputTexture, index: 1)
         commandEncoder.setBytes(&imageCountLocal, length: MemoryLayout<Int>.size, index: 0)
         commandEncoder.setBytes(&targetValueLocal, length: MemoryLayout<UInt8>.size, index: 1)
         

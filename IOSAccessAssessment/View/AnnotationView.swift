@@ -181,8 +181,8 @@ struct AnnotationView: View {
 //        }
         let unionOfMasksImage = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
             targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-        if let unionOfMasksImage = unionOfMasksImage {
-            self.grayscaleToColorMasker.inputImage = unionOfMasksImage
+        if let unionImage = unionOfMasksImage {
+            self.grayscaleToColorMasker.inputImage = unionImage
         } else {
             print("Failed to create union image")
         }

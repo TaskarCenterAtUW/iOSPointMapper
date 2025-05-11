@@ -11,8 +11,8 @@ using namespace metal;
 kernel
 void
 unionOfMasksKernel(
-//    texture2d_array<float, access::read> masks [[texture(0)]],
-    texture2d<float, access::write> outputTexture [[texture(0)]],
+    texture2d_array<float, access::read> masks [[texture(0)]],
+    texture2d<float, access::write> outputTexture [[texture(1)]],
     constant uint &maskCount [[buffer(0)]],
     constant uint8_t &targetValue [[buffer(1)]],
     uint2 gid [[thread_position_in_grid]]
@@ -20,11 +20,16 @@ unionOfMasksKernel(
     if (gid.x >= outputTexture.get_width() || gid.y >= outputTexture.get_height())
         return;
     
-    constexpr sampler s(address::clamp_to_edge, filter::nearest);
+    float4 color = float4(0.0, 0.0, 0.0, 0.0); // Default color
     
-    float2 texCoord = float2(gid) / float2(outputTexture.get_width(), outputTexture.get_height());
-    
-    float4 color = float4(0.705882352941176, 0.705882352941176, 0.705882352941176, 1.0);
+    for (uint i = 0; i < maskCount; i++) {
+        float4 maskValue = masks.read(gid, i);
+        uint8_t index = min(uint(round(maskValue.r * 255.0)), 255u);
+        if (index == targetValue) {
+            color = maskValue;
+            break;
+        }
+    }
     
     outputTexture.write(color, gid);
 }
