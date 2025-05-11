@@ -122,13 +122,28 @@ class AnnotationSegmentationPipeline {
         return transformedSegmentationLabelImages
     }
     
-    func processUnionOfMasksRequest(segmentationLabelImages: [CIImage]) -> CIImage? {
+    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) {
+        if self.isProcessing {
+            print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
+            return
+        }
+        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
+    }
+    
+    func processUnionOfMasksRequest(targetValue: UInt8) -> CIImage? {
         if self.isProcessing {
             print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
         }
+        self.isProcessing = true
         
-        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
-        return nil
+        guard let unionOfMasksProcessor = self.unionOfMasksProcessor else {
+            print("Union of masks processor is not initialized.")
+            return nil
+        }
+        
+        let unionOfMasks = unionOfMasksProcessor.apply(targetValue: targetValue)
+        self.isProcessing = false
+        return unionOfMasks
     }
 }

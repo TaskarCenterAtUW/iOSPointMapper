@@ -152,6 +152,10 @@ struct AnnotationView: View {
     func initializeView() {
         self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
             imageDataHistory: sharedImageData.getImageDataHistory())
+        if let transformedLabelImages = transformedLabelImages {
+            print("Transformed label images count: \(transformedLabelImages.count)")
+            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+        }
     }
     
     func refreshView() {
@@ -166,9 +170,21 @@ struct AnnotationView: View {
         }
         
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
-        if let transformedLabelImages = self.transformedLabelImages, !transformedLabelImages.isEmpty {
-            self.grayscaleToColorMasker.inputImage = transformedLabelImages.last
-            self.annotationSegmentationPipeline.processUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+//        if let transformedLabelImages = self.transformedLabelImages, !transformedLabelImages.isEmpty {
+////            self.grayscaleToColorMasker.inputImage = transformedLabelImages.last
+//            let unionImage = self.annotationSegmentationPipeline.processUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+//            if let unionImage = unionImage {
+//                self.grayscaleToColorMasker.inputImage = unionImage
+//            } else {
+//                print("Failed to create union image")
+//            }
+//        }
+        let unionOfMasksImage = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
+            targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+        if let unionOfMasksImage = unionOfMasksImage {
+            self.grayscaleToColorMasker.inputImage = unionOfMasksImage
+        } else {
+            print("Failed to create union image")
         }
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]

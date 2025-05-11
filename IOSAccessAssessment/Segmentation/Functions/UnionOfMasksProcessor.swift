@@ -19,6 +19,10 @@ struct UnionOfMasksProcessor {
     private let ciContext: CIContext
     
     var arrayTexture: MTLTexture?
+    var imageCount: Int = 0
+    var format: MTLPixelFormat = .rgba8Unorm
+    var width: Int = 0
+    var height: Int = 0
     
     init() {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -31,7 +35,7 @@ struct UnionOfMasksProcessor {
         
         self.ciContext = CIContext(mtlDevice: device)
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "unionOfMasksKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             fatalError("Error: Failed to initialize Metal pipeline")
         }
@@ -40,7 +44,10 @@ struct UnionOfMasksProcessor {
     
     mutating func setArrayTexture(images: [CIImage]) {
         let imageCount = images.count
-        guard imageCount > 0 else { return }
+        guard imageCount > 0 else {
+            print("Error: No images provided")
+            return
+        }
         let inputImage = images[0]
         
         let format: MTLPixelFormat = .rgba8Unorm
@@ -90,6 +97,50 @@ struct UnionOfMasksProcessor {
         }
         
         self.arrayTexture = arrayTexture
+        self.imageCount = imageCount
+        self.width = width
+        self.height = height
+        self.format = format
+    }
+    
+    func apply(targetValue: UInt8) -> CIImage? {
+        guard let inputImages = self.arrayTexture else {
+            return nil
+        }
+        
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
+                                                                  mipmapped: false)
+        descriptor.usage = [.shaderRead, .shaderWrite]
+        
+        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+        
+        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
+        guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
+              let commandBuffer = self.commandQueue.makeCommandBuffer(),
+              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            return nil
+        }
+        
+        var imageCountLocal = self.imageCount
+        var targetValueLocal = targetValue
+        
+        commandEncoder.setComputePipelineState(self.pipeline)
+//        commandEncoder.setTexture(inputImages, index: 0)
+        commandEncoder.setTexture(outputTexture, index: 0)
+        commandEncoder.setBytes(&imageCountLocal, length: MemoryLayout<Int>.size, index: 0)
+        commandEncoder.setBytes(&targetValueLocal, length: MemoryLayout<UInt8>.size, index: 1)
+        
+        let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
+        let threadgroups = MTLSize(width: (self.width + threadgroupSize.width - 1) / threadgroupSize.width,
+                                   height: (self.height + threadgroupSize.height - 1) / threadgroupSize.height,
+                                   depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
+        commandEncoder.endEncoding()
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+
+        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
     }
     
     private func ciImageToTexture(image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]) -> MTLTexture? {
