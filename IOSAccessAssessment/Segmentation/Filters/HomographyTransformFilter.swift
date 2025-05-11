@@ -28,7 +28,7 @@ struct HomographyTransformFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull()])
+        self.ciContext = CIContext(mtlDevice: device)
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {

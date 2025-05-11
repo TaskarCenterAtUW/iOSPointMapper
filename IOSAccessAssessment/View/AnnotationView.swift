@@ -34,7 +34,9 @@ struct AnnotationView: View {
     let annotationCIContext = CIContext()
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     @State private var depthMapProcessor: DepthMapProcessor? = nil
+    
     let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
+    @State var transformedLabelImages: [CIImage]? = nil
     
     
     let options = AnnotationOption.allCases
@@ -101,6 +103,7 @@ struct AnnotationView: View {
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
+                initializeView()
                 refreshView()
             }
             .onDisappear {
@@ -146,6 +149,11 @@ struct AnnotationView: View {
         return true
     }
     
+    func initializeView() {
+        self.transformedLabelImages = annotationSegmentationPipeline.processTransformationsRequest(
+            imageDataHistory: sharedImageData.getImageDataHistory())
+    }
+    
     func refreshView() {
         let cameraCGImage = annotationCIContext.createCGImage(
             sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
@@ -157,12 +165,9 @@ struct AnnotationView: View {
             return
         }
         
-        let images: [CIImage]? = annotationSegmentationPipeline.processTransformationsRequest(
-            imageDataHistory: sharedImageData.getImageDataHistory())
-        
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
-        if let images = images, !images.isEmpty {
-            self.grayscaleToColorMasker.inputImage = images.last
+        if let transformedLabelImages = self.transformedLabelImages, !transformedLabelImages.isEmpty {
+            self.grayscaleToColorMasker.inputImage = transformedLabelImages.last
         }
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
