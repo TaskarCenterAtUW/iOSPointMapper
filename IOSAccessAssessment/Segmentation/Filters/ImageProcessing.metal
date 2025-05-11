@@ -92,7 +92,7 @@ kernel
 void dimensionBasedMaskingKernel (
     texture2d<float, access::read> inputTexture [[texture(0)]],
     texture2d<float, access::write> outputTexture [[texture(1)]],
-    constant float& minX [[buffer(0)]],
+    constant float& minX [[buffer(0)]], // Normalized coordinates
     constant float& minY [[buffer(1)]],
     constant float& maxX [[buffer(2)]],
     constant float& maxY [[buffer(3)]],
