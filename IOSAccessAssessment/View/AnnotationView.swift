@@ -157,12 +157,12 @@ struct AnnotationView: View {
             return
         }
         
-        let images: [CIImage]? = annotationSegmentationPipeline.processRequest(imageDataHistory: sharedImageData.getImageDataHistory())
+        let images: [CIImage]? = annotationSegmentationPipeline.processTransformationsRequest(
+            imageDataHistory: sharedImageData.getImageDataHistory())
         
         self.grayscaleToColorMasker.inputImage = sharedImageData.segmentationLabelImage
         if let images = images, !images.isEmpty {
-//            print("Unique grayscale values: ", CVPixelBufferUtils.extractUniqueGrayscaleValues(from: images[0].pixelBuffer!))
-            self.grayscaleToColorMasker.inputImage = images[0]
+            self.grayscaleToColorMasker.inputImage = images.last
         }
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]

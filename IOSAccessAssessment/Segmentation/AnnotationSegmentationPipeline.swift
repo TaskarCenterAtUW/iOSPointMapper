@@ -12,6 +12,16 @@ import CoreML
 import OrderedCollections
 import simd
 
+struct AnnotationSegmentationPipelineResults {
+    var segmentationImage: CIImage
+    var detectedObjects: [UUID: DetectedObject]
+    
+    init(segmentationImage: CIImage, detectedObjects: [UUID: DetectedObject]) {
+        self.segmentationImage = segmentationImage
+        self.detectedObjects = detectedObjects
+    }
+}
+
 /**
  A class to handle the segmentation pipeline for annotation purposes.
  Unlike the main SegmentationPipeline, this class processes images and returns the results synchronously.
@@ -57,7 +67,7 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
-    func processRequest(imageDataHistory: [ImageData]) -> [CIImage]? {
+    func processTransformationsRequest(imageDataHistory: [ImageData]) -> [CIImage]? {
         if self.isProcessing {
             print("Unable to process Annotation-based segmentation. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
@@ -84,17 +94,21 @@ class AnnotationSegmentationPipeline {
          Process each image by applying the homography transforms of the successive images.
          */
         // Identity matrix for the first image
-        var transformMatrix: simd_float3x3 = matrix_identity_float3x3
-        for i in (0..<imageDataHistory.count-1).reversed() {
+        var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
+        for i in (0..<imageDataHistory.count).reversed() {
             let currentImageData = imageDataHistory[i]
-            let nextImageData = imageDataHistory[i+1]
-            transformMatrix = (nextImageData.transformMatrixToNextFrame?.inverse ?? matrix_identity_float3x3) * transformMatrix
             if currentImageData.segmentationLabelImage == nil {
+                transformMatrixToNextFrame = (
+                    currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
+                ) * transformMatrixToNextFrame
                 continue
             }
             // Apply the homography transform to the current image
             let transformedImage = homographyTransformFilter.apply(
-                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrix)
+                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
+            transformMatrixToNextFrame = (
+                currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
+            ) * transformMatrixToNextFrame
             if let transformedSegmentationLabelImage = transformedImage {
                 transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
             } else {
@@ -104,5 +118,9 @@ class AnnotationSegmentationPipeline {
         
         self.isProcessing = false
         return transformedSegmentationLabelImages
+    }
+    
+    func processUnionOfMasksRequest(segmentationLabelImages: [CIImage]) -> CIImage? {
+        return nil
     }
 }
