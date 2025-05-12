@@ -191,10 +191,6 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
-        if unionOfMasksObjectList.count > 0 {
-            self.segmentationUIImage = UIImage(ciImage: rasterizeContourObjects(objects: unionOfMasksObjectList,
-                size: Constants.ClassConstants.inputSize)!, scale: 1.0, orientation: .up)
-        }
         
 //        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
 //                                            height: sharedImageData.segmentationLabelImage!.extent.height)
