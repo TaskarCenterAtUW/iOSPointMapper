@@ -85,7 +85,7 @@ class SegmentationPipeline: ObservableObject {
     @Published var segmentationImage: CIImage?
     @Published var segmentedIndices: [Int] = []
     
-    // MARK: Temporary segmentationRequest UIImage
+    // MARK: Temporary segmentationRequest UIImage. Later we should move this mapping to the SharedImageData in ContentView
     @Published var segmentationResultUIImage: UIImage?
     
     // TODO: Check what would be the appropriate value for this
@@ -101,7 +101,7 @@ class SegmentationPipeline: ObservableObject {
 //    @Published var transformedFloatingImage: CIImage?
 //    @Published var transformedFloatingObjects: [DetectedObject]? = nil
     
-//    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     
     var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     var contourRequestProcessor: ContourRequestProcessor?
@@ -183,20 +183,20 @@ class SegmentationPipeline: ObservableObject {
                 self.detectedObjects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
                 
                 // Temporary
-//                self.grayscaleToColorMasker.inputImage = segmentationImage
-//                self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
-//                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
-//                self.segmentationResultUIImage = UIImage(
-//                    ciImage: self.grayscaleToColorMasker.outputImage!,
-//                    scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
+                self.grayscaleToColorMasker.inputImage = segmentationImage
+                self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
+                self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
+                self.segmentationResultUIImage = UIImage(
+                    ciImage: self.grayscaleToColorMasker.outputImage!,
+                    scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
                 
                 // Temporary
-                self.segmentationResultUIImage = UIImage(
-                    ciImage: rasterizeContourObjects(
-//                        objects: objectList,
-                        objects: self.centroidTracker.objects.values.map { $0 },
-                        size: Constants.ClassConstants.inputSize)!,
-                    scale: 1.0, orientation: .up)
+//                self.segmentationResultUIImage = UIImage(
+//                    cgImage: ContourObjectRasterizer.rasterizeContourObjects(
+////                        objects: objectList,
+//                        objects: self.centroidTracker.objects.values.map { $0 },
+//                        size: Constants.ClassConstants.inputSize)!,
+//                    scale: 1.0, orientation: .up)
                 
 //                if transformMatrix != nil {
 //                    self.segmentationResultUIImage = UIImage(

@@ -159,7 +159,6 @@ class AnnotationSegmentationPipeline {
             var largestObject = objectList.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
                 let bounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
-                print("Largest object bounds: \(bounds)")
                 largestObject?.wayBounds = bounds
                 objectList = [largestObject!]
             }
