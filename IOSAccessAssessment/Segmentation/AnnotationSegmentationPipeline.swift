@@ -156,9 +156,13 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
         var objectList = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
         if isWay && bounds != nil {
-            print("Finding the largest object")
-            let largestObject = objectList.sorted(by: {$0.perimeter > $1.perimeter}).first
-            objectList = largestObject != nil ? [largestObject!] : []
+            var largestObject = objectList.sorted(by: {$0.perimeter > $1.perimeter}).first
+            if largestObject != nil {
+                let bounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
+                print("Largest object bounds: \(bounds)")
+                largestObject?.wayBounds = bounds
+                objectList = [largestObject!]
+            }
         }
         
         self.isProcessing = false
