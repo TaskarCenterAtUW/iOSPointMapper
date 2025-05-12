@@ -14,6 +14,12 @@ enum AnnotationOption: String, CaseIterable {
     case misidentified = "The class annotation is misidentified"
 }
 
+struct AnnotatedDetectedObject {
+    var object: DetectedObject
+    var classLabel: String
+    var depthValue: Float
+}
+
 struct AnnotationView: View {
     var selection: [Int]
     var objectLocation: ObjectLocation
@@ -33,7 +39,7 @@ struct AnnotationView: View {
     @State private var objectsUIImage: UIImage? = nil
     
     @State private var annotatedSegmentationLabelImage: CIImage? = nil
-    @State private var annotatedDetectedObjects: [DetectedObject]? = nil
+    @State private var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
     
     let annotationCIContext = CIContext()
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -189,7 +195,11 @@ struct AnnotationView: View {
         }
         
         self.annotatedSegmentationLabelImage = inputImage
-        self.annotatedDetectedObjects = unionOfMasksObjectList
+        self.annotatedDetectedObjects = unionOfMasksObjectList.map({ object in
+            AnnotatedDetectedObject(object: object,
+                                    classLabel: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]],
+                                    depthValue: 0.0)
+        })
         self.grayscaleToColorMasker.inputImage = inputImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
@@ -226,31 +236,35 @@ struct AnnotationView: View {
     
     func confirmAnnotation() {
         var depthValue: Float = 0.0
-        if let depthMapProcessor = depthMapProcessor,
-//           let segmentationLabelImage = sharedImageData.segmentationLabelImage,
-           let segmentationLabelImage = self.annotatedSegmentationLabelImage,
-           let detectedObjects = self.annotatedDetectedObjects,
-           let depthImage = sharedImageData.depthImage {
+        
+        guard let depthMapProcessor = depthMapProcessor,
+            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
+            let segmentationLabelImage = self.annotatedSegmentationLabelImage,
+            let annotatedDetectedObjects = self.annotatedDetectedObjects,
+            let depthImage = sharedImageData.depthImage
+        else {
+            print("depthMapProcessor is nil. Falling back to default depth value.")
+            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            selectedOption = nil
+            uploadChanges(location: location)
+            nextSegment()
+            return
+        }
+        
             
-//            depthValue = depthMapProcessor.getDepth(
-//                segmentationLabelImage: segmentationLabelImage,
-//                depthImage: depthImage,
-//                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            
-            // TODO: Temporary object-based depth calculation.
-            // This logic currently only utilizes the centroid of the last detected object.
-            // This eventually needs to be extended to do 2 more things:
-            // 1. Treat every object as a separate object and calculate the depth value for each of them and upload them.
-            // 2. Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
-            for object in detectedObjects {
-                depthValue = depthMapProcessor.getDepth(
-                    segmentationLabelImage: segmentationLabelImage, object: object,
-                    depthImage: depthImage,
-                    classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-                print("Depth Value for Label: \(depthValue) Object: \(object.centroid)")
-            }
-        } else {
-            print("depthMapProcessor or segmentationLabelImage is nil. Falling back to default depth value.")
+        // TODO: Temporary object-based depth calculation.
+        // This logic currently only utilizes the centroid of the last detected object.
+        // This eventually needs to be extended to do 2 more things:
+        // 1. Treat every object as a separate object and calculate the depth value for each of them and upload them.
+        // 2. Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
+        for annotatedDetectedObject in annotatedDetectedObjects {
+            depthValue = depthMapProcessor.getDepth(
+                segmentationLabelImage: segmentationLabelImage, object: annotatedDetectedObject.object,
+                depthImage: depthImage,
+                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            print("Depth Value for Label: \(depthValue) Object: \(annotatedDetectedObject.object.centroid)")
+            var annotatedDetectedObject = annotatedDetectedObject
+            annotatedDetectedObject.depthValue = depthValue
         }
         let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
