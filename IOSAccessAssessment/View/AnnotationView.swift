@@ -169,12 +169,12 @@ struct AnnotationView: View {
         }
         
         var inputImage = sharedImageData.segmentationLabelImage
+        var unionOfMasksObjectList: [DetectedObject] = []
         let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
             targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
             isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
-            bounds: DimensionBasedMaskBounds(minX: 0, maxX: 1, minY: 0.6, maxY: 0.9)
+            bounds: DimensionBasedMaskBounds(minX: 0, maxX: 1, minY: 0.1, maxY: 0.4)
         )
-        var unionOfMasksObjectList: [DetectedObject] = []
         if let unionOfMasksResults = unionOfMasksResults {
             inputImage = unionOfMasksResults.segmentationImage
             unionOfMasksObjectList = unionOfMasksResults.detectedObjects

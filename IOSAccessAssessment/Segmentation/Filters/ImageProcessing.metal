@@ -93,24 +93,25 @@ void dimensionBasedMaskingKernel (
     texture2d<float, access::read> inputTexture [[texture(0)]],
     texture2d<float, access::write> outputTexture [[texture(1)]],
     constant float& minX [[buffer(0)]], // Normalized coordinates
-    constant float& minY [[buffer(1)]],
-    constant float& maxX [[buffer(2)]],
+    constant float& maxX [[buffer(1)]],
+    constant float& minY [[buffer(2)]],
     constant float& maxY [[buffer(3)]],
     uint2 gid [[thread_position_in_grid]]
 ) {
-    if (gid.x >= inputTexture.get_width() || gid.y >= inputTexture.get_height())
+    uint width = inputTexture.get_width();
+    uint height = inputTexture.get_height();
+
+    if (gid.x >= width || gid.y >= height)
         return;
-
+    
     float4 pixelColor = inputTexture.read(gid);
-    float2 pixelCoord = float2(gid);
 
-    // Check if the pixel is within the specified bounds
-//    if (pixelCoord.x < (minX * inputTexture.get_width()) ||
-//        pixelCoord.x > (maxX * inputTexture.get_width()) ||
-//        pixelCoord.y < (minY * inputTexture.get_height()) ||
-//        pixelCoord.y > (maxY * inputTexture.get_height())) {
-//        pixelColor = float4(0.0, 0.0, 0.0, 1.0); // Set to transparent
-//    }
+    float normX = float(gid.x) / float(width);
+    float normY = float(gid.y) / float(height);
+
+    if (normX < minX || normX > maxX || normY < minY || normY > maxY) {
+        pixelColor = float4(0.0, 0.0, 0.0, 0.0); // Transparent
+    }
     
     outputTexture.write(pixelColor, gid);
 }
