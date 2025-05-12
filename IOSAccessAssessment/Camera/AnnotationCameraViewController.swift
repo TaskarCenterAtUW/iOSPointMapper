@@ -13,15 +13,20 @@ import SwiftUI
 class AnnotationCameraViewController: UIViewController {
     var cameraImage: UIImage?
     var segmentationImage: UIImage?
+    var objectsImage: UIImage?
+    
     var cameraView: UIImageView? = nil
     var segmentationView: UIImageView? = nil
+    var objectsView: UIImageView? = nil
+    
     var sharedImageData: SharedImageData?
     
     var frameRect: CGRect = CGRect()
     
-    init(cameraImage: UIImage, segmentationImage: UIImage) {
+    init(cameraImage: UIImage, segmentationImage: UIImage, objectsImage: UIImage) {
         self.cameraImage = cameraImage
         self.segmentationImage = segmentationImage
+        self.objectsImage = objectsImage
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -45,16 +50,29 @@ class AnnotationCameraViewController: UIViewController {
             view.addSubview(segmentationView)
         }
         cameraView?.bringSubviewToFront(segmentationView!)
+        
+        objectsView = UIImageView(image: objectsImage)
+        objectsView?.frame = CGRect(x: frameRect.minX, y: frameRect.minY, width: frameRect.width, height: frameRect.height)
+        objectsView?.contentMode = .scaleAspectFill
+        if let objectsView = objectsView {
+            view.addSubview(objectsView)
+        }
+        segmentationView?.bringSubviewToFront(objectsView!)
     }
 }
 
 struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
     let cameraImage: UIImage
     let segmentationImage: UIImage
+    let objectsImage: UIImage
     var frameRect: CGRect
     
     func makeUIViewController(context: Context) -> AnnotationCameraViewController {
-        let viewController = AnnotationCameraViewController(cameraImage: cameraImage, segmentationImage: segmentationImage)
+        let viewController = AnnotationCameraViewController(
+            cameraImage: cameraImage,
+            segmentationImage: segmentationImage,
+            objectsImage: objectsImage
+        )
         viewController.frameRect = frameRect
         return viewController
     }
@@ -62,6 +80,7 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
     func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
         uiViewController.cameraImage = cameraImage
         uiViewController.segmentationImage = segmentationImage
+        uiViewController.objectsImage = objectsImage
         uiViewController.viewDidLoad()
     }
 }

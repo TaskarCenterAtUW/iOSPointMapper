@@ -192,7 +192,7 @@ class SegmentationPipeline: ObservableObject {
                 
                 // Temporary
 //                self.segmentationResultUIImage = UIImage(
-//                    ciImage: rasterizeContourObjects(
+//                    cgImage: ContourObjectRasterizer.rasterizeContourObjects(
 ////                        objects: objectList,
 //                        objects: self.centroidTracker.objects.values.map { $0 },
 //                        size: Constants.ClassConstants.inputSize)!,

@@ -30,6 +30,8 @@ struct AnnotationView: View {
     
     @State private var cameraUIImage: UIImage? = nil
     @State private var segmentationUIImage: UIImage? = nil
+    @State private var objectsUIImage: UIImage? = nil
+    
     @State private var annotatedSegmentationLabelImage: CIImage? = nil
     @State private var annotatedDetectedObjects: [DetectedObject]? = nil
     
@@ -55,6 +57,7 @@ struct AnnotationView: View {
                     Spacer()
                     HostedAnnotationCameraViewController(cameraImage: cameraUIImage!,
                                                          segmentationImage: segmentationUIImage!,
+                                                         objectsImage: objectsUIImage!,
                                                             frameRect: VerticalFrame.getColumnFrame(
                                                             width: UIScreen.main.bounds.width,
                                                             height: UIScreen.main.bounds.height,
@@ -149,7 +152,7 @@ struct AnnotationView: View {
             print("Invalid index or segmentedIndices in AnnotationView")
             return false
         }
-        if (self.cameraUIImage == nil || self.segmentationUIImage == nil) {
+        if (self.cameraUIImage == nil || self.segmentationUIImage == nil || self.objectsUIImage == nil) {
             return false
         }
         return true
@@ -191,6 +194,16 @@ struct AnnotationView: View {
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        self.objectsUIImage = UIImage(
+            cgImage: ContourObjectRasterizer.rasterizeContourObjects(
+                objects: unionOfMasksObjectList,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
+            )!,
+            scale: 1.0, orientation: .up)
         
 //        let segmentationCGSize = CGSize(width: sharedImageData.segmentationLabelImage!.extent.width,
 //                                            height: sharedImageData.segmentationLabelImage!.extent.height)
@@ -198,7 +211,7 @@ struct AnnotationView: View {
 //            object.classLabel == Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]] &&
 //            object.isCurrent == true
 //        } .map({ $0.value })
-//        let segmentationObjectImage = rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
+//        let segmentationObjectImage = ContourObjectRasterizer.rasterizeContourObjects(objects: segmentationObjects, size: segmentationCGSize)
 //        self.segmentationUIImage = UIImage(ciImage: segmentationObjectImage!, scale: 1.0, orientation: .up)
     }
     
