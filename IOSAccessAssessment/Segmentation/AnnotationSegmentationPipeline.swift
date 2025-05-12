@@ -45,6 +45,7 @@ class AnnotationSegmentationPipeline {
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
     var unionOfMasksProcessor: UnionOfMasksProcessor?
+    var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
     
     init() {
         self.contourRequestProcessor = ContourRequestProcessor(
@@ -53,6 +54,7 @@ class AnnotationSegmentationPipeline {
             selectionClassLabels: self.selectionClassLabels)
         self.homographyTransformFilter = HomographyTransformFilter()
         self.unionOfMasksProcessor = UnionOfMasksProcessor()
+        self.dimensionBasedMaskFilter = DimensionBasedMaskFilter()
     }
     
     func reset() {
@@ -126,7 +128,7 @@ class AnnotationSegmentationPipeline {
         self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(targetValue: UInt8) -> AnnotationSegmentationPipelineResults? {
+    func processUnionOfMasksRequest(targetValue: UInt8, isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil) -> AnnotationSegmentationPipelineResults? {
         if self.isProcessing {
             print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
             return nil
@@ -138,18 +140,24 @@ class AnnotationSegmentationPipeline {
             return nil
         }
         
-        let unionImage = unionOfMasksProcessor.apply(targetValue: targetValue)
-        guard unionImage != nil else {
+        let unionImageResult = unionOfMasksProcessor.apply(targetValue: targetValue)
+        guard var unionImage = unionImageResult else {
             print("Failed to apply union of masks.")
             self.isProcessing = false
             return nil
         }
+        if isWay && bounds != nil {
+            print("Applying dimension-based mask filter")
+            unionImage = self.dimensionBasedMaskFilter?.apply(
+                to: unionImage, bounds: bounds!) ?? unionImage
+        }
+        
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        let objectList = self.contourRequestProcessor?.processRequest(from: unionImage!) ?? []
+        let objectList = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
         
         self.isProcessing = false
         return AnnotationSegmentationPipelineResults(
-            segmentationImage: unionImage!,
+            segmentationImage: unionImage,
             detectedObjects: objectList
         )
     }

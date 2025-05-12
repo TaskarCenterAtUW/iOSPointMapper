@@ -43,7 +43,10 @@ struct AnnotationView: View {
     
     var body: some View {
         if (!self.isValid()) {
-            Rectangle().frame(width: 0, height: 0).onAppear {refreshView()}
+            // FIXME: When no segments are available, this view does not dismiss anymore.
+            Rectangle().frame(width: 0, height: 0).onAppear {
+                refreshView()
+            }
         } else {
             VStack {
                 HStack {
@@ -103,7 +106,7 @@ struct AnnotationView: View {
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
-                initializeAnnotationSegmentationPipeline()
+//                initializeAnnotationSegmentationPipeline()
                 refreshView()
             }
             .onDisappear {
@@ -141,6 +144,7 @@ struct AnnotationView: View {
     
     func isValid() -> Bool {
         if (self.sharedImageData.segmentedIndices.isEmpty || (index >= self.sharedImageData.segmentedIndices.count)) {
+            print("Invalid index or segmentedIndices in AnnotationView")
             return false
         }
         if (self.cameraUIImage == nil || self.segmentationUIImage == nil) {
@@ -166,7 +170,10 @@ struct AnnotationView: View {
         
         var inputImage = sharedImageData.segmentationLabelImage
         let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-            targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+            isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
+            bounds: DimensionBasedMaskBounds(minX: 0, maxX: 1, minY: 0.6, maxY: 0.9)
+        )
         var unionOfMasksObjectList: [DetectedObject] = []
         if let unionOfMasksResults = unionOfMasksResults {
             inputImage = unionOfMasksResults.segmentationImage
@@ -196,7 +203,7 @@ struct AnnotationView: View {
     private func initializeAnnotationSegmentationPipeline() {
         self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
             imageDataHistory: sharedImageData.getImageDataHistory())
-        if let transformedLabelImages = transformedLabelImages {
+        if let transformedLabelImages = self.transformedLabelImages {
             print("Transformed label images count: \(transformedLabelImages.count)")
             self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
         }

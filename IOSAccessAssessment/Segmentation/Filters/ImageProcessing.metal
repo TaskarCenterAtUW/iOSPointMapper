@@ -105,12 +105,12 @@ void dimensionBasedMaskingKernel (
     float2 pixelCoord = float2(gid);
 
     // Check if the pixel is within the specified bounds
-    if (pixelCoord.x < (minX * inputTexture.get_width()) ||
-        pixelCoord.x > (maxX * inputTexture.get_width()) ||
-        pixelCoord.y < (minY * inputTexture.get_height()) ||
-        pixelCoord.y > (maxY * inputTexture.get_height())) {
-        pixelColor = float4(0.0, 0.0, 0.0, 0.0); // Set to transparent
-    }
+//    if (pixelCoord.x < (minX * inputTexture.get_width()) ||
+//        pixelCoord.x > (maxX * inputTexture.get_width()) ||
+//        pixelCoord.y < (minY * inputTexture.get_height()) ||
+//        pixelCoord.y > (maxY * inputTexture.get_height())) {
+//        pixelColor = float4(0.0, 0.0, 0.0, 1.0); // Set to transparent
+//    }
     
     outputTexture.write(pixelColor, gid);
 }
