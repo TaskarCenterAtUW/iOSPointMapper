@@ -118,6 +118,91 @@ struct ContourRequestProcessor {
     }
     
     /**
+     Use shoelace formula to calculate the area of the contour.
+     */
+    private func getContourCentroidAndArea(from contour: VNContour) -> (centroid: CGPoint, area: Float) {
+        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return (CGPoint.zero, 0) }
+        
+        let count = points.count
+        
+        var area: Float = 0.0
+        var cx: Float = 0.0
+        var cy: Float = 0.0
+        
+        guard count > 2 else {
+            cx = points.map { $0.x }.reduce(0, +) / Float(points.count)
+            cy = points.map { $0.y }.reduce(0, +) / Float(points.count)
+            let centroid = CGPoint(x: CGFloat(cx), y: CGFloat(cy))
+            return (centroid, 0)
+        }
+        
+        for i in 0..<count {
+            let p0 = points[i]
+            let p1 = points[(i + 1) % count] // wrap around to the first point
+            
+            let crossProduct = (p0.x * p1.y) - (p1.x * p0.y)
+            area += crossProduct
+            cx += (p0.x + p1.x) * crossProduct
+            cy += (p0.y + p1.y) * crossProduct
+        }
+        
+        area = 0.5 * abs(area)
+        guard area > 0 else { return (CGPoint.zero, 0) }
+        
+        cx /= (6 * area)
+        cy /= (6 * area)
+        
+        let centroid = CGPoint(x: CGFloat(cx), y: CGFloat(cy))
+        return (centroid, area)
+    }
+    
+    private func getContourBoundingBox(from contour: VNContour) -> CGRect {
+        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return .zero }
+        
+        var minX = points[0].x
+        var minY = points[0].y
+        var maxX = points[0].x
+        var maxY = points[0].y
+        
+        for i in 0..<(points.count - 1) {
+            minX = min(minX, points[i].x)
+            minY = min(minY, points[i].y)
+            maxX = max(maxX, points[i].x)
+            maxY = max(maxY, points[i].y)
+        }
+        
+        return CGRect(
+            x: CGFloat(minX), y: CGFloat(minY),
+            width: CGFloat(maxX - minX), height: CGFloat(maxY - minY)
+        )
+    }
+    
+    private func getContourPerimeter(from contour: VNContour) -> Float {
+        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return 0 }
+        
+        var perimeter: Float = 0.0
+        let count = points.count
+        
+        for i in 0..<count {
+            let p0 = points[i]
+            let p1 = points[(i + 1) % count] // wrap around to the first point
+            
+            let dx = p1.x - p0.x
+            let dy = p1.y - p0.y
+            perimeter += sqrt(dx*dx + dy*dy)
+        }
+        
+        return perimeter
+    }
+
+
+
+        
+    
+    /**
         Function to get the bounding box of the contour as a trapezoid. This is the largest trapezoid that can be contained in the contour and has horizontal lines.
      
      
