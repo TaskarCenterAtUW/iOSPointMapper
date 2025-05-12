@@ -17,6 +17,7 @@ struct DetectedObject {
     var centroid: CGPoint
     var boundingBox: CGRect
     var normalizedPoints: [SIMD2<Float>]
+    var area: Float
     var perimeter: Float
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
     var wayBounds: [SIMD2<Float>]? // Special property for way-type objects

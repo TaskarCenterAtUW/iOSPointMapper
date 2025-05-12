@@ -35,8 +35,8 @@ class CentroidTracker {
     }
     
     func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>,
-                  objectBoundingBox: CGRect, perimeter: Float, isCurrent: Bool) {
-        let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints, perimeter: perimeter, isCurrent: isCurrent)
+                  objectBoundingBox: CGRect, area: Float, perimeter: Float, isCurrent: Bool) {
+        let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints, area: area, perimeter: perimeter, isCurrent: isCurrent)
         self.objects[nextObjectID] = object
         self.disappearedObjects[nextObjectID] = 0
         
@@ -86,7 +86,7 @@ class CentroidTracker {
             for object in objectsList {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                               objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
-                              perimeter: object.perimeter, isCurrent: object.isCurrent);
+                              area: object.area, perimeter: object.perimeter, isCurrent: object.isCurrent);
             }
             return
         }
@@ -171,7 +171,7 @@ class CentroidTracker {
             let object = objectsList[col]
             self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                           objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
-                          perimeter: object.perimeter, isCurrent: false) // Mark the object as not current
+                          area: object.area, perimeter: object.perimeter, isCurrent: false) // Mark the object as not current
         }
         
 //        print("Number of matches: ", matches)
@@ -234,6 +234,7 @@ extension CentroidTracker {
                                                    centroid: transformedCentroid,
                                                    boundingBox: object.boundingBox,
                                                    normalizedPoints: object.normalizedPoints,
+                                                   area: object.area,
                                                    perimeter: object.perimeter,
                                                    isCurrent: object.isCurrent)
             self.objects[objectID] = transformedObject

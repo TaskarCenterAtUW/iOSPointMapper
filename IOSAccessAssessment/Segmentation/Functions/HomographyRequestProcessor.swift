@@ -44,6 +44,7 @@ struct HomographyRequestProcessor {
                 centroid: transformedCentroid,
                 boundingBox: object.boundingBox,
                 normalizedPoints: object.normalizedPoints,
+                area: object.area,
                 perimeter: object.perimeter,
                 isCurrent: object.isCurrent
             )
