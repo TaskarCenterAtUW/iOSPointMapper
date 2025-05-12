@@ -18,6 +18,21 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
         return UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1.0)
     }
     
+    func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
+        let path = UIBezierPath()
+        guard let firstPoint = points.first else { return path }
+        
+        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x) * size.width, y: (1 - CGFloat(firstPoint.y)) * size.height)
+        path.move(to: firstPixelPoint)
+        
+        for point in points.dropFirst() {
+            let pixelPoint = CGPoint(x: CGFloat(point.x) * size.width, y: (1 - CGFloat(point.y)) * size.height)
+            path.addLine(to: pixelPoint)
+        }
+        path.close()
+        return path
+    }
+    
     UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
     guard let context = UIGraphicsGetCurrentContext() else { return nil }
     
@@ -26,17 +41,7 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
         let color = colorForClass(object.classLabel, labelToColorMap: labelToColorMap)
         
         /// First, draw the contour
-        let path = UIBezierPath()
-        guard let firstPoint = object.normalizedPoints.first else { continue }
-        
-        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x) * size.width, y: (1 - CGFloat(firstPoint.y)) * size.height)
-        path.move(to: firstPixelPoint)
-        
-        for point in object.normalizedPoints.dropFirst() {
-            let pixelPoint = CGPoint(x: CGFloat(point.x) * size.width, y: (1 - CGFloat(point.y)) * size.height)
-            path.addLine(to: pixelPoint)
-        }
-        path.close()
+        let path = createPath(points: object.normalizedPoints, size: size)
         
 //        context.setFillColor(color.cgColor)
         context.setStrokeColor(color.cgColor)
@@ -45,17 +50,26 @@ func rasterizeContourObjects(objects: [DetectedObject], size: CGSize) -> CIImage
 //        context.fillPath()
         context.strokePath()
         
-        /// Then, draw the bounding box
-        let boundingBox = object.boundingBox
-        let boundingBoxRect = CGRect(x: CGFloat(boundingBox.origin.x) * size.width,
-                                        y: (1 - CGFloat(boundingBox.origin.y + boundingBox.size.height)) * size.height,
-                                        width: CGFloat(boundingBox.size.width) * size.width,
-                                        height: CGFloat(boundingBox.size.height) * size.height)
-        
-        context.setStrokeColor(color.cgColor)
-        context.setLineWidth(2.0)
-        context.addRect(boundingBoxRect)
-        context.strokePath()
+        /// Then, draw the way bound if exists, else draw the bounding box
+        if object.wayBounds != nil {
+            let wayBounds = object.wayBounds!
+            let wayPath = createPath(points: wayBounds, size: size)
+            context.setStrokeColor(color.cgColor)
+            context.setLineWidth(2.0)
+            context.addPath(wayPath.cgPath)
+            context.strokePath()
+        } else {
+            let boundingBox = object.boundingBox
+            let boundingBoxRect = CGRect(x: CGFloat(boundingBox.origin.x) * size.width,
+                                            y: (1 - CGFloat(boundingBox.origin.y + boundingBox.size.height)) * size.height,
+                                            width: CGFloat(boundingBox.size.width) * size.width,
+                                            height: CGFloat(boundingBox.size.height) * size.height)
+            
+            context.setStrokeColor(color.cgColor)
+            context.setLineWidth(2.0)
+            context.addRect(boundingBoxRect)
+            context.strokePath()
+        }
         
         /// Lastly, circle the center point
         let centroid = object.centroid
