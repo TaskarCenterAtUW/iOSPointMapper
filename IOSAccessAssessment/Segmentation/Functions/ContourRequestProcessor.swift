@@ -118,6 +118,119 @@ struct ContourRequestProcessor {
     }
     
     /**
+        Function to get the bounding box of the contour as a trapezoid. This is the largest trapezoid that can be contained in the contour and has horizontal lines.
+     
+     
+        - Parameters:
+            - points: The points of the contour
+            - x_delta: The delta for the x-axis (minimum distance between points)
+            - y_delta: The delta for the y-axis (minimum distance between points)
+     */
+    // TODO: Check if the performance can be improved by using SIMD operations
+    // FIXME: Currently, this function does not guarantee that the trapezoid is valid.
+    // The trapezoid may actually have incorrect points.
+    func getContourTrapezoid(from points: [SIMD2<Float>], x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
+//        let points = contour.normalizedPoints
+        guard !points.isEmpty else { return nil }
+        
+        let minPointsForComparison = points.count
+        
+        let sortedByYPoints = points.sorted(by: { $0.y < $1.y })
+        
+        func intersectsAtY(p1: SIMD2<Float>, p2: SIMD2<Float>, y0: Float) -> SIMD2<Float>? {
+            // Check if y0 is between y1 and y2
+            if (y0 - p1.y) * (y0 - p2.y) <= 0 && p1.y != p2.y {
+                // Linear interpolation to find x
+                let t = (y0 - p1.y) / (p2.y - p1.y)
+                let x = p1.x + t * (p2.x - p1.x)
+                return SIMD2<Float>(x, y0)
+            }
+            return nil
+        }
+        
+        var upperLeftX: Float? = nil
+        var upperRightX: Float? = nil
+        var lowerLeftX: Float? = nil
+        var lowerRightX: Float? = nil
+        
+        // Status flags
+        var upperLineFound = false
+        var lowerLineFound = false
+        
+        // With two-pointer approach
+        var lowY = 0
+        var highY = points.count - 1
+        while lowY < highY {
+            if sortedByYPoints[lowY].y > (sortedByYPoints[highY].y - y_delta) {
+                return nil
+            }
+            // Check all the lines in the contour
+            // on whether they intersect with lowY or highY
+            for i in 0..<points.count {
+                let point1 = points[i]
+                let point2 = points[(i + 1) % points.count]
+                
+                if (!lowerLineFound) {
+                    let intersection1 = intersectsAtY(p1: point1, p2: point2, y0: sortedByYPoints[lowY].y)
+                    if let intersection1 = intersection1 {
+                        if (intersection1.x < (lowerLeftX ?? 2)) {
+                            lowerLeftX = intersection1.x
+                        }
+                        if (intersection1.x > (lowerRightX ?? -1)) {
+                            lowerRightX = intersection1.x
+                        }
+                    }
+                }
+                
+                if (!upperLineFound) {
+                    let intersection2 = intersectsAtY(p1: point1, p2: point2, y0: sortedByYPoints[highY].y)
+                    if let intersection2 = intersection2 {
+                        if (intersection2.x < (upperLeftX ?? 2)) {
+                            upperLeftX = intersection2.x
+                        }
+                        if (intersection2.x > (upperRightX ?? -1)) {
+                            upperRightX = intersection2.x
+                        }
+                    }
+                }
+            }
+            if !lowerLineFound {
+                if lowerLeftX != nil && lowerRightX != nil && (lowerLeftX! < lowerRightX! - x_delta) {
+                    lowerLineFound = true
+                } else {
+                    lowerLeftX = nil
+                    lowerRightX = nil
+                }
+            }
+            if !upperLineFound {
+                if upperLeftX != nil && upperRightX != nil && (upperLeftX! < upperRightX! - x_delta) {
+                    upperLineFound = true
+                } else {
+                    upperLeftX = nil
+                    upperRightX = nil
+                }
+            }
+            if upperLineFound && lowerLineFound {
+                return [
+                    SIMD2<Float>(lowerLeftX!, sortedByYPoints[lowY].y),
+                    SIMD2<Float>(upperLeftX!, sortedByYPoints[highY].y),
+                    SIMD2<Float>(upperRightX!, sortedByYPoints[highY].y),
+                    SIMD2<Float>(lowerRightX!, sortedByYPoints[lowY].y)
+                ]
+            }
+            
+            if !lowerLineFound{
+                lowY += 1
+            }
+            if !upperLineFound{
+                highY -= 1
+            }
+        }
+        
+        return nil
+    }
+    
+    /**
         Function to get the detected objects from the segmentation image.
             Processes each class in parallel to get the objects.
      */
