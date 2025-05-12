@@ -173,7 +173,7 @@ struct AnnotationView: View {
         let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
             targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
             isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
-            bounds: DimensionBasedMaskBounds(minX: 0, maxX: 1, minY: 0.1, maxY: 0.4)
+            bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
         )
         if let unionOfMasksResults = unionOfMasksResults {
             inputImage = unionOfMasksResults.segmentationImage

@@ -146,14 +146,19 @@ class AnnotationSegmentationPipeline {
             self.isProcessing = false
             return nil
         }
-        if isWay && bounds != nil {
+        if bounds != nil {
             print("Applying dimension-based mask filter")
             unionImage = self.dimensionBasedMaskFilter?.apply(
                 to: unionImage, bounds: bounds!) ?? unionImage
         }
         
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        let objectList = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
+        var objectList = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
+        if isWay && bounds != nil {
+            print("Finding the largest object")
+            let largestObject = objectList.sorted(by: {$0.perimeter > $1.perimeter}).first
+            objectList = largestObject != nil ? [largestObject!] : []
+        }
         
         self.isProcessing = false
         return AnnotationSegmentationPipelineResults(

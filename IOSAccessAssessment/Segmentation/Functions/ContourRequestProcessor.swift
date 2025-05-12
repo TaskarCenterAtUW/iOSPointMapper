@@ -60,6 +60,7 @@ struct ContourRequestProcessor {
                                                 centroid: contourDetails.centroid,
                                                 boundingBox: contourDetails.boundingBox,
                                                 normalizedPoints: contourApproximation.normalizedPoints,
+                                                perimeter: contourDetails.perimeter,
                                                 isCurrent: true))
             }
             return objectList

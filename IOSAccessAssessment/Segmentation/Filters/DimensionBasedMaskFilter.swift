@@ -11,13 +11,6 @@ import Metal
 import CoreImage
 import MetalKit
 
-struct DimensionBasedMaskBounds {
-    var minX: Float
-    var maxX: Float
-    var minY: Float
-    var maxY: Float
-}
-
 struct DimensionBasedMaskFilter {
     // Metal-related properties
     private let device: MTLDevice

@@ -7,19 +7,29 @@
 
 import SwiftUI
 
+struct DimensionBasedMaskBounds {
+    var minX: Float
+    var maxX: Float
+    var minY: Float
+    var maxY: Float
+}
+
 struct SegmentationClass {
     let name: String // Name of the segmentation class
     let grayscaleValue: Float // Grayscale value output for the segmentation class, by the relevant segmentation model
     let labelValue: UInt8 // Pre-defined label of the segmentation class
     let color: CIColor // Color to be assigned for visualization of the segmentation class during post-processing
     let isWay: Bool // Flag to indicate if the class is a road or path
+    let bounds: DimensionBasedMaskBounds? // Optional bounds for the segmentation class
     
-    init(name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor, isWay: Bool = false) {
+    init(name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
+         isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil) {
         self.name = name
         self.grayscaleValue = grayscaleValue
         self.labelValue = labelValue
         self.color = color
         self.isWay = isWay
+        self.bounds = bounds
     }
 }
 
@@ -106,7 +116,9 @@ struct Constants {
                               color: CIColor(red: 0.250, green: 0.500, blue: 0.500)),
             SegmentationClass(name: "Person", grayscaleValue: 180.0 / 255.0, labelValue: 180,
                               color: CIColor(red: 0.750, green: 0.500, blue: 0.500),
-                              isWay: true), // Temporarily set to true for testing
+                              isWay: true, // Temporarily set to true for testing
+                              bounds: DimensionBasedMaskBounds(minX: 0.001, maxX: 0.999, minY: 0.1, maxY: 0.5)
+                             ),
             SegmentationClass(name: "PottedPlant", grayscaleValue: 192.0 / 255.0, labelValue: 192,
                               color: CIColor(red: 0.000, green: 0.250, blue: 0.000)),
             SegmentationClass(name: "Sheep", grayscaleValue: 204.0 / 255.0, labelValue: 204,
@@ -139,10 +151,12 @@ struct Constants {
                               color: CIColor(red: 0.318, green: 0.000, blue: 0.318)),
             SegmentationClass(name: "Road", grayscaleValue: 7.0 / 255.0, labelValue: 7,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
-                              isWay: true),
+                              isWay: true,
+                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
             SegmentationClass(name: "Sidewalk", grayscaleValue: 8.0 / 255.0, labelValue: 8,
                               color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
-                              isWay: true),
+                              isWay: true,
+                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
             SegmentationClass(name: "Parking", grayscaleValue: 9.0 / 255.0, labelValue: 9,
                               color: CIColor(red: 0.980, green: 0.667, blue: 0.627)),
             SegmentationClass(name: "Rail track", grayscaleValue: 10.0 / 255.0, labelValue: 10,
@@ -204,10 +218,12 @@ struct Constants {
         classes: [
             SegmentationClass(name: "Road", grayscaleValue: 0.0 / 255.0, labelValue: 0,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
-                              isWay: true),
+                              isWay: true,
+                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
             SegmentationClass(name: "Sidewalk", grayscaleValue: 1.0 / 255.0, labelValue: 1,
                               color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
-                              isWay: true),
+                              isWay: true,
+                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
             SegmentationClass(name: "Building", grayscaleValue: 2.0 / 255.0, labelValue: 2,
                               color: CIColor(red: 0.275, green: 0.275, blue: 0.275)),
             SegmentationClass(name: "Wall", grayscaleValue: 3.0 / 255.0, labelValue: 3,
