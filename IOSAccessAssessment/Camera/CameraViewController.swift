@@ -37,7 +37,6 @@ class CameraViewController: UIViewController {
         previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
 //        previewLayer.translatesAutoresizingMaskIntoConstraints = false
         previewLayer.frame = self.frameRect
-        print(self.frameRect)
 //
 //        detectionView = UIImageView()
 //        detectionView.frame = CGRect(x: 59, y: 366, width: 280, height: 280)

@@ -60,6 +60,7 @@ struct ContourRequestProcessor {
                                                 centroid: contourDetails.centroid,
                                                 boundingBox: contourDetails.boundingBox,
                                                 normalizedPoints: contourApproximation.normalizedPoints,
+                                                perimeter: contourDetails.perimeter,
                                                 isCurrent: true))
             }
             return objectList
@@ -72,6 +73,7 @@ struct ContourRequestProcessor {
     /**
      Function to compute the centroid, bounding box, and perimeter of a contour more efficiently
      */
+    // TODO: Check if the performance can be improved by using SIMD operations
     private func getContourDetails(from contour: VNContour) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float) {
         let points = contour.normalizedPoints
         guard !points.isEmpty else { return (CGPoint.zero, .zero, 0) }
@@ -118,9 +120,8 @@ struct ContourRequestProcessor {
     /**
         Function to get the detected objects from the segmentation image.
             Processes each class in parallel to get the objects.
-     
-     TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
      */
+    // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
     func processRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
         var objectList: [DetectedObject] = []
         let lock = NSLock()

@@ -9,7 +9,9 @@ import Metal
 import CoreImage
 import MetalKit
 
-struct UnionOfMasksProcessor {
+// TODO: Check if a plain union of masks runs the risk of accummulating too many false positives
+// Would a voting system be better?
+class UnionOfMasksProcessor {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -42,7 +44,10 @@ struct UnionOfMasksProcessor {
         self.pipeline = pipeline
     }
     
-    mutating func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
+    // FIXME: Sometimes, the array texture is not set correctly.
+    // Could this be due to the limitations of the 'mutating' function?
+    // This could be due to the way the AnnotationView's initialization is set up.
+    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
         let imageCount = images.count
         guard imageCount > 0 else {
             print("Error: No images provided")
