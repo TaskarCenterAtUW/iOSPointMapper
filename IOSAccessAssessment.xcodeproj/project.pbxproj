@@ -31,6 +31,8 @@
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
 		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
 		A39A97862DD324C00036C51D /* MultiSelectDropdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39A97852DD324BD0036C51D /* MultiSelectDropdown.swift */; };
+		A39A97882DD32CFE0036C51D /* MultiSelectUIKitDropdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39A97872DD32CFA0036C51D /* MultiSelectUIKitDropdown.swift */; };
+		A39A978A2DD32E870036C51D /* MultiPickerSwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39A97892DD32E830036C51D /* MultiPickerSwiftUI.swift */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */; };
@@ -135,6 +137,8 @@
 		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
 		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A39A97852DD324BD0036C51D /* MultiSelectDropdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiSelectDropdown.swift; sourceTree = "<group>"; };
+		A39A97872DD32CFA0036C51D /* MultiSelectUIKitDropdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiSelectUIKitDropdown.swift; sourceTree = "<group>"; };
+		A39A97892DD32E830036C51D /* MultiPickerSwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiPickerSwiftUI.swift; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
@@ -384,6 +388,8 @@
 		A3DC22FC2DD2C1D00020CE84 /* MultiSelector */ = {
 			isa = PBXGroup;
 			children = (
+				A39A97892DD32E830036C51D /* MultiPickerSwiftUI.swift */,
+				A39A97872DD32CFA0036C51D /* MultiSelectUIKitDropdown.swift */,
 				A39A97852DD324BD0036C51D /* MultiSelectDropdown.swift */,
 				A3DC22FF2DD2C2160020CE84 /* MultiSelectionView.swift */,
 				A3DC22FD2DD2C1DE0020CE84 /* MultiSelector.swift */,
@@ -604,6 +610,7 @@
 			files = (
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
+				A39A97882DD32CFE0036C51D /* MultiSelectUIKitDropdown.swift in Sources */,
 				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
 				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
@@ -631,6 +638,7 @@
 				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
 				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */,
+				A39A978A2DD32E870036C51D /* MultiPickerSwiftUI.swift in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
 				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
