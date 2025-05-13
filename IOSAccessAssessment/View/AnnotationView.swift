@@ -20,6 +20,13 @@ struct AnnotatedDetectedObject {
     var depthValue: Float
 }
 
+enum Flavor: String, CaseIterable, Identifiable {
+    case chocolate, vanilla, strawberry, mint, blueberry, raspberry, banana, mango,
+            pistachio, cookieDough, greenTea, redBean, matcha, blackSesame, taro, lychee,
+            almond, coconut, coffee, caramel, hazelnut, lemon, orange, peach
+    var id: Self { self }
+}
+
 struct AnnotationView: View {
     var selection: [Int]
     var objectLocation: ObjectLocation
@@ -48,8 +55,9 @@ struct AnnotationView: View {
     let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
     @State var transformedLabelImages: [CIImage]? = nil
     
-    
     let options = AnnotationOption.allCases
+    
+    @State private var selectedFlavor: Flavor = .chocolate
     
     var body: some View {
         if (!self.isValid()) {
@@ -78,6 +86,33 @@ struct AnnotationView: View {
                 }
                 
                 ProgressBar(value: calculateProgress())
+                
+                Picker("Flavor", selection: $selectedFlavor) {
+                    Text("Chocolate").tag(Flavor.chocolate)
+                    Text("Vanilla").tag(Flavor.vanilla)
+                    Text("Strawberry").tag(Flavor.strawberry)
+                    Text("Mint").tag(Flavor.mint)
+                    Text("Blueberry").tag(Flavor.blueberry)
+                    Text("Raspberry").tag(Flavor.raspberry)
+                    Text("Banana").tag(Flavor.banana)
+                    Text("Mango").tag(Flavor.mango)
+                    Text("Pistachio").tag(Flavor.pistachio)
+                    Text("Cookie Dough").tag(Flavor.cookieDough)
+                    Text("Green Tea").tag(Flavor.greenTea)
+                    Text("Red Bean").tag(Flavor.redBean)
+                    Text("Matcha").tag(Flavor.matcha)
+                    Text("Black Sesame").tag(Flavor.blackSesame)
+                    Text("Taro").tag(Flavor.taro)
+                    Text("Lychee").tag(Flavor.lychee)
+                    Text("Almond").tag(Flavor.almond)
+                    Text("Coconut").tag(Flavor.coconut)
+                    Text("Coffee").tag(Flavor.coffee)
+                    Text("Caramel").tag(Flavor.caramel)
+                    Text("Hazelnut").tag(Flavor.hazelnut)
+                    Text("Lemon").tag(Flavor.lemon)
+                    Text("Orange").tag(Flavor.orange)
+                    Text("Peach").tag(Flavor.peach)
+                }
                 
                 HStack {
                     Spacer()
