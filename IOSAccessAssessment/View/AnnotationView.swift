@@ -58,6 +58,8 @@ struct AnnotationView: View {
     let options = AnnotationOption.allCases
     
     @State private var selectedFlavor: Flavor = .chocolate
+    @State private var selectedItems: Set<String> = []
+    let fruits = ["Apple", "Banana", "Orange", "Mango"]
     
     var body: some View {
         if (!self.isValid()) {
@@ -87,35 +89,37 @@ struct AnnotationView: View {
                 
                 ProgressBar(value: calculateProgress())
                 
-                Picker("Flavor", selection: $selectedFlavor) {
-                    Text("Chocolate").tag(Flavor.chocolate)
-                    Text("Vanilla").tag(Flavor.vanilla)
-                    Text("Strawberry").tag(Flavor.strawberry)
-                    Text("Mint").tag(Flavor.mint)
-                    Text("Blueberry").tag(Flavor.blueberry)
-                    Text("Raspberry").tag(Flavor.raspberry)
-                    Text("Banana").tag(Flavor.banana)
-                    Text("Mango").tag(Flavor.mango)
-                    Text("Pistachio").tag(Flavor.pistachio)
-                    Text("Cookie Dough").tag(Flavor.cookieDough)
-                    Text("Green Tea").tag(Flavor.greenTea)
-                    Text("Red Bean").tag(Flavor.redBean)
-                    Text("Matcha").tag(Flavor.matcha)
-                    Text("Black Sesame").tag(Flavor.blackSesame)
-                    Text("Taro").tag(Flavor.taro)
-                    Text("Lychee").tag(Flavor.lychee)
-                    Text("Almond").tag(Flavor.almond)
-                    Text("Coconut").tag(Flavor.coconut)
-                    Text("Coffee").tag(Flavor.coffee)
-                    Text("Caramel").tag(Flavor.caramel)
-                    Text("Hazelnut").tag(Flavor.hazelnut)
-                    Text("Lemon").tag(Flavor.lemon)
-                    Text("Orange").tag(Flavor.orange)
-                    Text("Peach").tag(Flavor.peach)
-                }
+                MultiSelectDropdown(options: fruits, selected: $selectedItems)
+                
+//                Picker("Flavor", selection: $selectedFlavor) {
+//                    Text("Chocolate").tag(Flavor.chocolate)
+//                    Text("Vanilla").tag(Flavor.vanilla)
+//                    Text("Strawberry").tag(Flavor.strawberry)
+//                    Text("Mint").tag(Flavor.mint)
+//                    Text("Blueberry").tag(Flavor.blueberry)
+//                    Text("Raspberry").tag(Flavor.raspberry)
+//                    Text("Banana").tag(Flavor.banana)
+//                    Text("Mango").tag(Flavor.mango)
+//                    Text("Pistachio").tag(Flavor.pistachio)
+//                    Text("Cookie Dough").tag(Flavor.cookieDough)
+//                    Text("Green Tea").tag(Flavor.greenTea)
+//                    Text("Red Bean").tag(Flavor.redBean)
+//                    Text("Matcha").tag(Flavor.matcha)
+//                    Text("Black Sesame").tag(Flavor.blackSesame)
+//                    Text("Taro").tag(Flavor.taro)
+//                    Text("Lychee").tag(Flavor.lychee)
+//                    Text("Almond").tag(Flavor.almond)
+//                    Text("Coconut").tag(Flavor.coconut)
+//                    Text("Coffee").tag(Flavor.coffee)
+//                    Text("Caramel").tag(Flavor.caramel)
+//                    Text("Hazelnut").tag(Flavor.hazelnut)
+//                    Text("Lemon").tag(Flavor.lemon)
+//                    Text("Orange").tag(Flavor.orange)
+//                    Text("Peach").tag(Flavor.peach)
+//                }
                 
                 HStack {
-                    Spacer()
+//                    Spacer()
                     VStack(spacing: 10) {
                         ForEach(options, id: \.self) { option in
                             Button(action: {
@@ -137,7 +141,7 @@ struct AnnotationView: View {
                             }
                         }
                     }
-                    Spacer()
+//                    Spacer()
                 }
                 .padding()
                 
