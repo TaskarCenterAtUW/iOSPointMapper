@@ -151,6 +151,7 @@ struct AnnotationView: View {
                 // Trigger any additional actions when the index changes
                 refreshView()
             }
+            // TODO: Need to check if the following vetting is necessary
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
                     let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
@@ -276,7 +277,6 @@ struct AnnotationView: View {
     }
     
     func updateAnnotatedDetectedSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
-        print("Selections: \(previousSelectedObjectId) \(selectedObjectId)")
         if let baseImage = self.objectsUIImage?.cgImage {
             var oldObjects: [DetectedObject] = []
             var newObjects: [DetectedObject] = []
@@ -289,7 +289,6 @@ struct AnnotationView: View {
                     }
                 }
             }
-            print("Old objects: \(oldObjects.count)")
             newImage = ContourObjectRasterizer.updateRasterizedImage(
                 baseImage: baseImage,
                 objects: oldObjects,
@@ -305,7 +304,6 @@ struct AnnotationView: View {
                     break
                 }
             }
-            print("New objects count: \(newObjects.count)")
             if newImage == nil {
                 print("Failed to update rasterized image")
                 return
@@ -330,16 +328,29 @@ struct AnnotationView: View {
     func confirmAnnotation() {
         var depthValue: Float = 0.0
         
+        // TODO: Give the user some explicit warning that the depth is not being calculated
+        // due to which the entire annotations are being ignored.
         guard let depthMapProcessor = depthMapProcessor,
 //            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
-            let segmentationLabelImage = self.annotatedSegmentationLabelImage,
-            let annotatedDetectedObjects = self.annotatedDetectedObjects,
             let depthImage = sharedImageData.depthImage
         else {
-            print("depthMapProcessor is nil. Falling back to default depth value.")
-            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            print("depthMapProcessor is nil. Returning.")
             selectedOption = nil
-            uploadChanges(location: location)
+            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+            uploadChanges(location: location, tags: tags)
+            nextSegment()
+            return
+        }
+        
+        guard let segmentationLabelImage = self.annotatedSegmentationLabelImage,
+              let annotatedDetectedObjects = self.annotatedDetectedObjects
+        else {
+            print("annotatedDetectedObjects is nil. Returning.")
+            selectedOption = nil
+            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+            uploadChanges(location: location, tags: tags)
             nextSegment()
             return
         }
@@ -358,13 +369,13 @@ struct AnnotationView: View {
                 segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                 depthImage: depthImage,
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            print("Depth Value for Label: \(depthValue) Object: \(annotatedDetectedObject.object?.centroid)")
+            print("Depth Value for Label: \(depthValue) Object: \(String(describing: annotatedDetectedObject.object?.centroid))")
             var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
-        let location = objectLocation.getCalcLocation(depthValue: depthValue)
+//        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
-        uploadChanges(location: location)
+        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects)
         nextSegment()
     }
     
@@ -382,12 +393,31 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
-    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
+        for annotatedDetectedObject in annotatedDetectedObjects {
+            if annotatedDetectedObject.isAll {
+                continue
+            }
+            self.uploadAnnotatedChange(annotatedDetectedObject: annotatedDetectedObject)
+        }
+    }
+    
+    private func uploadAnnotatedChange(annotatedDetectedObject: AnnotatedDetectedObject) {
+        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        
+        
+        let className = Constants.ClassConstants.classes.filter {
+            $0.labelValue == annotatedDetectedObject.classLabel
+        }.first?.name ?? "Unknown"
+        let tags: [String: String] = ["demo:class": className]
+        
+        uploadChanges(location: location, tags: tags)
+    }
+    
+    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String]) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
-        
-        let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
         let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         
         ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
