@@ -49,6 +49,8 @@
 		A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */; };
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
+		A3DC22FE2DD2C1E00020CE84 /* MultiSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FD2DD2C1DE0020CE84 /* MultiSelector.swift */; };
+		A3DC23002DD2C21A0020CE84 /* MultiSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FF2DD2C2160020CE84 /* MultiSelectionView.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -152,6 +154,8 @@
 		A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UnionOfMasks.metal; sourceTree = "<group>"; };
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
+		A3DC22FD2DD2C1DE0020CE84 /* MultiSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiSelector.swift; sourceTree = "<group>"; };
+		A3DC22FF2DD2C2160020CE84 /* MultiSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiSelectionView.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -319,6 +323,7 @@
 		A3B070982CE0B6DF0028CAC5 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				A3DC22FC2DD2C1D00020CE84 /* MultiSelector */,
 				A3B070992CE0B6E50028CAC5 /* Frame.swift */,
 			);
 			path = UI;
@@ -372,6 +377,15 @@
 				A300C7672D6A92DE00D54778 /* OtherConversions.mm */,
 			);
 			path = OpenCV;
+			sourceTree = "<group>";
+		};
+		A3DC22FC2DD2C1D00020CE84 /* MultiSelector */ = {
+			isa = PBXGroup;
+			children = (
+				A3DC22FF2DD2C2160020CE84 /* MultiSelectionView.swift */,
+				A3DC22FD2DD2C1DE0020CE84 /* MultiSelector.swift */,
+			);
+			path = MultiSelector;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* Depth */ = {
@@ -593,6 +607,7 @@
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
+				A3DC22FE2DD2C1E00020CE84 /* MultiSelector.swift in Sources */,
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
 				A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
@@ -635,6 +650,7 @@
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
+				A3DC23002DD2C21A0020CE84 /* MultiSelectionView.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
 			);
