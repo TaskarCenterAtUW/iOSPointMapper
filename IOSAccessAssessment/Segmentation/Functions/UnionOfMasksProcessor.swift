@@ -100,6 +100,7 @@ class UnionOfMasksProcessor {
                 bytesPerImage: bytesPerImage)
         }
         
+        print("Successfully created array texture with \(imageCount) images")
         self.arrayTexture = arrayTexture
         self.imageCount = imageCount
         self.width = width

@@ -15,9 +15,20 @@ enum AnnotationOption: String, CaseIterable {
 }
 
 struct AnnotatedDetectedObject {
-    var object: DetectedObject
-    var classLabel: String
+    var id: UUID = UUID()
+    var object: DetectedObject?
+    var classLabel: UInt8
     var depthValue: Float
+    var isAll: Bool = false
+    var label: String?
+    
+    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false, label: String? = "Select All") {
+        self.object = object
+        self.classLabel = classLabel
+        self.depthValue = depthValue
+        self.isAll = isAll
+        self.label = label
+    }
 }
 
 struct AnnotationView: View {
@@ -29,6 +40,7 @@ struct AnnotationView: View {
     
     @State private var index = 0
     
+    let options = AnnotationOption.allCases
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
@@ -40,6 +52,7 @@ struct AnnotationView: View {
     
     @State private var annotatedSegmentationLabelImage: CIImage? = nil
     @State private var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
+    @State private var selectedObjectId: UUID? = nil
     
     let annotationCIContext = CIContext()
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -47,9 +60,6 @@ struct AnnotationView: View {
     
     let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
     @State var transformedLabelImages: [CIImage]? = nil
-    
-    
-    let options = AnnotationOption.allCases
     
     var body: some View {
         if (!self.isValid()) {
@@ -75,6 +85,15 @@ struct AnnotationView: View {
                     Spacer()
                     Text("Selected class: \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
                     Spacer()
+                }
+                
+                HStack {
+                    Picker("Select an object", selection: $selectedObjectId) {
+                        ForEach(annotatedDetectedObjects ?? [], id: \.id) { object in
+                            Text(object.label ?? "")
+                                .tag(object.id)
+                        }
+                    }
                 }
                 
                 ProgressBar(value: calculateProgress())
@@ -123,10 +142,16 @@ struct AnnotationView: View {
             .onDisappear {
                 closeChangeset()
             }
+            .onChange(of: selectedObjectId) { oldValue, newValue in
+                if let newValue = newValue {
+                    updateAnnotatedDetectedSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                }
+            }
             .onChange(of: index, initial: true) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
                 refreshView()
             }
+            // TODO: Need to check if the following vetting is necessary
             .sheet(isPresented: $isShowingClassSelectionModal) {
                 if let selectedClassIndex = selectedClassIndex {
                     let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
@@ -195,11 +220,28 @@ struct AnnotationView: View {
         }
         
         self.annotatedSegmentationLabelImage = inputImage
-        self.annotatedDetectedObjects = unionOfMasksObjectList.map({ object in
+        var annotatedDetectedObjects = unionOfMasksObjectList.enumerated().map({ objectIndex, object in
             AnnotatedDetectedObject(object: object,
-                                    classLabel: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]],
-                                    depthValue: 0.0)
+                                    classLabel: object.classLabel,
+                                    depthValue: 0.0,
+                                    isAll: false,
+                                    label: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]] + ": " + String(objectIndex)
+            )
         })
+        // Add the "all" object to the beginning of the list
+        annotatedDetectedObjects.insert(
+            AnnotatedDetectedObject(
+                object: nil,
+                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                depthValue: 0.0,
+                isAll: true,
+                label: "Select All"
+            ),
+            at: 0
+        )
+        self.annotatedDetectedObjects = annotatedDetectedObjects
+        self.selectedObjectId = annotatedDetectedObjects[0].id
+        
         self.grayscaleToColorMasker.inputImage = inputImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
@@ -234,19 +276,81 @@ struct AnnotationView: View {
         }
     }
     
+    func updateAnnotatedDetectedSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
+        if let baseImage = self.objectsUIImage?.cgImage {
+            var oldObjects: [DetectedObject] = []
+            var newObjects: [DetectedObject] = []
+            var newImage: CGImage?
+            if previousSelectedObjectId != nil {
+                for object in self.annotatedDetectedObjects ?? [] {
+                    if object.id == previousSelectedObjectId! {
+                        if object.object != nil { oldObjects.append(object.object!) }
+                        break
+                    }
+                }
+            }
+            newImage = ContourObjectRasterizer.updateRasterizedImage(
+                baseImage: baseImage,
+                objects: oldObjects,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
+            )
+            for object in self.annotatedDetectedObjects ?? [] {
+                if object.id == selectedObjectId {
+                    if object.object != nil { newObjects.append(object.object!) }
+                    break
+                }
+            }
+            if newImage == nil {
+                print("Failed to update rasterized image")
+                return
+            }
+            newImage = ContourObjectRasterizer.updateRasterizedImage(
+                baseImage: newImage!,
+                objects: newObjects,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: .white, width: 5)
+            )
+            if let newImage = newImage {
+                self.objectsUIImage = UIImage(cgImage: newImage, scale: 1.0, orientation: .up)
+            } else {
+                print("Failed to update rasterized image")
+            }
+        }
+    }
+    
     func confirmAnnotation() {
         var depthValue: Float = 0.0
         
+        // TODO: Give the user some explicit warning that the depth is not being calculated
+        // due to which the entire annotations are being ignored.
         guard let depthMapProcessor = depthMapProcessor,
-            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
-            let segmentationLabelImage = self.annotatedSegmentationLabelImage,
-            let annotatedDetectedObjects = self.annotatedDetectedObjects,
+//            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
             let depthImage = sharedImageData.depthImage
         else {
-            print("depthMapProcessor is nil. Falling back to default depth value.")
-            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            print("depthMapProcessor is nil. Returning.")
             selectedOption = nil
-            uploadChanges(location: location)
+            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+            uploadChanges(location: location, tags: tags)
+            nextSegment()
+            return
+        }
+        
+        guard let segmentationLabelImage = self.annotatedSegmentationLabelImage,
+              let annotatedDetectedObjects = self.annotatedDetectedObjects
+        else {
+            print("annotatedDetectedObjects is nil. Returning.")
+            selectedOption = nil
+            let location = objectLocation.getCalcLocation(depthValue: depthValue)
+            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+            uploadChanges(location: location, tags: tags)
             nextSegment()
             return
         }
@@ -258,17 +362,20 @@ struct AnnotationView: View {
         // 1. Treat every object as a separate object and calculate the depth value for each of them and upload them.
         // 2. Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
         for annotatedDetectedObject in annotatedDetectedObjects {
+            guard let detectedObject = annotatedDetectedObject.object else {
+                continue
+            }
             depthValue = depthMapProcessor.getDepth(
-                segmentationLabelImage: segmentationLabelImage, object: annotatedDetectedObject.object,
+                segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                 depthImage: depthImage,
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            print("Depth Value for Label: \(depthValue) Object: \(annotatedDetectedObject.object.centroid)")
+            print("Depth Value for Label: \(depthValue) Object: \(String(describing: annotatedDetectedObject.object?.centroid))")
             var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
-        let location = objectLocation.getCalcLocation(depthValue: depthValue)
+//        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
-        uploadChanges(location: location)
+        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects)
         nextSegment()
     }
     
@@ -286,12 +393,31 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
-    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
+        for annotatedDetectedObject in annotatedDetectedObjects {
+            if annotatedDetectedObject.isAll {
+                continue
+            }
+            self.uploadAnnotatedChange(annotatedDetectedObject: annotatedDetectedObject)
+        }
+    }
+    
+    private func uploadAnnotatedChange(annotatedDetectedObject: AnnotatedDetectedObject) {
+        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        
+        
+        let className = Constants.ClassConstants.classes.filter {
+            $0.labelValue == annotatedDetectedObject.classLabel
+        }.first?.name ?? "Unknown"
+        let tags: [String: String] = ["demo:class": className]
+        
+        uploadChanges(location: location, tags: tags)
+    }
+    
+    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String]) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
-        
-        let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
         let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         
         ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in

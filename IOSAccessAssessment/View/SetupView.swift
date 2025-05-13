@@ -109,6 +109,7 @@ struct SetupView: View {
                 // MARK: Discuss on the possibility of having an explicit refresh
                 // instead of always refreshing when we end up in SetupView (could happen accidentally)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
+                    print("Setup View: refreshing sharedImageData")
                     self.sharedImageData.refreshData()
                 })
             }

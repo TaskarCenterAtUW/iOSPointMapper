@@ -129,6 +129,7 @@ class AnnotationSegmentationPipeline {
     }
     
     // TODO: A naming change would be better since this function does more than just processing the union of masks.
+    // Else, we should separate these functionalities into two different functions.
     func processUnionOfMasksRequest(targetValue: UInt8, isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil) -> AnnotationSegmentationPipelineResults? {
         if self.isProcessing {
             print("Unable to process Union of Masks. The AnnotationSegmentationPipeline is already processing a request.")
