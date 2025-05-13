@@ -70,7 +70,7 @@ struct AnnotationView: View {
         } else {
             VStack {
                 HStack {
-                    Spacer()
+//                    Spacer()
                     HostedAnnotationCameraViewController(cameraImage: cameraUIImage!,
                                                          segmentationImage: segmentationUIImage!,
                                                          objectsImage: objectsUIImage!,
@@ -79,12 +79,12 @@ struct AnnotationView: View {
                                                             height: UIScreen.main.bounds.height,
                                                             row: 0)
                     )
-                    Spacer()
+//                    Spacer()
                 }
                 HStack {
-                    Spacer()
+//                    Spacer()
                     Text("Selected class: \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
-                    Spacer()
+//                    Spacer()
                 }
                 
                 ProgressBar(value: calculateProgress())
@@ -92,30 +92,9 @@ struct AnnotationView: View {
                 MultiSelectDropdown(options: fruits, selected: $selectedItems)
                 
 //                Picker("Flavor", selection: $selectedFlavor) {
-//                    Text("Chocolate").tag(Flavor.chocolate)
-//                    Text("Vanilla").tag(Flavor.vanilla)
-//                    Text("Strawberry").tag(Flavor.strawberry)
-//                    Text("Mint").tag(Flavor.mint)
-//                    Text("Blueberry").tag(Flavor.blueberry)
-//                    Text("Raspberry").tag(Flavor.raspberry)
-//                    Text("Banana").tag(Flavor.banana)
-//                    Text("Mango").tag(Flavor.mango)
-//                    Text("Pistachio").tag(Flavor.pistachio)
-//                    Text("Cookie Dough").tag(Flavor.cookieDough)
-//                    Text("Green Tea").tag(Flavor.greenTea)
-//                    Text("Red Bean").tag(Flavor.redBean)
-//                    Text("Matcha").tag(Flavor.matcha)
-//                    Text("Black Sesame").tag(Flavor.blackSesame)
-//                    Text("Taro").tag(Flavor.taro)
-//                    Text("Lychee").tag(Flavor.lychee)
-//                    Text("Almond").tag(Flavor.almond)
-//                    Text("Coconut").tag(Flavor.coconut)
-//                    Text("Coffee").tag(Flavor.coffee)
-//                    Text("Caramel").tag(Flavor.caramel)
-//                    Text("Hazelnut").tag(Flavor.hazelnut)
-//                    Text("Lemon").tag(Flavor.lemon)
-//                    Text("Orange").tag(Flavor.orange)
-//                    Text("Peach").tag(Flavor.peach)
+//                    ForEach(Flavor.allCases) { flavor in
+//                        Text(flavor.rawValue.capitalized).tag(flavor)
+//                    }
 //                }
                 
                 HStack {
@@ -143,7 +122,7 @@ struct AnnotationView: View {
                     }
 //                    Spacer()
                 }
-                .padding()
+//                .padding()
                 
                 Button(action: {
                     confirmAnnotation()
