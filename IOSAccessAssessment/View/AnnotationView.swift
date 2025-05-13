@@ -15,9 +15,20 @@ enum AnnotationOption: String, CaseIterable {
 }
 
 struct AnnotatedDetectedObject {
-    var object: DetectedObject
-    var classLabel: String
+    var id: UUID = UUID()
+    var object: DetectedObject?
+    var classLabel: UInt8
     var depthValue: Float
+    var isAll: Bool = false
+    var label: String?
+    
+    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false, label: String? = "Select All") {
+        self.object = object
+        self.classLabel = classLabel
+        self.depthValue = depthValue
+        self.isAll = isAll
+        self.label = label
+    }
 }
 
 struct AnnotationView: View {
@@ -29,6 +40,7 @@ struct AnnotationView: View {
     
     @State private var index = 0
     
+    let options = AnnotationOption.allCases
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
@@ -40,6 +52,7 @@ struct AnnotationView: View {
     
     @State private var annotatedSegmentationLabelImage: CIImage? = nil
     @State private var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
+    @State private var selectedObjectId: UUID? = nil
     
     let annotationCIContext = CIContext()
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
@@ -47,9 +60,6 @@ struct AnnotationView: View {
     
     let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
     @State var transformedLabelImages: [CIImage]? = nil
-    
-    
-    let options = AnnotationOption.allCases
     
     var body: some View {
         if (!self.isValid()) {
@@ -75,6 +85,15 @@ struct AnnotationView: View {
                     Spacer()
                     Text("Selected class: \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
                     Spacer()
+                }
+                
+                HStack {
+                    Picker("Select an object", selection: $selectedObjectId) {
+                        ForEach(annotatedDetectedObjects ?? [], id: \.id) { object in
+                            Text(object.label ?? "")
+                                .tag(object.id)
+                        }
+                    }
                 }
                 
                 ProgressBar(value: calculateProgress())
@@ -195,11 +214,28 @@ struct AnnotationView: View {
         }
         
         self.annotatedSegmentationLabelImage = inputImage
-        self.annotatedDetectedObjects = unionOfMasksObjectList.map({ object in
+        var annotatedDetectedObjects = unionOfMasksObjectList.enumerated().map({ objectIndex, object in
             AnnotatedDetectedObject(object: object,
-                                    classLabel: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]],
-                                    depthValue: 0.0)
+                                    classLabel: object.classLabel,
+                                    depthValue: 0.0,
+                                    isAll: false,
+                                    label: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]] + ": " + String(objectIndex)
+            )
         })
+        // Add the "all" object to the beginning of the list
+        annotatedDetectedObjects.insert(
+            AnnotatedDetectedObject(
+                object: nil,
+                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                depthValue: 0.0,
+                isAll: true,
+                label: "Select All"
+            ),
+            at: 0
+        )
+        self.annotatedDetectedObjects = annotatedDetectedObjects
+        self.selectedObjectId = annotatedDetectedObjects[0].id
+        
         self.grayscaleToColorMasker.inputImage = inputImage
         self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
         self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
@@ -238,7 +274,7 @@ struct AnnotationView: View {
         var depthValue: Float = 0.0
         
         guard let depthMapProcessor = depthMapProcessor,
-            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
+//            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
             let segmentationLabelImage = self.annotatedSegmentationLabelImage,
             let annotatedDetectedObjects = self.annotatedDetectedObjects,
             let depthImage = sharedImageData.depthImage
@@ -258,11 +294,14 @@ struct AnnotationView: View {
         // 1. Treat every object as a separate object and calculate the depth value for each of them and upload them.
         // 2. Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
         for annotatedDetectedObject in annotatedDetectedObjects {
+            guard let detectedObject = annotatedDetectedObject.object else {
+                continue
+            }
             depthValue = depthMapProcessor.getDepth(
-                segmentationLabelImage: segmentationLabelImage, object: annotatedDetectedObject.object,
+                segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                 depthImage: depthImage,
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            print("Depth Value for Label: \(depthValue) Object: \(annotatedDetectedObject.object.centroid)")
+            print("Depth Value for Label: \(depthValue) Object: \(annotatedDetectedObject.object?.centroid)")
             var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
