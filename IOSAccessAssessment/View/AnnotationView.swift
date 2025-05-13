@@ -142,6 +142,11 @@ struct AnnotationView: View {
             .onDisappear {
                 closeChangeset()
             }
+            .onChange(of: selectedObjectId) { oldValue, newValue in
+                if let newValue = newValue {
+                    updateAnnotatedDetectedSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                }
+            }
             .onChange(of: index, initial: true) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
                 refreshView()
@@ -267,6 +272,58 @@ struct AnnotationView: View {
         if let transformedLabelImages = self.transformedLabelImages {
             print("Transformed label images count: \(transformedLabelImages.count)")
             self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+        }
+    }
+    
+    func updateAnnotatedDetectedSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
+        print("Selections: \(previousSelectedObjectId) \(selectedObjectId)")
+        if let baseImage = self.objectsUIImage?.cgImage {
+            var oldObjects: [DetectedObject] = []
+            var newObjects: [DetectedObject] = []
+            var newImage: CGImage?
+            if previousSelectedObjectId != nil {
+                for object in self.annotatedDetectedObjects ?? [] {
+                    if object.id == previousSelectedObjectId! {
+                        if object.object != nil { oldObjects.append(object.object!) }
+                        break
+                    }
+                }
+            }
+            print("Old objects: \(oldObjects.count)")
+            newImage = ContourObjectRasterizer.updateRasterizedImage(
+                baseImage: baseImage,
+                objects: oldObjects,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
+            )
+            for object in self.annotatedDetectedObjects ?? [] {
+                if object.id == selectedObjectId {
+                    if object.object != nil { newObjects.append(object.object!) }
+                    break
+                }
+            }
+            print("New objects count: \(newObjects.count)")
+            if newImage == nil {
+                print("Failed to update rasterized image")
+                return
+            }
+            newImage = ContourObjectRasterizer.updateRasterizedImage(
+                baseImage: newImage!,
+                objects: newObjects,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: .white, width: 5)
+            )
+            if let newImage = newImage {
+                self.objectsUIImage = UIImage(cgImage: newImage, scale: 1.0, orientation: .up)
+            } else {
+                print("Failed to update rasterized image")
+            }
         }
     }
     
