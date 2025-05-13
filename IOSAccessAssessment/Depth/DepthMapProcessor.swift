@@ -103,7 +103,11 @@ struct DepthMapProcessor {
      
         The depth image is not used in this function.
      */
-    func getDepth(segmentationLabelImage: CIImage, object: DetectedObject, depthImage: CIImage, classLabel: UInt8) -> Float {
+    func getDepth(segmentationLabelImage: CIImage, object: DetectedObject?, depthImage: CIImage, classLabel: UInt8) -> Float {
+        guard let object = object else {
+            print("Object is nil")
+            return self.getDepth(segmentationLabelImage: segmentationLabelImage, depthImage: depthImage, classLabel: classLabel)
+        }
         guard let depthMap = self.depthMap else {
             print("Depth image pixel buffer is nil")
             return 0.0
