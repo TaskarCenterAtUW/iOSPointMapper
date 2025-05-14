@@ -29,7 +29,7 @@ struct WayData {
     var tags: [String: String]
     var nodeRefs: [String]
     
-    init(id: String = "-1", version: String = "1", tags: [String: String], nodeRefs: [String]) {
+    init(id: String = "-2", version: String = "1", tags: [String: String], nodeRefs: [String]) {
         self.id = id
         self.version = version
         self.tags = tags
@@ -170,7 +170,7 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            
+            print("Create Node Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
@@ -219,7 +219,7 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            
+            print("Create Way Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
@@ -268,7 +268,7 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            
+            print("Modify Way Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
