@@ -15,7 +15,9 @@ struct SetupView: View {
             static let uploadChangesetTitle = "Upload Changeset"
             static let selectClassesText = "Select Classes to Identify"
             static let changesetOpeningErrorText = "Changeset failed to open. Please retry."
-            static let changesetRetryText = "Retry"
+            static let changesetOpeningRetryText = "Retry"
+            static let changesetClosingErrorText = "Changeset failed to close. Please retry."
+            static let changesetClosingRetryText = "Retry"
             static let confirmationDialogTitle = "Are you sure you want to log out?"
             static let confirmationDialogConfirmText = "Log out"
             static let confirmationDialogCancelText = "Cancel"
@@ -37,8 +39,11 @@ struct SetupView: View {
     }
     
     @State private var isChangesetOpened = false
-    @State private var showRetryAlert = false
-    @State private var retryMessage = ""
+    @State private var showOpeningRetryAlert = false
+    @State private var openRetryMessage = ""
+//    @State private var isChangesetClosed = false
+    @State private var showClosingRetryAlert = false
+    @State private var closeRetryMessage = ""
 
     @State private var selection = Set<Int>()
     private var isSelectionEmpty: Bool {
@@ -61,7 +66,8 @@ struct SetupView: View {
                     Spacer()
                     
                     Button (action: {
-                        print("Upload Changeset")
+                        print("Uploading changeset...")
+                        closeChangeset()
                     }) {
                         Image(systemName: "arrow.up")
                             .resizable()
@@ -131,16 +137,26 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
-            .alert(SetupViewConstants.Texts.changesetOpeningErrorText, isPresented: $showRetryAlert) {
-                Button(SetupViewConstants.Texts.changesetRetryText) {
+            .alert(SetupViewConstants.Texts.changesetOpeningErrorText, isPresented: $showOpeningRetryAlert) {
+                Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
                     isChangesetOpened = false
-                    retryMessage = ""
-                    showRetryAlert = false
+                    openRetryMessage = ""
+                    showOpeningRetryAlert = false
                     
                     openChangeset()
                 }
             } message: {
-                Text(retryMessage)
+                Text(openRetryMessage)
+            }
+            .alert(SetupViewConstants.Texts.changesetClosingErrorText, isPresented: $showClosingRetryAlert) {
+                Button(SetupViewConstants.Texts.changesetClosingRetryText) {
+                    closeRetryMessage = ""
+                    showClosingRetryAlert = false
+                    
+                    closeChangeset()
+                }
+            } message: {
+                Text(closeRetryMessage)
             }
             .onAppear {
                 // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
@@ -167,9 +183,21 @@ struct SetupView: View {
                 print("Opened changeset with ID: \(changesetId)")
                 isChangesetOpened = true
             case .failure(let error):
-                retryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
+                openRetryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
                 isChangesetOpened = false
-                showRetryAlert = true
+                showOpeningRetryAlert = true
+            }
+        }
+    }
+    
+    private func closeChangeset() {
+        ChangesetService.shared.closeChangeset { result in
+            switch result {
+            case .success:
+                print("Changeset closed successfully.")
+            case .failure(let error):
+                closeRetryMessage = "Failed to close changeset: \(error.localizedDescription)"
+                showClosingRetryAlert = true
             }
         }
     }

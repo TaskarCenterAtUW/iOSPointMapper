@@ -139,9 +139,9 @@ struct AnnotationView: View {
 //                initializeAnnotationSegmentationPipeline()
                 refreshView()
             }
-            .onDisappear {
-                closeChangeset()
-            }
+//            .onDisappear {
+//                closeChangeset()
+//            }
             .onChange(of: selectedObjectId) { oldValue, newValue in
                 if let newValue = newValue {
                     updateAnnotatedDetectedSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
@@ -424,23 +424,12 @@ struct AnnotationView: View {
             switch result {
             case .success:
                 print("Changes uploaded successfully.")
+                sharedImageData.isUploadReady = true
             case .failure(let error):
                 print("Failed to upload changes: \(error.localizedDescription)")
             }
         }
     }
-    
-    private func closeChangeset() {
-        ChangesetService.shared.closeChangeset { result in
-            switch result {
-            case .success:
-                print("Changeset closed successfully.")
-            case .failure(let error):
-                print("Failed to close changeset: \(error.localizedDescription)")
-            }
-        }
-    }
-
 }
 
 struct ClassSelectionView: View {
