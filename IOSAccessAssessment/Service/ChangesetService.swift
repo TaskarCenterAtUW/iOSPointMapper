@@ -103,6 +103,11 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
+            
+            if let data = data {
+                let parser = ChangesetXMLParser()
+                parser.parse(data: data)
+            }
             completion(.success(()))
         }.resume()
     }

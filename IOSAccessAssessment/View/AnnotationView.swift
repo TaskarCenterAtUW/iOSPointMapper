@@ -393,6 +393,7 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
+    // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
     private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
         for annotatedDetectedObject in annotatedDetectedObjects {
             if annotatedDetectedObject.isAll {
