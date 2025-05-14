@@ -23,64 +23,55 @@ struct ContentView: View {
     
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
-    @State private var isChangesetOpened = false
-    @State private var showRetryAlert = false
-    @State private var retryMessage = ""
     
     var isCameraStoppedPayload = ["isStopped": true]
     
     var body: some View {
         VStack {
-            if isChangesetOpened {
-                if manager?.dataAvailable ?? false{
-                    ZStack {
+            if manager?.dataAvailable ?? false{
+                ZStack {
 //                        HostedCameraViewController(session: manager!.controller.captureSession,
 //                                                   frameRect: VerticalFrame.getColumnFrame(
 //                                                    width: UIScreen.main.bounds.width,
 //                                                    height: UIScreen.main.bounds.height,
 //                                                    row: 0)
 //                        )
-                        HostedSegmentationViewController(
-                            segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-                                                         frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 1)
-                        )
-                        HostedSegmentationViewController(
-                            segmentationImage: Binding(
-                                get: { manager?.cameraUIImage ?? UIImage() },
-                                set: { manager?.cameraUIImage = $0 }
-                            ),
-                                                         frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 0)
-                        )
-                    }
-                    Button {
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                        segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                            additionalPayload: isCameraStoppedPayload)
-                    } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
-                    }
+                    HostedSegmentationViewController(
+                        segmentationImage: $segmentationPipeline.segmentationResultUIImage,
+                                                     frameRect: VerticalFrame.getColumnFrame(
+                                                        width: UIScreen.main.bounds.width,
+                                                        height: UIScreen.main.bounds.height,
+                                                        row: 1)
+                    )
+                    HostedSegmentationViewController(
+                        segmentationImage: Binding(
+                            get: { manager?.cameraUIImage ?? UIImage() },
+                            set: { manager?.cameraUIImage = $0 }
+                        ),
+                                                     frameRect: VerticalFrame.getColumnFrame(
+                                                        width: UIScreen.main.bounds.width,
+                                                        height: UIScreen.main.bounds.height,
+                                                        row: 0)
+                    )
                 }
-                else {
-                    VStack {
-                        SpinnerView()
-                        Text("Camera settings in progress")
-                            .padding(.top, 20)
-                    }
+                Button {
+                    objectLocation.setLocationAndHeading()
+                    manager?.stopStream()
+                    segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
+                                                        additionalPayload: isCameraStoppedPayload)
+                } label: {
+                    Image(systemName: "camera.circle.fill")
+                        .resizable()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.white)
                 }
-            } else {
-                SpinnerView()
-                Text("Changeset opening in progress")
-                    .padding(.top, 20)
+            }
+            else {
+                VStack {
+                    SpinnerView()
+                    Text("Camera settings in progress")
+                        .padding(.top, 20)
+                }
             }
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
@@ -91,7 +82,6 @@ struct ContentView: View {
         }
         .navigationBarTitle("Camera View", displayMode: .inline)
         .onAppear {
-            openChangeset()
             navigateToAnnotationView = false
             
             if (manager == nil) {
@@ -104,17 +94,6 @@ struct ContentView: View {
         }
         .onDisappear {
             manager?.stopStream()
-        }
-        .alert("Changeset opening error", isPresented: $showRetryAlert) {
-            Button("Retry") {
-                isChangesetOpened = false
-                retryMessage = ""
-                showRetryAlert = false
-                
-                openChangeset()
-            }
-        } message: {
-            Text(retryMessage)
         }
     }
     
@@ -149,20 +128,6 @@ struct ContentView: View {
 //            fatalError("Unable to process segmentation \(error.localizedDescription)")
             print("Unable to process segmentation \(error.localizedDescription)")
             return
-        }
-    }
-    
-    private func openChangeset() {
-        ChangesetService.shared.openChangeset { result in
-            switch result {
-            case .success(let changesetId):
-                print("Opened changeset with ID: \(changesetId)")
-                isChangesetOpened = true
-            case .failure(let error):
-                retryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
-                isChangesetOpened = false
-                showRetryAlert = true
-            }
         }
     }
 }

@@ -42,6 +42,8 @@ class ImageData {
     Currently, while it is an ObservableObject, it is not used as a state object in the app. It is merely used as a global data store.
  */
 class SharedImageData: ObservableObject {
+    var isUploadReady: Bool = false
+    
     var cameraImage: CIImage?
     
     var isLidarAvailable: Bool = false
