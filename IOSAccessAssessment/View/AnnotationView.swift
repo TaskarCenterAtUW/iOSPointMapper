@@ -424,7 +424,9 @@ struct AnnotationView: View {
             switch result {
             case .success:
                 print("Changes uploaded successfully.")
-                sharedImageData.isUploadReady = true
+                DispatchQueue.main.async {
+                    sharedImageData.isUploadReady = true
+                }
             case .failure(let error):
                 print("Failed to upload changes: \(error.localizedDescription)")
             }

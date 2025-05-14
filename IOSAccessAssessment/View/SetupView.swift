@@ -159,15 +159,9 @@ struct SetupView: View {
                 Text(closeRetryMessage)
             }
             .onAppear {
-                // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
-                // This kind of delay should be fine, since the very first few frames of capture may not be necessary.
-                // MARK: Discuss on the possibility of having an explicit refresh
-                // instead of always refreshing when we end up in SetupView (could happen accidentally)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                    print("Setup View: refreshing sharedImageData")
-                    self.sharedImageData.refreshData()
-                })
-                openChangeset()
+                if !isChangesetOpened {
+                    openChangeset()
+                }
             }
         }
         .environmentObject(self.sharedImageData)
@@ -195,6 +189,10 @@ struct SetupView: View {
             switch result {
             case .success:
                 print("Changeset closed successfully.")
+                DispatchQueue.main.async {
+                    sharedImageData.refreshData()
+                    openChangeset()
+                }
             case .failure(let error):
                 closeRetryMessage = "Failed to close changeset: \(error.localizedDescription)"
                 showClosingRetryAlert = true
