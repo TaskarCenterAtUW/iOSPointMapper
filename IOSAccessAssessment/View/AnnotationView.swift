@@ -404,12 +404,21 @@ struct AnnotationView: View {
     
     private func uploadAnnotatedChange(annotatedDetectedObject: AnnotatedDetectedObject) {
         let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        // Check if way type
+        let isWay = Constants.ClassConstants.classes.filter {
+            $0.labelValue == annotatedDetectedObject.classLabel
+        }.first?.isWay ?? false
         
         
         let className = Constants.ClassConstants.classes.filter {
             $0.labelValue == annotatedDetectedObject.classLabel
         }.first?.name ?? "Unknown"
-        let tags: [String: String] = ["demo:class": className]
+        var tags: [String: String] = ["demo:class": className]
+        if isWay {
+            let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
+                                                   imageSize: segmentationUIImage?.size ?? CGSize.zero)
+            tags["demo:width"] = String(format: "%.4f", width)
+        }
         
         uploadChanges(location: location, tags: tags)
     }
