@@ -65,6 +65,9 @@ class SharedImageData: ObservableObject {
     var maxCapacity: Int
     var thresholdRatio: Float = 0.7
     
+    // One way for each class
+    var wayGeometries: [UInt8: String] = [:]
+    
     init(maxCapacity: Int = 100, thresholdRatio: Float = 0.7, historyMaxCapacity: Int = 5) {
         self.maxCapacity = maxCapacity
         self.thresholdRatio = thresholdRatio
@@ -75,16 +78,19 @@ class SharedImageData: ObservableObject {
         self.isUploadReady = false
         
         self.cameraImage = nil
+        
+        self.isLidarAvailable = checkLidarAvailability()
         self.depthImage = nil
         
         self.segmentationLabelImage = nil
         self.segmentedIndices = []
         self.detectedObjects = [:]
+        self.transformMatrixToPreviousFrame = nil
         
         self.history.removeAll()
         self.segmentationFrames.removeAll()
         
-        self.isLidarAvailable = checkLidarAvailability()
+        self.wayGeometries.removeAll()
     }
     
     func recordImageData(imageData: ImageData) {

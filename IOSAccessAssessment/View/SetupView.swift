@@ -72,7 +72,7 @@ struct SetupView: View {
                         Image(systemName: "arrow.up")
                             .resizable()
                             .frame(width: 20, height: 20)
-                            .foregroundColor(.white)
+//                            .foregroundColor(.white)
                     }
                     .buttonStyle(.bordered)
                     .disabled(!sharedImageData.isUploadReady)

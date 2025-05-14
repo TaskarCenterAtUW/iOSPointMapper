@@ -187,7 +187,7 @@ struct ContourRequestProcessor {
 //        let points = contour.normalizedPoints
         guard !points.isEmpty else { return nil }
         
-        let minPointsForComparison = points.count
+//        let minPointsForComparison = points.count
         
         let sortedByYPoints = points.sorted(by: { $0.y < $1.y })
         

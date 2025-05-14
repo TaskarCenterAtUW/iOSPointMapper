@@ -138,7 +138,6 @@ class CameraController: NSObject, ObservableObject {
     }
 }
 
-// MARK: Output Synchronizer Delegate
 extension CameraController: AVCaptureDataOutputSynchronizerDelegate {
     
     func dataOutputSynchronizer(_ synchronizer: AVCaptureDataOutputSynchronizer,

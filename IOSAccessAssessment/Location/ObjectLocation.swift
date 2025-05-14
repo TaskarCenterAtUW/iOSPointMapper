@@ -90,4 +90,50 @@ extension ObjectLocation {
         return (latitude: CLLocationDegrees(objectLatitude),
                 longitude: CLLocationDegrees(objectLongitude))
     }
+    
+    // TODO: Get the actual device-specific attributes, instead of the hard-coded values
+    func getWayWidth(wayBounds: [SIMD2<Float>], imageSize: CGSize) -> Float {
+        guard wayBounds.count == 4 else {
+            print("Invalid way bounds")
+            return 0.0
+        }
+        
+        func pixelCorToPixelWidth(v: Float, frameHeight: Float) -> Float {
+            let a: Float = 23726.211
+            let b: Float = -0.0232829
+            let c: Float = 0.2012972
+            var w = a * exp(b * v) + c
+            w = w * 0.775862
+            if w > 0 {
+                return w
+            }
+            else {
+                return 0.0
+            }
+        }
+        
+        let frameWidth = Float(imageSize.width)
+        let frameHeight = Float(imageSize.height)
+        
+        let lowY: Float = wayBounds[0].y*frameHeight
+        let highY: Float = wayBounds[1].y*frameHeight
+        
+        let lowLeftX: Float = wayBounds[0].x*frameWidth
+        let lowRightX: Float = wayBounds[3].x*frameWidth
+        let highLeftX: Float = wayBounds[1].x*frameWidth
+        let highRightX: Float = wayBounds[2].x*frameWidth
+        
+        let part1: Float = pixelCorToPixelWidth(
+            v: lowY*720/376, frameHeight: frameHeight
+        )*(lowLeftX-lowRightX)*1280/672
+        let part2: Float = pixelCorToPixelWidth(
+            v: highY*720/376, frameHeight: frameHeight
+        )*(highLeftX-highRightX)*1280/672
+
+        let hardware_width_scale: Float = 0.775862
+        var widthInMeters: Float = 1/2*(part1 + part2) * 0.0254
+        widthInMeters *= hardware_width_scale
+        
+        return widthInMeters
+    }
 }
