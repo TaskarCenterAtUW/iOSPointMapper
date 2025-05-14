@@ -12,7 +12,12 @@ struct SetupView: View {
     private enum SetupViewConstants {
         enum Texts {
             static let setupViewTitle = "Setup"
+            static let uploadChangesetTitle = "Upload Changeset"
             static let selectClassesText = "Select Classes to Identify"
+            static let changesetOpeningErrorText = "Changeset failed to open. Please retry."
+            static let changesetOpeningRetryText = "Retry"
+            static let changesetClosingErrorText = "Changeset failed to close. Please retry."
+            static let changesetClosingRetryText = "Retry"
             static let confirmationDialogTitle = "Are you sure you want to log out?"
             static let confirmationDialogConfirmText = "Log out"
             static let confirmationDialogCancelText = "Cancel"
@@ -32,6 +37,13 @@ struct SetupView: View {
             static let logoutIconSize: CGFloat = 20
         }
     }
+    
+    @State private var isChangesetOpened = false
+    @State private var showOpeningRetryAlert = false
+    @State private var openRetryMessage = ""
+//    @State private var isChangesetClosed = false
+    @State private var showClosingRetryAlert = false
+    @State private var closeRetryMessage = ""
 
     @State private var selection = Set<Int>()
     private var isSelectionEmpty: Bool {
@@ -47,9 +59,31 @@ struct SetupView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading) {
+                HStack {
+                    Text(SetupViewConstants.Texts.uploadChangesetTitle)
+                        .font(.subheadline)
+                    
+                    Spacer()
+                    
+                    Button (action: {
+                        print("Uploading changeset...")
+                        closeChangeset()
+                    }) {
+                        Image(systemName: "arrow.up")
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!sharedImageData.isUploadReady)
+                }
+                .padding(.bottom, 10)
+                
+                Divider()
+                
                 Text(SetupViewConstants.Texts.selectClassesText)
-                    .font(.title)
-                    .foregroundColor(.gray)
+                    .font(.subheadline)
+//                    .foregroundColor(.gray)
                 
                 List {
                     ForEach(0..<Constants.ClassConstants.classNames.count, id: \.self) { index in
@@ -103,20 +137,66 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
+            .alert(SetupViewConstants.Texts.changesetOpeningErrorText, isPresented: $showOpeningRetryAlert) {
+                Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
+                    isChangesetOpened = false
+                    openRetryMessage = ""
+                    showOpeningRetryAlert = false
+                    
+                    openChangeset()
+                }
+            } message: {
+                Text(openRetryMessage)
+            }
+            .alert(SetupViewConstants.Texts.changesetClosingErrorText, isPresented: $showClosingRetryAlert) {
+                Button(SetupViewConstants.Texts.changesetClosingRetryText) {
+                    closeRetryMessage = ""
+                    showClosingRetryAlert = false
+                    
+                    closeChangeset()
+                }
+            } message: {
+                Text(closeRetryMessage)
+            }
             .onAppear {
-                // This refresh is done asynchronously, because frames get added from the ContentView even after the refresh
-                // This kind of delay should be fine, since the very first few frames of capture may not be necessary.
-                // MARK: Discuss on the possibility of having an explicit refresh
-                // instead of always refreshing when we end up in SetupView (could happen accidentally)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: {
-                    print("Setup View: refreshing sharedImageData")
-                    self.sharedImageData.refreshData()
-                })
+                if !isChangesetOpened {
+                    openChangeset()
+                }
             }
         }
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
         .environment(\.colorScheme, .dark)
+    }
+    
+    private func openChangeset() {
+        ChangesetService.shared.openChangeset { result in
+            switch result {
+            case .success(let changesetId):
+                print("Opened changeset with ID: \(changesetId)")
+                isChangesetOpened = true
+            case .failure(let error):
+                openRetryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
+                isChangesetOpened = false
+                showOpeningRetryAlert = true
+            }
+        }
+    }
+    
+    private func closeChangeset() {
+        ChangesetService.shared.closeChangeset { result in
+            switch result {
+            case .success:
+                print("Changeset closed successfully.")
+                DispatchQueue.main.async {
+                    sharedImageData.refreshData()
+                    openChangeset()
+                }
+            case .failure(let error):
+                closeRetryMessage = "Failed to close changeset: \(error.localizedDescription)"
+                showClosingRetryAlert = true
+            }
+        }
     }
 }
