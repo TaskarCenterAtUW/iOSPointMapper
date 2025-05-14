@@ -118,8 +118,8 @@ extension ObjectLocation {
         let frameWidth = Float(imageSize.width)
         let frameHeight = Float(imageSize.height)
         
-        let lowY: Float = wayBounds[0].y*frameHeight
-        let highY: Float = wayBounds[1].y*frameHeight
+        let lowY: Float = (1-wayBounds[0]).y*frameHeight
+        let highY: Float = (1-wayBounds[1]).y*frameHeight
         
         let lowLeftX: Float = wayBounds[0].x*frameWidth
         let lowRightX: Float = wayBounds[3].x*frameWidth
@@ -128,10 +128,10 @@ extension ObjectLocation {
         
         let part1: Float = pixelCorToPixelWidth(
             v: lowY*originalFrameHeight/frameHeight, frameHeight: frameHeight
-        )*(lowLeftX-lowRightX)*originalFrameWidth/frameWidth
+        )*(lowRightX-lowLeftX)*originalFrameWidth/frameWidth
         let part2: Float = pixelCorToPixelWidth(
             v: highY*originalFrameHeight/frameHeight, frameHeight: frameHeight
-        )*(highLeftX-highRightX)*originalFrameWidth/frameWidth
+        )*(highRightX-highLeftX)*originalFrameWidth/frameWidth
 
         let hardware_width_scale: Float = 0.775862
         var widthInMeters: Float = 1/2*(part1 + part2) * 0.0254
