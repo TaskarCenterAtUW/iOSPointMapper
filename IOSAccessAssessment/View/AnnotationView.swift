@@ -419,6 +419,9 @@ struct AnnotationView: View {
             let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
                                                    imageSize: segmentationUIImage?.size ?? CGSize.zero)
             tags["demo:width"] = String(format: "%.4f", width)
+            tags["footway"] = Constants.ClassConstants.classes.filter {
+                $0.labelValue == annotatedDetectedObject.classLabel
+            }.first?.name.lowercased() ?? "unknown"
         }
         
         uploadChanges(location: location, tags: tags)
