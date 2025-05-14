@@ -8,9 +8,33 @@
 import Foundation
 
 struct NodeData {
-    let latitude: Double
-    let longitude: Double
-    let tags: [String: String]
+    var id: String
+    var version: String
+    var latitude: Double
+    var longitude: Double
+    var tags: [String: String]
+    
+    init(id: String = "-1", version: String = "1", latitude: Double, longitude: Double, tags: [String: String]) {
+        self.id = id
+        self.version = version
+        self.latitude = latitude
+        self.longitude = longitude
+        self.tags = tags
+    }
+}
+
+struct WayData {
+    var id: String
+    var version: String
+    var tags: [String: String]
+    var nodeRefs: [String]
+    
+    init(id: String = "-1", version: String = "1", tags: [String: String], nodeRefs: [String]) {
+        self.id = id
+        self.version = version
+        self.tags = tags
+        self.nodeRefs = nodeRefs
+    }
 }
 
 class ChangesetService {
