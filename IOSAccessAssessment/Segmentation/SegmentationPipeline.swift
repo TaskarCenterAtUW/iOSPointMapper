@@ -166,7 +166,7 @@ class SegmentationPipeline: ObservableObject {
                 transformMatrixFromPreviousFrame = self.homographyRequestProcessor?.getHomographyTransform(
                     referenceImage: cIImage, floatingImage: previousImage) ?? nil
             }
-            self.centroidTracker.update(detectedObjects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
+            self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
             
             DispatchQueue.main.async {
                 self.segmentationImage = segmentationResults?.segmentationImage

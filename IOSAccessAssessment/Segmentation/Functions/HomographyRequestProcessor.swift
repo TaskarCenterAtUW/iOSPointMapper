@@ -36,8 +36,8 @@ struct HomographyRequestProcessor {
         return CGPoint(x: CGFloat(vector1.x / vector1.z), y: CGFloat(vector1.y / vector1.z))
     }
     
-    func transformObjectCentroids(for detectedObjects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
-        return detectedObjects.map { object in
+    func transformObjectCentroids(for objects: [DetectedObject], using transformMatrix: simd_float3x3) -> [DetectedObject] {
+        return objects.map { object in
             let transformedCentroid = warpedPoint(object.centroid, using: transformMatrix)
             return DetectedObject(
                 classLabel: object.classLabel,

@@ -57,11 +57,11 @@ class CentroidTracker {
      TODO: Have a better performance assessment of this update method.
 
      */
-    func update(detectedObjects: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
+    func update(objects: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
         /**
          If object list is empty, increment the disappeared count for each object
          */
-        if (detectedObjects.isEmpty) {
+        if (objects.isEmpty) {
             for (objectID, objectDisappearCount) in self.disappearedObjectMap {
                 self.disappearedObjectMap[objectID] = objectDisappearCount + 1;
                 
@@ -83,7 +83,7 @@ class CentroidTracker {
          If the current object list is empty, only register the new objects
          */
         if (self.detectedObjectMap.isEmpty) {
-            for object in detectedObjects {
+            for object in objects {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                               objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
                               area: object.area, perimeter: object.perimeter, isCurrent: object.isCurrent);
@@ -100,8 +100,7 @@ class CentroidTracker {
          Compute the distance matrix between the existing objects and the new objects.         
          */
         let detectedObjects = Array(self.detectedObjectMap.values.map { $0 });
-        let inputObjects = Array(detectedObjects.map { $0 });
-        let distanceMatrix = computeDistanceMatrix(detectedObjects: detectedObjects, inputObjects: inputObjects);
+        let distanceMatrix = computeDistanceMatrix(detectedObjects: detectedObjects, inputObjects: objects);
         let rowCount = distanceMatrix.count;
         let colCount = distanceMatrix[0].count;
         
@@ -139,7 +138,7 @@ class CentroidTracker {
             
             // Else, we have a match
             let objectID = objectIDs[row]
-            self.detectedObjectMap[objectID] = detectedObjects[col]
+            self.detectedObjectMap[objectID] = objects[col]
             self.disappearedObjectMap[objectID] = 0
             
             usedRows.insert(row)
@@ -168,7 +167,7 @@ class CentroidTracker {
          If there are any unused columns, register them as new objects
          */
         for col in unusedCols {
-            let object = detectedObjects[col]
+            let object = objects[col]
             self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                           objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
                           area: object.area, perimeter: object.perimeter, isCurrent: false) // Mark the object as not current
