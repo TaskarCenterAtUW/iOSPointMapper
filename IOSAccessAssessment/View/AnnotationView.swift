@@ -338,7 +338,9 @@ struct AnnotationView: View {
             selectedOption = nil
             let location = objectLocation.getCalcLocation(depthValue: depthValue)
             let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
-            uploadChanges(location: location, tags: tags)
+            // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
+            uploadNodeChanges(location: location, tags: tags,
+                              classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
             nextSegment()
             return
         }
@@ -350,7 +352,9 @@ struct AnnotationView: View {
             selectedOption = nil
             let location = objectLocation.getCalcLocation(depthValue: depthValue)
             let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
-            uploadChanges(location: location, tags: tags)
+            // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
+            uploadNodeChanges(location: location, tags: tags,
+                              classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
             nextSegment()
             return
         }
@@ -393,6 +397,7 @@ struct AnnotationView: View {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
     
+    // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
     private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
         for annotatedDetectedObject in annotatedDetectedObjects {
             if annotatedDetectedObject.isAll {
@@ -404,40 +409,117 @@ struct AnnotationView: View {
     
     private func uploadAnnotatedChange(annotatedDetectedObject: AnnotatedDetectedObject) {
         let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
-        // Check if way type
-        let isWay = Constants.ClassConstants.classes.filter {
-            $0.labelValue == annotatedDetectedObject.classLabel
-        }.first?.isWay ?? false
         
-        
-        let className = Constants.ClassConstants.classes.filter {
+        let classLabelClass = Constants.ClassConstants.classes.filter {
             $0.labelValue == annotatedDetectedObject.classLabel
-        }.first?.name ?? "Unknown"
+        }.first
+        
+        let className = classLabelClass?.name ?? "Unknown"
         var tags: [String: String] = ["demo:class": className]
-        if isWay {
-            let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
-                                                   imageSize: segmentationUIImage?.size ?? CGSize.zero)
-            tags["demo:width"] = String(format: "%.4f", width)
-        }
         
-        uploadChanges(location: location, tags: tags)
+        // Check if way type
+        let isWay = classLabelClass?.isWay ?? false
+        guard isWay else {
+            uploadNodeChanges(location: location, tags: tags, classLabel: annotatedDetectedObject.classLabel)
+            return
+        }
+        let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
+                                               imageSize: segmentationUIImage?.size ?? CGSize.zero)
+        
+        var wayTags: [String: String] = ["demo:class": className]
+        tags["demo:width"] = String(format: "%.4f", width)
+//        wayTags["footway"] = className.lowercased()
+        uploadNodeChanges(location: location, tags: tags, classLabel: annotatedDetectedObject.classLabel,
+                           wayTags: wayTags)
     }
     
-    private func uploadChanges(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String]) {
+    // TODO: This is a temporary set up of wayTags to test what is possible. Need to segregate these functionalities
+    private func uploadNodeChanges(
+        location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String], classLabel: UInt8,
+        wayTags: [String: String]? = nil
+    ) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
-        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+        var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         
-        ChangesetService.shared.uploadChanges(nodeData: nodeData) { result in
+        ChangesetService.shared.createNode(nodeData: nodeData) { result in
             switch result {
-            case .success:
+            case .success(let response):
                 print("Changes uploaded successfully.")
                 DispatchQueue.main.async {
                     sharedImageData.isUploadReady = true
+                    
+                    if let response = response,
+                        let nodeAttributes = response["node"] {
+                        nodeData.id = nodeAttributes["new_id"] ?? "-1"
+                        nodeData.version = nodeAttributes["new_version"] ?? "-1"
+                    }
+                    
+                    sharedImageData.appendNodeGeometry(nodeData: nodeData, classLabel: classLabel)
+                    
+                    if let wayTags = wayTags {
+                        self.uploadWayChanges(nodeData: nodeData, tags: wayTags, classLabel: classLabel)
+                    }
                 }
             case .failure(let error):
                 print("Failed to upload changes: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func uploadWayChanges(nodeData: NodeData?, tags: [String: String], classLabel: UInt8) {
+        if let wayData = self.sharedImageData.wayGeometries[classLabel]?.last,
+           wayData.id != "-1" && wayData.id != "" {
+            var wayData = wayData
+            if (nodeData != nil && nodeData?.id != "" && nodeData?.id != "-1") {
+                wayData.nodeRefs.append(nodeData!.id)
+            }
+            // Modify the existing way
+            ChangesetService.shared.modifyWay(wayData: wayData) { result in
+                switch result {
+                case .success(let response):
+                    print("Changes uploaded successfully.")
+                    DispatchQueue.main.async {
+                        sharedImageData.isUploadReady = true
+                        
+                        if let response = response,
+                           let wayAttributes = response["way"] {
+                            wayData.id = wayAttributes["new_id"] ?? "-1"
+                            wayData.version = wayAttributes["new_version"] ?? "-1"
+                        }
+                        sharedImageData.wayGeometries[classLabel]?.removeLast()
+                        sharedImageData.appendWayGeometry(wayData: wayData, classLabel: classLabel)
+                    }
+                case .failure(let error):
+                    print("Failed to upload changes: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            // Create a new way
+            var nodeRefs: [String] = []
+            if (nodeData != nil && nodeData?.id != "" && nodeData?.id != "-1") {
+                nodeRefs.append(nodeData!.id)
+            }
+            var wayData = WayData(tags: tags, nodeRefs: nodeRefs)
+            
+            ChangesetService.shared.createWay(wayData: wayData) { result in
+                switch result {
+                case .success(let response):
+                    print("Changes uploaded successfully.")
+                    DispatchQueue.main.async {
+                        sharedImageData.isUploadReady = true
+                        
+                        if let response = response,
+                           let wayAttributes = response["way"] {
+                            wayData.id = wayAttributes["new_id"] ?? "-1"
+                            wayData.version = wayAttributes["new_version"] ?? "-1"
+                        }
+                        sharedImageData.appendWayGeometry(wayData: wayData, classLabel: classLabel)
+                    }
+                case .failure(let error):
+                    print("Failed to upload changes: \(error.localizedDescription)")
+                }
             }
         }
     }

@@ -8,9 +8,33 @@
 import Foundation
 
 struct NodeData {
-    let latitude: Double
-    let longitude: Double
-    let tags: [String: String]
+    var id: String
+    var version: String
+    var latitude: Double
+    var longitude: Double
+    var tags: [String: String]
+    
+    init(id: String = "-1", version: String = "1", latitude: Double, longitude: Double, tags: [String: String]) {
+        self.id = id
+        self.version = version
+        self.latitude = latitude
+        self.longitude = longitude
+        self.tags = tags
+    }
+}
+
+struct WayData {
+    var id: String
+    var version: String
+    var tags: [String: String]
+    var nodeRefs: [String]
+    
+    init(id: String = "-2", version: String = "1", tags: [String: String], nodeRefs: [String]) {
+        self.id = id
+        self.version = version
+        self.tags = tags
+        self.nodeRefs = nodeRefs
+    }
 }
 
 class ChangesetService {
@@ -103,7 +127,158 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
+            
+            if let data = data {
+                let parser = ChangesetXMLParser()
+                parser.parse(data: data)
+            }
             completion(.success(()))
+        }.resume()
+    }
+    
+    // TODO: The next 3 functions have a lot of code duplication. Refactor them.
+    func createNode(nodeData: NodeData, completion: @escaping (Result<[String: [String : String]]?, Error>) -> Void) {
+        guard let changesetId,
+              let accessToken,
+              let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
+        else { return }
+        
+        let tagElements = nodeData.tags.map { key, value in
+            "<tag k=\"\(key)\" v=\"\(value)\" />"
+        }.joined(separator: "\n")
+        
+        let xmlContent =
+        """
+        <osmChange version="0.6" generator="iOSPointMapper Change generator">
+            <create>
+                <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)">
+                    \(tagElements)
+                </node>
+            </create>
+        </osmChange>
+        """
+        print("XML Content: ", xmlContent)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpBody = xmlContent.data(using: .utf8)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            if let data = data {
+                let parser = ChangesetXMLParser()
+                parser.parse(data: data)
+//                print("Create Node Data: ", parser.nodesWithAttributes)
+                completion(.success((parser.nodesWithAttributes)))
+            } else {
+                completion(.success((nil)))
+            }
+        }.resume()
+    }
+    
+    func createWay(wayData: WayData, completion: @escaping (Result<[String: [String : String]]?, Error>) -> Void) {
+        guard let changesetId,
+              let accessToken,
+              let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
+        else { return }
+        
+        let tagElements = wayData.tags.map { key, value in
+            "<tag k=\"\(key)\" v=\"\(value)\" />"
+        }.joined(separator: "\n")
+        
+        let nodeRefElements = wayData.nodeRefs.map { ref in
+            "<nd ref=\"\(ref)\" />"
+        }.joined(separator: "\n")
+        
+        let xmlContent =
+        """
+        <osmChange version="0.6" generator="iOSPointMapper Change generator">
+            <create>
+                <way id="-1" changeset="\(changesetId)">
+                    \(tagElements)
+                    \(nodeRefElements)
+                </way>
+            </create>
+        </osmChange>
+        """
+        print("XML Content: ", xmlContent)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpBody = xmlContent.data(using: .utf8)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            if let data = data {
+                let parser = ChangesetXMLParser()
+                parser.parse(data: data)
+//                print("Create Way Data: ", parser.waysWithAttributes)
+                completion(.success((parser.waysWithAttributes)))
+            } else {
+                completion(.success((nil)))
+            }
+        }.resume()
+    }
+    
+    func modifyWay(wayData: WayData, completion: @escaping (Result<[String: [String : String]]?, Error>) -> Void) {
+        guard let changesetId,
+              let accessToken,
+              let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
+        else { return }
+        
+        let tagElements = wayData.tags.map { key, value in
+            "<tag k=\"\(key)\" v=\"\(value)\" />"
+        }.joined(separator: "\n")
+        
+        let nodeRefElements = wayData.nodeRefs.map { ref in
+            "<nd ref=\"\(ref)\" />"
+        }.joined(separator: "\n")
+        
+        let xmlContent =
+        """
+        <osmChange version="0.6" generator="iOSPointMapper Change generator">
+            <modify>
+                <way id="\(wayData.id)" changeset="\(changesetId)" version="\(wayData.version)">
+                    \(tagElements)
+                    \(nodeRefElements)
+                </way>
+            </modify>
+        </osmChange>
+        """
+        print("XML Content: ", xmlContent)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
+        request.httpBody = xmlContent.data(using: .utf8)
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            if let data = data {
+                let parser = ChangesetXMLParser()
+                parser.parse(data: data)
+//                print("Modify Way Data: ", parser.waysWithAttributes)
+                completion(.success((parser.waysWithAttributes)))
+            } else {
+                completion(.success((nil)))
+            }
         }.resume()
     }
     

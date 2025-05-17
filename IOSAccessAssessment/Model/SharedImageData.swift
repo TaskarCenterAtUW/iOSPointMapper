@@ -65,8 +65,9 @@ class SharedImageData: ObservableObject {
     var maxCapacity: Int
     var thresholdRatio: Float = 0.7
     
-    // One way for each class
-    var wayGeometries: [UInt8: String] = [:]
+    // Geometry data by class label
+    var nodeGeometries: [UInt8: [NodeData]] = [:]
+    var wayGeometries: [UInt8: [WayData]] = [:]
     
     init(maxCapacity: Int = 100, thresholdRatio: Float = 0.7, historyMaxCapacity: Int = 5) {
         self.maxCapacity = maxCapacity
@@ -90,6 +91,7 @@ class SharedImageData: ObservableObject {
         self.history.removeAll()
         self.segmentationFrames.removeAll()
         
+        self.nodeGeometries.removeAll()
         self.wayGeometries.removeAll()
     }
     
@@ -146,4 +148,34 @@ class SharedImageData: ObservableObject {
         }
         return frames
     }
+    
+    func appendNodeGeometry(nodeData: NodeData, classLabel: UInt8) {
+        self.nodeGeometries[classLabel, default: []].append(nodeData)
+    }
+    
+    func appendWayGeometry(wayData: WayData, classLabel: UInt8) {
+        self.wayGeometries[classLabel, default: []].append(wayData)
+    }
+    
+    // TODO: By default, we append the node of a class to the last wayData of the same class.
+    // However, currently, there will never be more than one wayData of a class in one changeset.
+    // Check if we should add functionality to support multiple wayData of the same class in one changeset
+    func appendNodeToWayGeometry(nodeData: NodeData, classLabel: UInt8) {
+        // If the class is of type way, only then can we append to the wayGeometries
+        let isWay = Constants.ClassConstants.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        guard isWay else {
+            print("Class \(classLabel) is not a way class")
+            return
+        }
+        guard let wayData = self.wayGeometries[classLabel]?.last else {
+            print("No way data found for class \(classLabel)")
+            return
+        }
+        // Append the nodeData to the wayData
+        var updatedWayData = wayData
+        updatedWayData.nodeRefs.append(nodeData.id)
+        self.wayGeometries[classLabel]?.removeLast()
+        self.wayGeometries[classLabel]?.append(updatedWayData)
+    }
+            
 }
