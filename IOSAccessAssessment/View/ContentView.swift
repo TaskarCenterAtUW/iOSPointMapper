@@ -103,7 +103,7 @@ struct ContentView: View {
             self.sharedImageData.segmentationLabelImage = output.segmentationImage
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.sharedImageData.detectedObjects = output.detectedObjects
-            self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrix?.inverse
+            self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
 //            print("Objects: ", output.objects.map { ($0.value.centroid, $0.value.isCurrent) })
             
             // Saving history
@@ -111,7 +111,7 @@ struct ContentView: View {
                 cameraImage: nil, depthImage: nil,
                 segmentationLabelImage: output.segmentationImage,
                 segmentedIndices: output.segmentedIndices, detectedObjects: output.detectedObjects,
-                transformMatrixToPreviousFrame: output.transformMatrix?.inverse
+                transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
             ))
             self.sharedImageData.appendFrame(frame: output.segmentationImage)
             
