@@ -155,20 +155,20 @@ class AnnotationSegmentationPipeline {
         }
         
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        var objectList = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
+        var detectedObjects = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
         if isWay && bounds != nil {
-            var largestObject = objectList.sorted(by: {$0.perimeter > $1.perimeter}).first
+            var largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
                 let bounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
                 largestObject?.wayBounds = bounds
-                objectList = [largestObject!]
+                detectedObjects = [largestObject!]
             }
         }
         
         self.isProcessing = false
         return AnnotationSegmentationPipelineResults(
             segmentationImage: unionImage,
-            detectedObjects: objectList
+            detectedObjects: detectedObjects
         )
     }
 }

@@ -49,14 +49,14 @@ struct ContourRequestProcessor {
             
             let contourResult = contourResults.first
             
-            var objectList = [DetectedObject]()
+            var detectedObjects = [DetectedObject]()
             let contours = contourResult?.topLevelContours
             for contour in contours! {
                 let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
                 let contourDetails = self.getContourDetails(from: contourApproximation)
                 if contourDetails.perimeter < self.perimeterThreshold {continue}
                 
-                objectList.append(DetectedObject(classLabel: classLabel,
+                detectedObjects.append(DetectedObject(classLabel: classLabel,
                                                 centroid: contourDetails.centroid,
                                                 boundingBox: contourDetails.boundingBox,
                                                 normalizedPoints: contourApproximation.normalizedPoints,
@@ -64,7 +64,7 @@ struct ContourRequestProcessor {
                                                 perimeter: contourDetails.perimeter,
                                                 isCurrent: true))
             }
-            return objectList
+            return detectedObjects
         } catch {
             print("Error processing contour detection request: \(error)")
             return nil
@@ -290,7 +290,7 @@ struct ContourRequestProcessor {
      */
     // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
     func processRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
-        var objectList: [DetectedObject] = []
+        var detectedObjects: [DetectedObject] = []
         let lock = NSLock()
 //        let start = DispatchTime.now()
         DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
@@ -299,15 +299,15 @@ struct ContourRequestProcessor {
                 print("Failed to generate mask for class label \(classLabel)")
                 return
             }
-            let objects = self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
+            let detectedObjectsFromBinaryImage = self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
             
             lock.lock()
-            objectList.append(contentsOf: objects ?? [])
+            detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage ?? [])
             lock.unlock()
         }
 //        let end = DispatchTime.now()
 //        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
 //        print("Contour detection time: \(timeInterval) ms")
-        return objectList
+        return detectedObjects
     }
 }

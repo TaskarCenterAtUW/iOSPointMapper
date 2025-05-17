@@ -206,7 +206,7 @@ struct AnnotationView: View {
         }
         
         var inputImage = sharedImageData.segmentationLabelImage
-        var unionOfMasksObjectList: [DetectedObject] = []
+        var unionOfMasksObjects: [DetectedObject] = []
         let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
             targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
             isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
@@ -214,13 +214,13 @@ struct AnnotationView: View {
         )
         if let unionOfMasksResults = unionOfMasksResults {
             inputImage = unionOfMasksResults.segmentationImage
-            unionOfMasksObjectList = unionOfMasksResults.detectedObjects
+            unionOfMasksObjects = unionOfMasksResults.detectedObjects
         } else {
             print("Failed to create union image")
         }
         
         self.annotatedSegmentationLabelImage = inputImage
-        var annotatedDetectedObjects = unionOfMasksObjectList.enumerated().map({ objectIndex, object in
+        var annotatedDetectedObjects = unionOfMasksObjects.enumerated().map({ objectIndex, object in
             AnnotatedDetectedObject(object: object,
                                     classLabel: object.classLabel,
                                     depthValue: 0.0,
@@ -248,7 +248,7 @@ struct AnnotationView: View {
         self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
         self.objectsUIImage = UIImage(
             cgImage: ContourObjectRasterizer.rasterizeContourObjects(
-                objects: unionOfMasksObjectList,
+                objects: unionOfMasksObjects,
                 size: Constants.ClassConstants.inputSize,
                 polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
                 boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),

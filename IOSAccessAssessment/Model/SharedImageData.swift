@@ -25,20 +25,20 @@ class ImageData {
     
     var segmentationLabelImage: CIImage?
     var segmentedIndices: [Int]?
-    var detectedObjects: [UUID: DetectedObject]?
+    var detectedObjectMap: [UUID: DetectedObject]?
     
     var transformMatrixToNextFrame: simd_float3x3?
     var transformMatrixToPreviousFrame: simd_float3x3?
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
          segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
-         detectedObjects: [UUID: DetectedObject]? = nil,
+         detectedObjectMap: [UUID: DetectedObject]? = nil,
          transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
-        self.detectedObjects = detectedObjects
+        self.detectedObjectMap = detectedObjectMap
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
         self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
     }
