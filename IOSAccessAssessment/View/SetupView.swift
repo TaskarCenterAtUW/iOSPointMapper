@@ -7,36 +7,41 @@
 
 import SwiftUI
 
-struct SetupView: View {
-    
-    private enum SetupViewConstants {
-        enum Texts {
-            static let setupViewTitle = "Setup"
-            static let uploadChangesetTitle = "Upload Changeset"
-            static let selectClassesText = "Select Classes to Identify"
-            static let changesetOpeningErrorText = "Changeset failed to open. Please retry."
-            static let changesetOpeningRetryText = "Retry"
-            static let changesetClosingErrorText = "Changeset failed to close. Please retry."
-            static let changesetClosingRetryText = "Retry"
-            static let confirmationDialogTitle = "Are you sure you want to log out?"
-            static let confirmationDialogConfirmText = "Log out"
-            static let confirmationDialogCancelText = "Cancel"
-            static let nextButton = "Next"
-        }
+enum SetupViewConstants {
+    enum Texts {
+        static let setupViewTitle = "Setup"
+        static let uploadChangesetTitle = "Upload Changeset"
+        static let selectClassesText = "Select Classes to Identify"
         
-        enum Images {
-            static let logoutIcon = "rectangle.portrait.and.arrow.right"
-        }
+        static let changesetOpeningErrorTitle = "Changeset failed to open. Please retry."
+        static let changesetOpeningRetryText = "Retry"
+        static let changesetOpeningRetryMessageText = "Failed to open changeset."
+        static let changesetClosingErrorTitle = "Changeset failed to close. Please retry."
+        static let changesetClosingRetryText = "Retry"
+        static let changesetClosingRetryMessageText = "Failed to close changeset."
         
-        enum Colors {
-            static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
-            static let unselectedClass = Color.white
-        }
+        static let confirmationDialogTitle = "Are you sure you want to log out?"
+        static let confirmationDialogConfirmText = "Log out"
+        static let confirmationDialogCancelText = "Cancel"
         
-        enum Constraints {
-            static let logoutIconSize: CGFloat = 20
-        }
+        static let nextButton = "Next"
     }
+    
+    enum Images {
+        static let logoutIcon = "rectangle.portrait.and.arrow.right"
+    }
+    
+    enum Colors {
+        static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
+        static let unselectedClass = Color.white
+    }
+    
+    enum Constraints {
+        static let logoutIconSize: CGFloat = 20
+    }
+}
+
+struct SetupView: View {
     
     @State private var isChangesetOpened = false
     @State private var showOpeningRetryAlert = false
@@ -137,7 +142,7 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
-            .alert(SetupViewConstants.Texts.changesetOpeningErrorText, isPresented: $showOpeningRetryAlert) {
+            .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $showOpeningRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
                     isChangesetOpened = false
                     openRetryMessage = ""
@@ -148,7 +153,7 @@ struct SetupView: View {
             } message: {
                 Text(openRetryMessage)
             }
-            .alert(SetupViewConstants.Texts.changesetClosingErrorText, isPresented: $showClosingRetryAlert) {
+            .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $showClosingRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetClosingRetryText) {
                     closeRetryMessage = ""
                     showClosingRetryAlert = false
@@ -177,7 +182,7 @@ struct SetupView: View {
                 print("Opened changeset with ID: \(changesetId)")
                 isChangesetOpened = true
             case .failure(let error):
-                openRetryMessage = "Failed to open changeset. Error: \(error.localizedDescription)"
+                openRetryMessage = "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)"
                 isChangesetOpened = false
                 showOpeningRetryAlert = true
             }
@@ -194,7 +199,7 @@ struct SetupView: View {
                     openChangeset()
                 }
             case .failure(let error):
-                closeRetryMessage = "Failed to close changeset: \(error.localizedDescription)"
+                closeRetryMessage = "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)"
                 showClosingRetryAlert = true
             }
         }

@@ -45,7 +45,6 @@ class UnionOfMasksProcessor {
     }
     
     // FIXME: Sometimes, the array texture is not set correctly.
-    // Could this be due to the limitations of the 'mutating' function?
     // This could be due to the way the AnnotationView's initialization is set up.
     func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
         let imageCount = images.count

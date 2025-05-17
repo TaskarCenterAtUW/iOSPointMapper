@@ -12,6 +12,32 @@ import Metal
 import CoreImage
 import MetalKit
 
+enum ContentViewConstants {
+    enum Texts {
+        static let contentViewTitle = "Camera View"
+        
+        static let cameraInProgressText = "Camera settings in progress"
+    }
+    
+    enum Images {
+        static let cameraIcon = "camera.circle.fill"
+        
+    }
+    
+    enum Colors {
+        static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
+        static let unselectedClass = Color.white
+    }
+    
+    enum Constraints {
+        static let logoutIconSize: CGFloat = 20
+    }
+    
+    enum Payload {
+        static let isCameraStopped = "isStopped"
+    }
+}
+
 struct ContentView: View {
     var selection: [Int]
     
@@ -24,7 +50,7 @@ struct ContentView: View {
     @State private var manager: CameraManager?
     @State private var navigateToAnnotationView = false
     
-    var isCameraStoppedPayload = ["isStopped": true]
+    var isCameraStoppedPayload = [ContentViewConstants.Payload.isCameraStopped: true]
     
     var body: some View {
         VStack {
@@ -60,7 +86,7 @@ struct ContentView: View {
                     segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
                                                         additionalPayload: isCameraStoppedPayload)
                 } label: {
-                    Image(systemName: "camera.circle.fill")
+                    Image(systemName: ContentViewConstants.Images.cameraIcon)
                         .resizable()
                         .frame(width: 60, height: 60)
                         .foregroundColor(.white)
@@ -69,7 +95,7 @@ struct ContentView: View {
             else {
                 VStack {
                     SpinnerView()
-                    Text("Camera settings in progress")
+                    Text(ContentViewConstants.Texts.cameraInProgressText)
                         .padding(.top, 20)
                 }
             }
@@ -80,7 +106,7 @@ struct ContentView: View {
                 objectLocation: objectLocation
             )
         }
-        .navigationBarTitle("Camera View", displayMode: .inline)
+        .navigationBarTitle(ContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             navigateToAnnotationView = false
             
@@ -102,7 +128,7 @@ struct ContentView: View {
         case .success(let output):
             self.sharedImageData.segmentationLabelImage = output.segmentationImage
             self.sharedImageData.segmentedIndices = output.segmentedIndices
-            self.sharedImageData.detectedObjects = output.detectedObjectMap
+            self.sharedImageData.detectedObjectMap = output.detectedObjectMap
             self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
             
             // Saving history
@@ -112,9 +138,9 @@ struct ContentView: View {
                 segmentedIndices: output.segmentedIndices, detectedObjectMap: output.detectedObjectMap,
                 transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
             ))
-            self.sharedImageData.appendFrame(frame: output.segmentationImage)
+//            self.sharedImageData.appendFrame(frame: output.segmentationImage)
             
-            if let isStopped = output.additionalPayload["isStopped"] as? Bool, isStopped {
+            if let isStopped = output.additionalPayload[ContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
                 if (!sharedImageData.isLidarAvailable) {
                     print("Performing depth estimation because LiDAR is not available.")

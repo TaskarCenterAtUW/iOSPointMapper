@@ -72,10 +72,40 @@ struct ContourRequestProcessor {
     }
     
     /**
+        Function to get the detected objects from the segmentation image.
+            Processes each class in parallel to get the objects.
+     */
+    // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
+    func processRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
+        var detectedObjects: [DetectedObject] = []
+        let lock = NSLock()
+//        let start = DispatchTime.now()
+        DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
+            let classLabel = self.selectionClassLabels[index]
+            guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
+                print("Failed to generate mask for class label \(classLabel)")
+                return
+            }
+            let detectedObjectsFromBinaryImage = self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
+            
+            lock.lock()
+            detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage ?? [])
+            lock.unlock()
+        }
+//        let end = DispatchTime.now()
+//        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
+//        print("Contour detection time: \(timeInterval) ms")
+        return detectedObjects
+    }
+}
+
+// Functions to get contour details including centroid, area, bounding box, and perimeter
+extension ContourRequestProcessor {
+    /**
      Function to compute the centroid, bounding box, and perimeter of a contour more efficiently
      */
     // TODO: Check if the performance can be improved by using SIMD operations
-    private func getContourDetails(from contour: VNContour) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
+    func getContourDetails(from contour: VNContour) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
         let points = contour.normalizedPoints
         guard !points.isEmpty else { return (CGPoint.zero, .zero, 0, 0) }
         
@@ -87,7 +117,7 @@ struct ContourRequestProcessor {
     }
     
     /**
-     Use shoelace formula to calculate the area of the contour.
+     Use shoelace formula to calculate the area and centroid of the contour.
      */
     private func getContourCentroidAndArea(from contour: VNContour) -> (centroid: CGPoint, area: Float) {
         let points = contour.normalizedPoints
@@ -166,23 +196,15 @@ struct ContourRequestProcessor {
         
         return perimeter
     }
-
-
-
-        
     
     /**
         Function to get the bounding box of the contour as a trapezoid. This is the largest trapezoid that can be contained in the contour and has horizontal lines.
-     
-     
         - Parameters:
             - points: The points of the contour
             - x_delta: The delta for the x-axis (minimum distance between points)
             - y_delta: The delta for the y-axis (minimum distance between points)
      */
     // TODO: Check if the performance can be improved by using SIMD operations
-    // FIXME: Currently, this function does not guarantee that the trapezoid is valid.
-    // The trapezoid may actually have incorrect points.
     func getContourTrapezoid(from points: [SIMD2<Float>], x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
 //        let points = contour.normalizedPoints
         guard !points.isEmpty else { return nil }
@@ -282,32 +304,5 @@ struct ContourRequestProcessor {
         }
         
         return nil
-    }
-    
-    /**
-        Function to get the detected objects from the segmentation image.
-            Processes each class in parallel to get the objects.
-     */
-    // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
-    func processRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
-        var detectedObjects: [DetectedObject] = []
-        let lock = NSLock()
-//        let start = DispatchTime.now()
-        DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
-            let classLabel = self.selectionClassLabels[index]
-            guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
-                print("Failed to generate mask for class label \(classLabel)")
-                return
-            }
-            let detectedObjectsFromBinaryImage = self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
-            
-            lock.lock()
-            detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage ?? [])
-            lock.unlock()
-        }
-//        let end = DispatchTime.now()
-//        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-//        print("Contour detection time: \(timeInterval) ms")
-        return detectedObjects
     }
 }

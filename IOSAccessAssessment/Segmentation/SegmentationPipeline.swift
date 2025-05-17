@@ -135,6 +135,13 @@ class SegmentationPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
         MARK: Because the orientation issues have been handled in the caller function, we will not be making changes here for now.
+     
+        The entire procedure has the following main steps:
+        1. Get the segmentation mask from the camera image using the segmentation model
+        2. Get the objects from the segmentation image
+        3. Get the homography transform matrix from the previous image to the current image
+        4. Update the centroid tracker with the detected objects and the transform matrix (Currently, the results of this are not effectively utilized)
+        5. Return the segmentation image, segmented indices, detected objects, and the transform matrix to the caller function
      */
     func processRequest(with cIImage: CIImage, previousImage: CIImage?, deviceOrientation: UIDeviceOrientation = .portrait,
                         additionalPayload: [String: Any] = [:]) {

@@ -64,7 +64,7 @@ class SharedImageData: ObservableObject {
     var segmentationLabelImage: CIImage?
     // Indices of all the classes that were detected in the segmentation image
     var segmentedIndices: [Int] = []
-    var detectedObjects: [UUID: DetectedObject] = [:]
+    var detectedObjectMap: [UUID: DetectedObject] = [:]
     var transformMatrixToPreviousFrame: simd_float3x3? = nil
     
     var history: Deque<ImageData> = []
@@ -96,7 +96,7 @@ class SharedImageData: ObservableObject {
         
         self.segmentationLabelImage = nil
         self.segmentedIndices = []
-        self.detectedObjects = [:]
+        self.detectedObjectMap = [:]
         self.transformMatrixToPreviousFrame = nil
         
         self.history.removeAll()

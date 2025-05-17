@@ -11,8 +11,6 @@ import AVFoundation
 import CoreImage
 import CoreLocation
 
-// TODO: As pointed out in the TODO for the ContentView objectLocation
-// We would want to separate out device location logic, and pixel-wise location calculation logic
 class ObjectLocation: ObservableObject {
     var locationManager: CLLocationManager
     @Published var longitude: CLLocationDegrees?
