@@ -23,6 +23,7 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, didStartElement elementName: String,
                 namespaceURI: String?, qualifiedName qName: String?,
                 attributes attributeDict: [String : String] = [:]) {
+        print("Start Element: \(elementName), Attributes: \(attributeDict)")
         currentElement = elementName
         
         if currentElement == "node" {

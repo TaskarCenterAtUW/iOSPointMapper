@@ -417,26 +417,26 @@ struct AnnotationView: View {
         let className = classLabelClass?.name ?? "Unknown"
         var tags: [String: String] = ["demo:class": className]
         
-        uploadNodeChanges(location: location, tags: tags, classLabel: annotatedDetectedObject.classLabel)
-        
         // Check if way type
         let isWay = classLabelClass?.isWay ?? false
         guard isWay else {
+            uploadNodeChanges(location: location, tags: tags, classLabel: annotatedDetectedObject.classLabel)
             return
         }
         let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
                                                imageSize: segmentationUIImage?.size ?? CGSize.zero)
-        tags["demo:width"] = String(format: "%.4f", width)
-        tags["footway"] = className.lowercased()
         
-        // TODO: Instead of getting the node from the uploadNodeChanges function, we will have to get the node ID from the
-        // sharedImageData object.
-//        let nodeData = sharedImageData.nodeGeometries[annotatedDetectedObject.classLabel]?.last ?? nil
-//        uploadWayChanges(nodeData: nodeData, tags: tags, classLabel: annotatedDetectedObject.classLabel)
+        var wayTags: [String: String] = ["demo:class": className]
+        tags["demo:width"] = String(format: "%.4f", width)
+//        wayTags["footway"] = className.lowercased()
+        uploadNodeChanges(location: location, tags: tags, classLabel: annotatedDetectedObject.classLabel,
+                           wayTags: wayTags)
     }
     
+    // TODO: This is a temporary set up of wayTags to test what is possible. Need to segregate these functionalities
     private func uploadNodeChanges(
-        location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String], classLabel: UInt8
+        location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, tags: [String: String], classLabel: UInt8,
+        wayTags: [String: String]? = nil
     ) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
@@ -452,11 +452,15 @@ struct AnnotationView: View {
                     
                     if let response = response,
                         let nodeAttributes = response["node"] {
-                        nodeData.id = nodeAttributes["id"] ?? "-1"
-                        nodeData.version = nodeAttributes["version"] ?? "-1"
+                        nodeData.id = nodeAttributes["new_id"] ?? "-1"
+                        nodeData.version = nodeAttributes["new_version"] ?? "-1"
                     }
                     
                     sharedImageData.appendNodeGeometry(nodeData: nodeData, classLabel: classLabel)
+                    
+                    if let wayTags = wayTags {
+                        self.uploadWayChanges(nodeData: nodeData, tags: wayTags, classLabel: classLabel)
+                    }
                 }
             case .failure(let error):
                 print("Failed to upload changes: \(error.localizedDescription)")
@@ -468,6 +472,9 @@ struct AnnotationView: View {
         if let wayData = self.sharedImageData.wayGeometries[classLabel]?.last,
            wayData.id != "-1" && wayData.id != "" {
             var wayData = wayData
+            if (nodeData != nil && nodeData?.id != "" && nodeData?.id != "-1") {
+                wayData.nodeRefs.append(nodeData!.id)
+            }
             // Modify the existing way
             ChangesetService.shared.modifyWay(wayData: wayData) { result in
                 switch result {
@@ -478,11 +485,8 @@ struct AnnotationView: View {
                         
                         if let response = response,
                            let wayAttributes = response["way"] {
-                            wayData.id = wayAttributes["id"] ?? "-1"
-                            wayData.version = wayAttributes["version"] ?? "-1"
-                        }
-                        if (nodeData != nil && nodeData?.id != "" && nodeData?.id != "-1") {
-                            wayData.nodeRefs.append(nodeData!.id)
+                            wayData.id = wayAttributes["new_id"] ?? "-1"
+                            wayData.version = wayAttributes["new_version"] ?? "-1"
                         }
                         sharedImageData.wayGeometries[classLabel]?.removeLast()
                         sharedImageData.appendWayGeometry(wayData: wayData, classLabel: classLabel)
@@ -508,8 +512,8 @@ struct AnnotationView: View {
                         
                         if let response = response,
                            let wayAttributes = response["way"] {
-                            wayData.id = wayAttributes["id"] ?? "-1"
-                            wayData.version = wayAttributes["version"] ?? "-1"
+                            wayData.id = wayAttributes["new_id"] ?? "-1"
+                            wayData.version = wayAttributes["new_version"] ?? "-1"
                         }
                         sharedImageData.appendWayGeometry(wayData: wayData, classLabel: classLabel)
                     }

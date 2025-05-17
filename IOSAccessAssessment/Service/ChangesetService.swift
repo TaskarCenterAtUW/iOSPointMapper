@@ -157,6 +157,7 @@ class ChangesetService {
             </create>
         </osmChange>
         """
+        print("XML Content: ", xmlContent)
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -170,10 +171,10 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            print("Create Node Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
+//                print("Create Node Data: ", parser.nodesWithAttributes)
                 completion(.success((parser.nodesWithAttributes)))
             } else {
                 completion(.success((nil)))
@@ -202,10 +203,11 @@ class ChangesetService {
                 <way id="-1" changeset="\(changesetId)">
                     \(tagElements)
                     \(nodeRefElements)
-                </node>
+                </way>
             </create>
         </osmChange>
         """
+        print("XML Content: ", xmlContent)
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -219,10 +221,10 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            print("Create Way Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
+//                print("Create Way Data: ", parser.waysWithAttributes)
                 completion(.success((parser.waysWithAttributes)))
             } else {
                 completion(.success((nil)))
@@ -248,13 +250,14 @@ class ChangesetService {
         """
         <osmChange version="0.6" generator="iOSPointMapper Change generator">
             <modify>
-                <way id="\(wayData.id)" changeset="\(changesetId)" version=\(wayData.version)>
+                <way id="\(wayData.id)" changeset="\(changesetId)" version="\(wayData.version)">
                     \(tagElements)
                     \(nodeRefElements)
-                </node>
+                </way>
             </modify>
         </osmChange>
         """
+        print("XML Content: ", xmlContent)
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -268,10 +271,10 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            print("Modify Way Data: ", data)
             if let data = data {
                 let parser = ChangesetXMLParser()
                 parser.parse(data: data)
+//                print("Modify Way Data: ", parser.waysWithAttributes)
                 completion(.success((parser.waysWithAttributes)))
             } else {
                 completion(.success((nil)))
