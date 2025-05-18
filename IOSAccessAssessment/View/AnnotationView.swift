@@ -426,25 +426,25 @@ extension AnnotationView {
         
         var wayData = self.sharedImageData.wayGeometries[classLabel]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
-        if let wayData = wayData, wayData.id != "-1" && wayData.id != "" {
-            var wayData = wayData
+        if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
+//            var wayData = wayData!
             if let nodeData = nodeData {
-                wayData.nodeRefs.append(nodeData.id)
+                wayData?.nodeRefs.append(nodeData.id)
             }
-            wayDataOperations.append(ChangesetDiffOperation.modify(wayData))
+            wayDataOperations.append(ChangesetDiffOperation.modify(wayData!))
         } else {
             let classLabelClass = Constants.ClassConstants.classes.filter {
                 $0.labelValue == annotatedDetectedObject.classLabel
             }.first
             let className = classLabelClass?.name ?? APIConstants.OtherConstants.classLabelPlaceholder
-            var wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
+            let wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
             
             var nodeRefs: [String] = []
             if let nodeData = nodeData {
                 nodeRefs.append(nodeData.id)
             }
-            var wayData = WayData(id: String(tempId), tags: wayTags, nodeRefs: nodeRefs)
-            wayDataOperations.append(ChangesetDiffOperation.create(wayData))
+            wayData = WayData(id: String(tempId), tags: wayTags, nodeRefs: nodeRefs)
+            wayDataOperations.append(ChangesetDiffOperation.create(wayData!))
         }
         
         ChangesetService.shared.performUpload(operations: wayDataOperations) { result in
@@ -458,14 +458,16 @@ extension AnnotationView {
                         print("Node map is nil")
                         return
                     }
-                    var tempId = -1
+                    let oldNodeId = nodeData?.id
                     for nodeId in nodeMap.keys {
                         guard nodeData?.id == nodeId else { continue }
-                        nodeData?.id = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId] ?? String(tempId)
-                        nodeData?.version = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion] ?? String(tempId)
+                        guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
+                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                        else { continue }
+                        nodeData?.id = newId
+                        nodeData?.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData!,
                                                            classLabel: classLabel)
-                        tempId -= 1
                     }
                     
                     // Update the way data with the new id and version
@@ -475,11 +477,20 @@ extension AnnotationView {
                     }
                     for wayId in wayMap.keys {
                         guard wayData?.id == wayId else { continue }
-                        wayData?.id = wayMap[wayId]?[APIConstants.AttributeKeys.newId] ?? String(tempId)
-                        wayData?.version = wayMap[wayId]?[APIConstants.AttributeKeys.newVersion] ?? String(tempId)
+                        guard let newId = wayMap[wayId]?[APIConstants.AttributeKeys.newId],
+                                let newVersion = wayMap[wayId]?[APIConstants.AttributeKeys.newVersion]
+                        else { continue }
+                        wayData?.id = newId
+                        wayData?.version = newVersion
+                        // Update the wayData's nodeRefs with the new node id
+                        if let nodeData = nodeData,
+                            let oldNodeId = oldNodeId,
+                           let oldNodeIdIndex = wayData?.nodeRefs.firstIndex(of: oldNodeId) {
+                            wayData?.nodeRefs[oldNodeIdIndex] = nodeData.id
+                        }
+                        sharedImageData.wayGeometries[classLabel]?.removeLast()
                         sharedImageData.appendWayGeometry(wayData: wayData!,
                                                           classLabel: classLabel)
-                        tempId -= 1
                     }
                 }
             case .failure(let error):
@@ -515,14 +526,15 @@ extension AnnotationView {
                         print("Node map is nil")
                         return
                     }
-                    var tempId = -1
                     for nodeId in nodeMap.keys {
                         guard var nodeData = nodeDataObjectMap[nodeId] else { continue }
-                        nodeData.id = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId] ?? String(tempId)
-                        nodeData.version = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion] ?? String(tempId)
+                        guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
+                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                        else { continue }
+                        nodeData.id = newId
+                        nodeData.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData,
                                                            classLabel: classLabel)
-                        tempId -= 1
                     }
                 }
             case .failure(let error):
