@@ -52,6 +52,7 @@
 		A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */; };
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
+		A3E84ECC2DDAA82F0096A645 /* OrientationObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -158,6 +159,7 @@
 		A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UnionOfMasks.metal; sourceTree = "<group>"; };
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
+		A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationObserver.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -430,6 +432,7 @@
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
+				A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */,
 				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
 				A362AEC82DB638AB002D7598 /* CameraUtils.swift */,
 				A3B070902CE0536D0028CAC5 /* CameraDevice.swift */,
@@ -610,6 +613,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3E84ECC2DDAA82F0096A645 /* OrientationObserver.swift in Sources */,
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
 				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
