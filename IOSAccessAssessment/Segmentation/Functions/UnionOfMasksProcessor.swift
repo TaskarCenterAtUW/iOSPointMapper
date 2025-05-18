@@ -117,7 +117,7 @@ class UnionOfMasksProcessor {
                                                                   mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+//        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),

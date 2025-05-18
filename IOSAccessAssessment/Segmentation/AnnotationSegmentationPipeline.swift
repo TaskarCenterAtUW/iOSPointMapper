@@ -15,7 +15,9 @@ import simd
 enum AnnotationSegmentationPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case homographyTransformFilterNil
+    case imageHistoryEmpty
     case unionOfMasksProcessorNil
+    case contourRequestProcessorNil
     case invalidUnionImageResult
     
     var errorDescription: String? {
@@ -24,8 +26,12 @@ enum AnnotationSegmentationPipelineError: Error, LocalizedError {
             return "The AnnotationSegmentationPipeline is already processing a request."
         case .homographyTransformFilterNil:
             return "Homography transform filter is not initialized."
+        case .imageHistoryEmpty:
+            return "Image data history is empty."
         case .unionOfMasksProcessorNil:
             return "Union of masks processor is not initialized."
+        case .contourRequestProcessorNil:
+            return "Contour request processor is not initialized."
         case .invalidUnionImageResult:
             return "Failed to apply union of masks."
         }
@@ -92,7 +98,7 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
-    func processTransformationsRequest(imageDataHistory: [ImageData]) throws -> [CIImage]? {
+    func processTransformationsRequest(imageDataHistory: [ImageData]) throws -> [CIImage] {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -108,7 +114,7 @@ class AnnotationSegmentationPipeline {
             if imageDataHistory.count == 1 && imageDataHistory[0].segmentationLabelImage != nil {
                 return [imageDataHistory[0].segmentationLabelImage!]
             }
-            return nil
+            throw AnnotationSegmentationPipelineError.imageHistoryEmpty
         }
         var transformedSegmentationLabelImages: [CIImage] = []
         
@@ -147,9 +153,7 @@ class AnnotationSegmentationPipeline {
         self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
-    // TODO: A naming change would be better since this function does more than just processing the union of masks.
-    // Else, we should separate these functionalities into two different functions.
-    func processUnionOfMasksRequest(targetValue: UInt8, isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil) throws -> AnnotationSegmentationPipelineResults? {
+    func processUnionOfMasksRequest(targetValue: UInt8) throws -> CIImage {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -164,14 +168,24 @@ class AnnotationSegmentationPipeline {
             self.isProcessing = false
             throw AnnotationSegmentationPipelineError.invalidUnionImageResult
         }
-        if bounds != nil {
-            print("Applying dimension-based mask filter")
-            unionImage = self.dimensionBasedMaskFilter?.apply(
-                to: unionImage, bounds: bounds!) ?? unionImage
+        
+        self.isProcessing = false
+        return unionImage
+    }
+    
+    func processContourRequest(from ciImage: CIImage, targetValue: UInt8, isWay: Bool = false,
+                               bounds: DimensionBasedMaskBounds? = nil) throws -> [DetectedObject] {
+        if self.isProcessing {
+            throw AnnotationSegmentationPipelineError.isProcessingTrue
+        }
+        self.isProcessing = true
+        
+        guard let contourRequestProcessor = self.contourRequestProcessor else {
+            throw AnnotationSegmentationPipelineError.contourRequestProcessorNil
         }
         
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        var detectedObjects = self.contourRequestProcessor?.processRequest(from: unionImage) ?? []
+        var detectedObjects = self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
         if isWay && bounds != nil {
             var largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
@@ -182,9 +196,7 @@ class AnnotationSegmentationPipeline {
         }
         
         self.isProcessing = false
-        return AnnotationSegmentationPipelineResults(
-            segmentationImage: unionImage,
-            detectedObjects: detectedObjects
-        )
+        return detectedObjects
     }
+        
 }
