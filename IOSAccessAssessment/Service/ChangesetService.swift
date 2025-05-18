@@ -7,35 +7,7 @@
 
 import Foundation
 
-struct NodeData {
-    var id: String
-    var version: String
-    var latitude: Double
-    var longitude: Double
-    var tags: [String: String]
-    
-    init(id: String = "-1", version: String = "1", latitude: Double, longitude: Double, tags: [String: String]) {
-        self.id = id
-        self.version = version
-        self.latitude = latitude
-        self.longitude = longitude
-        self.tags = tags
-    }
-}
-
-struct WayData {
-    var id: String
-    var version: String
-    var tags: [String: String]
-    var nodeRefs: [String]
-    
-    init(id: String = "-2", version: String = "1", tags: [String: String], nodeRefs: [String]) {
-        self.id = id
-        self.version = version
-        self.tags = tags
-        self.nodeRefs = nodeRefs
-    }
-}
+typealias ParsedElements = (nodes: [String: [String: String]]?, ways: [String: [String: String]]?)
 
 class ChangesetService {
     
@@ -94,47 +66,60 @@ class ChangesetService {
         }.resume()
     }
     
-    func uploadChanges(nodeData: NodeData, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func performUpload(type: String, element: OSMElement,
+                               completion: @escaping (Result<ParsedElements?, Error>) -> Void) {
         guard let changesetId,
               let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
-        else { return }
-        
-        let tagElements = nodeData.tags.map { key, value in
-            "<tag k=\"\(key)\" v=\"\(value)\" />"
-        }.joined(separator: "\n")
-        
-        let xmlContent =
-        """
-        <osmChange version="0.6" generator="iOSPointMapper Change generator">
-            <create>
-                <node id="-1" lat="\(nodeData.latitude)" lon="\(nodeData.longitude)" changeset="\(changesetId)">
-                    \(tagElements)
-                </node>
-            </create>
+        else {
+            completion(.failure(NSError(domain: "Invalid state", code: -2)))
+            return
+        }
+
+        var mutableElement = element
+        let elementXML: String
+        switch type {
+        case "create": elementXML = mutableElement.toOSMCreateXML(changesetId: changesetId)
+        case "modify": elementXML = mutableElement.toOSMModifyXML(changesetId: changesetId)
+        default:
+            completion(.failure(NSError(domain: "Invalid type", code: -3)))
+            return
+        }
+
+        let xmlContent = """
+        <osmChange version="0.6" generator="iOSPointMapper">
+            <\(type)>
+                \(elementXML)
+            </\(type)>
         </osmChange>
         """
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.httpBody = xmlContent.data(using: .utf8)
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
+
+        URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
-            
-            if let data = data {
-                let parser = ChangesetXMLParser()
-                parser.parse(data: data)
+
+            guard let data = data else {
+                completion(.success(nil))
+                return
             }
-            completion(.success(()))
+
+            let parser = ChangesetXMLParser()
+            parser.parse(data: data)
+
+            // Dynamically pick which map to return
+            completion(.success((parser.nodesWithAttributes, parser.waysWithAttributes)))
         }.resume()
     }
+
     
     // TODO: The next 3 functions have a lot of code duplication. Refactor them.
     func createNode(nodeData: NodeData, completion: @escaping (Result<[String: [String : String]]?, Error>) -> Void) {
