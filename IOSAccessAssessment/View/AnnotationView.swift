@@ -92,6 +92,9 @@ struct AnnotationView: View {
     
     @State private var confirmAnnotationFailed: Bool = false
     
+    // For deciding the layout
+    @StateObject private var orientationObserver = OrientationObserver()
+    
     var body: some View {
         if (!self.isValid()) {
             // FIXME: When no segments are available, this view does not dismiss anymore.
@@ -99,69 +102,68 @@ struct AnnotationView: View {
                 refreshView()
             }
         } else {
-            VStack {
+            orientationStack {
                 HStack {
                     Spacer()
                     HostedAnnotationCameraViewController(
-                        cameraImage: cameraUIImage!, segmentationImage: segmentationUIImage!, objectsImage: objectsUIImage!,
-                        frameRect: VerticalFrame.getColumnFrame(
-                        width: UIScreen.main.bounds.width,
-                        height: UIScreen.main.bounds.height,
-                        row: 0)
+                        cameraImage: cameraUIImage!, segmentationImage: segmentationUIImage!, objectsImage: objectsUIImage!
                     )
                     Spacer()
                 }
-                HStack {
-                    Spacer()
-                    Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
-                    Spacer()
-                }
-                
-                HStack {
-                    Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $selectedObjectId) {
-                        ForEach(annotatedDetectedObjects ?? [], id: \.id) { object in
-                            Text(object.label ?? "")
-                                .tag(object.id)
-                        }
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
+                        Spacer()
                     }
-                }
-                
-                ProgressBar(value: calculateProgress())
-                
-                HStack {
-                    Spacer()
-                    VStack(spacing: 10) {
-                        ForEach(options, id: \.self) { option in
-                            Button(action: {
-                                selectedOption = (selectedOption == option) ? nil : option
-                                
-                                if option == .misidentified {
-                                    selectedClassIndex = index
-                                    tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-                                    isShowingClassSelectionModal = true
-                                }
-                            }) {
-                                Text(option.rawValue)
-                                    .font(.subheadline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(selectedOption == option ? Color.blue : Color.gray)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
+                    
+                    HStack {
+                        Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $selectedObjectId) {
+                            ForEach(annotatedDetectedObjects ?? [], id: \.id) { object in
+                                Text(object.label ?? "")
+                                    .tag(object.id)
                             }
                         }
                     }
-                    Spacer()
+                    
+                    ProgressBar(value: calculateProgress())
+                    
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 10) {
+                            ForEach(options, id: \.self) { option in
+                                Button(action: {
+                                    selectedOption = (selectedOption == option) ? nil : option
+                                    
+                                    if option == .misidentified {
+                                        selectedClassIndex = index
+                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+                                        isShowingClassSelectionModal = true
+                                    }
+                                }) {
+                                    Text(option.rawValue)
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(selectedOption == option ? Color.blue : Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    
+                    Button(action: {
+                        confirmAnnotation()
+                    }) {
+                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                    }
+                    .padding()
                 }
-                .padding()
-                
-                Button(action: {
-                    confirmAnnotation()
-                }) {
-                    Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                }
-                .padding()
             }
+            .padding(.top, 20)
             .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
@@ -193,6 +195,17 @@ struct AnnotationView: View {
 //            .sheet(isPresented: $isShowingClassSelectionModal) {
 //                classSelectionView()
 //            }
+        }
+    }
+    
+    @ViewBuilder
+    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        let isLandscape = CameraOrientation.isLandscapeOrientation(
+            currentDeviceOrientation: orientationObserver.deviceOrientation)
+        if isLandscape {
+            HStack(content: content)
+        } else {
+            VStack(content: content)
         }
     }
     
@@ -562,7 +575,6 @@ extension AnnotationView {
                         print("Node map is nil")
                         return
                     }
-                    let oldNodeId = nodeData.id
                     for nodeId in nodeMap.keys {
                         guard nodeData.id == nodeId else { continue }
                         guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],

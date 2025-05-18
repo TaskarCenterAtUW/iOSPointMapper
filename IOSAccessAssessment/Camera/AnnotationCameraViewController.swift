@@ -21,12 +21,15 @@ class AnnotationCameraViewController: UIViewController {
     
     var sharedImageData: SharedImageData?
     
-    var frameRect: CGRect = CGRect()
-    
     init(cameraImage: UIImage, segmentationImage: UIImage, objectsImage: UIImage) {
+        self.cameraView = UIImageView()
+        self.segmentationView = UIImageView()
+        self.objectsView = UIImageView()
+        
         self.cameraImage = cameraImage
         self.segmentationImage = segmentationImage
         self.objectsImage = objectsImage
+        
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -36,28 +39,65 @@ class AnnotationCameraViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        cameraView = UIImageView(image: cameraImage)
-        cameraView?.frame = CGRect(x: frameRect.minX, y: frameRect.minY, width: frameRect.width, height: frameRect.height)
+        
         cameraView?.contentMode = .scaleAspectFill
+        cameraView?.translatesAutoresizingMaskIntoConstraints = false
+        cameraView?.image = cameraImage
         if let cameraView = cameraView {
             view.addSubview(cameraView)
         }
         
-        segmentationView = UIImageView(image: segmentationImage)
-        segmentationView?.frame = CGRect(x: frameRect.minX, y: frameRect.minY, width: frameRect.width, height: frameRect.height)
         segmentationView?.contentMode = .scaleAspectFill
+        segmentationView?.translatesAutoresizingMaskIntoConstraints = false
+        segmentationView?.image = segmentationImage
         if let segmentationView = segmentationView {
             view.addSubview(segmentationView)
         }
-        cameraView?.bringSubviewToFront(segmentationView!)
         
-        objectsView = UIImageView(image: objectsImage)
-        objectsView?.frame = CGRect(x: frameRect.minX, y: frameRect.minY, width: frameRect.width, height: frameRect.height)
         objectsView?.contentMode = .scaleAspectFill
+        objectsView?.translatesAutoresizingMaskIntoConstraints = false
+        objectsView?.image = objectsImage
         if let objectsView = objectsView {
             view.addSubview(objectsView)
         }
+        
+        if let cameraView = cameraView {
+            NSLayoutConstraint.activate([
+                cameraView.topAnchor.constraint(equalTo: view.topAnchor),
+                cameraView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                cameraView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                cameraView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                cameraView.widthAnchor.constraint(equalTo: cameraView.heightAnchor, multiplier: aspectRatio)
+            ])
+        }
+        
+        if let segmentationView = segmentationView {
+            NSLayoutConstraint.activate([
+                segmentationView.topAnchor.constraint(equalTo: view.topAnchor),
+                segmentationView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                segmentationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                segmentationView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
+            ])
+        }
+        
+        if let objectsView = objectsView {
+            NSLayoutConstraint.activate([
+                objectsView.topAnchor.constraint(equalTo: view.topAnchor),
+                objectsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                objectsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                objectsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                objectsView.widthAnchor.constraint(equalTo: objectsView.heightAnchor, multiplier: aspectRatio)
+            ])
+        }
+        
+        cameraView?.bringSubviewToFront(segmentationView!)
         segmentationView?.bringSubviewToFront(objectsView!)
+    }
+    
+    private var aspectRatio: CGFloat {
+        guard let image = cameraImage else { return 1.0 }
+        return image.size.width / image.size.height
     }
 }
 
@@ -65,7 +105,6 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
     let cameraImage: UIImage
     let segmentationImage: UIImage
     let objectsImage: UIImage
-    var frameRect: CGRect
     
     func makeUIViewController(context: Context) -> AnnotationCameraViewController {
         let viewController = AnnotationCameraViewController(
@@ -73,7 +112,6 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
             segmentationImage: segmentationImage,
             objectsImage: objectsImage
         )
-        viewController.frameRect = frameRect
         return viewController
     }
     
