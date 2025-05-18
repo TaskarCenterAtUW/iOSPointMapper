@@ -26,11 +26,19 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
         print("Start Element: \(elementName), Attributes: \(attributeDict)")
         currentElement = elementName
         
-        if currentElement == "node" {
-            nodesWithAttributes[elementName] = attributeDict
+        if currentElement == "node"  {
+            if let oldId = attributeDict[APIConstants.AttributeKeys.oldId] {
+                nodesWithAttributes[oldId] = attributeDict
+            } else if let newId = attributeDict[APIConstants.AttributeKeys.newId] {
+                nodesWithAttributes[newId] = attributeDict
+            }
         }
         if currentElement == "way" {
-            waysWithAttributes[elementName] = attributeDict
+            if let oldId = attributeDict[APIConstants.AttributeKeys.oldId] {
+                waysWithAttributes[oldId] = attributeDict
+            } else if let newId = attributeDict[APIConstants.AttributeKeys.newId] {
+                waysWithAttributes[newId] = attributeDict
+            }
         }
     }
 

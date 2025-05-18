@@ -31,6 +31,7 @@
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
 		A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A36CF16A2D62E5A50081F82E /* Watershed.cpp */; };
 		A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3A2DD9B03000455E45 /* OSMElement.swift */; };
+		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
 		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
@@ -134,6 +135,7 @@
 		A36CF1692D62E5A50081F82E /* Watershed.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Watershed.hpp; sourceTree = "<group>"; };
 		A36CF16A2D62E5A50081F82E /* Watershed.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Watershed.cpp; sourceTree = "<group>"; };
 		A39C9F3A2DD9B03000455E45 /* OSMElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMElement.swift; sourceTree = "<group>"; };
+		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
 		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
@@ -324,6 +326,8 @@
 		A39C9F392DD9B01200455E45 /* API */ = {
 			isa = PBXGroup;
 			children = (
+				A3A739432DD4BA330073C7D2 /* Helpers */,
+				A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */,
 				A39C9F3A2DD9B03000455E45 /* OSMElement.swift */,
 				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
 			);
@@ -408,7 +412,6 @@
 		CAA947772CDE7001000C6918 /* Service */ = {
 			isa = PBXGroup;
 			children = (
-				A3A739432DD4BA330073C7D2 /* Helpers */,
 				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
 				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
@@ -652,6 +655,7 @@
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
+				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,

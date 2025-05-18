@@ -190,9 +190,9 @@ struct AnnotationView: View {
                 Text(AnnotationViewConstants.Texts.depthOrSegmentationUnavailableText)
             }
             // TODO: Need to check if the following vetting is necessary
-            .sheet(isPresented: $isShowingClassSelectionModal) {
-                classSelectionView()
-            }
+//            .sheet(isPresented: $isShowingClassSelectionModal) {
+//                classSelectionView()
+//            }
         }
     }
     
@@ -392,12 +392,80 @@ struct AnnotationView: View {
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
     // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
-    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {        
-        for annotatedDetectedObject in annotatedDetectedObjects {
-            if annotatedDetectedObject.isAll {
-                continue
+    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
+        let uploadObjects = annotatedDetectedObjects.filter { $0.object != nil && !$0.isAll }
+        guard !uploadObjects.isEmpty else {
+            print("No objects to upload")
+            return
+        }
+        
+        // We assume that every object is of the same class.
+        let currentClass = Constants.ClassConstants.classes.filter {
+            $0.labelValue == uploadObjects[0].classLabel
+        }.first
+        let isWay = currentClass?.isWay ?? false
+        if isWay {
+            // We upload all the nodes along with the way.
+            uploadWay(annotatedDetectedObject: uploadObjects[0])
+        } else {
+            // We upload all the nodes.
+            uploadNodes(annotatedDetectedObjects: uploadObjects, classLabel: uploadObjects[0].classLabel)
+        }
+    }
+    
+    private func uploadWay(annotatedDetectedObject: AnnotatedDetectedObject) {
+    }
+    
+    private func uploadNodes(annotatedDetectedObjects: [AnnotatedDetectedObject], classLabel: UInt8) {
+        var tempId = -1
+        let nodeDataObjects: [NodeData?] = annotatedDetectedObjects.map { object in
+            let location = objectLocation.getCalcLocation(depthValue: object.depthValue)
+            guard let nodeLatitude = location?.latitude,
+                    let nodeLongitude = location?.longitude
+            else { return nil }
+            
+            let classLabelClass = Constants.ClassConstants.classes.filter {
+                $0.labelValue == object.classLabel
+            }.first
+            let className = classLabelClass?.name ?? APIConstants.OtherConstants.classLabelPlaceholder
+            let tags: [String: String] = [APIConstants.TagKeys.classKey: className]
+            let nodeData = NodeData(id: String(tempId),
+                latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+            tempId -= 1
+            return nodeData
+        }
+        let nodeDataObjectsToUpload: [NodeData] = nodeDataObjects.compactMap { $0 }
+        let nodeDataObjectMap: [String: NodeData] = nodeDataObjectsToUpload.reduce(into: [:]) { $0[$1.id] = $1 }
+        
+        let nodeDataOperations: [ChangesetDiffOperation] = nodeDataObjectsToUpload.map { nodeData in
+            return ChangesetDiffOperation.create(nodeData)
+        }
+        
+        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+            switch result {
+            case .success(let response):
+                print("Changes uploaded successfully.")
+                DispatchQueue.main.async {
+                    sharedImageData.isUploadReady = true
+                    
+                    // Updata every node data with the new id and version and append to sharedImageData
+                    guard let nodeMap = response.nodes else {
+                        print("Node map is nil")
+                        return
+                    }
+                    var tempId = -1
+                    for nodeId in nodeMap.keys {
+                        guard var nodeData = nodeDataObjectMap[nodeId] else { continue }
+                        nodeData.id = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId] ?? String(tempId)
+                        nodeData.version = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion] ?? String(tempId)
+                        sharedImageData.appendNodeGeometry(nodeData: nodeData,
+                                                           classLabel: classLabel)
+                        tempId -= 1
+                    }
+                }
+            case .failure(let error):
+                print("Failed to upload changes: \(error.localizedDescription)")
             }
-            self.uploadAnnotatedChange(annotatedDetectedObject: annotatedDetectedObject)
         }
     }
     
@@ -408,7 +476,7 @@ extension AnnotationView {
             $0.labelValue == annotatedDetectedObject.classLabel
         }.first
         
-        let className = classLabelClass?.name ?? "Unknown"
+        let className = classLabelClass?.name ?? APIConstants.OtherConstants.classLabelPlaceholder
         var tags: [String: String] = ["demo:class": className]
         
         // Check if way type

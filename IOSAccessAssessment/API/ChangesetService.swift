@@ -9,14 +9,14 @@ import Foundation
 
 typealias ParsedElements = (nodes: [String: [String: String]]?, ways: [String: [String: String]]?)
 
-enum DiffOperation {
+enum ChangesetDiffOperation {
     case create(OSMElement)
     case modify(OSMElement)
     case delete(OSMElement)
 }
 
 class ChangesetService {
-    
+    // TODO: Replace with globally available APIConstants
     private enum Constants {
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
         static let workspaceId = "288"
@@ -72,7 +72,7 @@ class ChangesetService {
         }.resume()
     }
     
-    func performUpload(operations: [DiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
+    func performUpload(operations: [ChangesetDiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
         guard let changesetId,
               let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
