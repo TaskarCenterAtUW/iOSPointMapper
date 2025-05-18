@@ -8,6 +8,34 @@
 import SwiftUI
 import CoreLocation
 
+enum AnnotationViewConstants {
+    enum Texts {
+        static let annotationViewTitle = "Annotation View"
+        
+        static let selectedClassPrefixText = "Selected class: "
+        static let finishText = "Finish"
+        static let nextText = "Next"
+        
+        static let selectObjectText = "Select an object"
+        static let selectAllLabelText = "Select All"
+        
+        static let confirmAnnotationFailedTitle = "Cannot confirm annotation"
+        static let depthOrSegmentationUnavailableText = "Depth or segmentation related information is not available." +
+        "\nDo you want to upload all the objects as a single point with the current location?"
+        static let confirmAnnotationFailedConfirmText = "Yes"
+        static let confirmAnnotationFailedCancelText = "No"
+        
+        static let selectCorrectAnnotationText = "Select correct annotation"
+        static let doneText = "Done"
+    }
+    
+    enum Images {
+        static let checkIcon = "checkmark"
+    }
+}
+        
+        
+
 enum AnnotationOption: String, CaseIterable {
     case agree = "I agree with this class annotation"
     case missingInstances = "Annotation is missing some instances of the class"
@@ -22,7 +50,8 @@ struct AnnotatedDetectedObject {
     var isAll: Bool = false
     var label: String?
     
-    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false, label: String? = "Select All") {
+    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
+         label: String? = AnnotationViewConstants.Texts.selectAllLabelText) {
         self.object = object
         self.classLabel = classLabel
         self.depthValue = depthValue
@@ -54,12 +83,14 @@ struct AnnotationView: View {
     @State private var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
     @State private var selectedObjectId: UUID? = nil
     
-    let annotationCIContext = CIContext()
-    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    private let annotationCIContext = CIContext()
+    private let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     @State private var depthMapProcessor: DepthMapProcessor? = nil
     
-    let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
-    @State var transformedLabelImages: [CIImage]? = nil
+    private let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
+    @State private var transformedLabelImages: [CIImage]? = nil
+    
+    @State private var confirmAnnotationFailed: Bool = false
     
     var body: some View {
         if (!self.isValid()) {
@@ -71,24 +102,23 @@ struct AnnotationView: View {
             VStack {
                 HStack {
                     Spacer()
-                    HostedAnnotationCameraViewController(cameraImage: cameraUIImage!,
-                                                         segmentationImage: segmentationUIImage!,
-                                                         objectsImage: objectsUIImage!,
-                                                            frameRect: VerticalFrame.getColumnFrame(
-                                                            width: UIScreen.main.bounds.width,
-                                                            height: UIScreen.main.bounds.height,
-                                                            row: 0)
+                    HostedAnnotationCameraViewController(
+                        cameraImage: cameraUIImage!, segmentationImage: segmentationUIImage!, objectsImage: objectsUIImage!,
+                        frameRect: VerticalFrame.getColumnFrame(
+                        width: UIScreen.main.bounds.width,
+                        height: UIScreen.main.bounds.height,
+                        row: 0)
                     )
                     Spacer()
                 }
                 HStack {
                     Spacer()
-                    Text("Selected class: \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
+                    Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
                     Spacer()
                 }
                 
                 HStack {
-                    Picker("Select an object", selection: $selectedObjectId) {
+                    Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $selectedObjectId) {
                         ForEach(annotatedDetectedObjects ?? [], id: \.id) { object in
                             Text(object.label ?? "")
                                 .tag(object.id)
@@ -128,53 +158,41 @@ struct AnnotationView: View {
                 Button(action: {
                     confirmAnnotation()
                 }) {
-                    Text(index == selection.count - 1 ? "Finish" : "Next")
+                    Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                 }
                 .padding()
             }
-            .navigationBarTitle("Annotation View", displayMode: .inline)
+            .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
 //                initializeAnnotationSegmentationPipeline()
                 refreshView()
             }
-//            .onDisappear {
-//                closeChangeset()
-//            }
             .onChange(of: selectedObjectId) { oldValue, newValue in
                 if let newValue = newValue {
-                    updateAnnotatedDetectedSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                    updateObjectSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
                 }
             }
             .onChange(of: index, initial: true) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
                 refreshView()
             }
+            .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {
+                Button(AnnotationViewConstants.Texts.confirmAnnotationFailedCancelText, role: .cancel) {
+                    selectedOption = nil
+                    nextSegment()
+                }
+                Button(AnnotationViewConstants.Texts.confirmAnnotationFailedConfirmText) {
+                    confirmAnnotationWithoutDepth()
+                }
+            } message: {
+                Text(AnnotationViewConstants.Texts.depthOrSegmentationUnavailableText)
+            }
             // TODO: Need to check if the following vetting is necessary
             .sheet(isPresented: $isShowingClassSelectionModal) {
-                if let selectedClassIndex = selectedClassIndex {
-                    let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
-                    
-                    // mapping between filtered and non-filtered
-                    let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
-                    
-                    let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
-                        get: { selectedFilteredIndex },
-                        set: { newValue in
-                            let originalIndex = selection[newValue]
-                            // Update the segmentedIndices inside sharedImageData
-                            sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
-                        }
-                    )
-                    
-                    ClassSelectionView(
-                        classes: filteredClasses,
-                        selectedClass: selectedClassBinding
-                    )
-                }
+                classSelectionView()
             }
-
         }
     }
     
@@ -210,7 +228,8 @@ struct AnnotationView: View {
         var inputDetectedObjects: [DetectedObject] = []
         do {
             inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]]
+                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
             )
         } catch {
             print("Error processing union of masks request: \(error)")
@@ -239,7 +258,7 @@ struct AnnotationView: View {
         // Add the "all" object to the beginning of the list
         annotatedDetectedObjects.insert(
             AnnotatedDetectedObject(object: nil, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
-                depthValue: 0.0, isAll: true, label: "Select All"),
+                depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
             at: 0
         )
         self.annotatedDetectedObjects = annotatedDetectedObjects
@@ -272,7 +291,7 @@ struct AnnotationView: View {
         }
     }
     
-    func updateAnnotatedDetectedSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
+    func updateObjectSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
         guard let baseImage = self.objectsUIImage?.cgImage else {
             print("Base image is nil")
             return
@@ -282,9 +301,9 @@ struct AnnotationView: View {
         var newObjects: [DetectedObject] = []
         var newImage: CGImage?
         
-        if previousSelectedObjectId != nil {
+        if let previousSelectedObjectId = previousSelectedObjectId {
             for object in self.annotatedDetectedObjects ?? [] {
-                if object.id == previousSelectedObjectId! {
+                if object.id == previousSelectedObjectId {
                     if object.object != nil { oldObjects.append(object.object!) }
                     break
                 }
@@ -315,66 +334,43 @@ struct AnnotationView: View {
         )
         if let newImage = newImage {
             self.objectsUIImage = UIImage(cgImage: newImage, scale: 1.0, orientation: .up)
-        } else {
-            print("Failed to update rasterized image")
-        }
+        } else { print("Failed to update rasterized image") }
     }
     
     func confirmAnnotation() {
         var depthValue: Float = 0.0
-        
-        // TODO: Give the user some explicit warning that the depth is not being calculated
-        // due to which the entire annotations are being ignored.
         guard let depthMapProcessor = depthMapProcessor,
-//            let segmentationLabelImage = sharedImageData.segmentationLabelImage,
-            let depthImage = sharedImageData.depthImage
-        else {
-            print("depthMapProcessor is nil. Returning.")
-            selectedOption = nil
-            let location = objectLocation.getCalcLocation(depthValue: depthValue)
-            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
-            // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-            uploadNodeChanges(location: location, tags: tags,
-                              classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            nextSegment()
-            return
-        }
-        
-        guard let segmentationLabelImage = self.annotatedSegmentationLabelImage,
+              let depthImage = sharedImageData.depthImage,
+              let segmentationLabelImage = self.annotatedSegmentationLabelImage,
               let annotatedDetectedObjects = self.annotatedDetectedObjects
         else {
-            print("annotatedDetectedObjects is nil. Returning.")
-            selectedOption = nil
-            let location = objectLocation.getCalcLocation(depthValue: depthValue)
-            let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
-            // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-            uploadNodeChanges(location: location, tags: tags,
-                              classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            nextSegment()
+            confirmAnnotationFailed = true
             return
         }
-        
             
-        // TODO: Temporary object-based depth calculation.
-        // This logic currently only utilizes the centroid of the last detected object.
-        // This eventually needs to be extended to do 2 more things:
-        // 1. Treat every object as a separate object and calculate the depth value for each of them and upload them.
-        // 2. Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
+        // TODO: Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
         for annotatedDetectedObject in annotatedDetectedObjects {
-            guard let detectedObject = annotatedDetectedObject.object else {
-                continue
-            }
+            guard let detectedObject = annotatedDetectedObject.object else { continue }
             depthValue = depthMapProcessor.getDepth(
                 segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                 depthImage: depthImage,
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            print("Depth Value for Label: \(depthValue) Object: \(String(describing: annotatedDetectedObject.object?.centroid))")
             var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects)
+        nextSegment()
+    }
+    
+    func confirmAnnotationWithoutDepth() {
+        selectedOption = nil
+        let location = objectLocation.getCalcLocation(depthValue: 0.0)
+        let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+        // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
+        uploadNodeChanges(location: location, tags: tags,
+                          classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
         nextSegment()
     }
     
@@ -391,7 +387,10 @@ struct AnnotationView: View {
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
     }
-    
+}
+
+// Extension for uploading the annotated changes to the server
+extension AnnotationView {
     // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
     private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
         for annotatedDetectedObject in annotatedDetectedObjects {
@@ -520,6 +519,33 @@ struct AnnotationView: View {
     }
 }
 
+// Extension for loading the ClassSelectionView as sheet
+extension AnnotationView {
+    @ViewBuilder
+    func classSelectionView() -> some View {
+        if let selectedClassIndex = selectedClassIndex {
+            let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
+            
+            // mapping between filtered and non-filtered
+            let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
+            
+            let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
+                get: { selectedFilteredIndex },
+                set: { newValue in
+                    let originalIndex = selection[newValue]
+                    // Update the segmentedIndices inside sharedImageData
+                    sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
+                }
+            )
+            
+            ClassSelectionView(
+                classes: filteredClasses,
+                selectedClass: selectedClassBinding
+            )
+        }
+    }
+}
+
 struct ClassSelectionView: View {
     var classes: [String]
     @Binding var selectedClass: Int
@@ -528,7 +554,7 @@ struct ClassSelectionView: View {
 
     var body: some View {
         VStack {
-            Text("Select correct annotation")
+            Text(AnnotationViewConstants.Texts.selectCorrectAnnotationText)
                 .font(.headline)
                 .padding()
 
@@ -541,7 +567,7 @@ struct ClassSelectionView: View {
                             Text(classes[index])
                             Spacer()
                             if selectedClass == index {
-                                Image(systemName: "checkmark")
+                                Image(systemName: AnnotationViewConstants.Images.checkIcon)
                                     .foregroundColor(.blue)
                             }
                         }
@@ -552,7 +578,7 @@ struct ClassSelectionView: View {
             Button(action: {
                 self.presentationMode.wrappedValue.dismiss()
             }) {
-                Text("Done")
+                Text(AnnotationViewConstants.Texts.doneText)
                     .padding()
             }
         }

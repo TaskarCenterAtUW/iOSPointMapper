@@ -153,7 +153,7 @@ class AnnotationSegmentationPipeline {
         self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(targetValue: UInt8) throws -> CIImage {
+    func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil) throws -> CIImage {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -169,6 +169,12 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.invalidUnionImageResult
         }
         
+        if bounds != nil {
+            print("Applying dimension-based mask filter")
+            unionImage = self.dimensionBasedMaskFilter?.apply(
+                to: unionImage, bounds: bounds!) ?? unionImage
+        }
+        
         self.isProcessing = false
         return unionImage
     }
@@ -180,7 +186,7 @@ class AnnotationSegmentationPipeline {
         }
         self.isProcessing = true
         
-        guard let contourRequestProcessor = self.contourRequestProcessor else {
+        guard self.contourRequestProcessor != nil else {
             throw AnnotationSegmentationPipelineError.contourRequestProcessorNil
         }
         
@@ -189,8 +195,8 @@ class AnnotationSegmentationPipeline {
         if isWay && bounds != nil {
             var largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
-                let bounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
-                largestObject?.wayBounds = bounds
+                let wayBounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
+                largestObject?.wayBounds = wayBounds
                 detectedObjects = [largestObject!]
             }
         }
