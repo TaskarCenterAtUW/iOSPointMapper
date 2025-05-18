@@ -18,7 +18,6 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     var segmentationImage: UIImage?
     
-    var frameRect: CGRect = CGRect()
     var selection:[Int] = []
     var classes: [String] = []
     
@@ -34,20 +33,33 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        segmentationView.frame = self.frameRect
-        segmentationView.contentMode = .scaleAspectFill
-        self.view.addSubview(segmentationView)
-        self.segmentationView.image = self.segmentationImage
+        
+        segmentationView.contentMode = .scaleAspectFit
+        segmentationView.translatesAutoresizingMaskIntoConstraints = false
+        segmentationView.image = segmentationImage
+
+        view.addSubview(segmentationView)
+
+        NSLayoutConstraint.activate([
+            segmentationView.topAnchor.constraint(equalTo: view.topAnchor),
+            segmentationView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            segmentationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            segmentationView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
+        ])
+    }
+    
+    private var aspectRatio: CGFloat {
+        guard let image = segmentationImage else { return 1.0 }
+        return image.size.width / image.size.height
     }
 }
 
 struct HostedSegmentationViewController: UIViewControllerRepresentable{
     @Binding var segmentationImage: UIImage?
-    var frameRect: CGRect
     
     func makeUIViewController(context: Context) -> SegmentationViewController {
         let viewController = SegmentationViewController(segmentationImage: segmentationImage)
-        viewController.frameRect = frameRect
         return viewController
     }
     

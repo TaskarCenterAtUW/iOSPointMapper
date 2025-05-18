@@ -430,6 +430,7 @@
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
+				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
 				A362AEC82DB638AB002D7598 /* CameraUtils.swift */,
 				A3B070902CE0536D0028CAC5 /* CameraDevice.swift */,
 				55659C0C2BB786100094DF01 /* CameraManager.swift */,
@@ -465,7 +466,6 @@
 			isa = PBXGroup;
 			children = (
 				A362AEC72DB59577002D7598 /* Helpers */,
-				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
 				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
 				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
