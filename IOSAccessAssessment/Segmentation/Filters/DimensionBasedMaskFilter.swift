@@ -11,6 +11,10 @@ import Metal
 import CoreImage
 import MetalKit
 
+/**
+    A struct that applies a binary mask to an image using Metal.
+    The mask is applied based on a target value and specified bounds.
+ */
 struct DimensionBasedMaskFilter {
     // Metal-related properties
     private let device: MTLDevice

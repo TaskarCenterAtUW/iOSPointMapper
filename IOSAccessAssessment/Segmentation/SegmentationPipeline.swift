@@ -12,17 +12,6 @@ import CoreML
 import OrderedCollections
 import simd
 
-struct DetectedObject {
-    let classLabel: UInt8
-    var centroid: CGPoint
-    var boundingBox: CGRect
-    var normalizedPoints: [SIMD2<Float>]
-    var area: Float
-    var perimeter: Float
-    var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
-    var wayBounds: [SIMD2<Float>]? // Special property for way-type objects
-}
-
 enum SegmentationPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
@@ -50,18 +39,18 @@ struct SegmentationPipelineResults {
     var segmentationImage: CIImage
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
-    var detectedObjects: [UUID: DetectedObject]
-    var transformMatrix: simd_float3x3? = nil
+    var detectedObjectMap: [UUID: DetectedObject]
+    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         detectedObjects: [UUID: DetectedObject], transformMatrix: simd_float3x3? = nil,
+         detectedObjectMap: [UUID: DetectedObject], transformMatrixFromPreviousFrame: simd_float3x3? = nil,
          additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
-        self.detectedObjects = detectedObjects
-        self.transformMatrix = transformMatrix
+        self.detectedObjectMap = detectedObjectMap
+        self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
         self.additionalPayload = additionalPayload
     }
 }
@@ -82,9 +71,8 @@ class SegmentationPipeline: ObservableObject {
     var selectionClassGrayscaleValues: [Float] = []
     var selectionClassColors: [CIColor] = []
     
-    @Published var segmentationImage: CIImage?
-    @Published var segmentedIndices: [Int] = []
-    
+    var segmentationImage: CIImage?
+    var segmentedIndices: [Int] = []
     // MARK: Temporary segmentationRequest UIImage. Later we should move this mapping to the SharedImageData in ContentView
     @Published var segmentationResultUIImage: UIImage?
     
@@ -94,15 +82,15 @@ class SegmentationPipeline: ObservableObject {
     // For normalized points
     var perimeterThreshold: Float = 0.01
     // While the contour detection logic gives us an array of DetectedObject
-    // we get the objects as a dictionary with UUID as the key, from the centroid tracker.
-    @Published var detectedObjects: [UUID: DetectedObject] = [:]
+    // we get the detected objects as a dictionary with UUID as the key, from the centroid tracker.
+    var detectedObjectMap: [UUID: DetectedObject] = [:]
     
-    @Published var transformMatrix: simd_float3x3? = nil
+    // Transformation matrix from the previous frame to the current frame
+    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
 //    @Published var transformedFloatingImage: CIImage?
 //    @Published var transformedFloatingObjects: [DetectedObject]? = nil
     
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
-    
     var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     var contourRequestProcessor: ContourRequestProcessor?
     var homographyRequestProcessor: HomographyRequestProcessor?
@@ -124,8 +112,8 @@ class SegmentationPipeline: ObservableObject {
         self.segmentationImage = nil
         self.segmentationResultUIImage = nil
         self.segmentedIndices = []
-        self.detectedObjects = [:]
-        self.transformMatrix = nil
+        self.detectedObjectMap = [:]
+        self.transformMatrixFromPreviousFrame = nil
         // TODO: No reset function for maskers and processors
         self.centroidTracker.reset()
     }
@@ -147,6 +135,13 @@ class SegmentationPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
         MARK: Because the orientation issues have been handled in the caller function, we will not be making changes here for now.
+     
+        The entire procedure has the following main steps:
+        1. Get the segmentation mask from the camera image using the segmentation model
+        2. Get the objects from the segmentation image
+        3. Get the homography transform matrix from the previous image to the current image
+        4. Update the centroid tracker with the detected objects and the transform matrix (Currently, the results of this are not effectively utilized)
+        5. Return the segmentation image, segmented indices, detected objects, and the transform matrix to the caller function
      */
     func processRequest(with cIImage: CIImage, previousImage: CIImage?, deviceOrientation: UIDeviceOrientation = .portrait,
                         additionalPayload: [String: Any] = [:]) {
@@ -159,6 +154,7 @@ class SegmentationPipeline: ObservableObject {
         
         DispatchQueue.global(qos: .userInitiated).async {
             self.isProcessing = true
+            // Get the segmentation mask from the camera image using the segmentation model
             let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
             guard let segmentationImage = segmentationResults?.segmentationImage else {
                 DispatchQueue.main.async {
@@ -169,20 +165,22 @@ class SegmentationPipeline: ObservableObject {
             }
            
             // Get the objects from the segmentation image
-            let objectList = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
+            let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
 
-            var transformMatrix: simd_float3x3? = nil
+            // If a previous image is provided, get the homography transform matrix from the previous image to the current image
+            var transformMatrixFromPreviousFrame: simd_float3x3? = nil
             if let previousImage = previousImage {
-                transformMatrix = self.homographyRequestProcessor?.getHomographyTransform(referenceImage: cIImage, floatingImage: previousImage) ?? nil
+                transformMatrixFromPreviousFrame = self.homographyRequestProcessor?.getHomographyTransform(
+                    referenceImage: cIImage, floatingImage: previousImage) ?? nil
             }
-            self.centroidTracker.update(objectsList: objectList, transformMatrix: transformMatrix)
+            self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
             
             DispatchQueue.main.async {
                 self.segmentationImage = segmentationResults?.segmentationImage
                 self.segmentedIndices = segmentationResults?.segmentedIndices ?? []
-                self.detectedObjects = Dictionary(uniqueKeysWithValues: self.centroidTracker.objects.map { ($0.key, $0.value) })
+                self.detectedObjectMap = Dictionary(uniqueKeysWithValues: self.centroidTracker.detectedObjectMap.map { ($0.key, $0.value) })
+                self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
                 
-                // Temporary
                 self.grayscaleToColorMasker.inputImage = segmentationImage
                 self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
                 self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
@@ -193,8 +191,8 @@ class SegmentationPipeline: ObservableObject {
                 // Temporary
 //                self.segmentationResultUIImage = UIImage(
 //                    cgImage: ContourObjectRasterizer.rasterizeContourObjects(
-////                        objects: objectList,
-//                        objects: self.centroidTracker.objects.values.map { $0 },
+////                        objects: detectedObjects,
+//                        detectedObjects: self.centroidTracker.detectedObjects.values.map { $0 },
 //                        size: Constants.ClassConstants.inputSize)!,
 //                    scale: 1.0, orientation: .up)
                 
@@ -205,13 +203,12 @@ class SegmentationPipeline: ObservableObject {
 //                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
-                self.transformMatrix = transformMatrix
                 self.completionHandler?(.success(SegmentationPipelineResults(
                     segmentationImage: segmentationImage,
                     segmentationResultUIImage: self.segmentationResultUIImage!,
                     segmentedIndices: self.segmentedIndices,
-                    detectedObjects: self.detectedObjects,
-                    transformMatrix: transformMatrix,
+                    detectedObjectMap: self.detectedObjectMap,
+                    transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame,
                     additionalPayload: additionalPayload
                 )))
             }

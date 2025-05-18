@@ -7,6 +7,10 @@
 import CoreML
 import Vision
 
+/**
+    A struct to handle the segmentation model request processing.
+    Processes the segmentation model request and returns the segmentation mask as well as the segmented indices.
+ */
 struct SegmentationModelRequestProcessor {
     var visionModel: VNCoreMLModel
     

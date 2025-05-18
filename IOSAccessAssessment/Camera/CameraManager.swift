@@ -36,8 +36,7 @@ class CameraManager: ObservableObject, CaptureDataReceiver {
             controller.isFilteringEnabled = isFilteringDepth
         }
     }
-    // TODO: Currently, the orientation is redundant until we start using other orientation types
-    //  It does not seem to be used anywhere currently
+    
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
 //            print("Orientation changed to \(deviceOrientation)")

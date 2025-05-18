@@ -45,7 +45,6 @@ class UnionOfMasksProcessor {
     }
     
     // FIXME: Sometimes, the array texture is not set correctly.
-    // Could this be due to the limitations of the 'mutating' function?
     // This could be due to the way the AnnotationView's initialization is set up.
     func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
         let imageCount = images.count
@@ -118,7 +117,7 @@ class UnionOfMasksProcessor {
                                                                   mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+//        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),

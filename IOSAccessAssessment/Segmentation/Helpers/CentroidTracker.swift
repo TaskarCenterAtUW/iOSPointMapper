@@ -10,8 +10,8 @@ import simd
 
 class CentroidTracker {
     private var nextObjectID: UUID;
-    var objects: OrderedDictionary<UUID, DetectedObject>;
-    var disappearedObjects: OrderedDictionary<UUID, Int>;
+    var detectedObjectMap: OrderedDictionary<UUID, DetectedObject>;
+    var disappearedObjectMap: OrderedDictionary<UUID, Int>;
     
     var maxDisappeared: Int;
     // TODO: Currently, the distance threshold is very arbitrary.
@@ -21,8 +21,8 @@ class CentroidTracker {
     
     init(maxDisappeared: Int = 5, distanceThreshold: Float = 0.5) {
         self.nextObjectID = UUID()
-        self.objects = OrderedDictionary()
-        self.disappearedObjects = OrderedDictionary()
+        self.detectedObjectMap = OrderedDictionary()
+        self.disappearedObjectMap = OrderedDictionary()
         
         self.maxDisappeared = maxDisappeared
         self.distanceThreshold = distanceThreshold
@@ -30,22 +30,22 @@ class CentroidTracker {
     
     func reset() {
         self.nextObjectID = UUID()
-        self.objects.removeAll()
-        self.disappearedObjects.removeAll()
+        self.detectedObjectMap.removeAll()
+        self.disappearedObjectMap.removeAll()
     }
     
     func register(objectClassLabel: UInt8, objectCentroid: CGPoint, objectNormalizedPoints: Array<SIMD2<Float>>,
                   objectBoundingBox: CGRect, area: Float, perimeter: Float, isCurrent: Bool) {
         let object = DetectedObject(classLabel: objectClassLabel, centroid: objectCentroid, boundingBox: objectBoundingBox, normalizedPoints: objectNormalizedPoints, area: area, perimeter: perimeter, isCurrent: isCurrent)
-        self.objects[nextObjectID] = object
-        self.disappearedObjects[nextObjectID] = 0
+        self.detectedObjectMap[nextObjectID] = object
+        self.disappearedObjectMap[nextObjectID] = 0
         
         nextObjectID = UUID()
     }
     
     func deregister(objectID: UUID) {
-        self.objects.removeValue(forKey: objectID)
-        self.disappearedObjects.removeValue(forKey: objectID)
+        self.detectedObjectMap.removeValue(forKey: objectID)
+        self.disappearedObjectMap.removeValue(forKey: objectID)
     }
     
     /**
@@ -57,13 +57,13 @@ class CentroidTracker {
      TODO: Have a better performance assessment of this update method.
 
      */
-    func update(objectsList: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
+    func update(objects: Array<DetectedObject>, transformMatrix: simd_float3x3?) -> Void {
         /**
          If object list is empty, increment the disappeared count for each object
          */
-        if (objectsList.isEmpty) {
-            for (objectID, objectDisappearCount) in self.disappearedObjects {
-                self.disappearedObjects[objectID] = objectDisappearCount + 1;
+        if (objects.isEmpty) {
+            for (objectID, objectDisappearCount) in self.disappearedObjectMap {
+                self.disappearedObjectMap[objectID] = objectDisappearCount + 1;
                 
                 if (objectDisappearCount >= self.maxDisappeared) {
                     self.deregister(objectID: objectID);
@@ -82,8 +82,8 @@ class CentroidTracker {
         /**
          If the current object list is empty, only register the new objects
          */
-        if (self.objects.isEmpty) {
-            for object in objectsList {
+        if (self.detectedObjectMap.isEmpty) {
+            for object in objects {
                 self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                               objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
                               area: object.area, perimeter: object.perimeter, isCurrent: object.isCurrent);
@@ -94,14 +94,13 @@ class CentroidTracker {
         /**
          Otherwise, we need to match the objects in the current list with the existing objects
          */
-        let objectIDs = Array(self.objects.keys);
+        let objectIDs = Array(self.detectedObjectMap.keys);
         
         /**
          Compute the distance matrix between the existing objects and the new objects.         
          */
-        let objects = Array(self.objects.values.map { $0 });
-        let inputObjects = Array(objectsList.map { $0 });
-        let distanceMatrix = computeDistanceMatrix(objects: objects, inputObjects: inputObjects);
+        let detectedObjects = Array(self.detectedObjectMap.values.map { $0 });
+        let distanceMatrix = computeDistanceMatrix(detectedObjects: detectedObjects, inputObjects: objects);
         let rowCount = distanceMatrix.count;
         let colCount = distanceMatrix[0].count;
         
@@ -139,8 +138,8 @@ class CentroidTracker {
             
             // Else, we have a match
             let objectID = objectIDs[row]
-            self.objects[objectID] = objectsList[col]
-            self.disappearedObjects[objectID] = 0
+            self.detectedObjectMap[objectID] = objects[col]
+            self.disappearedObjectMap[objectID] = 0
             
             usedRows.insert(row)
             usedCols.insert(col)
@@ -157,10 +156,10 @@ class CentroidTracker {
          */
         for row in unusedRows {
             let objectID = objectIDs[row]
-            self.objects[objectID]?.isCurrent = false // Mark the object as not current
-            self.disappearedObjects[objectID] = (self.disappearedObjects[objectID] ?? 0) + 1
+            self.detectedObjectMap[objectID]?.isCurrent = false // Mark the object as not current
+            self.disappearedObjectMap[objectID] = (self.disappearedObjectMap[objectID] ?? 0) + 1
             
-            if ((self.disappearedObjects[objectID] ?? 0) >= self.maxDisappeared) {
+            if ((self.disappearedObjectMap[objectID] ?? 0) >= self.maxDisappeared) {
                 self.deregister(objectID: objectID)
             }
         }
@@ -168,15 +167,11 @@ class CentroidTracker {
          If there are any unused columns, register them as new objects
          */
         for col in unusedCols {
-            let object = objectsList[col]
+            let object = objects[col]
             self.register(objectClassLabel: object.classLabel, objectCentroid: object.centroid,
                           objectNormalizedPoints: object.normalizedPoints, objectBoundingBox: object.boundingBox,
                           area: object.area, perimeter: object.perimeter, isCurrent: false) // Mark the object as not current
         }
-        
-//        print("Number of matches: ", matches)
-//        print("Number of objects: ", self.objects.count)
-//        print("Number of objects on track to disappear: ", self.disappearedObjects.count(where: { $0.value > 0 }))
         
         return
     }
@@ -187,8 +182,8 @@ class CentroidTracker {
         return sqrt(dx * dx + dy * dy)
     }
     
-    private func computeDistanceMatrix(objects: [DetectedObject], inputObjects: [DetectedObject]) -> [[Float]] {
-        return objects.map { obj in
+    private func computeDistanceMatrix(detectedObjects: [DetectedObject], inputObjects: [DetectedObject]) -> [[Float]] {
+        return detectedObjects.map { obj in
             inputObjects.map { input in
                 if obj.classLabel != input.classLabel {
                     return Float.infinity // Different classes, no match
@@ -228,7 +223,7 @@ extension CentroidTracker {
          */
         let scaledTransform = self.normalizeHomographyMatrix(transformMatrix)
         let warpTransform = scaledTransform.transpose
-        for (objectID, object) in self.objects {
+        for (objectID, object) in self.detectedObjectMap {
             let transformedCentroid = warpedPoint(object.centroid, using: warpTransform)
             let transformedObject = DetectedObject(classLabel: object.classLabel,
                                                    centroid: transformedCentroid,
@@ -237,7 +232,7 @@ extension CentroidTracker {
                                                    area: object.area,
                                                    perimeter: object.perimeter,
                                                    isCurrent: object.isCurrent)
-            self.objects[objectID] = transformedObject
+            self.detectedObjectMap[objectID] = transformedObject
         }
     }
     
