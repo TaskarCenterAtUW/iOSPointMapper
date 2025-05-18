@@ -325,6 +325,7 @@
 			isa = PBXGroup;
 			children = (
 				A39C9F3A2DD9B03000455E45 /* OSMElement.swift */,
+				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -411,7 +412,6 @@
 				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
 				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
-				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
 			);
 			path = Service;
 			sourceTree = "<group>";

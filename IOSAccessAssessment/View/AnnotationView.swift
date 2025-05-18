@@ -392,7 +392,7 @@ struct AnnotationView: View {
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
     // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
-    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
+    private func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {        
         for annotatedDetectedObject in annotatedDetectedObjects {
             if annotatedDetectedObject.isAll {
                 continue

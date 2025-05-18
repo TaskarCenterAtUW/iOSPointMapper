@@ -9,6 +9,12 @@ import Foundation
 
 typealias ParsedElements = (nodes: [String: [String: String]]?, ways: [String: [String: String]]?)
 
+enum DiffOperation {
+    case create(OSMElement)
+    case modify(OSMElement)
+    case delete(OSMElement)
+}
+
 class ChangesetService {
     
     private enum Constants {
@@ -66,8 +72,7 @@ class ChangesetService {
         }.resume()
     }
     
-    private func performUpload(type: String, element: OSMElement,
-                               completion: @escaping (Result<ParsedElements?, Error>) -> Void) {
+    func performUpload(operations: [DiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
         guard let changesetId,
               let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
@@ -76,30 +81,36 @@ class ChangesetService {
             return
         }
 
-        var mutableElement = element
-        let elementXML: String
-        switch type {
-        case "create": elementXML = mutableElement.toOSMCreateXML(changesetId: changesetId)
-        case "modify": elementXML = mutableElement.toOSMModifyXML(changesetId: changesetId)
-        default:
-            completion(.failure(NSError(domain: "Invalid type", code: -3)))
-            return
+        var createXML = ""
+        var modifyXML = ""
+        var deleteXML = ""
+
+        for op in operations {
+            switch op {
+            case .create(let element):
+                createXML += element.toOSMCreateXML(changesetId: changesetId) + "\n"
+            case .modify(let element):
+                modifyXML += element.toOSMModifyXML(changesetId: changesetId) + "\n"
+            case .delete(let element):
+                deleteXML += element.toOSMDeleteXML(changesetId: changesetId) + "\n"
+            }
         }
 
-        let xmlContent = """
+        let osmChangeXML = """
         <osmChange version="0.6" generator="iOSPointMapper">
-            <\(type)>
-                \(elementXML)
-            </\(type)>
+            \(createXML.isEmpty ? "" : "<create>\n\(createXML)</create>")
+            \(modifyXML.isEmpty ? "" : "<modify>\n\(modifyXML)</modify>")
+            \(deleteXML.isEmpty ? "" : "<delete>\n\(deleteXML)</delete>")
         </osmChange>
         """
+        print("XML Content: ", osmChangeXML)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.httpBody = xmlContent.data(using: .utf8)
+        request.httpBody = osmChangeXML.data(using: .utf8)
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
@@ -108,14 +119,13 @@ class ChangesetService {
             }
 
             guard let data = data else {
-                completion(.success(nil))
+                completion(.success((nil, nil)))
                 return
             }
 
             let parser = ChangesetXMLParser()
             parser.parse(data: data)
 
-            // Dynamically pick which map to return
             completion(.success((parser.nodesWithAttributes, parser.waysWithAttributes)))
         }.resume()
     }

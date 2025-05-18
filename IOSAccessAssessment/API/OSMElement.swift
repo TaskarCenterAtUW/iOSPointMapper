@@ -11,6 +11,7 @@ protocol OSMElement {
     
     func toOSMCreateXML(changesetId: String) -> String
     func toOSMModifyXML(changesetId: String) -> String
+    func toOSMDeleteXML(changesetId: String) -> String
 }
 
 struct NodeData: OSMElement {
@@ -43,6 +44,12 @@ struct NodeData: OSMElement {
         <node id="\(id)" changeset="\(changesetId)" version="\(version)">
             \(tagElements)
         </node>
+        """
+    }
+    
+    func toOSMDeleteXML(changesetId: String) -> String {
+        return """
+        <node id="\(id)" changeset="\(changesetId)" version="\(version)"/>
         """
     }
 }
@@ -79,6 +86,12 @@ struct WayData: OSMElement {
             \(tagsXML)
             \(refsXML)
         </way>
+        """
+    }
+    
+    func toOSMDeleteXML(changesetId: String) -> String {
+        return """
+        <way id="\(id)" version="\(version)" changeset="\(changesetId)"/>
         """
     }
 }
