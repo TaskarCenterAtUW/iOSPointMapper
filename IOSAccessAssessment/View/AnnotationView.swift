@@ -369,7 +369,7 @@ struct AnnotationView: View {
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
         let tags: [String: String] = ["demo:class": Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-        uploadNodeChanges(location: location, tags: tags,
+        uploadNodeWithoutDepth(location: location, tags: tags,
                           classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
         nextSegment()
     }
@@ -528,6 +528,43 @@ extension AnnotationView {
                     }
                     for nodeId in nodeMap.keys {
                         guard var nodeData = nodeDataObjectMap[nodeId] else { continue }
+                        guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
+                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                        else { continue }
+                        nodeData.id = newId
+                        nodeData.version = newVersion
+                        sharedImageData.appendNodeGeometry(nodeData: nodeData,
+                                                           classLabel: classLabel)
+                    }
+                }
+            case .failure(let error):
+                print("Failed to upload changes: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func uploadNodeWithoutDepth(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?,
+                                        tags: [String: String], classLabel: UInt8) {
+        guard let nodeLatitude = location?.latitude,
+              let nodeLongitude = location?.longitude
+        else { return }
+        var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
+        
+        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+            switch result {
+            case .success(let response):
+                print("Changes uploaded successfully.")
+                DispatchQueue.main.async {
+                    sharedImageData.isUploadReady = true
+                    
+                    guard let nodeMap = response.nodes else {
+                        print("Node map is nil")
+                        return
+                    }
+                    let oldNodeId = nodeData.id
+                    for nodeId in nodeMap.keys {
+                        guard nodeData.id == nodeId else { continue }
                         guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
                                 let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
                         else { continue }
