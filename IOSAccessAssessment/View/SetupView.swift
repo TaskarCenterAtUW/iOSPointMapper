@@ -29,6 +29,7 @@ enum SetupViewConstants {
     
     enum Images {
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
+        static let uploadIcon = "arrow.up"
     }
     
     enum Colors {
@@ -74,7 +75,7 @@ struct SetupView: View {
                         print("Uploading changeset...")
                         closeChangeset()
                     }) {
-                        Image(systemName: "arrow.up")
+                        Image(systemName: SetupViewConstants.Images.uploadIcon)
                             .resizable()
                             .frame(width: 20, height: 20)
 //                            .foregroundColor(.white)

@@ -179,8 +179,8 @@ class SegmentationPipeline: ObservableObject {
                 self.segmentationImage = segmentationResults?.segmentationImage
                 self.segmentedIndices = segmentationResults?.segmentedIndices ?? []
                 self.detectedObjectMap = Dictionary(uniqueKeysWithValues: self.centroidTracker.detectedObjectMap.map { ($0.key, $0.value) })
+                self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
                 
-                // Temporary
                 self.grayscaleToColorMasker.inputImage = segmentationImage
                 self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
                 self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
@@ -203,7 +203,6 @@ class SegmentationPipeline: ObservableObject {
 //                }
 //
 //                self.transformedFloatingObjects = transformedFloatingObjects
-                self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
                 self.completionHandler?(.success(SegmentationPipelineResults(
                     segmentationImage: segmentationImage,
                     segmentationResultUIImage: self.segmentationResultUIImage!,

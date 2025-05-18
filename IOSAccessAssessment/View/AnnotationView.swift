@@ -207,16 +207,20 @@ struct AnnotationView: View {
         
         var inputImage = sharedImageData.segmentationLabelImage
         var unionOfMasksObjects: [DetectedObject] = []
-        let unionOfMasksResults = self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-            targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
-            isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
-            bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
-        )
-        if let unionOfMasksResults = unionOfMasksResults {
-            inputImage = unionOfMasksResults.segmentationImage
-            unionOfMasksObjects = unionOfMasksResults.detectedObjects
-        } else {
-            print("Failed to create union image")
+        do {
+            let unionOfMasksResults = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
+                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
+                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
+            )
+            if let unionOfMasksResults = unionOfMasksResults {
+                inputImage = unionOfMasksResults.segmentationImage
+                unionOfMasksObjects = unionOfMasksResults.detectedObjects
+            } else {
+                print("Failed to create union image")
+            }
+        } catch {
+            print("Error processing union of masks request: \(error)")
         }
         
         self.annotatedSegmentationLabelImage = inputImage
@@ -268,11 +272,15 @@ struct AnnotationView: View {
     }
     
     private func initializeAnnotationSegmentationPipeline() {
-        self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
-            imageDataHistory: sharedImageData.getImageDataHistory())
-        if let transformedLabelImages = self.transformedLabelImages {
-            print("Transformed label images count: \(transformedLabelImages.count)")
-            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+        do {
+            try self.transformedLabelImages = self.annotationSegmentationPipeline.processTransformationsRequest(
+                imageDataHistory: sharedImageData.getImageDataHistory())
+            if let transformedLabelImages = self.transformedLabelImages {
+                print("Transformed label images count: \(transformedLabelImages.count)")
+                self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+            }
+        } catch {
+            print("Error processing transformations request: \(error)")
         }
     }
     

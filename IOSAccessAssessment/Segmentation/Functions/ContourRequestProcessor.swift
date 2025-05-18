@@ -51,7 +51,7 @@ struct ContourRequestProcessor {
             
             var detectedObjects = [DetectedObject]()
             let contours = contourResult?.topLevelContours
-            for contour in contours! {
+            for contour in (contours ?? []) {
                 let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
                 let contourDetails = self.getContourDetails(from: contourApproximation)
                 if contourDetails.perimeter < self.perimeterThreshold {continue}
