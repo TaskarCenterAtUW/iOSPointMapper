@@ -226,66 +226,20 @@ struct AnnotationView: View {
             self.initializeAnnotationSegmentationPipeline()
         }
         
-        let cameraCGImage = annotationCIContext.createCGImage(
-            sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
-        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
+        setCameraUIImage()
         
         guard index < sharedImageData.segmentedIndices.count else {
             print("Index out of bounds for segmentedIndices in AnnotationView")
             return
         }
         
-        // Perform the union of masks on the label image history for the given segmentation class.
-        // Save the resultant image to the segmentedLabelImage property.
-        var inputLabelImage = sharedImageData.segmentationLabelImage
-        var inputDetectedObjects: [DetectedObject] = []
-        do {
-            inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
-                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
-            )
-        } catch {
-            print("Error processing union of masks request: \(error)")
-        }
-        self.annotatedSegmentationLabelImage = inputLabelImage
-        self.grayscaleToColorMasker.inputImage = inputLabelImage
-        self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
-        self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
-        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        var inputLabelImage = setAndReturnSegmentationUIImage()
         
-        // Get the detected objects from the resultant union image.
-        do {
-            inputDetectedObjects = try self.annotationSegmentationPipeline.processContourRequest(
-                from: inputLabelImage!,
-                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
-                isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
-                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
-            )
-        } catch {
-            print("Error processing contour request: \(error)")
+        guard let inputLabelImage = inputLabelImage else {
+            print("Input label image is nil")
+            return
         }
-        var annotatedDetectedObjects = inputDetectedObjects.enumerated().map({ objectIndex, object in
-            AnnotatedDetectedObject(object: object, classLabel: object.classLabel, depthValue: 0.0, isAll: false,
-                                    label: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]] + ": " + String(objectIndex))
-        })
-        // Add the "all" object to the beginning of the list
-        annotatedDetectedObjects.insert(
-            AnnotatedDetectedObject(object: nil, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
-                depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
-            at: 0
-        )
-        self.annotatedDetectedObjects = annotatedDetectedObjects
-        self.selectedObjectId = annotatedDetectedObjects[0].id
-        self.objectsUIImage = UIImage(
-            cgImage: ContourObjectRasterizer.rasterizeContourObjects(
-                objects: inputDetectedObjects,
-                size: Constants.ClassConstants.inputSize,
-                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
-                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
-            )!,
-            scale: 1.0, orientation: .up)
+        let _ = setAndReturnObjectsUIImage(inputLabelImage: inputLabelImage)
     }
     
     /**
@@ -302,6 +256,73 @@ struct AnnotationView: View {
         } catch {
             print("Error processing transformations request: \(error)")
         }
+    }
+    
+    private func setCameraUIImage() {
+        let cameraCGImage = annotationCIContext.createCGImage(
+            sharedImageData.cameraImage!, from: sharedImageData.cameraImage!.extent)!
+        self.cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
+    }
+    
+    // Perform the union of masks on the label image history for the given segmentation class.
+    // Save the resultant image to the segmentedLabelImage property.
+    private func setAndReturnSegmentationUIImage() -> CIImage? {
+        var inputLabelImage = sharedImageData.segmentationLabelImage
+        do {
+            inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
+                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
+            )
+        } catch {
+            print("Error processing union of masks request: \(error)")
+        }
+        self.annotatedSegmentationLabelImage = inputLabelImage
+        self.grayscaleToColorMasker.inputImage = inputLabelImage
+        self.grayscaleToColorMasker.grayscaleValues = [Constants.ClassConstants.grayscaleValues[sharedImageData.segmentedIndices[index]]]
+        self.grayscaleToColorMasker.colorValues = [Constants.ClassConstants.colors[sharedImageData.segmentedIndices[index]]]
+        self.segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        
+        return inputLabelImage
+    }
+    
+    private func setAndReturnObjectsUIImage(inputLabelImage: CIImage) -> [AnnotatedDetectedObject] {
+        var inputDetectedObjects: [DetectedObject] = []
+        
+        // Get the detected objects from the resultant union image.
+        do {
+            inputDetectedObjects = try self.annotationSegmentationPipeline.processContourRequest(
+                from: inputLabelImage,
+                targetValue: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                isWay: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay,
+                bounds: Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].bounds
+            )
+        } catch {
+            print("Error processing contour request: \(error)")
+        }
+        var annotatedDetectedObjects = inputDetectedObjects.enumerated().map({ objectIndex, object in
+            AnnotatedDetectedObject(object: object, classLabel: object.classLabel, depthValue: 0.0, isAll: false,
+                                    label: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]] + ": " + String(objectIndex))
+        })
+        // Add the "all" object to the beginning of the list
+        annotatedDetectedObjects.insert(
+            AnnotatedDetectedObject(object: nil, classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]],
+                                    depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
+            at: 0
+        )
+        self.annotatedDetectedObjects = annotatedDetectedObjects
+        self.selectedObjectId = annotatedDetectedObjects[0].id
+        self.objectsUIImage = UIImage(
+            cgImage: ContourObjectRasterizer.rasterizeContourObjects(
+                objects: inputDetectedObjects,
+                size: Constants.ClassConstants.inputSize,
+                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
+                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
+            )!,
+            scale: 1.0, orientation: .up)
+        
+        return annotatedDetectedObjects
     }
     
     func updateObjectSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
