@@ -156,10 +156,12 @@ struct AnnotationView: View {
             }
             .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {
                 Button(AnnotationViewConstants.Texts.confirmAnnotationFailedCancelText, role: .cancel) {
+                    confirmAnnotationFailed = false
                     selectedOption = nil
                     nextSegment()
                 }
                 Button(AnnotationViewConstants.Texts.confirmAnnotationFailedConfirmText) {
+                    confirmAnnotationFailed = false
                     confirmAnnotationWithoutDepth()
                 }
             } message: {
