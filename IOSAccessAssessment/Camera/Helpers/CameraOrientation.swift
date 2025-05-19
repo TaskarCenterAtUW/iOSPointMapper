@@ -39,4 +39,10 @@ class CameraOrientation {
                 return .right
         }
     }
+    
+    // Since people tend to hold devices in portrait mode by default when using the camera,
+    // we can assume that the camera is in portrait mode when the device orientation is unknown.
+    static func isLandscapeOrientation(currentDeviceOrientation: UIDeviceOrientation) -> Bool {
+        return currentDeviceOrientation == .landscapeLeft || currentDeviceOrientation == .landscapeRight
+    }
 }

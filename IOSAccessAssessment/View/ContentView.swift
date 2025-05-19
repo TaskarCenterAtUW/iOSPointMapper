@@ -52,44 +52,34 @@ struct ContentView: View {
     
     var isCameraStoppedPayload = [ContentViewConstants.Payload.isCameraStopped: true]
     
+    // For deciding the layout
+//    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isLandscape: Bool {
+        CameraOrientation.isLandscapeOrientation(currentDeviceOrientation: manager?.deviceOrientation ?? .portrait)
+//        horizontalSizeClass == .regular
+    }
+    
     var body: some View {
-        VStack {
-            if manager?.dataAvailable ?? false{
-                ZStack {
-//                        HostedCameraViewController(session: manager!.controller.captureSession,
-//                                                   frameRect: VerticalFrame.getColumnFrame(
-//                                                    width: UIScreen.main.bounds.width,
-//                                                    height: UIScreen.main.bounds.height,
-//                                                    row: 0)
-//                        )
-                    HostedSegmentationViewController(
-                        segmentationImage: $segmentationPipeline.segmentationResultUIImage,
-                                                     frameRect: VerticalFrame.getColumnFrame(
-                                                        width: UIScreen.main.bounds.width,
-                                                        height: UIScreen.main.bounds.height,
-                                                        row: 1)
-                    )
+        Group {
+            if manager?.dataAvailable ?? false {
+                orientationStack {
                     HostedSegmentationViewController(
                         segmentationImage: Binding(
                             get: { manager?.cameraUIImage ?? UIImage() },
                             set: { manager?.cameraUIImage = $0 }
-                        ),
-                                                     frameRect: VerticalFrame.getColumnFrame(
-                                                        width: UIScreen.main.bounds.width,
-                                                        height: UIScreen.main.bounds.height,
-                                                        row: 0)
-                    )
-                }
-                Button {
-                    objectLocation.setLocationAndHeading()
-                    manager?.stopStream()
-                    segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                        additionalPayload: isCameraStoppedPayload)
-                } label: {
-                    Image(systemName: ContentViewConstants.Images.cameraIcon)
-                        .resizable()
-                        .frame(width: 60, height: 60)
-                        .foregroundColor(.white)
+                    ))
+                    HostedSegmentationViewController(segmentationImage: $segmentationPipeline.segmentationResultUIImage)
+                    Button {
+                        objectLocation.setLocationAndHeading()
+                        manager?.stopStream()
+                        segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
+                                                            additionalPayload: isCameraStoppedPayload)
+                    } label: {
+                        Image(systemName: ContentViewConstants.Images.cameraIcon)
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(.white)
+                    }
                 }
             }
             else {
@@ -120,6 +110,15 @@ struct ContentView: View {
         }
         .onDisappear {
             manager?.stopStream()
+        }
+    }
+    
+    @ViewBuilder
+    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if isLandscape {
+            HStack(content: content)
+        } else {
+            VStack(content: content)
         }
     }
     
