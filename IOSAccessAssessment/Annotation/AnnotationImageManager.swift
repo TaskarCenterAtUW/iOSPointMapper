@@ -11,7 +11,7 @@ import Combine
 import simd
 
 typealias AnnotationCameraUIImageOutput = (cgImage: CGImage, uiImage: UIImage)
-typealias AnnotationSegmentationUIImageOutput = (ciImage: CIImage?, uiImage: UIImage)
+typealias AnnotationSegmentationUIImageOutput = (ciImage: CIImage, uiImage: UIImage)
 typealias AnnotationObjectsUIImageOutput = (annotatedDetectedObjects: [AnnotatedDetectedObject], selectedObjectId: UUID, uiImage: UIImage)
 
 class AnnotationImageManager: ObservableObject {
@@ -30,13 +30,35 @@ class AnnotationImageManager: ObservableObject {
     private let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
     private let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     
-    func update(cameraImage: UIImage?, segmentationImage: UIImage?, objectsImage: UIImage?,
-                annotatedSegmentationLabelImage: CIImage?, annotatedDetectedObjects: [AnnotatedDetectedObject]?) {
-        
+    func isImageInvalid() -> Bool {
+        if (self.cameraUIImage == nil || self.segmentationUIImage == nil || self.objectsUIImage == nil) {
+            return true
+        }
+        return false
     }
     
-    func update(segmentationLabelImage: CIImage, imageHistory: [ImageData]) {
+    func update(cameraImage: CIImage, segmentationLabelImage: CIImage, imageHistory: [ImageData],
+                segmentationClass: SegmentationClass) {
+        // TODO: Handle the case of transformedLabelImages being nil
         let transformedLabelImages = transformImageHistoryForUnionOfMasks(imageDataHistory: imageHistory)
+        
+        let cameraUIImageOutput = getCameraUIImage(cameraImage: cameraImage)
+        let segmentationUIImageOutput = getSegmentationUIImage(
+            segmentationLabelImage: segmentationLabelImage, segmentationClass: segmentationClass)
+        
+        let objectsInputLabelImage = segmentationUIImageOutput.ciImage
+        let objectsUIImageOutput = getObjectsUIImage(
+            inputLabelImage: objectsInputLabelImage, segmentationClass: segmentationClass)
+        
+        // Start updating the state
+        objectWillChange.send()
+        self.transformedLabelImages = transformedLabelImages
+        self.cameraUIImage = cameraUIImageOutput.uiImage
+        self.annotatedSegmentationLabelImage = segmentationUIImageOutput.ciImage
+        self.segmentationUIImage = segmentationUIImageOutput.uiImage
+        self.annotatedDetectedObjects = objectsUIImageOutput.annotatedDetectedObjects
+        self.selectedObjectId = objectsUIImageOutput.selectedObjectId
+        self.objectsUIImage = objectsUIImageOutput.uiImage
     }
     
     private func transformImageHistoryForUnionOfMasks(imageDataHistory: [ImageData]) -> [CIImage]? {
@@ -51,7 +73,7 @@ class AnnotationImageManager: ObservableObject {
         return nil
     }
     
-    private func setCameraUIImage(cameraImage: CIImage) -> AnnotationCameraUIImageOutput {
+    private func getCameraUIImage(cameraImage: CIImage) -> AnnotationCameraUIImageOutput {
         let cameraCGImage = annotationCIContext.createCGImage(
             cameraImage, from: cameraImage.extent)!
         let cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
@@ -61,7 +83,7 @@ class AnnotationImageManager: ObservableObject {
     
     // Perform the union of masks on the label image history for the given segmentation class.
     // Save the resultant image to the segmentedLabelImage property.
-    private func setAndReturnSegmentationUIImage(segmentationLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getSegmentationUIImage(segmentationLabelImage: CIImage, segmentationClass: SegmentationClass)
     -> AnnotationSegmentationUIImageOutput {
         var inputLabelImage = segmentationLabelImage
         do {
@@ -82,7 +104,7 @@ class AnnotationImageManager: ObservableObject {
                 uiImage: segmentationUIImage)
     }
     
-    private func setAndReturnObjectsUIImage(inputLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getObjectsUIImage(inputLabelImage: CIImage, segmentationClass: SegmentationClass)
     -> AnnotationObjectsUIImageOutput {
         var inputDetectedObjects: [DetectedObject] = []
         
