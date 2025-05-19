@@ -8,10 +8,28 @@
 import SwiftUI
 import CoreLocation
 
+struct AnnotatedDetectedObject {
+    var id: UUID = UUID()
+    var object: DetectedObject?
+    var classLabel: UInt8
+    var depthValue: Float
+    var isAll: Bool = false
+    var label: String?
+    
+    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
+         label: String? = AnnotationViewConstants.Texts.selectAllLabelText) {
+        self.object = object
+        self.classLabel = classLabel
+        self.depthValue = depthValue
+        self.isAll = isAll
+        self.label = label
+    }
+}
+
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
     // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
-    func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject]) {
+    func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
         let uploadObjects = annotatedDetectedObjects.filter { $0.object != nil && !$0.isAll }
         guard !uploadObjects.isEmpty else {
             print("No objects to upload")
@@ -19,23 +37,20 @@ extension AnnotationView {
         }
         
         // We assume that every object is of the same class.
-        let currentClass = Constants.ClassConstants.classes.filter {
-            $0.labelValue == uploadObjects[0].classLabel
-        }.first
-        let isWay = currentClass?.isWay ?? false
+        let isWay = segmentationClass.isWay
         if isWay {
             // We upload all the nodes along with the way.
-            uploadWay(annotatedDetectedObject: uploadObjects[0], classLabel: uploadObjects[0].classLabel)
+            uploadWay(annotatedDetectedObject: uploadObjects[0], segmentationClass: segmentationClass)
         } else {
             // We upload all the nodes.
-            uploadNodes(annotatedDetectedObjects: uploadObjects, classLabel: uploadObjects[0].classLabel)
+            uploadNodes(annotatedDetectedObjects: uploadObjects, segmentationClass: segmentationClass)
         }
     }
     
-    func uploadWay(annotatedDetectedObject: AnnotatedDetectedObject, classLabel: UInt8) {
+    func uploadWay(annotatedDetectedObject: AnnotatedDetectedObject, segmentationClass: SegmentationClass) {
         var tempId = -1
         var nodeData = getNodeDataFromAnnotatedObject(
-            annotatedDetectedObject: annotatedDetectedObject, id: tempId, isWay: true)
+            annotatedDetectedObject: annotatedDetectedObject, id: tempId, isWay: true, segmentationClass: segmentationClass)
         tempId -= 1
         
         var wayDataOperations: [ChangesetDiffOperation] = []
@@ -43,7 +58,7 @@ extension AnnotationView {
             wayDataOperations.append(ChangesetDiffOperation.create(nodeData))
         }
         
-        var wayData = self.sharedImageData.wayGeometries[classLabel]?.last
+        var wayData = self.sharedImageData.wayGeometries[segmentationClass.labelValue]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
         if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
 //            var wayData = wayData!
@@ -52,10 +67,7 @@ extension AnnotationView {
             }
             wayDataOperations.append(ChangesetDiffOperation.modify(wayData!))
         } else {
-            let classLabelClass = Constants.ClassConstants.classes.filter {
-                $0.labelValue == annotatedDetectedObject.classLabel
-            }.first
-            let className = classLabelClass?.name ?? APIConstants.OtherConstants.classLabelPlaceholder
+            let className = segmentationClass.name
             let wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
             
             var nodeRefs: [String] = []
@@ -86,7 +98,7 @@ extension AnnotationView {
                         nodeData?.id = newId
                         nodeData?.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData!,
-                                                           classLabel: classLabel)
+                                                           classLabel: segmentationClass.labelValue)
                     }
                     
                     // Update the way data with the new id and version
@@ -107,9 +119,9 @@ extension AnnotationView {
                            let oldNodeIdIndex = wayData?.nodeRefs.firstIndex(of: oldNodeId) {
                             wayData?.nodeRefs[oldNodeIdIndex] = nodeData.id
                         }
-                        sharedImageData.wayGeometries[classLabel]?.removeLast()
+                        sharedImageData.wayGeometries[segmentationClass.labelValue]?.removeLast()
                         sharedImageData.appendWayGeometry(wayData: wayData!,
-                                                          classLabel: classLabel)
+                                                          classLabel: segmentationClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -118,11 +130,11 @@ extension AnnotationView {
         }
     }
     
-    func uploadNodes(annotatedDetectedObjects: [AnnotatedDetectedObject], classLabel: UInt8) {
+    func uploadNodes(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
         var tempId = -1
         let nodeDataObjects: [NodeData?] = annotatedDetectedObjects.map { object in
             let nodeData = getNodeDataFromAnnotatedObject(
-                annotatedDetectedObject: object, id: tempId, isWay: false)
+                annotatedDetectedObject: object, id: tempId, isWay: false, segmentationClass: segmentationClass)
             tempId -= 1
             return nodeData
         }
@@ -153,7 +165,7 @@ extension AnnotationView {
                         nodeData.id = newId
                         nodeData.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData,
-                                                           classLabel: classLabel)
+                                                           classLabel: segmentationClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -163,10 +175,13 @@ extension AnnotationView {
     }
     
     func uploadNodeWithoutDepth(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?,
-                                        tags: [String: String], classLabel: UInt8) {
+                                segmentationClass: SegmentationClass) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
+        
+        let tags: [String: String] = [APIConstants.TagKeys.classKey: segmentationClass.name]
+        
         var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
@@ -189,7 +204,7 @@ extension AnnotationView {
                         nodeData.id = newId
                         nodeData.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData,
-                                                           classLabel: classLabel)
+                                                           classLabel: segmentationClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -200,17 +215,14 @@ extension AnnotationView {
     
     func getNodeDataFromAnnotatedObject(
         annotatedDetectedObject: AnnotatedDetectedObject,
-        id: Int, isWay: Bool = false
+        id: Int, isWay: Bool = false, segmentationClass: SegmentationClass
     ) -> NodeData? {
         let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return nil }
         
-        let classLabelClass = Constants.ClassConstants.classes.filter {
-            $0.labelValue == annotatedDetectedObject.classLabel
-        }.first
-        let className = classLabelClass?.name ?? APIConstants.OtherConstants.classLabelPlaceholder
+        let className = segmentationClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
         
         if isWay {

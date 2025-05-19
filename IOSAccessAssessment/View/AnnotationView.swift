@@ -40,24 +40,6 @@ enum AnnotationOption: String, CaseIterable {
     case misidentified = "The class annotation is misidentified"
 }
 
-struct AnnotatedDetectedObject {
-    var id: UUID = UUID()
-    var object: DetectedObject?
-    var classLabel: UInt8
-    var depthValue: Float
-    var isAll: Bool = false
-    var label: String?
-    
-    init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
-         label: String? = AnnotationViewConstants.Texts.selectAllLabelText) {
-        self.object = object
-        self.classLabel = classLabel
-        self.depthValue = depthValue
-        self.isAll = isAll
-        self.label = label
-    }
-}
-
 struct AnnotationView: View {
     var selection: [Int]
     var objectLocation: ObjectLocation
@@ -245,17 +227,17 @@ struct AnnotationView: View {
         }
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
-        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects)
+        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
         nextSegment()
     }
     
     func confirmAnnotationWithoutDepth() {
         selectedOption = nil
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
-        let tags: [String: String] = [APIConstants.TagKeys.classKey: Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]]]
+        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-        uploadNodeWithoutDepth(location: location, tags: tags,
-                          classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+        uploadNodeWithoutDepth(location: location, segmentationClass: segmentationClass)
         nextSegment()
     }
     
