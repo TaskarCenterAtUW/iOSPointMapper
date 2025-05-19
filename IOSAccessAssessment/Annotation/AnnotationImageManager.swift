@@ -14,6 +14,10 @@ typealias AnnotationCameraUIImageOutput = (cgImage: CGImage, uiImage: UIImage)
 typealias AnnotationSegmentationUIImageOutput = (ciImage: CIImage, uiImage: UIImage)
 typealias AnnotationObjectsUIImageOutput = (annotatedDetectedObjects: [AnnotatedDetectedObject], selectedObjectId: UUID, uiImage: UIImage)
 
+/**
+ The AnnotationImageManager class is responsible for managing the images used in the annotation process.
+ It handles updates to the camera image, segmentation label image, and detected objects image.
+ */
 class AnnotationImageManager: ObservableObject {
     @Published var cameraUIImage: UIImage? = nil
     @Published var segmentationUIImage: UIImage? = nil

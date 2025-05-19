@@ -170,7 +170,7 @@ class AnnotationSegmentationPipeline {
         }
         
         if bounds != nil {
-            print("Applying dimension-based mask filter")
+//            print("Applying dimension-based mask filter")
             unionImage = self.dimensionBasedMaskFilter?.apply(
                 to: unionImage, bounds: bounds!) ?? unionImage
         }
