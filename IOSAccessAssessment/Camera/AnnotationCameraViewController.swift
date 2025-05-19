@@ -67,7 +67,7 @@ class AnnotationCameraViewController: UIViewController {
                 cameraView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 cameraView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 cameraView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                cameraView.widthAnchor.constraint(equalTo: cameraView.heightAnchor, multiplier: aspectRatio)
+//                cameraView.widthAnchor.constraint(equalTo: cameraView.heightAnchor, multiplier: aspectRatio)
             ])
         }
         
@@ -77,7 +77,7 @@ class AnnotationCameraViewController: UIViewController {
                 segmentationView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 segmentationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 segmentationView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
+//                segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
             ])
         }
         
@@ -87,7 +87,7 @@ class AnnotationCameraViewController: UIViewController {
                 objectsView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
                 objectsView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 objectsView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                objectsView.widthAnchor.constraint(equalTo: objectsView.heightAnchor, multiplier: aspectRatio)
+//                objectsView.widthAnchor.constraint(equalTo: objectsView.heightAnchor, multiplier: aspectRatio)
             ])
         }
         

@@ -45,7 +45,7 @@ class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSamp
             segmentationView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             segmentationView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             segmentationView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
+//            segmentationView.widthAnchor.constraint(equalTo: segmentationView.heightAnchor, multiplier: aspectRatio)
         ])
     }
     
