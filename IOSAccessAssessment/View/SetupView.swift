@@ -42,28 +42,51 @@ enum SetupViewConstants {
     }
 }
 
-struct SetupView: View {
+class ChangeSetOpenViewModel: ObservableObject {
+    @Published var isChangesetOpened: Bool = false
+    @Published var showOpeningRetryAlert: Bool = false
+    @Published var openRetryMessage: String = ""
     
-    @State private var isChangesetOpened = false
-    @State private var showOpeningRetryAlert = false
-    @State private var openRetryMessage = ""
-//    @State private var isChangesetClosed = false
-    @State private var showClosingRetryAlert = false
-    @State private var closeRetryMessage = ""
+    func update(isChangesetOpened: Bool, showOpeningRetryAlert: Bool, openRetryMessage: String) {
+        objectWillChange.send()
+        
+        self.isChangesetOpened = isChangesetOpened
+        self.showOpeningRetryAlert = showOpeningRetryAlert
+        self.openRetryMessage = openRetryMessage
+    }
+}
 
+class ChangeSetCloseViewModel: ObservableObject {
+//    @Published var isChangesetClosed = false
+    @Published var showClosingRetryAlert = false
+    @Published var closeRetryMessage = ""
+    
+    func update(showClosingRetryAlert: Bool, closeRetryMessage: String) {
+        objectWillChange.send()
+        
+        self.showClosingRetryAlert = showClosingRetryAlert
+        self.closeRetryMessage = closeRetryMessage
+    }
+}
+
+struct SetupView: View {
     @State private var selection = Set<Int>()
     private var isSelectionEmpty: Bool {
         return (self.selection.count == 0)
     }
-    @State private var showLogoutConfirmation = false
+    
     @EnvironmentObject var userState: UserStateViewModel
+    @State private var showLogoutConfirmation = false
+    
+    @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
+    @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationPipeline: SegmentationPipeline = SegmentationPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
     var body: some View {
-        NavigationStack {
+        return NavigationStack {
             VStack(alignment: .leading) {
                 HStack {
                     Text(SetupViewConstants.Texts.uploadChangesetTitle)
@@ -134,6 +157,7 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
+            // Alert for logout confirmation
             .alert(
                 SetupViewConstants.Texts.confirmationDialogTitle,
                 isPresented: $showLogoutConfirmation
@@ -143,29 +167,28 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
-            .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $showOpeningRetryAlert) {
+            // Alert for changeset opening error
+            .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showOpeningRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
-                    isChangesetOpened = false
-                    openRetryMessage = ""
-                    showOpeningRetryAlert = false
+                    changesetOpenViewModel.update(isChangesetOpened: false, showOpeningRetryAlert: false, openRetryMessage: "")
                     
                     openChangeset()
                 }
             } message: {
-                Text(openRetryMessage)
+                Text(changesetOpenViewModel.openRetryMessage)
             }
-            .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $showClosingRetryAlert) {
+            // Alert for changeset closing error
+            .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $changeSetCloseViewModel.showClosingRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetClosingRetryText) {
-                    closeRetryMessage = ""
-                    showClosingRetryAlert = false
+                    changeSetCloseViewModel.update(showClosingRetryAlert: false, closeRetryMessage: "")
                     
                     closeChangeset()
                 }
             } message: {
-                Text(closeRetryMessage)
+                Text(changeSetCloseViewModel.closeRetryMessage)
             }
             .onAppear {
-                if !isChangesetOpened {
+                if !changesetOpenViewModel.isChangesetOpened {
                     openChangeset()
                 }
             }
@@ -181,11 +204,15 @@ struct SetupView: View {
             switch result {
             case .success(let changesetId):
                 print("Opened changeset with ID: \(changesetId)")
-                isChangesetOpened = true
+                DispatchQueue.main.async {
+                    changesetOpenViewModel.isChangesetOpened = true
+                }
             case .failure(let error):
-                openRetryMessage = "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)"
-                isChangesetOpened = false
-                showOpeningRetryAlert = true
+                DispatchQueue.main.async {
+                    changesetOpenViewModel.update(
+                        isChangesetOpened: false, showOpeningRetryAlert: true,
+                        openRetryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -200,8 +227,11 @@ struct SetupView: View {
                     openChangeset()
                 }
             case .failure(let error):
-                closeRetryMessage = "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)"
-                showClosingRetryAlert = true
+                DispatchQueue.main.async {
+                    changeSetCloseViewModel.update(
+                        showClosingRetryAlert: true,
+                        closeRetryMessage: "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)")
+                }
             }
         }
     }

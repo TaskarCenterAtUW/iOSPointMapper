@@ -53,6 +53,8 @@
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
 		A3E84ECC2DDAA82F0096A645 /* OrientationObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */; };
+		A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E84ECF2DDAC7A10096A645 /* AnnotationImageManager.swift */; };
+		A3E84ED22DDAD41E0096A645 /* AnnotationAPITransmissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E84ED12DDAD4130096A645 /* AnnotationAPITransmissionController.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
@@ -160,6 +162,8 @@
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
 		A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationObserver.swift; sourceTree = "<group>"; };
+		A3E84ECF2DDAC7A10096A645 /* AnnotationImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageManager.swift; sourceTree = "<group>"; };
+		A3E84ED12DDAD4130096A645 /* AnnotationAPITransmissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationAPITransmissionController.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
@@ -232,6 +236,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
+				A3E84ECE2DDAC7980096A645 /* Annotation */,
 				A39C9F392DD9B01200455E45 /* API */,
 				A3D1272F2D5D0DFE0081DFF4 /* OpenCV */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
@@ -410,6 +415,15 @@
 				A362AEC82DB638AB002D7598 /* CameraUtils.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A3E84ECE2DDAC7980096A645 /* Annotation */ = {
+			isa = PBXGroup;
+			children = (
+				A3E84ED12DDAD4130096A645 /* AnnotationAPITransmissionController.swift */,
+				A3E84ECF2DDAC7A10096A645 /* AnnotationImageManager.swift */,
+			);
+			path = Annotation;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* Depth */ = {
@@ -632,6 +646,7 @@
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
 				A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */,
+				A3E84ED22DDAD41E0096A645 /* AnnotationAPITransmissionController.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
@@ -666,6 +681,7 @@
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
+				A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
