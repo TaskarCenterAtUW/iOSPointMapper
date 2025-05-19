@@ -221,6 +221,7 @@ struct AnnotationView: View {
     }
     
     func refreshView() {
+        print("Calling refreshView")
         if self.transformedLabelImages == nil {
             print("Transformed label images are nil. Initializing annotation segmentation pipeline.")
             self.initializeAnnotationSegmentationPipeline()
@@ -233,7 +234,7 @@ struct AnnotationView: View {
             return
         }
         
-        var inputLabelImage = setAndReturnSegmentationUIImage()
+        let inputLabelImage = setAndReturnSegmentationUIImage()
         
         guard let inputLabelImage = inputLabelImage else {
             print("Input label image is nil")
