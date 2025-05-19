@@ -33,8 +33,6 @@ enum AnnotationViewConstants {
         static let checkIcon = "checkmark"
     }
 }
-        
-        
 
 enum AnnotationOption: String, CaseIterable {
     case agree = "I agree with this class annotation"

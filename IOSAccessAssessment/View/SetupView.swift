@@ -70,16 +70,16 @@ class ChangeSetCloseViewModel: ObservableObject {
 }
 
 struct SetupView: View {
-    
-    @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
-    @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
-
     @State private var selection = Set<Int>()
     private var isSelectionEmpty: Bool {
         return (self.selection.count == 0)
     }
-    @State private var showLogoutConfirmation = false
+    
     @EnvironmentObject var userState: UserStateViewModel
+    @State private var showLogoutConfirmation = false
+    
+    @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
+    @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationPipeline: SegmentationPipeline = SegmentationPipeline()
@@ -157,6 +157,7 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
+            // Alert for logout confirmation
             .alert(
                 SetupViewConstants.Texts.confirmationDialogTitle,
                 isPresented: $showLogoutConfirmation
@@ -166,6 +167,7 @@ struct SetupView: View {
                 }
                 Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
             }
+            // Alert for changeset opening error
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showOpeningRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
                     changesetOpenViewModel.update(isChangesetOpened: false, showOpeningRetryAlert: false, openRetryMessage: "")
@@ -175,6 +177,7 @@ struct SetupView: View {
             } message: {
                 Text(changesetOpenViewModel.openRetryMessage)
             }
+            // Alert for changeset closing error
             .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $changeSetCloseViewModel.showClosingRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetClosingRetryText) {
                     changeSetCloseViewModel.update(showClosingRetryAlert: false, closeRetryMessage: "")
