@@ -23,6 +23,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     @Published var dataAvailable = false
     var isDepthSupported: Bool = false
     
+    // Frame rate-related properties
+    var frameRate: Int = 15
+    var lastFrameTime: TimeInterval = 0
+    
     // Temporary image data
     @Published var cameraUIImage: UIImage?
     @Published var depthUIImage: UIImage?
@@ -67,6 +71,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
     
+    func setFrameRate(_ frameRate: Int) {
+        self.frameRate = frameRate
+    }
+    
     func resumeStream() {
         runSession()
         isProcessingCapturedResult = false
@@ -78,10 +86,16 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        if !checkFrameWithinFrameRate(frame: frame) {
+            return
+        }
+        
         let cameraImage: CIImage = orientAndFixCameraFrame(frame.capturedImage)
         var depthImage: CIImage? = nil
         if let depthMap = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap {
             depthImage = orientAndFixDepthFrame(depthMap)
+        } else {
+            print("Depth map not available")
         }
         DispatchQueue.main.async {
             if self.isProcessingCapturedResult {
@@ -92,7 +106,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             self.sharedImageData?.depthImage = depthImage
             
             self.cameraUIImage = UIImage(ciImage: cameraImage)
-            self.depthUIImage = UIImage(ciImage: depthImage!)
+            if depthImage != nil { self.depthUIImage = UIImage(ciImage: depthImage!) }
             
             self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
                                                       deviceOrientation: self.deviceOrientation)
@@ -102,7 +116,15 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             }
         }
     }
-
+    
+    func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {
+        let currentTime = frame.timestamp
+        let withinFrameRate = currentTime - lastFrameTime >= (1.0 / Double(frameRate))
+        if withinFrameRate {
+            lastFrameTime = currentTime
+        }
+        return withinFrameRate
+    }
 }
 
 // Functions to orient and fix the camera and depth frames
@@ -163,7 +185,6 @@ extension ARCameraManager {
             height: Constants.ClassConstants.inputSize.height
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
-        print("cameraImage size: \(cameraImage.extent.size)")
         cameraImage = resizeAspectAndFill(cameraImage, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
@@ -184,7 +205,6 @@ extension ARCameraManager {
         )
         
         var depthImage = CIImage(cvPixelBuffer: frame)
-        print("depthImage size: \(depthImage.extent.size)")
         depthImage = resizeAspectAndFill(depthImage, to: croppedSize)
         depthImage = depthImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)

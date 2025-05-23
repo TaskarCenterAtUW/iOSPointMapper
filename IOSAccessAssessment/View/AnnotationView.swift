@@ -151,7 +151,6 @@ struct AnnotationView: View {
             }
             .onChange(of: index, initial: false) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
-                print("On Change of index: \(oldIndex) -> \(newIndex)")
                 refreshView()
             }
             .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {
