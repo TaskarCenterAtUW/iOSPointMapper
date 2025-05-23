@@ -7,8 +7,6 @@
 
 import AVFoundation
 import UIKit
-import Vision
-import CoreGraphics
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
