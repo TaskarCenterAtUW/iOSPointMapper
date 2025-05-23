@@ -91,7 +91,7 @@ class SharedImageData: ObservableObject {
         
         self.cameraImage = nil
         
-        self.isLidarAvailable = checkLidarAvailability()
+        self.isLidarAvailable = CameraUtils.checkLidarAvailability()
         self.depthImage = nil
         
         self.segmentationLabelImage = nil
