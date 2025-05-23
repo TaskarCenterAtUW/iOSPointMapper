@@ -150,7 +150,7 @@ struct SetupView: View {
                         .bold()
                 },
                 trailing:
-                    NavigationLink(destination: ContentView(selection: Array(selection))) {
+                    NavigationLink(destination: ARContentView(selection: Array(selection))) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.white)
                             .font(.headline)

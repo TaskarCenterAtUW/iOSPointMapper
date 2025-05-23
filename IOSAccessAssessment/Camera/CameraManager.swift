@@ -170,7 +170,6 @@ extension CameraManager {
             height: Constants.ClassConstants.inputSize.height
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
-        print("cameraImage size: \(cameraImage.extent.size)")
         cameraImage = resizeAspectAndFill(cameraImage, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
@@ -191,7 +190,6 @@ extension CameraManager {
         )
         
         var depthImage = CIImage(cvPixelBuffer: frame)
-        print("depthImage size: \(depthImage.extent.size)")
         depthImage = resizeAspectAndFill(depthImage, to: croppedSize)
         depthImage = depthImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)

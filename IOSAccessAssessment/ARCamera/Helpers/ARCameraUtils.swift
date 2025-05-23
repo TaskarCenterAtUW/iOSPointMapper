@@ -8,7 +8,7 @@
 import ARKit
 
 class ARCameraUtils {
-    static func checkLidarAvailability() -> Bool {
+    static func checkDepthSupport() -> Bool {
         // Check if LiDAR is available on the device
         return ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) ||
         ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth)

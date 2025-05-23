@@ -21,6 +21,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
+    var isDepthSupported: Bool = false
     
     // Temporary image data
     @Published var cameraUIImage: UIImage?
@@ -43,6 +44,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
         session.delegate = self
+        runSession()
         
         do {
             try setUpPixelBufferPools()
@@ -53,7 +55,15 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     
     func runSession() {
         let config = ARWorldTrackingConfiguration()
-        config.frameSemantics = [.sceneDepth]
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            config.frameSemantics = [.smoothedSceneDepth]
+            isDepthSupported = true
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            config.frameSemantics = [.sceneDepth]
+            isDepthSupported = true
+        } else {
+            print("Scene depth not supported")
+        }
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
     
@@ -68,6 +78,29 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let cameraImage: CIImage = orientAndFixCameraFrame(frame.capturedImage)
+        var depthImage: CIImage? = nil
+        if let depthMap = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap {
+            depthImage = orientAndFixDepthFrame(depthMap)
+        }
+        DispatchQueue.main.async {
+            if self.isProcessingCapturedResult {
+                return
+            }
+            let previousImage = self.sharedImageData?.cameraImage
+            self.sharedImageData?.cameraImage = cameraImage // UIImage(cgImage: cameraImage, scale: 1.0, orientation: .right)
+            self.sharedImageData?.depthImage = depthImage
+            
+            self.cameraUIImage = UIImage(ciImage: cameraImage)
+            self.depthUIImage = UIImage(ciImage: depthImage!)
+            
+            self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
+                                                      deviceOrientation: self.deviceOrientation)
+            
+            if self.dataAvailable == false {
+                self.dataAvailable = true
+            }
+        }
     }
 
 }
