@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Vision
-import CoreML
 
 import OrderedCollections
 import simd

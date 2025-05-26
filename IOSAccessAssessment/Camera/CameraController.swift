@@ -7,8 +7,6 @@
 
 import AVFoundation
 import UIKit
-import Vision
-import CoreGraphics
 
 // Used as delegate by the CameraController
 protocol CaptureDataReceiver: AnyObject {
@@ -96,11 +94,11 @@ class CameraController: NSObject, ObservableObject {
     private func setupCaptureInput() throws {
         // Look up the LiDAR camera. Generally, only present at the back camera
         // TODO: Make the depth data information somewhat optional so that the app can still be tested for its segmentation.
-        captureDevice = getCameraDevice()
+        captureDevice = CameraUtils.getCameraDevice()
         guard let captureDevice = captureDevice else {
             throw ConfigurationError.requiredDeviceUnavailable
         }
-        isLidarDeviceAvailable = checkLidarAvailability()
+        isLidarDeviceAvailable = CameraUtils.checkLidarAvailability()
         
         let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
         captureSession.addInput(deviceInput)

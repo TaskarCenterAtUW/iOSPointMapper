@@ -11,12 +11,12 @@ import simd
 struct DetectedObject {
     let classLabel: UInt8
     var centroid: CGPoint
-    var boundingBox: CGRect
+    var boundingBox: CGRect // Bounding box in the original image coordinates. In normalized coordinates.
     var normalizedPoints: [SIMD2<Float>]
     var area: Float
     var perimeter: Float
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
-    var wayBounds: [SIMD2<Float>]? // Special property for way-type objects
+    var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
 }
 
 class ImageData {
@@ -27,18 +27,28 @@ class ImageData {
     var segmentedIndices: [Int]?
     var detectedObjectMap: [UUID: DetectedObject]?
     
+    // TODO: Create a separate class for AR-related ImageData
+    // The separate class would give preference to AR-related transforms over image transforms (such as homography)
+    var cameraTransform: simd_float4x4
+    var cameraIntrinsics: simd_float3x3
+    
+    // Transformation matrix from the current frame to the next frame
     var transformMatrixToNextFrame: simd_float3x3?
+    // Transformation matrix from the current frame to the previous frame
     var transformMatrixToPreviousFrame: simd_float3x3?
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
          segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
          detectedObjectMap: [UUID: DetectedObject]? = nil,
+         cameraTransform: simd_float4x4 = matrix_identity_float4x4, cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
          transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
+        self.cameraTransform = cameraTransform
+        self.cameraIntrinsics = cameraIntrinsics
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
         self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
     }
@@ -57,7 +67,7 @@ class SharedImageData: ObservableObject {
     
     var cameraImage: CIImage?
     
-    var isLidarAvailable: Bool = false
+    var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var depthImage: CIImage?
     
     // Overall segmentation image with all classes (labels)
@@ -65,6 +75,12 @@ class SharedImageData: ObservableObject {
     // Indices of all the classes that were detected in the segmentation image
     var segmentedIndices: [Int] = []
     var detectedObjectMap: [UUID: DetectedObject] = [:]
+    
+    // Camera transform matrix and intrinsics
+    var cameraTransform: simd_float4x4 = matrix_identity_float4x4
+    var cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3
+    
+    // Transformation matrices for the current frame
     var transformMatrixToPreviousFrame: simd_float3x3? = nil
     
     var history: Deque<ImageData> = []
@@ -91,7 +107,9 @@ class SharedImageData: ObservableObject {
         
         self.cameraImage = nil
         
-        self.isLidarAvailable = checkLidarAvailability()
+        // TODO: Sometimes it is possible for the following to return false even when the device supports LiDAR.
+        // Should inform the user about this if it happens.
+        self.isLidarAvailable = ARCameraUtils.checkDepthSupport()
         self.depthImage = nil
         
         self.segmentationLabelImage = nil

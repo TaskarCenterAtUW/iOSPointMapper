@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import simd
 
 enum AnnotationViewConstants {
     enum Texts {
@@ -57,7 +58,7 @@ struct AnnotationView: View {
     
     @StateObject var annotationImageManager = AnnotationImageManager()
     
-    @State private var depthMapProcessor: DepthMapProcessor? = nil
+    @State var depthMapProcessor: DepthMapProcessor? = nil
     
     @State private var confirmAnnotationFailed: Bool = false
     
@@ -68,7 +69,6 @@ struct AnnotationView: View {
         if (!self.isValid()) {
             // FIXME: When no segments are available, this view does not dismiss anymore.
             Rectangle().frame(width: 0, height: 0).onAppear {
-                print("On appear of the invalid view")
                 refreshView()
             }
         } else {
@@ -138,7 +138,6 @@ struct AnnotationView: View {
             .padding(.top, 20)
             .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)
             .onAppear {
-                print("On Appear of the main view")
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
 //                initializeAnnotationSegmentationPipeline()
@@ -151,7 +150,6 @@ struct AnnotationView: View {
             }
             .onChange(of: index, initial: false) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
-                print("On Change of index: \(oldIndex) -> \(newIndex)")
                 refreshView()
             }
             .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {

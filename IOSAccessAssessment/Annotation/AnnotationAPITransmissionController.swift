@@ -226,13 +226,64 @@ extension AnnotationView {
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
         
         if isWay {
-            let width = objectLocation.getWayWidth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [],
-                                                   imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero)
-            tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
+            if let wayBoundsWithDepth = wayBoundsWithDepth {
+                let width = objectLocation.getWayWidth(
+                    wayBoundsWithDepth: wayBoundsWithDepth,
+                    imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                    cameraTransform: self.sharedImageData.cameraTransform,
+                    cameraIntrinsics: self.sharedImageData.cameraIntrinsics
+                )
+                tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            }
         }
         
         let nodeData = NodeData(id: String(id),
                                 latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         return nodeData
+    }
+    
+    /**
+     Get the depth values for each point in the way bounds.
+     */
+    func getWayBoundsWithDepth(wayBounds: [SIMD2<Float>]) -> [SIMD3<Float>]? {
+        guard wayBounds.count == 4 else {
+            print("Invalid way bounds")
+            return nil
+        }
+        let lowerLeft = wayBounds[0]
+        let upperLeft = wayBounds[1]
+        let upperRight = wayBounds[2]
+        let lowerRight = wayBounds[3]
+        
+        let wayPoints: [SIMD2<Float>] = [
+            lowerLeft, upperLeft, upperRight, lowerRight
+        ]
+        // Since the way bounds are in normalized coordinates, we need to convert them to CGPoints
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            print("Depth map processor is nil")
+            return nil
+        }
+        let depthImageDimensions = depthMapProcessor.getDepthImageDimensions()
+        let wayCGPoints: [CGPoint] = wayPoints.map {
+            CGPoint(
+                x: CGFloat($0.x) * CGFloat(depthImageDimensions.width),
+                y: CGFloat($0.y) * CGFloat(depthImageDimensions.height)
+            )
+        }
+        
+        let depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
+        guard let depthValues = depthValues else {
+            print("Failed to get depth values for way bounds")
+            return wayPoints.map { SIMD3<Float>(x: $0.x, y: $0.y, z: 0) }
+        }
+        guard depthValues.count == wayBounds.count else {
+            print("Depth values count does not match way bounds count")
+            return wayPoints.map { SIMD3<Float>(x: $0.x, y: $0.y, z: 0) }
+        }
+        let wayBoundsWithDepth: [SIMD3<Float>] = wayPoints.enumerated().map { index, point in
+            return SIMD3<Float>(x: point.x, y: point.y, z: depthValues[index])
+        }
+        return wayBoundsWithDepth
     }
 }

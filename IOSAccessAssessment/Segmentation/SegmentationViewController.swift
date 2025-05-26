@@ -6,14 +6,9 @@
 //
 
 import SwiftUI
-import AVFoundation
-import Vision
-import Metal
-import CoreImage
-import MetalKit
 
 
-class SegmentationViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+class SegmentationViewController: UIViewController {
     var segmentationView: UIImageView! = nil
     
     var segmentationImage: UIImage?

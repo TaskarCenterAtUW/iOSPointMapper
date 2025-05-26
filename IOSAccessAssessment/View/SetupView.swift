@@ -82,7 +82,7 @@ struct SetupView: View {
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
-    @StateObject private var segmentationPipeline: SegmentationPipeline = SegmentationPipeline()
+    @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
     var body: some View {
@@ -150,7 +150,7 @@ struct SetupView: View {
                         .bold()
                 },
                 trailing:
-                    NavigationLink(destination: ContentView(selection: Array(selection))) {
+                    NavigationLink(destination: ARContentView(selection: Array(selection))) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.white)
                             .font(.headline)
