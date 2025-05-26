@@ -42,7 +42,7 @@ struct ARContentView: View {
     var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
-    @EnvironmentObject var segmentationPipeline: SegmentationPipeline
+    @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var depthModel: DepthModel
     
     @StateObject var objectLocation = ObjectLocation()
@@ -53,10 +53,8 @@ struct ARContentView: View {
     var isCameraStoppedPayload = [ARContentViewConstants.Payload.isCameraStopped: true]
     
     // For deciding the layout
-//    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     private var isLandscape: Bool {
         CameraOrientation.isLandscapeOrientation(currentDeviceOrientation: manager?.deviceOrientation ?? .portrait)
-//        horizontalSizeClass == .regular
     }
     
     var body: some View {
@@ -72,7 +70,7 @@ struct ARContentView: View {
                     Button {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
-                        segmentationPipeline.processRequest(with: sharedImageData.cameraImage!, previousImage: nil,
+                        segmentationPipeline.processFinalRequest(with: sharedImageData.cameraImage!, previousImage: nil,
                                                             additionalPayload: isCameraStoppedPayload)
                     } label: {
                         Image(systemName: ARContentViewConstants.Images.cameraIcon)
@@ -122,7 +120,7 @@ struct ARContentView: View {
         }
     }
     
-    private func segmentationPipelineCompletionHandler(results: Result<SegmentationPipelineResults, Error>) -> Void {
+    private func segmentationPipelineCompletionHandler(results: Result<SegmentationARPipelineResults, Error>) -> Void {
         switch results {
         case .success(let output):
             self.sharedImageData.segmentationLabelImage = output.segmentationImage
@@ -137,7 +135,6 @@ struct ARContentView: View {
                 segmentedIndices: output.segmentedIndices, detectedObjectMap: output.detectedObjectMap,
                 transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
             ))
-//            self.sharedImageData.appendFrame(frame: output.segmentationImage)
             
             if let isStopped = output.additionalPayload[ARContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available

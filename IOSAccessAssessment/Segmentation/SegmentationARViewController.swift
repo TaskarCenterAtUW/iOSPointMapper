@@ -9,7 +9,7 @@ import ARKit
 import RealityKit
 import SwiftUI
 
-// Stub for SegmentationARView
+// Stubs for SegmentationARView and SegmentationARViewController
 class SegmentationARView: ARView {
     required init(frame frameRect: CGRect) {
         super.init(frame: frameRect)

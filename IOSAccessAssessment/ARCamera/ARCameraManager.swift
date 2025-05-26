@@ -12,7 +12,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     let session = ARSession()
     
     var sharedImageData: SharedImageData?
-    var segmentationPipeline: SegmentationPipeline?
+    var segmentationPipeline: SegmentationARPipeline?
     
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
@@ -39,7 +39,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     var depthPixelBufferPool: CVPixelBufferPool? = nil
     var depthColorSpace: CGColorSpace? = nil
     
-    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationPipeline) {
+    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationARPipeline) {
         self.sharedImageData = sharedImageData
         self.segmentationPipeline = segmentationPipeline
         super.init()
@@ -86,6 +86,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let camera = frame.camera
+        let transform = camera.transform
+        let intrinsics = camera.intrinsics
+        
         if !checkFrameWithinFrameRate(frame: frame) {
             return
         }

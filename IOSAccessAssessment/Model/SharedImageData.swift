@@ -27,18 +27,26 @@ class ImageData {
     var segmentedIndices: [Int]?
     var detectedObjectMap: [UUID: DetectedObject]?
     
+    // TODO: Create a separate class for AR-related ImageData
+    // The separate class would give preference to AR-related transforms over image transforms (such as homography)
+    var cameraTransform: simd_float4x4
+    var cameraIntrinsics: simd_float3x3
+    
     var transformMatrixToNextFrame: simd_float3x3?
     var transformMatrixToPreviousFrame: simd_float3x3?
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
          segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
          detectedObjectMap: [UUID: DetectedObject]? = nil,
+         cameraTransform: simd_float4x4 = matrix_identity_float4x4, cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
          transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
+        self.cameraTransform = cameraTransform
+        self.cameraIntrinsics = cameraIntrinsics
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
         self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
     }

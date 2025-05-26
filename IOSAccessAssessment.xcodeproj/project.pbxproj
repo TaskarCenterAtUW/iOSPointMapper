@@ -63,6 +63,7 @@
 		A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */; };
 		A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */; };
 		A3FFAA7A2DE01A0F002B99BD /* ARContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA792DE01A0F002B99BD /* ARContentView.swift */; };
+		A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
@@ -175,6 +176,7 @@
 		A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraManager.swift; sourceTree = "<group>"; };
 		A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraUtils.swift; sourceTree = "<group>"; };
 		A3FFAA792DE01A0F002B99BD /* ARContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARContentView.swift; sourceTree = "<group>"; };
+		A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationARPipeline.swift; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -502,6 +504,7 @@
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 				A3FFAA722DE00B53002B99BD /* SegmentationARViewController.swift */,
 				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
+				A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */,
 				A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */,
 			);
 			path = Segmentation;
@@ -680,6 +683,7 @@
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */,
 				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
+				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
 				A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */,
 				A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
