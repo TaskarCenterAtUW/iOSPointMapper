@@ -226,7 +226,7 @@ class SegmentationARPipeline: ObservableObject {
         
         // MARK: Ignoring the contour detection and object tracking for now
         // Get the objects from the segmentation image
-//        let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
+        let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
 
         // If a previous image is provided, get the homography transform matrix from the previous image to the current image
         var transformMatrixFromPreviousFrame: simd_float3x3? = nil
@@ -234,7 +234,7 @@ class SegmentationARPipeline: ObservableObject {
             transformMatrixFromPreviousFrame = self.homographyRequestProcessor?.getHomographyTransform(
                 referenceImage: cIImage, floatingImage: previousImage) ?? nil
         }
-//        self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
+        self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
         
         self.grayscaleToColorMasker.inputImage = segmentationImage
         self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues

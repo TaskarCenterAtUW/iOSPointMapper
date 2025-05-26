@@ -8,13 +8,17 @@
 import SwiftUI
 import CoreLocation
 
-struct AnnotatedDetectedObject {
+// TODO: AnnotatedDetectedObject was very quickly changed from struct to class
+// Hence we need to test more thoroughly if this breaks anything.
+class AnnotatedDetectedObject {
     var id: UUID = UUID()
     var object: DetectedObject?
     var classLabel: UInt8
     var depthValue: Float
     var isAll: Bool = false
     var label: String?
+    
+    var selectedOption: AnnotationOption = .individualOption(.agree)
     
     init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
          label: String? = AnnotationViewConstants.Texts.selectAllLabelText) {
@@ -23,12 +27,13 @@ struct AnnotatedDetectedObject {
         self.depthValue = depthValue
         self.isAll = isAll
         self.label = label
+        
+        self.selectedOption = isAll ? .classOption(.agree) : .individualOption(.agree)
     }
 }
 
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
-    // TODO: Instead of passing one request for each object, we should be able to pass all the objects in one request.
     func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
         let uploadObjects = annotatedDetectedObjects.filter { $0.object != nil && !$0.isAll }
         guard !uploadObjects.isEmpty else {
@@ -213,6 +218,11 @@ extension AnnotationView {
         }
     }
     
+    /**
+        Get the NodeData from the AnnotatedDetectedObject.
+        Calculates the location of the object based on the depth value and device location.
+        Calculates other attributes such as width for ways.
+     */
     func getNodeDataFromAnnotatedObject(
         annotatedDetectedObject: AnnotatedDetectedObject,
         id: Int, isWay: Bool = false, segmentationClass: SegmentationClass
