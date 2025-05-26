@@ -35,7 +35,22 @@ class AnnotatedDetectedObject {
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
     func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
-        let uploadObjects = annotatedDetectedObjects.filter { $0.object != nil && !$0.isAll }
+        // TODO: It would be more efficient to do the following filtering before the uploadAnnotatedChanges function is called.
+        // Before the post-processing is done, such as the depth being calculated for each object.
+        let allObjects = annotatedDetectedObjects.filter { $0.isAll }
+        // If the "all" object has selected option as .discard, we discard all objects.
+        if let allObject = allObjects.first, allObject.selectedOption == .classOption(.discard) {
+            print("Discarding all objects")
+            return
+        }
+        let uploadObjects = annotatedDetectedObjects.filter { annotatedDetectedObject in
+            // We only upload objects that are not "all" and have a valid depth value.
+            // Also, if the selected option is .discard, we do not upload the object.
+            return (annotatedDetectedObject.object != nil &&
+                    !annotatedDetectedObject.isAll &&
+                    annotatedDetectedObject.selectedOption != .classOption(.discard) &&
+                    annotatedDetectedObject.selectedOption != .individualOption(.discard))
+        }
         guard !uploadObjects.isEmpty else {
             print("No objects to upload")
             return
