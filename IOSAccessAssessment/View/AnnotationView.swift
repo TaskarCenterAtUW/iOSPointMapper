@@ -99,7 +99,10 @@ struct AnnotationView: View {
                         VStack(spacing: 10) {
                             ForEach(options, id: \.self) { option in
                                 Button(action: {
-                                    selectedOption = (selectedOption == option) ? nil : option
+                                    // Update the selected option
+                                    updateAnnotation(newOption: option)
+
+//                                    selectedOption = (selectedOption == option) ? nil : option
                                     
 //                                    if option == .misidentified {
 //                                        selectedClassIndex = index
@@ -152,7 +155,6 @@ struct AnnotationView: View {
             .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {
                 Button(AnnotationViewConstants.Texts.confirmAnnotationFailedCancelText, role: .cancel) {
                     confirmAnnotationFailed = false
-                    selectedOption = nil
                     nextSegment()
                 }
                 Button(AnnotationViewConstants.Texts.confirmAnnotationFailedConfirmText) {
@@ -201,7 +203,7 @@ struct AnnotationView: View {
     }
     
     func refreshOptions() {
-        // Update the options based on the current selected object
+        
         if let selectedObjectId = annotationImageManager.selectedObjectId,
            let annotatedDetectedObjects = annotationImageManager.annotatedDetectedObjects {
             let selectedObject = annotatedDetectedObjects.first(where: { $0.id == selectedObjectId })
@@ -209,9 +211,23 @@ struct AnnotationView: View {
                 options = selectedObject.isAll ?
                 AnnotationOptionClass.allCases.map { .classOption($0) } :
                 AnnotationOptionObject.allCases.map { .individualOption($0) }
-                selectedOption = options.first ?? nil
+                selectedOption = selectedObject.selectedOption
             } else {
                 options = AnnotationOptionClass.allCases.map { .classOption($0) }
+            }
+        }
+    }
+    
+    func updateAnnotation(newOption: AnnotationOption) {
+        if let selectedObjectId = annotationImageManager.selectedObjectId,
+           let annotatedDetectedObjects = annotationImageManager.annotatedDetectedObjects {
+            let selectedObject = annotatedDetectedObjects.first(where: { $0.id == selectedObjectId })
+            if let selectedObject = selectedObject {
+                // Update the selected option for the object
+                selectedObject.selectedOption = newOption
+                selectedOption = newOption
+            } else {
+                print("Selected object not found in annotatedDetectedObjects.")
             }
         }
     }
@@ -234,19 +250,17 @@ struct AnnotationView: View {
                 segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                 depthImage: depthImage,
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
-            var annotatedDetectedObject = annotatedDetectedObject
+//            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
         
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
-        selectedOption = nil
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
         nextSegment()
     }
     
     func confirmAnnotationWithoutDepth() {
-        selectedOption = nil
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
@@ -257,6 +271,7 @@ struct AnnotationView: View {
     func nextSegment() {
         // Ensure that the index does not exceed the length of the sharedImageData segmentedIndices count
         // Do not simply rely on the isValid check in the body.
+        selectedOption = nil
         if (self.index + 1 < sharedImageData.segmentedIndices.count) {
             self.index += 1
         } else {

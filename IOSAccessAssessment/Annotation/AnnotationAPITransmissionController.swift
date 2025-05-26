@@ -28,6 +28,7 @@ class AnnotatedDetectedObject {
         self.isAll = isAll
         self.label = label
         
+        self.selectedOption = isAll ? .classOption(.agree) : .individualOption(.agree)
     }
 }
 
@@ -217,6 +218,11 @@ extension AnnotationView {
         }
     }
     
+    /**
+        Get the NodeData from the AnnotatedDetectedObject.
+        Calculates the location of the object based on the depth value and device location.
+        Calculates other attributes such as width for ways.
+     */
     func getNodeDataFromAnnotatedObject(
         annotatedDetectedObject: AnnotatedDetectedObject,
         id: Int, isWay: Bool = false, segmentationClass: SegmentationClass
