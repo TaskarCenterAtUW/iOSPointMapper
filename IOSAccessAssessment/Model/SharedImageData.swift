@@ -11,12 +11,12 @@ import simd
 struct DetectedObject {
     let classLabel: UInt8
     var centroid: CGPoint
-    var boundingBox: CGRect
+    var boundingBox: CGRect // Bounding box in the original image coordinates. In normalized coordinates.
     var normalizedPoints: [SIMD2<Float>]
     var area: Float
     var perimeter: Float
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
-    var wayBounds: [SIMD2<Float>]? // Special property for way-type objects
+    var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
 }
 
 class ImageData {

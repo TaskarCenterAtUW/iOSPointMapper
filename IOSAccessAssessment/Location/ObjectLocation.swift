@@ -10,6 +10,7 @@ import UIKit
 import AVFoundation
 import CoreImage
 import CoreLocation
+import simd
 
 class ObjectLocation: ObservableObject {
     var locationManager: CLLocationManager
@@ -134,6 +135,47 @@ extension ObjectLocation {
         let hardware_width_scale: Float = 0.775862
         var widthInMeters: Float = 1/2*(part1 + part2) * 0.0254
         widthInMeters *= hardware_width_scale
+        
+        return widthInMeters
+    }
+    
+    func getWayWidth(
+        wayBoundsWithDepth: [SIMD3<Float>], imageSize: CGSize,
+        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3
+    ) -> Float {
+        guard wayBoundsWithDepth.count == 4 else {
+            print("Invalid way bounds")
+            return 0.0
+        }
+        
+        let fx = cameraIntrinsics.columns.0.x
+        let fy = cameraIntrinsics.columns.1.y
+        let cx = cameraIntrinsics.columns.2.x
+        let cy = cameraIntrinsics.columns.2.y
+        
+        func imageToCameraSpace(x: Int, y: Int, z: Float) -> SIMD3<Float> {
+            let X = (Float(x) - cx) * z / fx
+            let Y = (Float(y) - cy) * z / fy
+            let Z = z
+            return SIMD3<Float>(X, Y, Z)
+        }
+        
+        let wayPointsInCameraSpace = wayBoundsWithDepth.map { point in
+            return imageToCameraSpace(x: Int(point.x), y: Int(point.y), z: point.z)
+        }
+        
+        let lowerLeft = wayPointsInCameraSpace[0]
+        let upperLeft = wayPointsInCameraSpace[1]
+        let upperRight = wayPointsInCameraSpace[2]
+        let lowerRight = wayPointsInCameraSpace[3]
+        
+        // Calculate the width in camera space
+        let lowerWidth = simd_distance(lowerLeft, lowerRight)
+        let upperWidth = simd_distance(upperLeft, upperRight)
+        
+        // Average the widths
+        let widthInMeters = (lowerWidth + upperWidth) / 2.0
         
         return widthInMeters
     }

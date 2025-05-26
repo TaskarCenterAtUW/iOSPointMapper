@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import simd
 
 enum AnnotationViewConstants {
     enum Texts {
@@ -57,7 +58,7 @@ struct AnnotationView: View {
     
     @StateObject var annotationImageManager = AnnotationImageManager()
     
-    @State private var depthMapProcessor: DepthMapProcessor? = nil
+    @State var depthMapProcessor: DepthMapProcessor? = nil
     
     @State private var confirmAnnotationFailed: Bool = false
     

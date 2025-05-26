@@ -99,7 +99,7 @@ struct DepthMapProcessor {
     /**
      This function calculates the depth value of the object at the centroid of the segmented image.
      
-     NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.\
+     NOTE: It takes the segmentation label image only for getting the dimensions of the image for verification and offset calculation.
      
         The depth image is not used in this function.
      */
@@ -137,6 +137,48 @@ struct DepthMapProcessor {
         return depthBuffer[gravityPixelOffset]
     }
         
+}
+
+/**
+ Helper functions to get specific pixel values from the depth map.
+ */
+extension DepthMapProcessor {
+    func getDepthImageDimensions() -> (width: Int, height: Int) {
+        return (depthMapWidth, depthMapHeight)
+    }
+    
+    func getValues(at points: [CGPoint]) -> [Float]? {
+        guard let depthMap = self.depthMap else {
+            print("Depth image pixel buffer is nil")
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        
+        guard let depthBaseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
+            return nil
+        }
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
+        
+        var values: [Float] = []
+        for point in points {
+            guard point.x >= 0 && point.x < CGFloat(depthWidth) && point.y >= 0 && point.y < CGFloat(depthHeight) else {
+                print("Point is out of bounds")
+                values.append(0.0)
+                continue
+            }
+            let x = Int(point.x)
+            let y = Int(point.y)
+            let pixelOffset = y * depthBytesPerRow / MemoryLayout<Float>.size + x
+            values.append(depthBuffer[pixelOffset])
+        }
+        return values
+    }
 }
 
 /**
