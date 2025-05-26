@@ -32,7 +32,9 @@ class ImageData {
     var cameraTransform: simd_float4x4
     var cameraIntrinsics: simd_float3x3
     
+    // Transformation matrix from the current frame to the next frame
     var transformMatrixToNextFrame: simd_float3x3?
+    // Transformation matrix from the current frame to the previous frame
     var transformMatrixToPreviousFrame: simd_float3x3?
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
@@ -73,6 +75,12 @@ class SharedImageData: ObservableObject {
     // Indices of all the classes that were detected in the segmentation image
     var segmentedIndices: [Int] = []
     var detectedObjectMap: [UUID: DetectedObject] = [:]
+    
+    // Camera transform matrix and intrinsics
+    var cameraTransform: simd_float4x4 = matrix_identity_float4x4
+    var cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3
+    
+    // Transformation matrices for the current frame
     var transformMatrixToPreviousFrame: simd_float3x3? = nil
     
     var history: Deque<ImageData> = []

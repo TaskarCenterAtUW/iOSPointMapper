@@ -74,8 +74,6 @@ class SegmentationARPipeline: ObservableObject {
     var selectionClassGrayscaleValues: [Float] = []
     var selectionClassColors: [CIColor] = []
     
-    var segmentationImage: CIImage?
-    var segmentedIndices: [Int] = []
     // MARK: Temporary segmentationRequest UIImage. Later we should move this mapping to the SharedImageData in ContentView
     @Published var segmentationResultUIImage: UIImage?
     
@@ -84,12 +82,6 @@ class SegmentationARPipeline: ObservableObject {
     // TODO: Check what would be the appropriate value for this
     // For normalized points
     var perimeterThreshold: Float = 0.01
-    // While the contour detection logic gives us an array of DetectedObject
-    // we get the detected objects as a dictionary with UUID as the key, from the centroid tracker.
-    var detectedObjectMap: [UUID: DetectedObject] = [:]
-    
-    // Transformation matrix from the previous frame to the current frame
-    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
@@ -110,11 +102,7 @@ class SegmentationARPipeline: ObservableObject {
     func reset() {
         self.isProcessing = false
         self.setSelectionClasses([])
-        self.segmentationImage = nil
         self.segmentationResultUIImage = nil
-        self.segmentedIndices = []
-        self.detectedObjectMap = [:]
-        self.transformMatrixFromPreviousFrame = nil
         // TODO: No reset function for maskers and processors
         self.centroidTracker.reset()
     }
@@ -154,10 +142,6 @@ class SegmentationARPipeline: ObservableObject {
                     cIImage, previousImage: previousImage, deviceOrientation: deviceOrientation
                 )
                 DispatchQueue.main.async {
-                    self.segmentationImage = processedImageResults.segmentationImage
-                    self.segmentedIndices = processedImageResults.segmentedIndices
-                    self.detectedObjectMap = processedImageResults.detectedObjectMap
-                    self.transformMatrixFromPreviousFrame = processedImageResults.transformMatrixFromPreviousFrame
                     self.segmentationResultUIImage = processedImageResults.segmentationResultUIImage
                     
                     self.completionHandler?(.success(SegmentationARPipelineResults(
@@ -196,10 +180,6 @@ class SegmentationARPipeline: ObservableObject {
                     cIImage, previousImage: previousImage, deviceOrientation: deviceOrientation
                 )
                 DispatchQueue.main.async {
-                    self.segmentationImage = processedImageResults.segmentationImage
-                    self.segmentedIndices = processedImageResults.segmentedIndices
-                    self.detectedObjectMap = processedImageResults.detectedObjectMap
-                    self.transformMatrixFromPreviousFrame = processedImageResults.transformMatrixFromPreviousFrame
                     self.segmentationResultUIImage = processedImageResults.segmentationResultUIImage
                     
                     self.completionHandler?(.success(SegmentationARPipelineResults(
@@ -244,8 +224,9 @@ class SegmentationARPipeline: ObservableObject {
             throw SegmentationARPipelineError.invalidSegmentation
         }
         
+        // MARK: Ignoring the contour detection and object tracking for now
         // Get the objects from the segmentation image
-        let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
+//        let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
 
         // If a previous image is provided, get the homography transform matrix from the previous image to the current image
         var transformMatrixFromPreviousFrame: simd_float3x3? = nil
@@ -253,7 +234,7 @@ class SegmentationARPipeline: ObservableObject {
             transformMatrixFromPreviousFrame = self.homographyRequestProcessor?.getHomographyTransform(
                 referenceImage: cIImage, floatingImage: previousImage) ?? nil
         }
-        self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
+//        self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
         
         self.grayscaleToColorMasker.inputImage = segmentationImage
         self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues

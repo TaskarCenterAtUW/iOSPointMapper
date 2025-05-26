@@ -87,8 +87,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let camera = frame.camera
+        
         let transform = camera.transform
         let intrinsics = camera.intrinsics
+        let additionalPayload = getAdditionalPayload(cameraTransform: transform, intrinsics: intrinsics)
         
         if !checkFrameWithinFrameRate(frame: frame) {
             return
@@ -113,12 +115,21 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             if depthImage != nil { self.depthUIImage = UIImage(ciImage: depthImage!) }
             
             self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
-                                                      deviceOrientation: self.deviceOrientation)
+                                                      deviceOrientation: self.deviceOrientation,
+                                                      additionalPayload: additionalPayload
+            )
             
             if self.dataAvailable == false {
                 self.dataAvailable = true
             }
         }
+    }
+    
+    private func getAdditionalPayload(cameraTransform: simd_float4x4, intrinsics: simd_float3x3) -> [String: Any] {
+        var additionalPayload: [String: Any] = [:]
+        additionalPayload[ARContentViewConstants.Payload.cameraTransform] = cameraTransform
+        additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] = intrinsics
+        return additionalPayload
     }
     
     func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {

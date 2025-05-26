@@ -35,6 +35,8 @@ enum ARContentViewConstants {
     
     enum Payload {
         static let isCameraStopped = "isStopped"
+        static let cameraTransform = "cameraTransform"
+        static let cameraIntrinsics = "cameraIntrinsics"
     }
 }
 
@@ -128,13 +130,10 @@ struct ARContentView: View {
             self.sharedImageData.detectedObjectMap = output.detectedObjectMap
             self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
             
-            // Saving history
-            self.sharedImageData.recordImageData(imageData: ImageData(
-                cameraImage: nil, depthImage: nil,
-                segmentationLabelImage: output.segmentationImage,
-                segmentedIndices: output.segmentedIndices, detectedObjectMap: output.detectedObjectMap,
-                transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
-            ))
+            let cameraTransform = output.additionalPayload[ARContentViewConstants.Payload.cameraTransform] as? simd_float4x4 ?? matrix_identity_float4x4
+            self.sharedImageData.cameraTransform = cameraTransform
+            let cameraIntrinsics = output.additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] as? simd_float3x3 ?? matrix_identity_float3x3
+            self.sharedImageData.cameraIntrinsics = cameraIntrinsics
             
             if let isStopped = output.additionalPayload[ARContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
@@ -143,6 +142,16 @@ struct ARContentView: View {
                     self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
                 }
                 self.navigateToAnnotationView = true
+            } else {
+                // Saving history
+                self.sharedImageData.recordImageData(imageData: ImageData(
+                    cameraImage: nil, depthImage: nil,
+                    segmentationLabelImage: output.segmentationImage,
+                    segmentedIndices: output.segmentedIndices, detectedObjectMap: output.detectedObjectMap,
+                    cameraTransform: cameraTransform,
+                    cameraIntrinsics: cameraIntrinsics,
+                    transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
+                ))
             }
             return
         case .failure(let error):
