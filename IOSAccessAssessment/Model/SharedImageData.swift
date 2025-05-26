@@ -8,7 +8,9 @@ import SwiftUI
 import DequeModule
 import simd
 
-struct DetectedObject {
+// TODO: DetectedObject was very quickly changed from struct to class
+// Hence we need to test more thoroughly if this breaks anything.
+class DetectedObject {
     let classLabel: UInt8
     var centroid: CGPoint
     var boundingBox: CGRect // Bounding box in the original image coordinates. In normalized coordinates.
@@ -17,6 +19,17 @@ struct DetectedObject {
     var perimeter: Float
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
     var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
+    
+    init(classLabel: UInt8, centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float, isCurrent: Bool, wayBounds: [SIMD2<Float>]? = nil) {
+        self.classLabel = classLabel
+        self.centroid = centroid
+        self.boundingBox = boundingBox
+        self.normalizedPoints = normalizedPoints
+        self.area = area
+        self.perimeter = perimeter
+        self.isCurrent = isCurrent
+        self.wayBounds = wayBounds
+    }
 }
 
 class ImageData {

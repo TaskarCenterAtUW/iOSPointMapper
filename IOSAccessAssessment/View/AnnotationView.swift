@@ -237,6 +237,7 @@ struct AnnotationView: View {
             var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
         }
+        
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         selectedOption = nil
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
