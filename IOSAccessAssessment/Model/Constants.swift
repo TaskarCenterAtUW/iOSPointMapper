@@ -82,7 +82,7 @@ struct SegmentationClassConstants {
 // Constants related to the supported classes
 struct Constants {
     // Supported Classes
-    static let ClassConstants: SegmentationClassConstants = SegmentationClassConstants(
+    static let VOCConstants: SegmentationClassConstants = SegmentationClassConstants(
         classes: [
 //            SegmentationClass(name: "Background", grayscaleValue: 0.0 / 255.0,
 //                              labelValue: 0, color: CIColor(red: 0.000, green: 0.000, blue: 0.000),
@@ -262,7 +262,7 @@ struct Constants {
         inputSize: CGSize(width: 512, height: 256)
     )
     
-    static let CustomConstants: SegmentationClassConstants = SegmentationClassConstants(
+    static let ClassConstants: SegmentationClassConstants = SegmentationClassConstants(
         classes: [
             SegmentationClass(name: "Road", grayscaleValue: 41.0 / 255.0, labelValue: 41,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502),

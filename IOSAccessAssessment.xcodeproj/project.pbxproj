@@ -922,7 +922,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu9;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
@@ -962,7 +962,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu9;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
