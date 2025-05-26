@@ -69,7 +69,6 @@ struct AnnotationView: View {
         if (!self.isValid()) {
             // FIXME: When no segments are available, this view does not dismiss anymore.
             Rectangle().frame(width: 0, height: 0).onAppear {
-                print("On appear of the invalid view")
                 refreshView()
             }
         } else {
@@ -139,7 +138,6 @@ struct AnnotationView: View {
             .padding(.top, 20)
             .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)
             .onAppear {
-                print("On Appear of the main view")
                 // Initialize the depthMapProcessor with the current depth image
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
 //                initializeAnnotationSegmentationPipeline()

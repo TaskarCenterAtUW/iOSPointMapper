@@ -205,6 +205,13 @@ extension ContourRequestProcessor {
             - y_delta: The delta for the y-axis (minimum distance between points)
      */
     // TODO: Check if the performance can be improved by using SIMD operations
+    /**
+     FIXME: This function suffers from an edge case
+     Let's say the contour has a very small line at its lowest point, but just above it has a very wide line.
+     In such a case, the function should probably return a trapezoid with the wider lower line,
+     but it returns the trapezoid with the smaller line.
+     We may have to come up with a better heuristic to determine the right shape for getting the way bounds.
+     */
     func getContourTrapezoid(from points: [SIMD2<Float>], x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
 //        let points = contour.normalizedPoints
         guard !points.isEmpty else { return nil }

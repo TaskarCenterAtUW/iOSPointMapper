@@ -67,7 +67,7 @@ class SharedImageData: ObservableObject {
     
     var cameraImage: CIImage?
     
-    var isLidarAvailable: Bool = false
+    var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var depthImage: CIImage?
     
     // Overall segmentation image with all classes (labels)
@@ -107,7 +107,9 @@ class SharedImageData: ObservableObject {
         
         self.cameraImage = nil
         
-        self.isLidarAvailable = CameraUtils.checkLidarAvailability()
+        // TODO: Sometimes it is possible for the following to return false even when the device supports LiDAR.
+        // Should inform the user about this if it happens.
+        self.isLidarAvailable = ARCameraUtils.checkDepthSupport()
         self.depthImage = nil
         
         self.segmentationLabelImage = nil
