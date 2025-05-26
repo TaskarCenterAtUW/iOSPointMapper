@@ -35,12 +35,6 @@ enum AnnotationViewConstants {
     }
 }
 
-enum AnnotationOption: String, CaseIterable {
-    case agree = "I agree with this class annotation"
-    case missingInstances = "Annotation is missing some instances of the class"
-    case misidentified = "The class annotation is misidentified"
-}
-
 struct AnnotationView: View {
     var selection: [Int]
     var objectLocation: ObjectLocation
@@ -50,7 +44,7 @@ struct AnnotationView: View {
     
     @State private var index = 0
     
-    let options = AnnotationOption.allCases
+    @State var options: [AnnotationOption] = AnnotationOptionClass.allCases.map { .classOption($0) }
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State private var selectedClassIndex: Int? = nil
@@ -107,11 +101,11 @@ struct AnnotationView: View {
                                 Button(action: {
                                     selectedOption = (selectedOption == option) ? nil : option
                                     
-                                    if option == .misidentified {
-                                        selectedClassIndex = index
-                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-                                        isShowingClassSelectionModal = true
-                                    }
+//                                    if option == .misidentified {
+//                                        selectedClassIndex = index
+//                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+//                                        isShowingClassSelectionModal = true
+//                                    }
                                 }) {
                                     Text(option.rawValue)
                                         .font(.subheadline)
@@ -142,15 +136,18 @@ struct AnnotationView: View {
                 depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
 //                initializeAnnotationSegmentationPipeline()
                 refreshView()
+                refreshOptions()
             }
             .onChange(of: annotationImageManager.selectedObjectId) { oldValue, newValue in
                 if let newValue = newValue {
                     annotationImageManager.updateObjectSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                    refreshOptions()
                 }
             }
             .onChange(of: index, initial: false) { oldIndex, newIndex in
                 // Trigger any additional actions when the index changes
                 refreshView()
+                refreshOptions()
             }
             .alert(AnnotationViewConstants.Texts.confirmAnnotationFailedTitle, isPresented: $confirmAnnotationFailed) {
                 Button(AnnotationViewConstants.Texts.confirmAnnotationFailedCancelText, role: .cancel) {
@@ -195,13 +192,28 @@ struct AnnotationView: View {
     }
     
     func refreshView() {
-        print("Calling refreshView")
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         self.annotationImageManager.update(
             cameraImage: sharedImageData.cameraImage!,
             segmentationLabelImage: sharedImageData.segmentationLabelImage!,
             imageHistory: sharedImageData.getImageDataHistory(),
             segmentationClass: segmentationClass)
+    }
+    
+    func refreshOptions() {
+        // Update the options based on the current selected object
+        if let selectedObjectId = annotationImageManager.selectedObjectId,
+           let annotatedDetectedObjects = annotationImageManager.annotatedDetectedObjects {
+            let selectedObject = annotatedDetectedObjects.first(where: { $0.id == selectedObjectId })
+            if let selectedObject = selectedObject {
+                options = selectedObject.isAll ?
+                AnnotationOptionClass.allCases.map { .classOption($0) } :
+                AnnotationOptionObject.allCases.map { .individualOption($0) }
+                selectedOption = options.first ?? nil
+            } else {
+                options = AnnotationOptionClass.allCases.map { .classOption($0) }
+            }
+        }
     }
     
     func confirmAnnotation() {

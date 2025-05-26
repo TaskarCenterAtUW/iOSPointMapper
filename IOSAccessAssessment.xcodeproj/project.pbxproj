@@ -64,6 +64,7 @@
 		A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */; };
 		A3FFAA7A2DE01A0F002B99BD /* ARContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA792DE01A0F002B99BD /* ARContentView.swift */; };
 		A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */; };
+		A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
@@ -177,6 +178,7 @@
 		A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraUtils.swift; sourceTree = "<group>"; };
 		A3FFAA792DE01A0F002B99BD /* ARContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARContentView.swift; sourceTree = "<group>"; };
 		A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationARPipeline.swift; sourceTree = "<group>"; };
+		A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOption.swift; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -441,6 +443,7 @@
 		A3E84ECE2DDAC7980096A645 /* Annotation */ = {
 			isa = PBXGroup;
 			children = (
+				A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */,
 				A3E84ED12DDAD4130096A645 /* AnnotationAPITransmissionController.swift */,
 				A3E84ECF2DDAC7A10096A645 /* AnnotationImageManager.swift */,
 			);
@@ -671,6 +674,7 @@
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
 				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
+				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
 				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
