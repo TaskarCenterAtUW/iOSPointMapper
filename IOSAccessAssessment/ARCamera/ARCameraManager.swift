@@ -24,7 +24,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     var isDepthSupported: Bool = false
     
     // Frame rate-related properties
-    var frameRate: Int = 15
+    var frameRate: Int = 5
     var lastFrameTime: TimeInterval = 0
     
     // Temporary image data

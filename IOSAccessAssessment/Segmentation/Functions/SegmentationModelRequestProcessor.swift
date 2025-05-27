@@ -17,8 +17,10 @@ struct SegmentationModelRequestProcessor {
     var selectionClasses: [Int] = []
     
     init(selectionClasses: [Int]) {
-        let modelURL = Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc")
-        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!)) else {
+        let modelURL = Bundle.main.url(forResource: "bisenetv2_53_640_640", withExtension: "mlmodelc")
+        let configuration: MLModelConfiguration = MLModelConfiguration()
+        configuration.computeUnits = .cpuAndNeuralEngine
+        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration)) else {
             fatalError("Cannot load CNN model")
         }
         self.visionModel = visionModel
