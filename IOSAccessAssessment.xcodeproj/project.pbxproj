@@ -65,6 +65,7 @@
 		A3FFAA7A2DE01A0F002B99BD /* ARContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA792DE01A0F002B99BD /* ARContentView.swift */; };
 		A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */; };
 		A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */; };
+		A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
 		CAA947792CDE700A000C6918 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947782CDE7007000C6918 /* AuthService.swift */; };
@@ -179,6 +180,7 @@
 		A3FFAA792DE01A0F002B99BD /* ARContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARContentView.swift; sourceTree = "<group>"; };
 		A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationARPipeline.swift; sourceTree = "<group>"; };
 		A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOption.swift; sourceTree = "<group>"; };
+		A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_53_640_640.mlpackage; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		CAA947782CDE7007000C6918 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 		55659C092BB785EA0094DF01 /* VisionModel */ = {
 			isa = PBXGroup;
 			children = (
+				A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */,
 				A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */,
 				A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */,
 				3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */,
@@ -729,6 +732,7 @@
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
+				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,
 				A3FFAA7A2DE01A0F002B99BD /* ARContentView.swift in Sources */,
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */,
@@ -918,7 +922,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu9;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
@@ -958,7 +962,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.kohmatsu9;
+				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "IOSAccessAssessment/OpenCV/IOSAccessAssessment-Bridging-Header.h";
