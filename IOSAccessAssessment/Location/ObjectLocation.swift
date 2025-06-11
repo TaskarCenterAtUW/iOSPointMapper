@@ -31,6 +31,9 @@ class ObjectLocation: ObservableObject {
     private func setupLocationManager() {
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
+        // TODO: Sync heading with the device orientation
+        locationManager.headingOrientation = .portrait
+        locationManager.headingFilter = kCLHeadingFilterNone
         locationManager.pausesLocationUpdatesAutomatically = false // Prevent auto-pausing
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
@@ -68,29 +71,46 @@ class ObjectLocation: ObservableObject {
 }
 
 extension ObjectLocation {
+    /**
+        Calculate the location of an object at a given depth value based on the current latitude, longitude, and heading.
+        Uses the Great Circle Distance formula to approximate the object's coordinates.
+     */
     func getCalcLocation(depthValue: Float)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
+        
+        // FIXME: Use a more accurate radius for the Earth depending on the latitude
+        let RADIUS = 6378137.0 // Earth's radius in meters (WGS 84)
 
         // Calculate the object's coordinates assuming a flat plane
-        let distance = depthValue
+        let distance = Double(depthValue)
+        
+        let lat1 = latitude * .pi / 180.0 // Convert to radians
+        let lon1 = longitude * .pi / 180.0 // Convert to radians
         let bearing = heading * .pi / 180.0 // Convert to radians
+        
+        // FIXME: The following formula is the Great Circle Distance formula.
+        // It makes the assumption that the Earth is a perfect sphere, which is not true.
+        // Find a better formula that accounts for the Earth's ellipsoidal shape.
+        let angularDistance = distance / RADIUS
+        
+        // NOTE: Have to break the two parts because of Swift compiler
+        let objectLatitudeA = sin(lat1) * cos(angularDistance)
+        let objectLatitudeB = cos(lat1) * sin(angularDistance) * cos(bearing)
+        let objectLatitude = asin(objectLatitudeA + objectLatitudeB)
+        
+        let objectLongitudeA = sin(bearing) * sin(angularDistance) * cos(lat1)
+        let objectLongitudeB = cos(angularDistance) - sin(lat1) * sin(objectLatitude)
+        let objectLongitude = lon1 + atan2(objectLongitudeA, objectLongitudeB)
+        
+        let finalObjectLatitude = objectLatitude * 180.0 / .pi // Convert back to degrees
+        let finalObjectLongitude = objectLongitude * 180.0 / .pi // Convert back to degrees
 
-        // Calculate the change in coordinates
-        let deltaX = Double(distance) * cos(Double(bearing))
-        let deltaY = Double(distance) * sin(Double(bearing))
-
-        // Assuming 1 degree of latitude and longitude is approximately 111,000 meters
-        let metersPerDegree = 111_000.0
-
-        let objectLatitude = latitude + (deltaY / metersPerDegree)
-        let objectLongitude = longitude + (deltaX / metersPerDegree)
-
-        return (latitude: CLLocationDegrees(objectLatitude),
-                longitude: CLLocationDegrees(objectLongitude))
+        return (latitude: CLLocationDegrees(finalObjectLatitude),
+                longitude: CLLocationDegrees(finalObjectLongitude))
     }
     
     func getWayWidth(
