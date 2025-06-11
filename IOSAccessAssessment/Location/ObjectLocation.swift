@@ -148,10 +148,10 @@ extension ObjectLocation {
         
         let metersPerDegree: Float = 111_000.0
         
-        let deltaLat = delta.z / metersPerDegree * -1 // Z forward = South
+        let deltaLat = delta.z / metersPerDegree // Z = North
         
-        let deltaLonSub: Float = Float(cos(latitude * .pi / 180.0))
-        let deltaLon = Float(delta.x / (metersPerDegree * deltaLonSub))
+        let latRadians: Float = Float(latitude * .pi / 180.0)
+        let deltaLon = delta.x / (metersPerDegree * cos(latRadians))
         
         let objectLatitude = latitude + CLLocationDegrees(deltaLat)
         let objectLongitude = longitude + CLLocationDegrees(deltaLon)
