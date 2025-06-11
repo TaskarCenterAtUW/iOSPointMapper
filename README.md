@@ -20,3 +20,9 @@ Note: While adding the frameworks, Xcode may not recognize the framework. In tha
 - Go to the project settings -> General -> Frameworks, Libraries, and Embedded Content
 - Change the Embed status of the framework to "Embed & Sign"
 - Clean the project and build again
+
+
+## Interest Form
+
+If you are interesting in being a part of the project, you can fill this form and we can get back to you ASAP: \
+[Interest Form](https://docs.google.com/forms/d/e/1FAIpQLSccLrBbDRPBinN1iyetmjndUz1LcftNWXvH3Y_Xets0RR-R4g/viewform?usp=dialog)
