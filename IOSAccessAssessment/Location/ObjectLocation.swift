@@ -16,6 +16,7 @@ class ObjectLocation: ObservableObject {
     var locationManager: CLLocationManager
     @Published var longitude: CLLocationDegrees?
     @Published var latitude: CLLocationDegrees?
+    @Published var altitude: CLLocationDistance?
     @Published var headingDegrees: CLLocationDirection?
     
     let ciContext = CIContext(options: nil)
@@ -41,9 +42,12 @@ class ObjectLocation: ObservableObject {
     }
     
     private func setLocation() {
+        // FIXME: Ensure that the horizontal and vertical accuracy are acceptable
+        // Else, do not update the location
         if let location = locationManager.location {
             self.latitude = location.coordinate.latitude
             self.longitude = location.coordinate.longitude
+            self.altitude = location.altitude
         }
     }
     
@@ -111,6 +115,49 @@ extension ObjectLocation {
 
         return (latitude: CLLocationDegrees(finalObjectLatitude),
                 longitude: CLLocationDegrees(finalObjectLongitude))
+    }
+    
+    func getCalculation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
+                        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3)
+    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
+        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
+            print("latitude, longitude, or heading: nil")
+            return nil
+        }
+        
+        // Back-project the point from image coordinates to camera space
+        let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
+        let pixel = simd_float3(Float(pointWithDepth.x), Float(pointWithDepth.y), 1.0)
+        let ray = cameraInverseIntrinsics * pixel
+        let rayDirection = simd_normalize(ray)
+        
+        // Scale the ray direction by the depth value to get the actual point in camera space
+        let depth = Float(pointWithDepth.z)
+        let localPoint = rayDirection * depth
+        
+        // Transform the point from camera space to world space
+        let worldPoint4 = cameraTransform * simd_float4(localPoint, 1.0)
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        
+        // Get camera world coordinates
+        let cameraPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                            cameraTransform.columns.3.y,
+                                            cameraTransform.columns.3.z)
+        let delta = worldPoint - cameraPoint
+        
+        let metersPerDegree: Float = 111_000.0
+        
+        let deltaLat = delta.z / metersPerDegree * -1 // Z forward = South
+        
+        let deltaLonSub: Float = Float(cos(latitude * .pi / 180.0))
+        let deltaLon = Float(delta.x / (metersPerDegree * deltaLonSub))
+        
+        let objectLatitude = latitude + CLLocationDegrees(deltaLat)
+        let objectLongitude = longitude + CLLocationDegrees(deltaLon)
+        
+        return (latitude: objectLatitude,
+                longitude: objectLongitude)
     }
     
     func getWayWidth(
