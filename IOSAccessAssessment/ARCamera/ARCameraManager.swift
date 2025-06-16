@@ -59,6 +59,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     
     func runSession() {
         let config = ARWorldTrackingConfiguration()
+        config.worldAlignment = .gravityAndHeading
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
             config.frameSemantics = [.smoothedSceneDepth]
             isDepthSupported = true
