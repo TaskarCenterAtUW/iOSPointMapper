@@ -54,6 +54,7 @@ class ChangesetService {
         }
 
         request.httpBody = xmlData
+        self.saveXMLToFile(xmlData: xmlData, fileName: "open_changeset.xml")
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
@@ -103,7 +104,7 @@ class ChangesetService {
             \(deleteXML.isEmpty ? "" : "<delete>\n\(deleteXML)</delete>")
         </osmChange>
         """
-        print("XML Content: ", osmChangeXML)
+        self.saveXMLToFile(xmlData: osmChangeXML.data(using: .utf8)!, fileName: "upload_changeset.xml")
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -151,4 +152,18 @@ class ChangesetService {
         }.resume()
     }
     
+    /**
+     Middleware function to be manually added to the request chain. This function will save the xml data to a file.
+     */
+    func saveXMLToFile(xmlData: Data, fileName: String) {
+        let url = URL.documentsDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try xmlData.write(to: url, options: .atomic)
+            let input = try String(contentsOf: url, encoding: .utf8)
+            print(input)
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
 }
