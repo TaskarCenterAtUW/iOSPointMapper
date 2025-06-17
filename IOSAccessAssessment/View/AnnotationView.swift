@@ -47,8 +47,11 @@ struct AnnotationView: View {
     @State var options: [AnnotationOption] = AnnotationOptionClass.allCases.map { .classOption($0) }
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
-    @State private var selectedClassIndex: Int? = nil
+    @State var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
+    
+    @State private var isDepthModalPresented: Bool = false
+    @State private var currentDepthValues: String = ""
     
     @StateObject var annotationImageManager = AnnotationImageManager()
     
@@ -164,6 +167,14 @@ struct AnnotationView: View {
             } message: {
                 Text(AnnotationViewConstants.Texts.depthOrSegmentationUnavailableText)
             }
+            .alert("Current Depth Value", isPresented: $isDepthModalPresented) {
+                Button("OK") {
+                    isDepthModalPresented = false
+                    nextSegmentTrue()
+                }
+            } message: {
+                Text(currentDepthValues)
+            }
             // TODO: Need to check if the following vetting is necessary
 //            .sheet(isPresented: $isShowingClassSelectionModal) {
 //                classSelectionView()
@@ -233,6 +244,8 @@ struct AnnotationView: View {
     }
     
     func confirmAnnotation() {
+        var currentDepthValues: [Float] = []
+        
         var depthValue: Float = 0.0
         guard let depthMapProcessor = depthMapProcessor,
               let depthImage = sharedImageData.depthImage,
@@ -252,11 +265,21 @@ struct AnnotationView: View {
                 classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
 //            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
+            
+            currentDepthValues.append(depthValue)
         }
         
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
+        
+        // Update the current depth values for display
+        var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+//        let objectLocationResults = objectLocation.getLocationAndHeading()
+//        currentDepthValueString = currentDepthValueString + "\nLatitude: " + String(describing: objectLocationResults.latitude)
+//        currentDepthValueString = currentDepthValueString + "\nLongitude: " + String(describing: objectLocationResults.longitude)
+//        currentDepthValueString = currentDepthValueString + "\nHeading: " + String(describing: objectLocationResults.heading)
+        self.currentDepthValues = currentDepthValueString
         nextSegment()
     }
     
@@ -269,6 +292,10 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
+        self.isDepthModalPresented = true
+    }
+    
+    func nextSegmentTrue() {
         // Ensure that the index does not exceed the length of the sharedImageData segmentedIndices count
         // Do not simply rely on the isValid check in the body.
         selectedOption = nil
@@ -281,71 +308,5 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
-    }
-}
-
-// Extension for loading the ClassSelectionView as sheet
-extension AnnotationView {
-    @ViewBuilder
-    func classSelectionView() -> some View {
-        if let selectedClassIndex = selectedClassIndex {
-            let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
-            
-            // mapping between filtered and non-filtered
-            let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
-            
-            let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
-                get: { selectedFilteredIndex },
-                set: { newValue in
-                    let originalIndex = selection[newValue]
-                    // Update the segmentedIndices inside sharedImageData
-                    sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
-                }
-            )
-            
-            ClassSelectionView(
-                classes: filteredClasses,
-                selectedClass: selectedClassBinding
-            )
-        }
-    }
-}
-
-struct ClassSelectionView: View {
-    var classes: [String]
-    @Binding var selectedClass: Int
-    
-    @Environment(\.presentationMode) var presentationMode
-
-    var body: some View {
-        VStack {
-            Text(AnnotationViewConstants.Texts.selectCorrectAnnotationText)
-                .font(.headline)
-                .padding()
-
-            List {
-                ForEach(0..<classes.count, id: \.self) { index in
-                    Button(action: {
-                        selectedClass = index
-                    }) {
-                        HStack {
-                            Text(classes[index])
-                            Spacer()
-                            if selectedClass == index {
-                                Image(systemName: AnnotationViewConstants.Images.checkIcon)
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Button(action: {
-                self.presentationMode.wrappedValue.dismiss()
-            }) {
-                Text(AnnotationViewConstants.Texts.doneText)
-                    .padding()
-            }
-        }
     }
 }

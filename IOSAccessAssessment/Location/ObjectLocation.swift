@@ -72,6 +72,10 @@ class ObjectLocation: ObservableObject {
             return
         }
     }
+    
+    func getLocationAndHeading() -> (latitude: CLLocationDegrees?, longitude: CLLocationDegrees?, heading: CLLocationDirection?) {
+        return (latitude: self.latitude, longitude: self.longitude, heading: self.headingDegrees)
+    }
 }
 
 extension ObjectLocation {
@@ -117,7 +121,7 @@ extension ObjectLocation {
                 longitude: CLLocationDegrees(finalObjectLongitude))
     }
     
-    func getCalculation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
+    func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
                         cameraTransform: simd_float4x4 = matrix_identity_float4x4,
                         cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
