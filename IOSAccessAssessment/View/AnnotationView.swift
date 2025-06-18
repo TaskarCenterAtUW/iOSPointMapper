@@ -266,7 +266,9 @@ struct AnnotationView: View {
 //            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
             
-            currentDepthValues.append(depthValue)
+//            currentDepthValues.append(depthValue)
+            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.x ?? 0))
+            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.y ?? 0))
         }
         
 //        let location = objectLocation.getCalcLocation(depthValue: depthValue)
@@ -275,6 +277,8 @@ struct AnnotationView: View {
         
         // Update the current depth values for display
         var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+        currentDepthValueString = currentDepthValueString + "\nCamera Transform: " + String(describing: sharedImageData.cameraTransform)
+        currentDepthValueString = currentDepthValueString + "\nCamera Intrinsics: " + String(describing: sharedImageData.cameraIntrinsics)
 //        let objectLocationResults = objectLocation.getLocationAndHeading()
 //        currentDepthValueString = currentDepthValueString + "\nLatitude: " + String(describing: objectLocationResults.latitude)
 //        currentDepthValueString = currentDepthValueString + "\nLongitude: " + String(describing: objectLocationResults.longitude)

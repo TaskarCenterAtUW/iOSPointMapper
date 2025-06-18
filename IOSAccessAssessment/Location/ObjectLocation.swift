@@ -85,10 +85,14 @@ extension ObjectLocation {
      */
     func getCalcLocation(depthValue: Float)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
+        guard
+            let latitude = self.latitude, let longitude = self.longitude,
+                let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
+//        let latitude = 47.6528169
+//        let longitude = -122.3047438
         
         // FIXME: Use a more accurate radius for the Earth depending on the latitude
         let RADIUS = 6378137.0 // Earth's radius in meters (WGS 84)
@@ -121,6 +125,12 @@ extension ObjectLocation {
                 longitude: CLLocationDegrees(finalObjectLongitude))
     }
     
+    /**
+        Calculate the location of an object at a given point with depth in the image.
+        Uses the camera intrinsics and transform to convert the image coordinates to world coordinates.
+        
+        Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
+     */
     func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
                         cameraTransform: simd_float4x4 = matrix_identity_float4x4,
                         cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3)
@@ -130,25 +140,35 @@ extension ObjectLocation {
             return nil
         }
         
-        // Back-project the point from image coordinates to camera space
+        // Invert the camera intrinsics to convert image coordinates to camera space
         let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
-        let pixel = simd_float3(Float(pointWithDepth.x), Float(pointWithDepth.y), 1.0)
-        let ray = cameraInverseIntrinsics * pixel
+        
+        let px = Float(pointWithDepth.x) * Float(imageSize.width)
+        // NOTE: In ARKit, the origin is at top-left corner, while in Vision, it is at bottom-left corner.
+        // Thus, we need to flip the y-coordinate for processing with ARKit camera intrinsics.
+        let py = (1 - Float(pointWithDepth.y)) * Float(imageSize.height)
+        
+        // Create a 3D point in camera space
+        let imagePoint = simd_float3(px, py, 1.0)
+        let ray = cameraInverseIntrinsics * imagePoint
         let rayDirection = simd_normalize(ray)
         
         // Scale the ray direction by the depth value to get the actual point in camera space
         let depth = Float(pointWithDepth.z)
-        let localPoint = rayDirection * depth
+        var cameraPoint = rayDirection * depth
+        // Because in ARKit, the z-axis points forward, we need to negate the z-coordinate
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
         
         // Transform the point from camera space to world space
-        let worldPoint4 = cameraTransform * simd_float4(localPoint, 1.0)
+        let worldPoint4 = cameraTransform * cameraPoint4
         let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
         
         // Get camera world coordinates
-        let cameraPoint = simd_make_float3(cameraTransform.columns.3.x,
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
                                             cameraTransform.columns.3.y,
                                             cameraTransform.columns.3.z)
-        let delta = worldPoint - cameraPoint
+        let delta = worldPoint - cameraOriginPoint
         
         let metersPerDegree: Float = 111_000.0
         
