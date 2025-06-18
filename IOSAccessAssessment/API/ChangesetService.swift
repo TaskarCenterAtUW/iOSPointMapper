@@ -103,7 +103,7 @@ class ChangesetService {
             \(deleteXML.isEmpty ? "" : "<delete>\n\(deleteXML)</delete>")
         </osmChange>
         """
-        print("XML Content: ", osmChangeXML)
+//        print("XML Content: ", osmChangeXML)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
