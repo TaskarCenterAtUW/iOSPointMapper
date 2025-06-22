@@ -37,6 +37,7 @@ enum ARContentViewConstants {
         static let isCameraStopped = "isStopped"
         static let cameraTransform = "cameraTransform"
         static let cameraIntrinsics = "cameraIntrinsics"
+        static let originalImageSize = "originalImageSize"
     }
 }
 
@@ -72,8 +73,12 @@ struct ARContentView: View {
                     Button {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
+                        var additionalPayload: [String: Any] = isCameraStoppedPayload
+                        additionalPayload[ARContentViewConstants.Payload.originalImageSize] = sharedImageData.originalImageSize
+                        let deviceOrientation = sharedImageData.deviceOrientation ?? manager?.deviceOrientation ?? .portrait
                         segmentationPipeline.processFinalRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                            additionalPayload: isCameraStoppedPayload)
+                                                                 deviceOrientation: deviceOrientation,
+                                                                 additionalPayload: additionalPayload)
                     } label: {
                         Image(systemName: ARContentViewConstants.Images.cameraIcon)
                             .resizable()
@@ -129,6 +134,9 @@ struct ARContentView: View {
             self.sharedImageData.segmentedIndices = output.segmentedIndices
             self.sharedImageData.detectedObjectMap = output.detectedObjectMap
             self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
+            
+            self.sharedImageData.deviceOrientation = output.deviceOrientation
+            self.sharedImageData.originalImageSize = output.additionalPayload[ARContentViewConstants.Payload.originalImageSize] as? CGSize
             
             if let isStopped = output.additionalPayload[ARContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available

@@ -45,7 +45,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         super.init()
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
-            print("Orientation changed to: \(UIDevice.current.orientation.rawValue)")
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
         session.delegate = self
@@ -92,19 +91,26 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         
         let transform = camera.transform
         let intrinsics = camera.intrinsics
-        let additionalPayload = getAdditionalPayload(cameraTransform: transform, intrinsics: intrinsics)
         
         if !checkFrameWithinFrameRate(frame: frame) {
             return
         }
         
-        let cameraImage: CIImage = orientAndFixCameraFrame(frame.capturedImage)
+//        let cameraImage: CIImage = orientAndFixCameraFrame(frame.capturedImage)
+        var cameraImage = CIImage(cvPixelBuffer: frame.capturedImage)
+        let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
+        cameraImage = orientAndFixCameraImage(cameraImage)
         var depthImage: CIImage? = nil
         if let depthMap = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap {
             depthImage = orientAndFixDepthFrame(depthMap)
         } else {
             print("Depth map not available")
         }
+        
+        let additionalPayload = getAdditionalPayload(
+            cameraTransform: transform, intrinsics: intrinsics, originalCameraImageSize: originalCameraImageSize
+        )
+        
         DispatchQueue.main.async {
             if self.isProcessingCapturedResult {
                 return
@@ -127,10 +133,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         }
     }
     
-    private func getAdditionalPayload(cameraTransform: simd_float4x4, intrinsics: simd_float3x3) -> [String: Any] {
+    private func getAdditionalPayload(
+        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
+    ) -> [String: Any] {
         var additionalPayload: [String: Any] = [:]
         additionalPayload[ARContentViewConstants.Payload.cameraTransform] = cameraTransform
         additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] = intrinsics
+        additionalPayload[ARContentViewConstants.Payload.originalImageSize] = originalCameraImageSize
         return additionalPayload
     }
     
@@ -203,6 +212,24 @@ extension ARCameraManager {
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
         cameraImage = resizeAspectAndFill(cameraImage, to: croppedSize)
+        cameraImage = cameraImage.oriented(
+            CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
+        )
+        let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
+            cameraImage,
+            size: croppedSize,
+            pixelBufferPool: cameraPixelBufferPool!,
+            colorSpace: cameraColorSpace
+        )
+        return renderedCameraPixelBuffer != nil ? CIImage(cvPixelBuffer: renderedCameraPixelBuffer!) : cameraImage
+    }
+    
+    func orientAndFixCameraImage(_ image: CIImage) -> CIImage {
+        let croppedSize: CGSize = CGSize(
+            width: Constants.ClassConstants.inputSize.width,
+            height: Constants.ClassConstants.inputSize.height
+        )
+        var cameraImage = resizeAspectAndFill(image, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
         )

@@ -15,7 +15,6 @@ final class OrientationObserver: ObservableObject {
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)
             .sink { [weak self] _ in
                 let orientation = UIDevice.current.orientation
-                print("Orientation changed to: \(orientation.rawValue)")
                 if orientation.isValidInterfaceOrientation {
                     self?.deviceOrientation = orientation
                 }

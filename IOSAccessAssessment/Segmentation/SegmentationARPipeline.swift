@@ -44,16 +44,20 @@ struct SegmentationARPipelineResults {
     var segmentedIndices: [Int]
     var detectedObjectMap: [UUID: DetectedObject]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
+    var deviceOrientation: UIDeviceOrientation? = nil
+    // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
          detectedObjectMap: [UUID: DetectedObject], transformMatrixFromPreviousFrame: simd_float3x3? = nil,
+         deviceOrientation: UIDeviceOrientation? = nil,
          additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
         self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
+        self.deviceOrientation = deviceOrientation
         self.additionalPayload = additionalPayload
     }
 }
@@ -150,6 +154,7 @@ class SegmentationARPipeline: ObservableObject {
                         segmentedIndices: processedImageResults.segmentedIndices,
                         detectedObjectMap: processedImageResults.detectedObjectMap,
                         transformMatrixFromPreviousFrame: processedImageResults.transformMatrixFromPreviousFrame,
+                        deviceOrientation: deviceOrientation,
                         additionalPayload: additionalPayload
                     )))
                 }
@@ -188,6 +193,7 @@ class SegmentationARPipeline: ObservableObject {
                         segmentedIndices: processedImageResults.segmentedIndices,
                         detectedObjectMap: processedImageResults.detectedObjectMap,
                         transformMatrixFromPreviousFrame: processedImageResults.transformMatrixFromPreviousFrame,
+                        deviceOrientation: deviceOrientation,
                         additionalPayload: additionalPayload
                     )))
                 }
@@ -248,7 +254,8 @@ class SegmentationARPipeline: ObservableObject {
             segmentationResultUIImage: segmentationResultUIImage,
             segmentedIndices: segmentationResults?.segmentedIndices ?? [],
             detectedObjectMap: Dictionary(uniqueKeysWithValues: self.centroidTracker.detectedObjectMap.map { ($0.key, $0.value) }),
-            transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame
+            transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame,
+            deviceOrientation: deviceOrientation
         )
     }
     
