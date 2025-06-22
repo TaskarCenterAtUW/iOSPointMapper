@@ -88,4 +88,28 @@ struct CIImageUtils {
         let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
         return croppedImage
     }
+    
+    /**
+     This function returns the transformation to revert the effect of `resizeWithAspectThenCrop`.
+     */
+    static func transformRevertResizeWithAspectThenCrop(_ image: CIImage, from originalSize: CGSize) -> CGAffineTransform {
+        let sourceAspect = image.extent.width / image.extent.height
+        let originalAspect = originalSize.width / originalSize.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect < originalAspect {
+            let scale = originalSize.height / image.extent.height
+            let newWidth = image.extent.width * scale
+            let xOffset = (originalSize.width - newWidth) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = originalSize.width / image.extent.width
+            let newHeight = image.extent.height * scale
+            let yOffset = (originalSize.height - newHeight) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        return transform
+    }
 }

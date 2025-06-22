@@ -17,11 +17,26 @@ class CameraOrientation {
             case .portraitUpsideDown:
                 return .left                 // Camera is rotated 90° CCW
             case .landscapeLeft:
-                return .up                   // Home button on the right
+                return .up                   // (Home button on the right) Camera is not rotated.
             case .landscapeRight:
-                return .down                 // Home button on the left
+                return .down                 // (Home button on the left) Camera is rotated 180°.
             default:
                 return .right               // Fallback to portrait
+        }
+    }
+    
+    static func getCGImageReverseOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
+        switch currentDeviceOrientation {
+        case .portrait:
+            return .left                 // Camera is rotated 90° CCW to revert to original orientation
+        case .portraitUpsideDown:
+            return .right                // Camera is rotated 90° CW to revert to original orientation
+        case .landscapeLeft:
+            return .up                 // Home button on the right, camera is rotated 180°
+        case .landscapeRight:
+            return .down                   // Home button on the left, camera is rotated 180°
+        default:
+            return .left                // Fallback to portrait
         }
     }
     
