@@ -211,7 +211,7 @@ extension ARCameraManager {
             height: Constants.ClassConstants.inputSize.height
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
-        cameraImage = resizeAspectAndFill(cameraImage, to: croppedSize)
+        cameraImage = CIImageUtils.resizeWithAspectThenCrop(cameraImage, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
         )
@@ -229,7 +229,7 @@ extension ARCameraManager {
             width: Constants.ClassConstants.inputSize.width,
             height: Constants.ClassConstants.inputSize.height
         )
-        var cameraImage = resizeAspectAndFill(image, to: croppedSize)
+        var cameraImage = CIImageUtils.resizeWithAspectThenCrop(image, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
         )
@@ -249,7 +249,7 @@ extension ARCameraManager {
         )
         
         var depthImage = CIImage(cvPixelBuffer: frame)
-        depthImage = resizeAspectAndFill(depthImage, to: croppedSize)
+        depthImage = CIImageUtils.resizeWithAspectThenCrop(depthImage, to: croppedSize)
         depthImage = depthImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
         )
@@ -260,29 +260,6 @@ extension ARCameraManager {
             colorSpace: depthColorSpace
         )
         return depthPixelBuffer != nil ? CIImage(cvPixelBuffer: depthPixelBuffer!) : depthImage
-    }
-    
-    private func resizeAspectAndFill(_ image: CIImage, to size: CGSize) -> CIImage {
-        let sourceAspect = image.extent.width / image.extent.height
-        let destAspect = size.width / size.height
-        
-        var transform: CGAffineTransform = .identity
-        if sourceAspect > destAspect {
-            let scale = size.height / image.extent.height
-            let newWidth = image.extent.width * scale
-            let xOffset = (size.width - newWidth) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = size.width / image.extent.width
-            let newHeight = image.extent.height * scale
-            let yOffset = (size.height - newHeight) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
-        }
-        let newImage = image.transformed(by: transform)
-        let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
-        return croppedImage
     }
     
     private func renderCIImageToPixelBuffer(
