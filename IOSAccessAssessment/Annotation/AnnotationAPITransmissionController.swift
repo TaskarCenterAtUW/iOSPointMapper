@@ -242,13 +242,27 @@ extension AnnotationView {
         annotatedDetectedObject: AnnotatedDetectedObject,
         id: Int, isWay: Bool = false, segmentationClass: SegmentationClass
     ) -> NodeData? {
-        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        let centroid = annotatedDetectedObject.object?.centroid
+        let pointWithDepth: SIMD3<Float> = SIMD3<Float>(
+            x: Float(centroid?.x ?? 0.0),
+            y: Float(centroid?.y ?? 0.0),
+            z: annotatedDetectedObject.depthValue
+        )
+        let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
+//        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        let location = objectLocation.getCalcLocation(
+            pointWithDepth: pointWithDepth, imageSize: imageSize,
+            cameraTransform: self.sharedImageData.cameraTransform,
+            cameraIntrinsics: self.sharedImageData.cameraIntrinsics
+        )
+        self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return nil }
         
         let className = segmentationClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
+        tags["demo:depth"] = String(format: "%.4f", annotatedDetectedObject.depthValue)
         
         if isWay {
             let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])

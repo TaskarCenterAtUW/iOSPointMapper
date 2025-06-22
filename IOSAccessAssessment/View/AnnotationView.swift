@@ -51,7 +51,7 @@ struct AnnotationView: View {
     @State private var tempSelectedClassIndex: Int = 0
     
     @State private var isDepthModalPresented: Bool = false
-    @State private var currentDepthValues: String = ""
+    @State var currentDepthValues: String = ""
     
     @StateObject var annotationImageManager = AnnotationImageManager()
     
@@ -271,19 +271,13 @@ struct AnnotationView: View {
             currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.y ?? 0))
         }
         
-//        let location = objectLocation.getCalcLocation(depthValue: depthValue)
+        // Update the current depth values for display
+        var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+        self.currentDepthValues = currentDepthValueString
+        
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
         
-        // Update the current depth values for display
-        var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
-        currentDepthValueString = currentDepthValueString + "\nCamera Transform: " + String(describing: sharedImageData.cameraTransform)
-        currentDepthValueString = currentDepthValueString + "\nCamera Intrinsics: " + String(describing: sharedImageData.cameraIntrinsics)
-//        let objectLocationResults = objectLocation.getLocationAndHeading()
-//        currentDepthValueString = currentDepthValueString + "\nLatitude: " + String(describing: objectLocationResults.latitude)
-//        currentDepthValueString = currentDepthValueString + "\nLongitude: " + String(describing: objectLocationResults.longitude)
-//        currentDepthValueString = currentDepthValueString + "\nHeading: " + String(describing: objectLocationResults.heading)
-        self.currentDepthValues = currentDepthValueString
         nextSegment()
     }
     

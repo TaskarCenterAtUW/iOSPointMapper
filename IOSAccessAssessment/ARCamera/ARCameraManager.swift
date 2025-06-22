@@ -45,6 +45,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         super.init()
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
+            print("Orientation changed to: \(UIDevice.current.orientation.rawValue)")
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
         session.delegate = self
