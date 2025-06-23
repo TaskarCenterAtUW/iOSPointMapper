@@ -12,11 +12,13 @@ import simd
 // Hence we need to test more thoroughly if this breaks anything.
 class DetectedObject {
     let classLabel: UInt8
+    
     var centroid: CGPoint
     var boundingBox: CGRect // Bounding box in the original image coordinates. In normalized coordinates.
     var normalizedPoints: [SIMD2<Float>]
     var area: Float
     var perimeter: Float
+    
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
     var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
     
@@ -50,11 +52,15 @@ class ImageData {
     // Transformation matrix from the current frame to the previous frame
     var transformMatrixToPreviousFrame: simd_float3x3?
     
+    var deviceOrientation: UIDeviceOrientation? // Orientation of the device at the time of capture
+    var originalImageSize: CGSize? // Size of the original image at the time of capture
+    
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
          segmentationLabelImage: CIImage? = nil, segmentedIndices: [Int]? = nil,
          detectedObjectMap: [UUID: DetectedObject]? = nil,
          cameraTransform: simd_float4x4 = matrix_identity_float4x4, cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
-         transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil) {
+         transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil,
+         deviceOrientation: UIDeviceOrientation? = nil, originalImageSize: CGSize? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
@@ -64,6 +70,8 @@ class ImageData {
         self.cameraIntrinsics = cameraIntrinsics
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
         self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
+        self.deviceOrientation = deviceOrientation
+        self.originalImageSize = originalImageSize
     }
 }
 
@@ -77,21 +85,22 @@ class ImageData {
  */
 class SharedImageData: ObservableObject {
     @Published var isUploadReady: Bool = false
-    
-    var cameraImage: CIImage?
-    
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
-    var depthImage: CIImage?
     
+    // TODO: Replace the following properties with a single ImageData object.
+    var cameraImage: CIImage?
+    var depthImage: CIImage?
     // Overall segmentation image with all classes (labels)
     var segmentationLabelImage: CIImage?
     // Indices of all the classes that were detected in the segmentation image
     var segmentedIndices: [Int] = []
     var detectedObjectMap: [UUID: DetectedObject] = [:]
-    
     // Camera transform matrix and intrinsics
     var cameraTransform: simd_float4x4 = matrix_identity_float4x4
     var cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3
+    // Orientation and original image size
+    var deviceOrientation: UIDeviceOrientation? = nil
+    var originalImageSize: CGSize? = nil
     
     // Transformation matrices for the current frame
     var transformMatrixToPreviousFrame: simd_float3x3? = nil

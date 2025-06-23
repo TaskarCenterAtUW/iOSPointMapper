@@ -53,7 +53,7 @@ class ObjectLocation: ObservableObject {
     
     private func setHeading() {
         if let heading = locationManager.heading {
-            self.headingDegrees = heading.magneticHeading
+            self.headingDegrees = heading.trueHeading
             //            headingStatus = "Heading: \(headingDegrees) degrees"
         }
     }
@@ -72,6 +72,10 @@ class ObjectLocation: ObservableObject {
             return
         }
     }
+    
+    func getLocationAndHeading() -> (latitude: CLLocationDegrees?, longitude: CLLocationDegrees?, heading: CLLocationDirection?) {
+        return (latitude: self.latitude, longitude: self.longitude, heading: self.headingDegrees)
+    }
 }
 
 extension ObjectLocation {
@@ -81,7 +85,9 @@ extension ObjectLocation {
      */
     func getCalcLocation(depthValue: Float)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
+        guard
+            let latitude = self.latitude, let longitude = self.longitude,
+                let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
@@ -117,34 +123,76 @@ extension ObjectLocation {
                 longitude: CLLocationDegrees(finalObjectLongitude))
     }
     
-    func getCalculation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
+    /**
+        Calculate the location of an object at a given point with depth in the image.
+        Uses the camera intrinsics and transform to convert the image coordinates to world coordinates.
+        
+        Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
+     */
+    func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
                         cameraTransform: simd_float4x4 = matrix_identity_float4x4,
-                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3)
+                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+                        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+                        originalImageSize: CGSize
+    )
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        guard let latitude = self.latitude, let longitude = self.longitude, let heading = self.headingDegrees else {
+        guard
+            let latitude = self.latitude, let longitude = self.longitude,
+                let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
         
-        // Back-project the point from image coordinates to camera space
+        // Invert the camera intrinsics to convert image coordinates to camera space
         let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
-        let pixel = simd_float3(Float(pointWithDepth.x), Float(pointWithDepth.y), 1.0)
-        let ray = cameraInverseIntrinsics * pixel
+        
+        let arKitPoint = alignVisionPointToARKitPoint(
+            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
+            imageSize: imageSize, originalImageSize: originalImageSize,
+            deviceOrientation: deviceOrientation)
+        let px = Float(arKitPoint.x) // Convert to Float for processing
+        let py = Float(arKitPoint.y) // Convert to Float for processing
+        print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
+        
+        // Create a 3D point in camera space
+        let imagePoint = simd_float3(px, py, 1.0)
+        let ray = cameraInverseIntrinsics * imagePoint
         let rayDirection = simd_normalize(ray)
+        
+        print("Camera Intrinsics: \(cameraIntrinsics)")
+        print("Camera Inverse Intrinsics: \(cameraInverseIntrinsics)")
+        print("Ray: \(ray)")
+        print("Ray direction: \(rayDirection)")
         
         // Scale the ray direction by the depth value to get the actual point in camera space
         let depth = Float(pointWithDepth.z)
-        let localPoint = rayDirection * depth
+        var cameraPoint = rayDirection * depth
+        // Fix the cameraPoint so that the y-axis points up
+        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
+        // while the ARKit camera transform has the y-axis pointing upwards
+        cameraPoint.y = -cameraPoint.y
+        // Fix the cameraPoint so that the z-axis points south
+        // TODO: Check why camera transform coordinates has the z-axis inverted
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        
+        print("Camera point in camera space: \(cameraPoint)")
         
         // Transform the point from camera space to world space
-        let worldPoint4 = cameraTransform * simd_float4(localPoint, 1.0)
+        let worldPoint4 = cameraTransform * cameraPoint4
         let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
         
+        print("Fixed Camera Transform: \(cameraTransform)")
+        print("World point in world space: \(worldPoint4)")
+        
         // Get camera world coordinates
-        let cameraPoint = simd_make_float3(cameraTransform.columns.3.x,
-                                            cameraTransform.columns.3.y,
-                                            cameraTransform.columns.3.z)
-        let delta = worldPoint - cameraPoint
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
+        let delta = worldPoint - cameraOriginPoint
+        
+        print("Camera origin point: \(cameraOriginPoint)")
+        print("Delta: \(delta)")
         
         let metersPerDegree: Float = 111_000.0
         
@@ -199,5 +247,49 @@ extension ObjectLocation {
         let widthInMeters = (lowerWidth + upperWidth) / 2.0
         
         return widthInMeters
+    }
+    
+    /**
+     This function converts a normalized point in the image space to an unnormalized point in the ARKit frame.
+        It takes into account the device orientation
+     
+     The ARKit frame has its origin at the top-left corner, with y-axis pointing downwards.
+     On the other hand, the Vision framework has its origin at the bottom-left corner, with y-axis pointing upwards.
+     */
+    func alignVisionPointToARKitPoint(point: CGPoint, imageSize: CGSize,
+                                 originalImageSize: CGSize, deviceOrientation: UIDeviceOrientation) -> CGPoint {
+        // The following point aligns the Vision point's co-ordinate frame with the camera frame
+        // (It does not change the origin configuration)
+        var alignedPoint = point
+        var alignTransform: CGAffineTransform = .identity
+        switch (deviceOrientation) {
+        case .portrait:
+            // Rotate the point counter-clockwise by 90 degrees and add 1 to x-coordinate
+            alignTransform = CGAffineTransform(translationX: 1, y: 0).rotated(by: .pi/2)
+            break
+        case .portraitUpsideDown:
+            // Rotate the point clockwise by 90 degrees and add 1 to y-coordinate
+            alignTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -(.pi/2))
+            break
+        case .landscapeLeft:
+            // No change needed for landscape left orientation
+            break
+        case .landscapeRight:
+            // Rotate the point clockwise by 180 degrees and add 1 to both coordinates
+            alignTransform = CGAffineTransform(translationX: 1, y: 1).rotated(by: .pi)
+        default:
+            break
+        }
+        // Apply the alignment transformation to the point
+        alignedPoint = alignedPoint.applying(alignTransform)
+        
+        // Get the transformation to revert the image to its original size
+        let transform: CGAffineTransform = CIImageUtils.transformRevertResizeWithAspectThenCrop(
+            imageSize: imageSize, from: originalImageSize)
+        // Apply the transformation to the point
+        let newPoint = CGPoint(x: alignedPoint.x * imageSize.width, y: (1-alignedPoint.y) * imageSize.height)
+        let transformedPoint = newPoint.applying(transform)
+        
+        return transformedPoint
     }
 }

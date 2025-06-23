@@ -60,4 +60,56 @@ struct CIImageUtils {
         
         return buffer
     }
+    
+    /**
+     This function resizes a CIImage to match the specified size by:
+        - First, resizing the image to match the smaller dimension while maintaining the aspect ratio.
+        - Then, cropping the image to the specified size while centering it.
+     */
+    static func resizeWithAspectThenCrop(_ image: CIImage, to size: CGSize) -> CIImage {
+        let sourceAspect = image.extent.width / image.extent.height
+        let destAspect = size.width / size.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect > destAspect {
+            let scale = size.height / image.extent.height
+            let newWidth = image.extent.width * scale
+            let xOffset = (size.width - newWidth) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = size.width / image.extent.width
+            let newHeight = image.extent.height * scale
+            let yOffset = (size.height - newHeight) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        let newImage = image.transformed(by: transform)
+        let croppedImage = newImage.cropped(to: CGRect(origin: .zero, size: size))
+        return croppedImage
+    }
+    
+    /**
+     This function returns the transformation to revert the effect of `resizeWithAspectThenCrop`.
+     */
+    static func transformRevertResizeWithAspectThenCrop(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
+        let sourceAspect = imageSize.width / imageSize.height
+        let originalAspect = originalSize.width / originalSize.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect < originalAspect {
+            let scale = originalSize.height / imageSize.height
+            let newWidth = imageSize.width * scale
+            let xOffset = (originalSize.width - newWidth) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = originalSize.width / imageSize.width
+            let newHeight = imageSize.height * scale
+            let yOffset = (originalSize.height - newHeight) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        return transform
+    }
 }
