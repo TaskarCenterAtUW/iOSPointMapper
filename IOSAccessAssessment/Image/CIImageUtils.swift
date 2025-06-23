@@ -92,20 +92,20 @@ struct CIImageUtils {
     /**
      This function returns the transformation to revert the effect of `resizeWithAspectThenCrop`.
      */
-    static func transformRevertResizeWithAspectThenCrop(_ image: CIImage, from originalSize: CGSize) -> CGAffineTransform {
-        let sourceAspect = image.extent.width / image.extent.height
+    static func transformRevertResizeWithAspectThenCrop(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
+        let sourceAspect = imageSize.width / imageSize.height
         let originalAspect = originalSize.width / originalSize.height
         
         var transform: CGAffineTransform = .identity
         if sourceAspect < originalAspect {
-            let scale = originalSize.height / image.extent.height
-            let newWidth = image.extent.width * scale
+            let scale = originalSize.height / imageSize.height
+            let newWidth = imageSize.width * scale
             let xOffset = (originalSize.width - newWidth) / 2
             transform = CGAffineTransform(scaleX: scale, y: scale)
                 .translatedBy(x: xOffset / scale, y: 0)
         } else {
-            let scale = originalSize.width / image.extent.width
-            let newHeight = image.extent.height * scale
+            let scale = originalSize.width / imageSize.width
+            let newHeight = imageSize.height * scale
             let yOffset = (originalSize.height - newHeight) / 2
             transform = CGAffineTransform(scaleX: scale, y: scale)
                 .translatedBy(x: 0, y: yOffset / scale)

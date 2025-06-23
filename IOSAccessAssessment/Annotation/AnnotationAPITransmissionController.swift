@@ -253,7 +253,9 @@ extension AnnotationView {
         let location = objectLocation.getCalcLocation(
             pointWithDepth: pointWithDepth, imageSize: imageSize,
             cameraTransform: self.sharedImageData.cameraTransform,
-            cameraIntrinsics: self.sharedImageData.cameraIntrinsics
+            cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+            deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+            originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
         )
         self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
         guard let nodeLatitude = location?.latitude,

@@ -91,8 +91,10 @@ extension ObjectLocation {
             print("latitude, longitude, or heading: nil")
             return nil
         }
-        let latitude = 47.6528169
-        let longitude = -122.3047438
+//        let latitude = 47.6528169
+//        let longitude = -122.3047438
+        let latitude = 47.6608587
+        let longitude = -122.3145265
         
         // FIXME: Use a more accurate radius for the Earth depending on the latitude
         let RADIUS = 6378137.0 // Earth's radius in meters (WGS 84)
@@ -133,7 +135,10 @@ extension ObjectLocation {
      */
     func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
                         cameraTransform: simd_float4x4 = matrix_identity_float4x4,
-                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3)
+                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+                        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+                        originalImageSize: CGSize
+    )
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard
 //            let latitude = self.latitude, let longitude = self.longitude,
@@ -141,16 +146,20 @@ extension ObjectLocation {
             print("latitude, longitude, or heading: nil")
             return nil
         }
-        let latitude = 47.6528169
-        let longitude = -122.3047438
+//        let latitude = 47.6528169
+//        let longitude = -122.3047438
+        let latitude = 47.6608587
+        let longitude = -122.3145265
         
         // Invert the camera intrinsics to convert image coordinates to camera space
         let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
         
-        let px = Float(pointWithDepth.x) * 1920 // * Float(imageSize.width)
-        // NOTE: In ARKit, the origin is at top-left corner, while in Vision, it is at bottom-left corner.
-        // Thus, we need to flip the y-coordinate for processing with ARKit camera intrinsics.
-        let py = (1 - Float(pointWithDepth.y)) * 1440 // * Float(imageSize.height)
+        let arKitPoint = alignVisionPointToARKitPoint(
+            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
+            imageSize: imageSize, originalImageSize: originalImageSize,
+            deviceOrientation: deviceOrientation)
+        let px = Float(arKitPoint.x) // Convert to Float for processing
+        let py = Float(arKitPoint.y) // Convert to Float for processing
         print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
         
         // Create a 3D point in camera space
@@ -241,5 +250,49 @@ extension ObjectLocation {
         let widthInMeters = (lowerWidth + upperWidth) / 2.0
         
         return widthInMeters
+    }
+    
+    /**
+     This function converts a normalized point in the image space to an unnormalized point in the ARKit frame.
+        It takes into account the device orientation
+     
+     The ARKit frame has its origin at the top-left corner, with y-axis pointing downwards.
+     On the other hand, the Vision framework has its origin at the bottom-left corner, with y-axis pointing upwards.
+     */
+    func alignVisionPointToARKitPoint(point: CGPoint, imageSize: CGSize,
+                                 originalImageSize: CGSize, deviceOrientation: UIDeviceOrientation) -> CGPoint {
+        // The following point aligns the Vision point's co-ordinate frame with the camera frame
+        // (It does not change the origin configuration)
+        var alignedPoint = point
+        var alignTransform: CGAffineTransform = .identity
+        switch (deviceOrientation) {
+        case .portrait:
+            // Rotate the point counter-clockwise by 90 degrees and add 1 to x-coordinate
+            alignTransform = CGAffineTransform(translationX: 1, y: 0).rotated(by: .pi/2)
+            break
+        case .portraitUpsideDown:
+            // Rotate the point clockwise by 90 degrees and add 1 to y-coordinate
+            alignTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -(.pi/2))
+            break
+        case .landscapeLeft:
+            // No change needed for landscape left orientation
+            break
+        case .landscapeRight:
+            // Rotate the point clockwise by 180 degrees and add 1 to both coordinates
+            alignTransform = CGAffineTransform(translationX: 1, y: 1).rotated(by: .pi)
+        default:
+            break
+        }
+        // Apply the alignment transformation to the point
+        alignedPoint = alignedPoint.applying(alignTransform)
+        
+        // Get the transformation to revert the image to its original size
+        let transform: CGAffineTransform = CIImageUtils.transformRevertResizeWithAspectThenCrop(
+            imageSize: imageSize, from: originalImageSize)
+        // Apply the transformation to the point
+        let newPoint = CGPoint(x: alignedPoint.x * imageSize.width, y: (1-alignedPoint.y) * imageSize.height)
+        let transformedPoint = newPoint.applying(transform)
+        
+        return transformedPoint
     }
 }

@@ -205,6 +205,10 @@ struct AnnotationView: View {
     }
     
     func refreshView() {
+        if index >= sharedImageData.segmentedIndices.count {
+            print("Index out of bounds in refreshView")
+            return
+        }
         let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         self.annotationImageManager.update(
             cameraImage: sharedImageData.cameraImage!,
