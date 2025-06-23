@@ -86,15 +86,11 @@ extension ObjectLocation {
     func getCalcLocation(depthValue: Float)
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard
-//            let latitude = self.latitude, let longitude = self.longitude,
+            let latitude = self.latitude, let longitude = self.longitude,
                 let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
-//        let latitude = 47.6528169
-//        let longitude = -122.3047438
-        let latitude = 47.6608587
-        let longitude = -122.3145265
         
         // FIXME: Use a more accurate radius for the Earth depending on the latitude
         let RADIUS = 6378137.0 // Earth's radius in meters (WGS 84)
@@ -141,15 +137,11 @@ extension ObjectLocation {
     )
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard
-//            let latitude = self.latitude, let longitude = self.longitude,
+            let latitude = self.latitude, let longitude = self.longitude,
                 let heading = self.headingDegrees else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
-//        let latitude = 47.6528169
-//        let longitude = -122.3047438
-        let latitude = 47.6608587
-        let longitude = -122.3145265
         
         // Invert the camera intrinsics to convert image coordinates to camera space
         let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
@@ -174,27 +166,29 @@ extension ObjectLocation {
         
         // Scale the ray direction by the depth value to get the actual point in camera space
         let depth = Float(pointWithDepth.z)
-        let cameraPoint = rayDirection * depth
+        var cameraPoint = rayDirection * depth
+        // Fix the cameraPoint so that the y-axis points up
+        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
+        // while the ARKit camera transform has the y-axis pointing upwards
+        cameraPoint.y = -cameraPoint.y
+        // Fix the cameraPoint so that the z-axis points south
+        // TODO: Check why camera transform coordinates has the z-axis inverted
+        cameraPoint.z = -cameraPoint.z
         let cameraPoint4 = simd_float4(cameraPoint, 1.0)
         
         print("Camera point in camera space: \(cameraPoint)")
         
-        // Fix the camera transform so that the z-axis points south
-        // TODO: Check why camera transform has the z-axis inverted
-        var fixedCameraTransform = cameraTransform
-        fixedCameraTransform.columns.2 = -cameraTransform.columns.2 // Invert the z-axis
-        
         // Transform the point from camera space to world space
-        let worldPoint4 = fixedCameraTransform * cameraPoint4
+        let worldPoint4 = cameraTransform * cameraPoint4
         let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
         
-        print("Fixed Camera Transform: \(fixedCameraTransform)")
+        print("Fixed Camera Transform: \(cameraTransform)")
         print("World point in world space: \(worldPoint4)")
         
         // Get camera world coordinates
-        let cameraOriginPoint = simd_make_float3(fixedCameraTransform.columns.3.x,
-                                                 fixedCameraTransform.columns.3.y,
-                                                 fixedCameraTransform.columns.3.z)
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
         let delta = worldPoint - cameraOriginPoint
         
         print("Camera origin point: \(cameraOriginPoint)")
