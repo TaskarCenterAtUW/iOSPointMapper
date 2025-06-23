@@ -53,7 +53,7 @@ class ObjectLocation: ObservableObject {
     
     private func setHeading() {
         if let heading = locationManager.heading {
-            self.headingDegrees = heading.magneticHeading
+            self.headingDegrees = heading.trueHeading
             //            headingStatus = "Heading: \(headingDegrees) degrees"
         }
     }
@@ -174,24 +174,27 @@ extension ObjectLocation {
         
         // Scale the ray direction by the depth value to get the actual point in camera space
         let depth = Float(pointWithDepth.z)
-        var cameraPoint = rayDirection * depth
-        // Because in ARKit, the z-axis points forward, we need to negate the z-coordinate
-        cameraPoint.z = -cameraPoint.z
+        let cameraPoint = rayDirection * depth
         let cameraPoint4 = simd_float4(cameraPoint, 1.0)
         
         print("Camera point in camera space: \(cameraPoint)")
         
+        // Fix the camera transform so that the z-axis points south
+        // TODO: Check why camera transform has the z-axis inverted
+        var fixedCameraTransform = cameraTransform
+        fixedCameraTransform.columns.2 = -cameraTransform.columns.2 // Invert the z-axis
+        
         // Transform the point from camera space to world space
-        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint4 = fixedCameraTransform * cameraPoint4
         let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
         
-        print("Camera Transform: \(cameraTransform)")
+        print("Fixed Camera Transform: \(fixedCameraTransform)")
         print("World point in world space: \(worldPoint4)")
         
         // Get camera world coordinates
-        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
-                                            cameraTransform.columns.3.y,
-                                            cameraTransform.columns.3.z)
+        let cameraOriginPoint = simd_make_float3(fixedCameraTransform.columns.3.x,
+                                                 fixedCameraTransform.columns.3.y,
+                                                 fixedCameraTransform.columns.3.z)
         let delta = worldPoint - cameraOriginPoint
         
         print("Camera origin point: \(cameraOriginPoint)")
