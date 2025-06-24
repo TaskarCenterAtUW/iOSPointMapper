@@ -92,56 +92,10 @@ extension ObjectLocation {
                         originalImageSize: CGSize
     )
     -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
-        // Invert the camera intrinsics to convert image coordinates to camera space
-        let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
-        
-        // Align the point with depth to ARKit's coordinate system
-        let arKitPoint = alignVisionPointToARKitPoint(
-            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
-            imageSize: imageSize, originalImageSize: originalImageSize,
-            deviceOrientation: deviceOrientation)
-        let px = Float(arKitPoint.x) // Convert to Float for processing
-        let py = Float(arKitPoint.y) // Convert to Float for processing
-        
-        // Create a 3D point in camera space
-        let imagePoint = simd_float3(px, py, 1.0)
-        let ray = cameraInverseIntrinsics * imagePoint
-        let rayDirection = simd_normalize(ray)
-        
-        // Scale the ray direction by the depth value to get the actual point in camera space
-        let depth = Float(pointWithDepth.z)
-        var cameraPoint = rayDirection * depth
-        // Fix the cameraPoint so that the y-axis points up
-        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
-        // while the ARKit camera transform has the y-axis pointing upwards
-        cameraPoint.y = -cameraPoint.y
-        // Fix the cameraPoint so that the z-axis points south
-        // TODO: Check why camera transform coordinates has the z-axis inverted
-        cameraPoint.z = -cameraPoint.z
-        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
-        
-        // Transform the point from camera space to world space
-        let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
-        
-        // Get camera world coordinates
-        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
-                                                 cameraTransform.columns.3.y,
-                                                 cameraTransform.columns.3.z)
-        var delta = worldPoint - cameraOriginPoint
-        
-        print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
-        print("Camera Intrinsics: \(cameraIntrinsics)")
-        print("Camera Inverse Intrinsics: \(cameraInverseIntrinsics)")
-        print("Ray: \(ray)")
-        print("Ray direction: \(rayDirection)")
-        print("Camera point in camera space: \(cameraPoint)")
-        print("Fixed Camera Transform: \(cameraTransform)")
-        print("World point in world space: \(worldPoint4)")
-        print("Camera origin point: \(cameraOriginPoint)")
-        print("Delta: \(delta)")
-        
-        delta.z = -delta.z // Fix the z-axis back so that it points north
+        let delta = getDeltaFromPoint(
+            pointWithDepth: pointWithDepth, imageSize: imageSize,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
         
         return getCalcLocation(deltaLat: delta.z, deltaLon: delta.x)
     }
@@ -269,6 +223,99 @@ extension ObjectLocation {
         let widthInMeters = (lowerWidth + upperWidth) / 2.0
         
         return widthInMeters
+    }
+    
+    func getWayWidth(
+        wayBoundsWithDepth: [SIMD3<Float>], imageSize: CGSize,
+        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+        originalImageSize: CGSize
+    ) -> Float {
+        guard wayBoundsWithDepth.count == 4 else {
+            print("Invalid way bounds")
+            return 0.0
+        }
+        
+        print("Calculating way width with bounds")
+        let deltas = wayBoundsWithDepth.map { point in
+            return getDeltaFromPoint(
+                pointWithDepth: point, imageSize: imageSize,
+                cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+                deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
+        }
+        let lowerLeft = deltas[0]
+        let upperLeft = deltas[1]
+        let upperRight = deltas[2]
+        let lowerRight = deltas[3]
+        
+        // Calculate the width in camera space
+        let lowerWidth = simd_distance(lowerLeft, lowerRight)
+        let upperWidth = simd_distance(upperLeft, upperRight)
+        print(lowerWidth, upperWidth)
+        
+        // Average the widths
+        let widthInMeters = (lowerWidth + upperWidth) / 2.0
+        
+        return widthInMeters
+    }
+    
+    func getDeltaFromPoint(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
+                               cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+                               cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+                               deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+                               originalImageSize: CGSize) -> SIMD3<Float> {
+        // Invert the camera intrinsics to convert image coordinates to camera space
+        let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
+        
+        // Align the point with depth to ARKit's coordinate system
+        let arKitPoint = alignVisionPointToARKitPoint(
+            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
+            imageSize: imageSize, originalImageSize: originalImageSize,
+            deviceOrientation: deviceOrientation)
+        let px = Float(arKitPoint.x) // Convert to Float for processing
+        let py = Float(arKitPoint.y) // Convert to Float for processing
+        
+        // Create a 3D point in camera space
+        let imagePoint = simd_float3(px, py, 1.0)
+        let ray = cameraInverseIntrinsics * imagePoint
+        let rayDirection = simd_normalize(ray)
+        
+        // Scale the ray direction by the depth value to get the actual point in camera space
+        let depth = Float(pointWithDepth.z)
+        var cameraPoint = rayDirection * depth
+        // Fix the cameraPoint so that the y-axis points up
+        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
+        // while the ARKit camera transform has the y-axis pointing upwards
+        cameraPoint.y = -cameraPoint.y
+        // Fix the cameraPoint so that the z-axis points south
+        // TODO: Check why camera transform coordinates has the z-axis inverted
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        
+        // Transform the point from camera space to world space
+        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        
+        // Get camera world coordinates
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
+        var delta = worldPoint - cameraOriginPoint
+        delta.z = -delta.z // Fix the z-axis back so that it points north
+        
+//        print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
+//        print("Camera Intrinsics: \(cameraIntrinsics)")
+//        print("Camera Inverse Intrinsics: \(cameraInverseIntrinsics)")
+//        print("Ray: \(ray)")
+//        print("Ray direction: \(rayDirection)")
+//        print("Camera point in camera space: \(cameraPoint)")
+//        print("Fixed Camera Transform: \(cameraTransform)")
+//        print("World point in world space: \(worldPoint4)")
+//        print("Camera origin point: \(cameraOriginPoint)")
+        print("Delta: \(delta)")
+        
+        return delta
     }
     
     /**

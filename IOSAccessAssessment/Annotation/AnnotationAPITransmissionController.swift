@@ -273,7 +273,9 @@ extension AnnotationView {
                     wayBoundsWithDepth: wayBoundsWithDepth,
                     imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
                     cameraTransform: self.sharedImageData.cameraTransform,
-                    cameraIntrinsics: self.sharedImageData.cameraIntrinsics
+                    cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                    deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                    originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
                 )
                 tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
             }
