@@ -80,6 +80,73 @@ class ObjectLocation: ObservableObject {
 
 extension ObjectLocation {
     /**
+        Calculate the location of an object at a given point with depth in the image.
+        Uses the camera intrinsics and transform to convert the image coordinates to world coordinates.
+        
+        Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
+     */
+    func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
+                        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+                        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+                        originalImageSize: CGSize
+    )
+    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
+        // Invert the camera intrinsics to convert image coordinates to camera space
+        let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
+        
+        // Align the point with depth to ARKit's coordinate system
+        let arKitPoint = alignVisionPointToARKitPoint(
+            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
+            imageSize: imageSize, originalImageSize: originalImageSize,
+            deviceOrientation: deviceOrientation)
+        let px = Float(arKitPoint.x) // Convert to Float for processing
+        let py = Float(arKitPoint.y) // Convert to Float for processing
+        
+        // Create a 3D point in camera space
+        let imagePoint = simd_float3(px, py, 1.0)
+        let ray = cameraInverseIntrinsics * imagePoint
+        let rayDirection = simd_normalize(ray)
+        
+        // Scale the ray direction by the depth value to get the actual point in camera space
+        let depth = Float(pointWithDepth.z)
+        var cameraPoint = rayDirection * depth
+        // Fix the cameraPoint so that the y-axis points up
+        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
+        // while the ARKit camera transform has the y-axis pointing upwards
+        cameraPoint.y = -cameraPoint.y
+        // Fix the cameraPoint so that the z-axis points south
+        // TODO: Check why camera transform coordinates has the z-axis inverted
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        
+        // Transform the point from camera space to world space
+        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        
+        // Get camera world coordinates
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
+        var delta = worldPoint - cameraOriginPoint
+        
+        print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
+        print("Camera Intrinsics: \(cameraIntrinsics)")
+        print("Camera Inverse Intrinsics: \(cameraInverseIntrinsics)")
+        print("Ray: \(ray)")
+        print("Ray direction: \(rayDirection)")
+        print("Camera point in camera space: \(cameraPoint)")
+        print("Fixed Camera Transform: \(cameraTransform)")
+        print("World point in world space: \(worldPoint4)")
+        print("Camera origin point: \(cameraOriginPoint)")
+        print("Delta: \(delta)")
+        
+        delta.z = -delta.z // Fix the z-axis back so that it points north
+        
+        return getCalcLocation(deltaLat: delta.z, deltaLon: delta.x)
+    }
+    
+    /**
         Calculate the location of an object at a given depth value based on the current latitude, longitude, and heading.
         Uses the Great Circle Distance formula to approximate the object's coordinates.
      */
@@ -124,88 +191,43 @@ extension ObjectLocation {
     }
     
     /**
-        Calculate the location of an object at a given point with depth in the image.
-        Uses the camera intrinsics and transform to convert the image coordinates to world coordinates.
-        
-        Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
+     Calculate the location of an object at a given delta latitude and longitude.
+     Uses the Great Circle Distance formula to approximate the object's coordinates.
      */
-    func getCalcLocation(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
-                        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
-                        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
-                        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
-                        originalImageSize: CGSize
-    )
-    -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
+    func getCalcLocation(deltaLat: Float, deltaLon: Float) -> (latitude: CLLocationDegrees, longitude: CLLocationDegrees)? {
         guard
-            let latitude = self.latitude, let longitude = self.longitude,
-                let heading = self.headingDegrees else {
+            let latitude = self.latitude, let longitude = self.longitude
+        else {
             print("latitude, longitude, or heading: nil")
             return nil
         }
         
-        // Invert the camera intrinsics to convert image coordinates to camera space
-        let cameraInverseIntrinsics = simd_inverse(cameraIntrinsics)
+        // FIXME: Use a more accurate radius for the Earth depending on the latitude
+        let RADIUS = 6378137.0 // Earth's radius in meters (WGS 84)
         
-        let arKitPoint = alignVisionPointToARKitPoint(
-            point: CGPoint(x: CGFloat(pointWithDepth.x), y: CGFloat(pointWithDepth.y)),
-            imageSize: imageSize, originalImageSize: originalImageSize,
-            deviceOrientation: deviceOrientation)
-        let px = Float(arKitPoint.x) // Convert to Float for processing
-        let py = Float(arKitPoint.y) // Convert to Float for processing
-        print("Point with depth: \(pointWithDepth), px: \(px), py: \(py)")
+        // Calculate distance and bearing
+        let distance = Double(sqrt(deltaLat * deltaLat + deltaLon * deltaLon))
+        let bearing = Double(atan2(deltaLon, deltaLat))
         
-        // Create a 3D point in camera space
-        let imagePoint = simd_float3(px, py, 1.0)
-        let ray = cameraInverseIntrinsics * imagePoint
-        let rayDirection = simd_normalize(ray)
+        let lat1 = latitude * .pi / 180.0 // Convert to radians
+        let lon1 = longitude * .pi / 180.0 // Convert to radians
         
-        print("Camera Intrinsics: \(cameraIntrinsics)")
-        print("Camera Inverse Intrinsics: \(cameraInverseIntrinsics)")
-        print("Ray: \(ray)")
-        print("Ray direction: \(rayDirection)")
+        let angularDistance = distance / RADIUS
         
-        // Scale the ray direction by the depth value to get the actual point in camera space
-        let depth = Float(pointWithDepth.z)
-        var cameraPoint = rayDirection * depth
-        // Fix the cameraPoint so that the y-axis points up
-        // TODO: Check how to fix the discrepancy between ARKit image origin having y-axis pointing downwards
-        // while the ARKit camera transform has the y-axis pointing upwards
-        cameraPoint.y = -cameraPoint.y
-        // Fix the cameraPoint so that the z-axis points south
-        // TODO: Check why camera transform coordinates has the z-axis inverted
-        cameraPoint.z = -cameraPoint.z
-        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        // NOTE: Have to break the two parts because of Swift compiler
+        let objectLatitudeA = sin(lat1) * cos(angularDistance)
+        let objectLatitudeB = cos(lat1) * sin(angularDistance) * cos(bearing)
+        let objectLatitude = asin(objectLatitudeA + objectLatitudeB)
         
-        print("Camera point in camera space: \(cameraPoint)")
+        let objectLongitudeA = sin(bearing) * sin(angularDistance) * cos(lat1)
+        let objectLongitudeB = cos(angularDistance) - sin(lat1) * sin(objectLatitude)
+        let objectLongitude = lon1 + atan2(objectLongitudeA, objectLongitudeB)
         
-        // Transform the point from camera space to world space
-        let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        let finalObjectLatitude = objectLatitude * 180.0 / .pi // Convert back to degrees
+        let finalObjectLongitude = objectLongitude * 180.0 / .pi // Convert back to degrees
         
-        print("Fixed Camera Transform: \(cameraTransform)")
-        print("World point in world space: \(worldPoint4)")
-        
-        // Get camera world coordinates
-        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
-                                                 cameraTransform.columns.3.y,
-                                                 cameraTransform.columns.3.z)
-        let delta = worldPoint - cameraOriginPoint
-        
-        print("Camera origin point: \(cameraOriginPoint)")
-        print("Delta: \(delta)")
-        
-        let metersPerDegree: Float = 111_000.0
-        
-        let deltaLat = delta.z / metersPerDegree // Z = North
-        
-        let latRadians: Float = Float(latitude * .pi / 180.0)
-        let deltaLon = delta.x / (metersPerDegree * cos(latRadians))
-        
-        let objectLatitude = latitude + CLLocationDegrees(deltaLat)
-        let objectLongitude = longitude + CLLocationDegrees(deltaLon)
-        
-        return (latitude: objectLatitude,
-                longitude: objectLongitude)
+        return (latitude: CLLocationDegrees(finalObjectLatitude),
+                longitude: CLLocationDegrees(finalObjectLongitude))
     }
     
     func getWayWidth(
@@ -263,19 +285,15 @@ extension ObjectLocation {
         var alignedPoint = point
         var alignTransform: CGAffineTransform = .identity
         switch (deviceOrientation) {
-        case .portrait:
-            // Rotate the point counter-clockwise by 90 degrees and add 1 to x-coordinate
+        case .portrait: // Rotate the point counter-clockwise by 90 degrees and add 1 to x-coordinate
             alignTransform = CGAffineTransform(translationX: 1, y: 0).rotated(by: .pi/2)
             break
-        case .portraitUpsideDown:
-            // Rotate the point clockwise by 90 degrees and add 1 to y-coordinate
+        case .portraitUpsideDown: // Rotate the point clockwise by 90 degrees and add 1 to y-coordinate
             alignTransform = CGAffineTransform(translationX: 0, y: 1).rotated(by: -(.pi/2))
             break
-        case .landscapeLeft:
-            // No change needed for landscape left orientation
+        case .landscapeLeft: // No change needed for landscape left orientation
             break
-        case .landscapeRight:
-            // Rotate the point clockwise by 180 degrees and add 1 to both coordinates
+        case .landscapeRight: // Rotate the point clockwise by 180 degrees and add 1 to both coordinates
             alignTransform = CGAffineTransform(translationX: 1, y: 1).rotated(by: .pi)
         default:
             break
