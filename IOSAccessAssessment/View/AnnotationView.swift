@@ -79,60 +79,72 @@ struct AnnotationView: View {
                     )
                     Spacer()
                 }
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
-                        Spacer()
-                    }
-                    
-                    HStack {
-                        Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
-                            ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
-                                Text(object.label ?? "")
-                                    .tag(object.id)
-                            }
+                ScrollView(.vertical) {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
+                            Spacer()
                         }
-                    }
-                    
-                    ProgressBar(value: calculateProgress())
-                    
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 10) {
-                            ForEach(options, id: \.self) { option in
-                                Button(action: {
-                                    // Update the selected option
-                                    updateAnnotation(newOption: option)
-
-//                                    selectedOption = (selectedOption == option) ? nil : option
-                                    
-//                                    if option == .misidentified {
-//                                        selectedClassIndex = index
-//                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-//                                        isShowingClassSelectionModal = true
-//                                    }
-                                }) {
-                                    Text(option.rawValue)
-                                        .font(.subheadline)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(selectedOption == option ? Color.blue : Color.gray)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(10)
+                        
+                        HStack {
+                            Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
+                                ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
+                                    Text(object.label ?? "")
+                                        .tag(object.id)
                                 }
                             }
                         }
-                        Spacer()
+                        
+                        HStack {
+                            Spacer()
+                            Text("Width: ")
+                            TextField("Width: ", value: $annotationImageManager.selectedObjectWidth, formatter: NumberFormatter())
+                                .frame(width: 50)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .fixedSize(horizontal: true, vertical: false)
+                            Spacer()
+                        }
+                        
+                        ProgressBar(value: calculateProgress())
+                        
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 10) {
+                                ForEach(options, id: \.self) { option in
+                                    Button(action: {
+                                        // Update the selected option
+                                        updateAnnotation(newOption: option)
+
+    //                                    selectedOption = (selectedOption == option) ? nil : option
+                                        
+    //                                    if option == .misidentified {
+    //                                        selectedClassIndex = index
+    //                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+    //                                        isShowingClassSelectionModal = true
+    //                                    }
+                                    }) {
+                                        Text(option.rawValue)
+                                            .font(.subheadline)
+                                            .frame(maxWidth: .infinity)
+                                            .padding()
+                                            .background(selectedOption == option ? Color.blue : Color.gray)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(10)
+                                    }
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding()
+                        
+                        Button(action: {
+                            confirmAnnotation()
+                        }) {
+                            Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        }
+                        .padding()
                     }
-                    .padding()
-                    
-                    Button(action: {
-                        confirmAnnotation()
-                    }) {
-                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                    }
-                    .padding()
                 }
             }
             .padding(.top, 20)

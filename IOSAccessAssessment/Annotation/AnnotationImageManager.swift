@@ -27,6 +27,7 @@ class AnnotationImageManager: ObservableObject {
     
     @Published var annotatedSegmentationLabelImage: CIImage? = nil
     @Published var selectedObjectId: UUID? = nil
+    @Published var selectedObjectWidth: Float? = nil // Temporary property to hold the selected object width
     @Published var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
     
     // Helpers

@@ -22,6 +22,10 @@ class DetectedObject {
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
     var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
     
+    // Temporary properties for object width if it is a way-type object
+    var calculatedWidth: Float? // Width of the object in meters
+    var finalWidth: Float? // Final width of the object in meters after validation
+    
     init(classLabel: UInt8, centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float, isCurrent: Bool, wayBounds: [SIMD2<Float>]? = nil) {
         self.classLabel = classLabel
         self.centroid = centroid
