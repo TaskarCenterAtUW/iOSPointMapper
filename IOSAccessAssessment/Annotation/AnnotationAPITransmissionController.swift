@@ -267,19 +267,27 @@ extension AnnotationView {
         tags["demo:depth"] = String(format: "%.4f", annotatedDetectedObject.depthValue)
         
         if isWay {
-            let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
-            if let wayBoundsWithDepth = wayBoundsWithDepth {
-                let width = objectLocation.getWayWidth(
-                    wayBoundsWithDepth: wayBoundsWithDepth,
-                    imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
-                    cameraTransform: self.sharedImageData.cameraTransform,
-                    cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
-                    deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
-                    originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
-                )
-                tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            // MARK: Width Field Demo: Use the calculated or validated width for the way bounds if present
+            var width: Float = 0.0
+            if annotatedDetectedObject.object?.calculatedWidth != nil {
+                width = annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0
+                tags["demo:calculatedWidth"] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedWidth ?? 0)
+            } else {
+                let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
+                if let wayBoundsWithDepth = wayBoundsWithDepth {
+                    width = objectLocation.getWayWidth(
+                        wayBoundsWithDepth: wayBoundsWithDepth,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                }
             }
+            tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
         }
+        print("Tags for node: \(tags)")
         
         let nodeData = NodeData(id: String(id),
                                 latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
