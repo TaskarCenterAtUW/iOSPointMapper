@@ -62,6 +62,13 @@ struct AnnotationView: View {
     // For deciding the layout
     @StateObject private var orientationObserver = OrientationObserver()
     
+    // MARK: Width Field Demo: Temporary variable for number formatter
+    @State private var numberFormatter: NumberFormatter = {
+        var nf = NumberFormatter()
+        nf.numberStyle = .decimal
+        return nf
+    }()
+    
     var body: some View {
         if (!self.isValid()) {
             // FIXME: When no segments are available, this view does not dismiss anymore.
@@ -95,14 +102,19 @@ struct AnnotationView: View {
                                 }
                             }
                         }
-                        
+                        // MARK: Width Field Demo: Display width field for way-type objects
                         HStack {
                             Spacer()
                             Text("Width: ")
-                            TextField("Width: ", value: $annotationImageManager.selectedObjectWidth, formatter: NumberFormatter())
-                                .frame(width: 50)
+                            TextField("Width: ", value: $annotationImageManager.selectedObjectWidth, formatter: numberFormatter)
+                                .frame(width: 120)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .fixedSize(horizontal: true, vertical: false)
+                                .onSubmit {
+                                    updateSelectedObjectWidth(
+                                        selectedObjectId: annotationImageManager.selectedObjectId ?? UUID(),
+                                        width: annotationImageManager.selectedObjectWidth ?? 0.0)
+                                }
                             Spacer()
                         }
                         
@@ -159,6 +171,7 @@ struct AnnotationView: View {
             .onChange(of: annotationImageManager.selectedObjectId) { oldValue, newValue in
                 if let newValue = newValue {
                     annotationImageManager.updateObjectSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                    calculateWidth(selectedObjectId: newValue)
                     refreshOptions()
                 }
             }
@@ -322,5 +335,48 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
+    }
+    
+    // MARK: Width Field Demo: Temporary function to calculate width of a way-type object
+    func calculateWidth(selectedObjectId: UUID) {
+        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        var width: Float = 0.0
+        // If the current class is way-type, we should calculate the width of the selected object
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object
+           {
+            if (selectedObjectObject.calculatedWidth != nil) {
+                width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth ?? 0.0
+            } else {
+                // Calculate the width of the selected object
+                let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: selectedObject.object?.wayBounds ?? [])
+                let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
+                if let wayBoundsWithDepth = wayBoundsWithDepth {
+                    width = objectLocation.getWayWidth(
+                        wayBoundsWithDepth: wayBoundsWithDepth,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                    selectedObjectObject.calculatedWidth = width
+                }
+            }
+        }
+        // Update the width in the annotationImageManager
+        annotationImageManager.selectedObjectWidth = width
+    }
+    
+    // MARK: Width Field Demo: Temporary method to update the object width of the selected object
+    func updateSelectedObjectWidth(selectedObjectId: UUID, width: Float) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalWidth = width
+        }
     }
 }

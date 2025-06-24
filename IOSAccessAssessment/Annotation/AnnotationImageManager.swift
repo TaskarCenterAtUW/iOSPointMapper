@@ -27,7 +27,7 @@ class AnnotationImageManager: ObservableObject {
     
     @Published var annotatedSegmentationLabelImage: CIImage? = nil
     @Published var selectedObjectId: UUID? = nil
-    @Published var selectedObjectWidth: Float? = nil // Temporary property to hold the selected object width
+    @Published var selectedObjectWidth: Float? = nil // MARK: Width Field Demo: Temporary property to hold the selected object width
     @Published var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
     
     // Helpers
@@ -192,7 +192,8 @@ class AnnotationImageManager: ObservableObject {
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),
             centroidConfig: RasterizeConfig(draw: true, color: .white, width: 5)
-        )
+        )        
+        
         if let newImage = newImage {
             self.objectsUIImage = UIImage(cgImage: newImage, scale: 1.0, orientation: .up)
         } else { print("Failed to update rasterized image") }

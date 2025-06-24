@@ -22,7 +22,7 @@ class DetectedObject {
     var isCurrent: Bool // Indicates if the object is from the current frame or a previous frame
     var wayBounds: [SIMD2<Float>]? // Special property for way-type objects. In normalized coordinates.
     
-    // Temporary properties for object width if it is a way-type object
+    // MARK: Width Field Demo: Temporary properties for object width if it is a way-type object
     var calculatedWidth: Float? // Width of the object in meters
     var finalWidth: Float? // Final width of the object in meters after validation
     
@@ -232,5 +232,4 @@ class SharedImageData: ObservableObject {
         self.wayGeometries[classLabel]?.removeLast()
         self.wayGeometries[classLabel]?.append(updatedWayData)
     }
-            
 }
