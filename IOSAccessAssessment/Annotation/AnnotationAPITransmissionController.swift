@@ -264,14 +264,14 @@ extension AnnotationView {
         
         let className = segmentationClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
-        tags["demo:depth"] = String(format: "%.4f", annotatedDetectedObject.depthValue)
+        tags[APIConstants.TagKeys.depthKey] = String(format: "%.4f", annotatedDetectedObject.depthValue)
         
         if isWay {
             // MARK: Width Field Demo: Use the calculated or validated width for the way bounds if present
             var width: Float = 0.0
             if annotatedDetectedObject.object?.calculatedWidth != nil {
                 width = annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0
-                tags["demo:calculatedWidth"] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedWidth ?? 0)
+                tags[APIConstants.TagKeys.calculatedWidthKey] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedWidth ?? 0)
             } else {
                 let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
                 if let wayBoundsWithDepth = wayBoundsWithDepth {
