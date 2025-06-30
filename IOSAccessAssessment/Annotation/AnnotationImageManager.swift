@@ -108,6 +108,11 @@ class AnnotationImageManager: ObservableObject {
         self.grayscaleToColorMasker.colorValues = [segmentationClass.color]
         
         let segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        // Check if inputLabelImage is backed by a CVPixelBuffer
+        if inputLabelImage.extent.width == 0 || inputLabelImage.extent.height == 0 {
+            print("Warning: inputLabelImage has zero width or height.")
+        }
+        print("inputLabelImage pixelBuffer nil?: \(inputLabelImage.pixelBuffer == nil)")
         return (ciImage: inputLabelImage,
                 uiImage: segmentationUIImage)
     }
