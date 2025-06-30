@@ -79,6 +79,12 @@ class ImageData {
     }
 }
 
+struct WayWidth {
+    var id: String
+    var classLabel: UInt8
+    var widths: [Float] // Widths of the way in meters
+}
+
 /**
     SharedImageData is a "singleton" class that holds the camera image, depth image, segmentation label image,
     segmented indices, detected objects, and the history of images.
@@ -121,6 +127,8 @@ class SharedImageData: ObservableObject {
     // Geometry data by class label
     var nodeGeometries: [UInt8: [NodeData]] = [:]
     var wayGeometries: [UInt8: [WayData]] = [:]
+    // NOTE: Tempoary width history
+    var wayWidthHistory: [UInt8: [WayWidth]] = [:]
     
     init(maxCapacity: Int = 100, thresholdRatio: Float = 0.7, historyMaxCapacity: Int = 5) {
         self.maxCapacity = maxCapacity
@@ -148,6 +156,7 @@ class SharedImageData: ObservableObject {
         
         self.nodeGeometries.removeAll()
         self.wayGeometries.removeAll()
+        self.wayWidthHistory.removeAll()
     }
     
     func recordImageData(imageData: ImageData) {
@@ -212,6 +221,10 @@ class SharedImageData: ObservableObject {
         self.wayGeometries[classLabel, default: []].append(wayData)
     }
     
+    func appendWayWidthToWayWidthHistory(wayWidth: WayWidth, classLabel: UInt8) {
+        self.wayWidthHistory[classLabel, default: []].append(wayWidth)
+    }
+    
     // TODO: By default, we append the node of a class to the last wayData of the same class.
     // However, currently, there will never be more than one wayData of a class in one changeset.
     // Check if we should add functionality to support multiple wayData of the same class in one changeset
@@ -231,5 +244,22 @@ class SharedImageData: ObservableObject {
         updatedWayData.nodeRefs.append(nodeData.id)
         self.wayGeometries[classLabel]?.removeLast()
         self.wayGeometries[classLabel]?.append(updatedWayData)
+    }
+    
+    func appendWidthToWayWidth(width: Float, classLabel: UInt8) {
+        let isWay = Constants.ClassConstants.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        guard isWay else {
+            print("Class \(classLabel) is not a way class")
+            return
+        }
+        guard let wayWidths = self.wayWidthHistory[classLabel]?.last else {
+            print("No way width history found for class \(classLabel)")
+            return
+        }
+        // Append the wayWidth to the wayWidths
+        var updatedWayWidths = wayWidths
+        updatedWayWidths.widths.append(width)
+        self.wayWidthHistory[classLabel]?.removeLast()
+        self.wayWidthHistory[classLabel]?.append(updatedWayWidths)
     }
 }

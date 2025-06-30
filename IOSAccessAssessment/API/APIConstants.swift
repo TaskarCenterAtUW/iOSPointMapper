@@ -31,6 +31,7 @@ struct APIConstants {
         static let widthKey = "demo:width"
         static let depthKey = "demo:depth"
         static let calculatedWidthKey = "demo:demo:calculatedWidth"
+        static let breakageKey = "demo:breakage"
     }
     
     enum OtherConstants {

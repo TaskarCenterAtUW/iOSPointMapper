@@ -79,13 +79,17 @@ extension AnnotationView {
         }
         
         var wayData = self.sharedImageData.wayGeometries[segmentationClass.labelValue]?.last
+        var wayWidth = self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
         if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
 //            var wayData = wayData!
             if let nodeData = nodeData {
                 wayData?.nodeRefs.append(nodeData.id)
+                
             }
             wayDataOperations.append(ChangesetDiffOperation.modify(wayData!))
+            wayWidth?.widths.append(annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0)
+            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.removeLast()
         } else {
             let className = segmentationClass.name
             let wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
@@ -96,6 +100,13 @@ extension AnnotationView {
             }
             wayData = WayData(id: String(tempId), tags: wayTags, nodeRefs: nodeRefs)
             wayDataOperations.append(ChangesetDiffOperation.create(wayData!))
+            
+            // Create wayWidth and add to wayWidthHistory
+            wayWidth = WayWidth(id: String(tempId), classLabel: segmentationClass.labelValue,
+                widths: [annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0])
+        }
+        if let wayWidth = wayWidth {
+            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue, default: []].append(wayWidth)
         }
         
         ChangesetService.shared.performUpload(operations: wayDataOperations) { result in
@@ -286,6 +297,11 @@ extension AnnotationView {
                 }
             }
             tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            let breakageStatus: Bool = self.getBreakageStatus(
+                    width: width,
+                    wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
+            print("Breakage status for way: \(breakageStatus)")
         }
         print("Tags for node: \(tags)")
         
@@ -347,5 +363,24 @@ extension AnnotationView {
             return SIMD3<Float>(x: point.x, y: point.y, z: depthValues[index])
         }
         return wayBoundsWithDepth
+    }
+    
+    func getBreakageStatus(width: Float, wayWidth: WayWidth?) -> Bool {
+        print("Way Width: \(wayWidth?.widths ?? [])")
+        guard let wayWidth = wayWidth else {
+            return false
+        }
+        let widths = wayWidth.widths
+        // Check if width is lower than mean - 2 standard deviations of the mean (if the length of widths array is greater than 3)
+        guard widths.count >= 3 else {
+            return false
+        }
+        let sum = widths.reduce(0, +)
+        let avg = sum / Float(widths.count)
+        let v = widths.reduce(0, { $0 + ($1-avg)*($1-avg) })
+        let stdDev = sqrt(v / (Float(widths.count)-1))
+        let lowerBound = avg - 2 * stdDev
+        print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
+        return width < lowerBound
     }
 }
