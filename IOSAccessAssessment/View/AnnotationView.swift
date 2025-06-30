@@ -388,14 +388,6 @@ struct AnnotationView: View {
         annotationImageManager.selectedObjectWidth = width
     }
     
-    // MARK: Width Field Demo: Temporary method to update the object width of the selected object
-    func updateSelectedObjectWidth(selectedObjectId: UUID, width: Float) {
-        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
-           let selectedObjectObject = selectedObject.object {
-            selectedObjectObject.finalWidth = width
-        }
-    }
-    
     func calculateBreakage(selectedObjectId: UUID) {
         let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
         if !(selectionClass.isWay) {
@@ -433,13 +425,5 @@ struct AnnotationView: View {
         let lowerBound = avg - 2 * stdDev
         print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
         return width < lowerBound
-    }
-    
-    // MARK: Breakage Field Demo: Temporary method to update the object width of the selected object
-    func updateSelectedObjectBreakage(selectedObjectId: UUID, breakageStatus: Bool) {
-        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
-           let selectedObjectObject = selectedObject.object {
-            selectedObjectObject.finalBreakage = breakageStatus
-        }
     }
 }

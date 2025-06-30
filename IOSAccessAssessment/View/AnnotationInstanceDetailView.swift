@@ -29,6 +29,7 @@ extension AnnotationView {
         let selectedObjectWidth: Binding<Float> = Binding(
             get: { self.annotationImageManager.selectedObjectWidth ?? 0.0 },
             set: { newValue in
+                print("New Width Value: \(newValue)")
                 self.updateSelectedObjectWidth(selectedObjectId: selectedObjectId, width: newValue)
             }
         )
@@ -46,6 +47,24 @@ extension AnnotationView {
             selectedObjectBreakage: selectedObjectBreakage
         )
     }
+    
+    // MARK: Width Field Demo: Temporary method to update the object width of the selected object
+    func updateSelectedObjectWidth(selectedObjectId: UUID, width: Float) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalWidth = width
+            annotationImageManager.selectedObjectWidth = width
+        }
+    }
+    
+    // MARK: Breakage Field Demo: Temporary method to update the object width of the selected object
+    func updateSelectedObjectBreakage(selectedObjectId: UUID, breakageStatus: Bool) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalBreakage = breakageStatus
+            annotationImageManager.selectedObjectBreakage = breakageStatus
+        }
+    }
 }
 
 struct AnnotationInstanceDetailView: View {
@@ -54,6 +73,12 @@ struct AnnotationInstanceDetailView: View {
     @Binding var selectedObjectBreakage: Bool
     
     @Environment(\.presentationMode) var presentationMode
+    
+    var numberFormatter: NumberFormatter = {
+        var nf = NumberFormatter()
+        nf.numberStyle = .decimal
+        return nf
+    }()
     
     var body: some View {
         VStack {
@@ -68,8 +93,9 @@ struct AnnotationInstanceDetailView: View {
                 }
                 
                 Section(header: Text("Width")) {
-                    TextField("Width in meters", value: $selectedObjectWidth, formatter: NumberFormatter())
+                    TextField("Width in meters", value: $selectedObjectWidth, formatter: numberFormatter)
                         .keyboardType(.decimalPad)
+                        .submitLabel(.done)
                 }
                 
                 Section(header: Text("Breakage Status")) {
