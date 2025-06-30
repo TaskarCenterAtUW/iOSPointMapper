@@ -42,7 +42,7 @@ struct AnnotationView: View {
     @EnvironmentObject var sharedImageData: SharedImageData
     @Environment(\.dismiss) var dismiss
     
-    @State private var index = 0
+    @State var index = 0
     
     @State var options: [AnnotationOption] = AnnotationOptionClass.allCases.map { .classOption($0) }
     @State private var selectedOption: AnnotationOption? = nil
@@ -263,10 +263,18 @@ struct AnnotationView: View {
         // TODO: Instead of only using the centroid, use a trimmed mean of the depth values of all the pixels in the object.
         for annotatedDetectedObject in annotatedDetectedObjects {
             guard let detectedObject = annotatedDetectedObject.object else { continue }
-            depthValue = depthMapProcessor.getDepth(
-                segmentationLabelImage: segmentationLabelImage, object: detectedObject,
-                depthImage: depthImage,
-                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            if segmentationLabelImage.pixelBuffer == nil {
+                print("Segmentation label image is nil. Cannot calculate depth by radius.")
+                depthValue = depthMapProcessor.getDepth(
+                    segmentationLabelImage: segmentationLabelImage, object: detectedObject,
+                    depthImage: depthImage,
+                    classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            } else {
+                depthValue = depthMapProcessor.getDepthInRadius(
+                    segmentationLabelImage: segmentationLabelImage, object: detectedObject,
+                    depthRadius: 5, depthImage: depthImage,
+                    classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+            }
 //            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
             

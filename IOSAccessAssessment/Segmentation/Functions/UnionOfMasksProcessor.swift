@@ -153,8 +153,9 @@ class UnionOfMasksProcessor {
         
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
-
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
+        
+        let image = CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
+        return image
     }
     
     private func ciImageToTexture(image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]) -> MTLTexture? {
@@ -178,5 +179,4 @@ class UnionOfMasksProcessor {
             fatalError("Unsupported pixel format: \(format.rawValue)")
         }
     }
-
 }
