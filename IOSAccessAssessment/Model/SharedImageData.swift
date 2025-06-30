@@ -26,6 +26,10 @@ class DetectedObject {
     var calculatedWidth: Float? // Width of the object in meters
     var finalWidth: Float? // Final width of the object in meters after validation
     
+    // MARK: Breakage Field Demo: Temporary properties for object breakage if it is a way-type object
+    var calculatedBreakage: Bool? // Indicates if the object is broken or not
+    var finalBreakage: Bool? // Final indication of breakage after validation
+    
     init(classLabel: UInt8, centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float, isCurrent: Bool, wayBounds: [SIMD2<Float>]? = nil) {
         self.classLabel = classLabel
         self.centroid = centroid

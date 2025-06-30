@@ -389,4 +389,51 @@ struct AnnotationView: View {
             selectedObjectObject.finalWidth = width
         }
     }
+    
+    func calculateBreakage(selectedObjectId: UUID) {
+        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        var breakageStatus: Bool = false
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object,
+           let width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth {
+            breakageStatus = self.getBreakageStatus(
+                width: width,
+                wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            selectedObjectObject.calculatedBreakage = breakageStatus
+        }
+        // Update the breakage status in the annotationImageManager
+        annotationImageManager.selectedObjectBreakage = breakageStatus
+    }
+    
+    func getBreakageStatus(width: Float, wayWidth: WayWidth?) -> Bool {
+        print("Way Width: \(wayWidth?.widths ?? [])")
+        guard let wayWidth = wayWidth else {
+            return false
+        }
+        let widths = wayWidth.widths
+        // Check if width is lower than mean - 2 standard deviations of the mean (if the length of widths array is greater than 3)
+        guard widths.count >= 3 else {
+            return false
+        }
+        let sum = widths.reduce(0, +)
+        let avg = sum / Float(widths.count)
+        let v = widths.reduce(0, { $0 + ($1-avg)*($1-avg) })
+        let stdDev = sqrt(v / (Float(widths.count)-1))
+        let lowerBound = avg - 2 * stdDev
+        print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
+        return width < lowerBound
+    }
+    
+    // MARK: Breakage Field Demo: Temporary method to update the object width of the selected object
+    func updateSelectedObjectBreakage(selectedObjectId: UUID, breakageStatus: Bool) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalBreakage = breakageStatus
+        }
+    }
 }

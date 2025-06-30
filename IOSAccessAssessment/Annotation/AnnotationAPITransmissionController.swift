@@ -297,11 +297,9 @@ extension AnnotationView {
                 }
             }
             tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
-            let breakageStatus: Bool = self.getBreakageStatus(
-                    width: width,
-                    wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            let breakageStatus: Bool = annotatedDetectedObject.object?.finalBreakage ??
+            annotatedDetectedObject.object?.calculatedBreakage ?? false
             tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
-            print("Breakage status for way: \(breakageStatus)")
         }
         print("Tags for node: \(tags)")
         
@@ -363,24 +361,5 @@ extension AnnotationView {
             return SIMD3<Float>(x: point.x, y: point.y, z: depthValues[index])
         }
         return wayBoundsWithDepth
-    }
-    
-    func getBreakageStatus(width: Float, wayWidth: WayWidth?) -> Bool {
-        print("Way Width: \(wayWidth?.widths ?? [])")
-        guard let wayWidth = wayWidth else {
-            return false
-        }
-        let widths = wayWidth.widths
-        // Check if width is lower than mean - 2 standard deviations of the mean (if the length of widths array is greater than 3)
-        guard widths.count >= 3 else {
-            return false
-        }
-        let sum = widths.reduce(0, +)
-        let avg = sum / Float(widths.count)
-        let v = widths.reduce(0, { $0 + ($1-avg)*($1-avg) })
-        let stdDev = sqrt(v / (Float(widths.count)-1))
-        let lowerBound = avg - 2 * stdDev
-        print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
-        return width < lowerBound
     }
 }
