@@ -9,8 +9,10 @@ import Metal
 import CoreImage
 import MetalKit
 
-// TODO: Check if a plain union of masks runs the risk of accummulating too many false positives
-// Would a voting system be better?
+/**
+ UnionOfMasksProcessor is a class that processes an array of CIImages to compute the union of masks using Metal.
+ It performs a simple weighted union operation on the input images, where each image is treated as a mask. Only the last frame can be weighted differently from the rest.
+ */
 class UnionOfMasksProcessor {
     // Metal-related properties
     private let device: MTLDevice
@@ -107,7 +109,8 @@ class UnionOfMasksProcessor {
         self.format = format
     }
     
-    func apply(targetValue: UInt8) -> CIImage? {
+    func apply(targetValue: UInt8, unionOfMasksThreshold: Float = 1.0,
+               defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) -> CIImage? {
         guard let inputImages = self.arrayTexture else {
             print("Error: No input images provided")
             return nil
@@ -128,12 +131,18 @@ class UnionOfMasksProcessor {
         
         var imageCountLocal = self.imageCount
         var targetValueLocal = targetValue
+        var unionOfMasksThresholdLocal = unionOfMasksThreshold
+        var defaultFrameWeightLocal = defaultFrameWeight
+        var lastFrameWeightLocal = lastFrameWeight
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputImages, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
         commandEncoder.setBytes(&imageCountLocal, length: MemoryLayout<Int>.size, index: 0)
         commandEncoder.setBytes(&targetValueLocal, length: MemoryLayout<UInt8>.size, index: 1)
+        commandEncoder.setBytes(&unionOfMasksThresholdLocal, length: MemoryLayout<Float>.size, index: 2)
+        commandEncoder.setBytes(&defaultFrameWeightLocal, length: MemoryLayout<Float>.size, index: 3)
+        commandEncoder.setBytes(&lastFrameWeightLocal, length: MemoryLayout<Float>.size, index: 4)
         
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (self.width + threadgroupSize.width - 1) / threadgroupSize.width,
