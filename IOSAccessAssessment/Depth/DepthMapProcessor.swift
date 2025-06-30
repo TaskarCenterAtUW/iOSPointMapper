@@ -277,6 +277,93 @@ extension DepthMapProcessor {
         }
         return values
     }
+    
+    func getDepthValuesInRadius(segmentationLabelImage: CIImage, at points: [CGPoint],
+                                depthRadius: Int = 5, depthImage: CIImage, classLabel: UInt8) -> [Float]? {
+        guard let depthMap = self.depthMap else {
+            print("Depth image pixel buffer is nil")
+            return nil
+        }
+        guard let segmentationLabelMap = segmentationLabelImage.pixelBuffer else {
+            print("Segmentation label image pixel buffer is nil")
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+        
+        CVPixelBufferLockBaseAddress(segmentationLabelMap, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(segmentationLabelMap, .readOnly) }
+        
+        let segmentationLabelWidth = segmentationLabelImage.extent.width
+        let segmentationLabelHeight = segmentationLabelImage.extent.height
+        let depthWidth = CVPixelBufferGetWidth(depthMap)
+        let depthHeight = CVPixelBufferGetHeight(depthMap)
+        
+        guard Int(segmentationLabelWidth) == depthMapWidth && Int(segmentationLabelHeight) == depthMapHeight else {
+            print("Segmentation label image and depth image dimensions do not match")
+            return nil
+        }
+        
+        guard let segmentationLabelBaseAddress = CVPixelBufferGetBaseAddress(segmentationLabelMap),
+                let depthBaseAddress = CVPixelBufferGetBaseAddress(depthMap) else {
+            return nil
+        }
+        let segmentationLabelBytesPerRow = CVPixelBufferGetBytesPerRow(segmentationLabelMap)
+        let segmentationLabelBuffer = segmentationLabelBaseAddress.assumingMemoryBound(to: UInt8.self)
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
+        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
+        
+        var depthValues: [Float] = []
+        for point in points {
+            // Calculate the radius points
+            let deltas = (-depthRadius...depthRadius).flatMap { dx in
+                (-depthRadius...depthRadius).map { dy in
+                    CGPoint(x: dx, y: dy)
+                }
+            }
+            var depths: [Float] = []
+            for delta in deltas {
+                // Check if the point is within bounds of the segmentation label image
+                guard point.x >= 0 && point.x < CGFloat(segmentationLabelWidth) &&
+                        point.y >= 0 && point.y < CGFloat(segmentationLabelHeight) else {
+                    print("Point is out of bounds: \(point)")
+                    continue
+                }
+                let x = Int(point.x)
+                // Flip the y part of the centroid, since it comes from Core Vision/Graphics and is in the bottom-left coordinate system
+                // unlike a CVPixelBuffer, which when manually accessed, is in the top-left coordinate system.
+                let y = Int(Float(depthHeight) - Float(point.y))
+                // Check if the point is part of the object in the segmentation label image
+                let segmentationPixelOffset = y * segmentationLabelBytesPerRow / MemoryLayout<UInt8>.size + x
+                let segmentationPixelValue = segmentationLabelBuffer[segmentationPixelOffset]
+                guard segmentationPixelValue == classLabel else {
+                    continue
+                }
+                // Calculate the depth value at this point
+                let depthPixelOffset = y * depthBytesPerRow / MemoryLayout<Float>.size + x
+                let depthValue = depthBuffer[depthPixelOffset]
+                // Add the depth value to the list
+                depths.append(depthValue)
+            }
+            // TODO: The following fallback exists in case no depths are found in the radius.
+            // This is why trimmed mean should be eventually used as the main method for calculating depth.
+            if depths.isEmpty {
+                let x = Int(point.x)
+                // Flip the y part of the centroid, since it comes from Core Vision/Graphics and is in the bottom-left coordinate system
+                // unlike a CVPixelBuffer, which when manually accessed, is in the top-left coordinate system.
+                let y = Int(Float(depthHeight) - Float(point.y))
+                let depthPixelOffset = y * depthBytesPerRow / MemoryLayout<Float>.size + x
+                let depthValue = depthBuffer[depthPixelOffset]
+                depths.append(depthValue)
+            }
+            
+            // Calculate the mean depth value
+            let meanDepth = depths.reduce(0, +) / Float(depths.count)
+            depthValues.append(meanDepth)
+        }
+        return depthValues
+    }
 }
 
 /**
