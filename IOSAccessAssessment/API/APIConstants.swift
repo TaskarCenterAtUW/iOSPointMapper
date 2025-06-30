@@ -25,8 +25,12 @@ struct APIConstants {
     }
     
     enum TagKeys {
+        static let sessionIdKey = "demo:sessionId"
+        static let captureIdKey = "demo:captureId"
         static let classKey = "demo:class"
         static let widthKey = "demo:width"
+        static let depthKey = "demo:depth"
+        static let calculatedWidthKey = "demo:demo:calculatedWidth"
     }
     
     enum OtherConstants {
