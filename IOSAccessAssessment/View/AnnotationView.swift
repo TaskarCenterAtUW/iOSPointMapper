@@ -105,23 +105,6 @@ struct AnnotationView: View {
                             }
                             openAnnotationInstanceDetailView()
                         }
-//                        // MARK: Width Field Demo: Display width field for way-type objects if selectionClass is way-type
-//                        if (Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay) {
-//                            HStack {
-//                                Spacer()
-//                                Text("Width: ")
-//                                TextField("Width: ", value: $annotationImageManager.selectedObjectWidth, formatter: numberFormatter)
-//                                    .frame(width: 120)
-//                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-//                                    .fixedSize(horizontal: true, vertical: false)
-//                                    .onSubmit {
-//                                        updateSelectedObjectWidth(
-//                                            selectedObjectId: annotationImageManager.selectedObjectId ?? UUID(),
-//                                            width: annotationImageManager.selectedObjectWidth ?? 0.0)
-//                                    }
-//                                Spacer()
-//                            }
-//                        }
                         
                         ProgressBar(value: calculateProgress())
                         

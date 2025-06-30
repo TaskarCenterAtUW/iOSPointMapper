@@ -29,14 +29,12 @@ extension AnnotationView {
         let selectedObjectWidth: Binding<Float> = Binding(
             get: { self.annotationImageManager.selectedObjectWidth ?? 0.0 },
             set: { newValue in
-                print("New Width Value: \(newValue)")
                 self.updateSelectedObjectWidth(selectedObjectId: selectedObjectId, width: newValue)
             }
         )
         let selectedObjectBreakage: Binding<Bool> = Binding(
             get: { self.annotationImageManager.selectedObjectBreakage ?? false },
             set: { newValue in
-                print("New Value: \(newValue)")
                 self.updateSelectedObjectBreakage(selectedObjectId: selectedObjectId, breakageStatus: newValue)
             }
         )
