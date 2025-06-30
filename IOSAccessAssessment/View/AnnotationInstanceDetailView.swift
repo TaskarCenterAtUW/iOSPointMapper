@@ -8,6 +8,22 @@ import SwiftUI
 
 extension AnnotationView {
     @ViewBuilder
+    func openAnnotationInstanceDetailView() -> some View {
+        let isWay = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay
+        let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == annotationImageManager.selectedObjectId })
+        let disabledStatus = (!isWay || (selectedObject?.isAll ?? false))
+        
+        Button(action: {
+            isShowingAnnotationInstanceDetailView = true
+        }) {
+            Image(systemName: AnnotationViewConstants.Images.ellipsisIcon)
+        }
+        .buttonStyle(.bordered)
+        .disabled(disabledStatus)
+    }
+    
+    // Will be used to display the details of the selected annotation instance.
+    @ViewBuilder
     func annotationInstanceDetailView() -> some View {
         let selectedObjectId = self.annotationImageManager.selectedObjectId ?? UUID()
         let selectedObjectWidth: Binding<Float> = Binding(
@@ -19,6 +35,7 @@ extension AnnotationView {
         let selectedObjectBreakage: Binding<Bool> = Binding(
             get: { self.annotationImageManager.selectedObjectBreakage ?? false },
             set: { newValue in
+                print("New Value: \(newValue)")
                 self.updateSelectedObjectBreakage(selectedObjectId: selectedObjectId, breakageStatus: newValue)
             }
         )
@@ -57,7 +74,7 @@ struct AnnotationInstanceDetailView: View {
                 
                 Section(header: Text("Breakage Status")) {
                     Toggle(isOn: $selectedObjectBreakage) {
-                        Text("Is Breakage")
+                        Text("Potential Breakage")
                     }
                 }
             }
