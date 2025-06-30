@@ -315,7 +315,18 @@ extension AnnotationView {
             )
         }
         
-        let depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
+        var depthValues: [Float]?
+        if let segmentationLabelImage = self.annotationImageManager.annotatedSegmentationLabelImage,
+           segmentationLabelImage.pixelBuffer != nil,
+           let depthImage = self.sharedImageData.depthImage {
+            depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
+                segmentationLabelImage: segmentationLabelImage,
+                at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
+                classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[self.index]])
+        } else {
+            depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
+        }
+            
         guard let depthValues = depthValues else {
             print("Failed to get depth values for way bounds")
             return wayPoints.map { SIMD3<Float>(x: $0.x, y: $0.y, z: 0) }

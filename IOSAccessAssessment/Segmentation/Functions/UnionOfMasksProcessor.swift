@@ -155,12 +155,7 @@ class UnionOfMasksProcessor {
         commandBuffer.waitUntilCompleted()
         
         let image = CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
-        guard let image = image else {
-            print("Error: Failed to create CIImage from output texture")
-            return nil
-        }
-        // Create a CIImage from the outputTexture backed by a CVPixelBuffer, because it will be mostly accessed by CPU
-        return self.backCIImageToPixelBuffer(image)
+        return image
     }
     
     private func ciImageToTexture(image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]) -> MTLTexture? {
@@ -184,31 +179,4 @@ class UnionOfMasksProcessor {
             fatalError("Unsupported pixel format: \(format.rawValue)")
         }
     }
-    
-    private func backCIImageToPixelBuffer(_ image: CIImage) -> CIImage {
-        var imageBuffer: CVPixelBuffer?
-        let attributes: [CFString: Any] = [
-            kCVPixelBufferCGImageCompatibilityKey: true,
-            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
-            kCVPixelBufferIOSurfacePropertiesKey: [:] // Required for Metal/CoreImage
-        ]
-        let status = CVPixelBufferCreate(
-            kCFAllocatorDefault,
-            self.width,
-            self.height,
-            kCVPixelFormatType_OneComponent8,
-            attributes as CFDictionary,
-            &imageBuffer
-        )
-        guard status == kCVReturnSuccess, let imageBuffer = imageBuffer else {
-            print("Error: Failed to create pixel buffer")
-            return image
-        }
-        // Render the CIImage to the pixel buffer
-        self.ciContext.render(image, to: imageBuffer, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceGray())
-        // Create a CIImage from the pixel buffer
-        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
-        return ciImage
-    }
-
 }

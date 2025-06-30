@@ -72,6 +72,7 @@ class AnnotationSegmentationPipeline {
     var homographyTransformFilter: HomographyTransformFilter?
     var unionOfMasksProcessor: UnionOfMasksProcessor?
     var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
+    let context = CIContext()
     
     init() {
         self.contourRequestProcessor = ContourRequestProcessor(
@@ -180,6 +181,9 @@ class AnnotationSegmentationPipeline {
         }
         
         self.isProcessing = false
+        
+        // Back the CIImage to a pixel buffer
+        unionImage = self.backCIImageToPixelBuffer(unionImage)
         return unionImage
     }
     
@@ -197,7 +201,7 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
         var detectedObjects = self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
         if isWay && bounds != nil {
-            var largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
+            let largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
                 let wayBounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
                 largestObject?.wayBounds = wayBounds
@@ -207,6 +211,32 @@ class AnnotationSegmentationPipeline {
         
         self.isProcessing = false
         return detectedObjects
+    }
+    
+    private func backCIImageToPixelBuffer(_ image: CIImage) -> CIImage {
+        var imageBuffer: CVPixelBuffer?
+        let attributes: [CFString: Any] = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
+            kCVPixelBufferIOSurfacePropertiesKey: [:] // Required for Metal/CoreImage
+        ]
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            Int(image.extent.width),
+            Int(image.extent.height),
+            kCVPixelFormatType_OneComponent8,
+            attributes as CFDictionary,
+            &imageBuffer
+        )
+        guard status == kCVReturnSuccess, let imageBuffer = imageBuffer else {
+            print("Error: Failed to create pixel buffer")
+            return image
+        }
+        // Render the CIImage to the pixel buffer
+        self.context.render(image, to: imageBuffer, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceGray())
+        // Create a CIImage from the pixel buffer
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+        return ciImage
     }
         
 }
