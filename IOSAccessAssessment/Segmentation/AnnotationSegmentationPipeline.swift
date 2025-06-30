@@ -152,7 +152,9 @@ class AnnotationSegmentationPipeline {
         self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil) throws -> CIImage {
+    func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
+                                    unionOfMasksThreshold: Float = 1.0,
+                                    defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) throws -> CIImage {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -162,7 +164,10 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.unionOfMasksProcessorNil
         }
         
-        let unionImageResult = unionOfMasksProcessor.apply(targetValue: targetValue)
+        let unionImageResult = unionOfMasksProcessor.apply(targetValue: targetValue,
+                                                           unionOfMasksThreshold: unionOfMasksThreshold,
+                                                           defaultFrameWeight: defaultFrameWeight,
+                                                           lastFrameWeight: lastFrameWeight)
         guard var unionImage = unionImageResult else {
             self.isProcessing = false
             throw AnnotationSegmentationPipelineError.invalidUnionImageResult

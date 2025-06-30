@@ -94,7 +94,10 @@ class AnnotationImageManager: ObservableObject {
         do {
             inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
                 targetValue: segmentationClass.labelValue,
-                bounds: segmentationClass.bounds
+                bounds: segmentationClass.bounds,
+                unionOfMasksThreshold: segmentationClass.unionOfMasksThreshold,
+                defaultFrameWeight: segmentationClass.defaultFrameUnionWeight,
+                lastFrameWeight: segmentationClass.lastFrameUnionWeight
             )
         } catch {
             print("Error processing union of masks request: \(error)")
