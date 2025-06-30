@@ -130,8 +130,10 @@ struct DepthMapProcessor {
         let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthMap)
         let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
         
+        // Flip the y part of the centroid, since it comes from Core Vision and is in the bottom-left coordinate system
+        // unlike a CVPixelBuffer, which when manually accessed, is in the top-left coordinate system.
         let objectGravityPoint: CGPoint = CGPoint(x: object.centroid.x * segmentationLabelWidth,
-                                              y: object.centroid.y * segmentationLabelHeight)
+                                              y: (1 - object.centroid.y) * segmentationLabelHeight)
 //        print("objectCentroid: \(objectGravityPoint)")
         let gravityPixelOffset = Int(objectGravityPoint.y) * depthBytesPerRow / MemoryLayout<Float>.size + Int(objectGravityPoint.x)
         return depthBuffer[gravityPixelOffset]
@@ -173,7 +175,10 @@ extension DepthMapProcessor {
                 continue
             }
             let x = Int(point.x)
-            let y = Int(point.y)
+//            let y = Int(point.y)
+            // Flip the y part of the centroid, since it comes from Core Vision/Graphics and is in the bottom-left coordinate system
+            // unlike a CVPixelBuffer, which when manually accessed, is in the top-left coordinate system.
+            let y = Int(Float(depthHeight) - Float(point.y))
             let pixelOffset = y * depthBytesPerRow / MemoryLayout<Float>.size + x
             values.append(depthBuffer[pixelOffset])
         }
