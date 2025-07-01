@@ -88,7 +88,7 @@ struct AnnotationView: View {
                     )
                     Spacer()
                 }
-                ScrollView(.vertical) {
+//                ScrollView(.vertical) {
                     VStack {
                         HStack {
                             Spacer()
@@ -145,7 +145,7 @@ struct AnnotationView: View {
                         }
                         .padding()
                     }
-                }
+//                }
             }
             .padding(.top, 20)
             .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)

@@ -297,8 +297,15 @@ extension AnnotationView {
                 }
             }
             tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
-            let breakageStatus: Bool = annotatedDetectedObject.object?.finalBreakage ??
-            annotatedDetectedObject.object?.calculatedBreakage ?? false
+            var breakageStatus: Bool = false
+            if annotatedDetectedObject.object?.calculatedBreakage != nil {
+                breakageStatus = annotatedDetectedObject.object?.finalBreakage ??
+                annotatedDetectedObject.object?.calculatedBreakage ?? false
+            } else {
+                breakageStatus = self.getBreakageStatus(
+                    width: width,
+                    wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            }
             tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
         }
         print("Tags for node: \(tags)")
