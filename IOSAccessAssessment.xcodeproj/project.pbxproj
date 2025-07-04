@@ -23,6 +23,10 @@
 		A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */; };
 		A305B05F2E18978C00ECCF9B /* SegmentationConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B05E2E18978B00ECCF9B /* SegmentationConfig.swift */; };
 		A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0612E18992300ECCF9B /* VOCClassConfig.swift */; };
+		A305B0642E189C5500ECCF9B /* CityscapesClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0632E189C4F00ECCF9B /* CityscapesClassConfig.swift */; };
+		A305B0662E189C9A00ECCF9B /* CityscapesSubsetClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0652E189C9400ECCF9B /* CityscapesSubsetClassConfig.swift */; };
+		A305B0682E189CD600ECCF9B /* CocoCustom53ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0672E189CD000ECCF9B /* CocoCustom53ClassConfig.swift */; };
+		A305B06A2E189D8500ECCF9B /* CocoCustom35ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */; };
 		A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */ = {isa = PBXBuildFile; fileRef = A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */; };
 		A30646262D60486900B97D1B /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; };
 		A30646272D60486900B97D1B /* opencv2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A3D1272B2D5D09F40081DFF4 /* opencv2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -143,6 +147,10 @@
 		A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetEncoder.swift; sourceTree = "<group>"; };
 		A305B05E2E18978B00ECCF9B /* SegmentationConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationConfig.swift; sourceTree = "<group>"; };
 		A305B0612E18992300ECCF9B /* VOCClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VOCClassConfig.swift; sourceTree = "<group>"; };
+		A305B0632E189C4F00ECCF9B /* CityscapesClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityscapesClassConfig.swift; sourceTree = "<group>"; };
+		A305B0652E189C9400ECCF9B /* CityscapesSubsetClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityscapesSubsetClassConfig.swift; sourceTree = "<group>"; };
+		A305B0672E189CD000ECCF9B /* CocoCustom53ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom53ClassConfig.swift; sourceTree = "<group>"; };
+		A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom35ClassConfig.swift; sourceTree = "<group>"; };
 		A30646232D601C2F00B97D1B /* UIImage+OpenCV.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCV.h"; sourceTree = "<group>"; };
 		A30646242D601C2F00B97D1B /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
@@ -360,6 +368,10 @@
 			children = (
 				A305B05E2E18978B00ECCF9B /* SegmentationConfig.swift */,
 				A305B0612E18992300ECCF9B /* VOCClassConfig.swift */,
+				A305B0632E189C4F00ECCF9B /* CityscapesClassConfig.swift */,
+				A305B0652E189C9400ECCF9B /* CityscapesSubsetClassConfig.swift */,
+				A305B0672E189CD000ECCF9B /* CocoCustom53ClassConfig.swift */,
+				A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -708,11 +720,14 @@
 			files = (
 				A3E84ECC2DDAA82F0096A645 /* OrientationObserver.swift in Sources */,
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
+				A305B0642E189C5500ECCF9B /* CityscapesClassConfig.swift in Sources */,
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
 				A30646252D601C2F00B97D1B /* UIImage+OpenCV.mm in Sources */,
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
+				A305B0662E189C9A00ECCF9B /* CityscapesSubsetClassConfig.swift in Sources */,
 				A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */,
 				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
+				A305B0682E189CD600ECCF9B /* CocoCustom53ClassConfig.swift in Sources */,
 				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
@@ -752,6 +767,7 @@
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				A3FFAA732DE00B60002B99BD /* SegmentationARViewController.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
+				A305B06A2E189D8500ECCF9B /* CocoCustom35ClassConfig.swift in Sources */,
 				A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,

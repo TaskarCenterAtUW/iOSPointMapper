@@ -88,5 +88,5 @@ struct SegmentationClassConfig {
 }
 
 enum SegmentationConfig {
-    static let voc = VOCClassConfig.config
+    /// Configurations for the segmentation model. Added in separate files.
 }

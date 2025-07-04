@@ -5,9 +5,8 @@
 //  Created by Himanshu on 7/4/25.
 //
 
-
-enum VOCClassConfig {
-    static let config: SegmentationClassConfig = SegmentationClassConfig(
+extension SegmentationConfig {
+    static let voc: SegmentationClassConfig = SegmentationClassConfig(
         modelURL: Bundle.main.url(forResource: "espnetv2_pascal_256", withExtension: "mlmodelc"),
         classes: [
 //            SegmentationClass(name: "Background", grayscaleValue: 0.0 / 255.0,
