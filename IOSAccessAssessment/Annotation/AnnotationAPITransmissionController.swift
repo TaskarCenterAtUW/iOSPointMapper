@@ -79,13 +79,17 @@ extension AnnotationView {
         }
         
         var wayData = self.sharedImageData.wayGeometries[segmentationClass.labelValue]?.last
+        var wayWidth = self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
         if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
 //            var wayData = wayData!
             if let nodeData = nodeData {
                 wayData?.nodeRefs.append(nodeData.id)
+                
             }
             wayDataOperations.append(ChangesetDiffOperation.modify(wayData!))
+            wayWidth?.widths.append(annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0)
+            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.removeLast()
         } else {
             let className = segmentationClass.name
             let wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
@@ -96,6 +100,13 @@ extension AnnotationView {
             }
             wayData = WayData(id: String(tempId), tags: wayTags, nodeRefs: nodeRefs)
             wayDataOperations.append(ChangesetDiffOperation.create(wayData!))
+            
+            // Create wayWidth and add to wayWidthHistory
+            wayWidth = WayWidth(id: String(tempId), classLabel: segmentationClass.labelValue,
+                widths: [annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0])
+        }
+        if let wayWidth = wayWidth {
+            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue, default: []].append(wayWidth)
         }
         
         ChangesetService.shared.performUpload(operations: wayDataOperations) { result in
@@ -264,22 +275,40 @@ extension AnnotationView {
         
         let className = segmentationClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
-        tags["demo:depth"] = String(format: "%.4f", annotatedDetectedObject.depthValue)
+        tags[APIConstants.TagKeys.depthKey] = String(format: "%.4f", annotatedDetectedObject.depthValue)
         
         if isWay {
-            let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
-            if let wayBoundsWithDepth = wayBoundsWithDepth {
-                let width = objectLocation.getWayWidth(
-                    wayBoundsWithDepth: wayBoundsWithDepth,
-                    imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
-                    cameraTransform: self.sharedImageData.cameraTransform,
-                    cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
-                    deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
-                    originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
-                )
-                tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            // MARK: Width Field Demo: Use the calculated or validated width for the way bounds if present
+            var width: Float = 0.0
+            if annotatedDetectedObject.object?.calculatedWidth != nil {
+                width = annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0
+                tags[APIConstants.TagKeys.calculatedWidthKey] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedWidth ?? 0)
+            } else {
+                let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
+                if let wayBoundsWithDepth = wayBoundsWithDepth {
+                    width = objectLocation.getWayWidth(
+                        wayBoundsWithDepth: wayBoundsWithDepth,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                }
             }
+            tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            var breakageStatus: Bool = false
+            if annotatedDetectedObject.object?.calculatedBreakage != nil {
+                breakageStatus = annotatedDetectedObject.object?.finalBreakage ??
+                annotatedDetectedObject.object?.calculatedBreakage ?? false
+            } else {
+                breakageStatus = self.getBreakageStatus(
+                    width: width,
+                    wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            }
+            tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
         }
+        print("Tags for node: \(tags)")
         
         let nodeData = NodeData(id: String(id),
                                 latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)

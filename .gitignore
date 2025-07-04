@@ -13,3 +13,7 @@ build/
 # Project Specific
 Frameworks/*
 !Frameworks/.gitkeep
+
+# No additional model updates for now. These will be added to separate storage
+*.mlpackage
+*.mlmodel
