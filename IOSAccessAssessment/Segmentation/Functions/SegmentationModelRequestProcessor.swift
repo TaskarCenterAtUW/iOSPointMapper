@@ -17,7 +17,7 @@ struct SegmentationModelRequestProcessor {
     var selectionClasses: [Int] = []
     
     init(selectionClasses: [Int]) {
-        let modelURL = Bundle.main.url(forResource: "bisenetv2_53_640_640", withExtension: "mlmodelc")
+        let modelURL = Bundle.main.url(forResource: "bisenetv2_35_640_640", withExtension: "mlmodelc")
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
         guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration)) else {

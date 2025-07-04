@@ -32,6 +32,7 @@ enum AnnotationViewConstants {
     
     enum Images {
         static let checkIcon = "checkmark"
+        static let ellipsisIcon = "ellipsis"
     }
 }
 
@@ -47,6 +48,7 @@ struct AnnotationView: View {
     @State var options: [AnnotationOption] = AnnotationOptionClass.allCases.map { .classOption($0) }
     @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
+    @State var isShowingAnnotationInstanceDetailView: Bool = false
     @State var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
     
@@ -61,6 +63,13 @@ struct AnnotationView: View {
     
     // For deciding the layout
     @StateObject private var orientationObserver = OrientationObserver()
+    
+    // MARK: Width Field Demo: Temporary variable for number formatter
+    @State private var numberFormatter: NumberFormatter = {
+        var nf = NumberFormatter()
+        nf.numberStyle = .decimal
+        return nf
+    }()
     
     var body: some View {
         if (!self.isValid()) {
@@ -79,61 +88,64 @@ struct AnnotationView: View {
                     )
                     Spacer()
                 }
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
-                        Spacer()
-                    }
-                    
-                    HStack {
-                        Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
-                            ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
-                                Text(object.label ?? "")
-                                    .tag(object.id)
-                            }
+//                ScrollView(.vertical) {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
+                            Spacer()
                         }
-                    }
-                    
-                    ProgressBar(value: calculateProgress())
-                    
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 10) {
-                            ForEach(options, id: \.self) { option in
-                                Button(action: {
-                                    // Update the selected option
-                                    updateAnnotation(newOption: option)
-
-//                                    selectedOption = (selectedOption == option) ? nil : option
-                                    
-//                                    if option == .misidentified {
-//                                        selectedClassIndex = index
-//                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-//                                        isShowingClassSelectionModal = true
-//                                    }
-                                }) {
-                                    Text(option.rawValue)
-                                        .font(.subheadline)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(selectedOption == option ? Color.blue : Color.gray)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(10)
+                        
+                        HStack {
+                            Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
+                                ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
+                                    Text(object.label ?? "")
+                                        .tag(object.id)
                                 }
                             }
+                            openAnnotationInstanceDetailView()
                         }
-                        Spacer()
+                        
+                        ProgressBar(value: calculateProgress())
+                        
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 10) {
+                                ForEach(options, id: \.self) { option in
+                                    Button(action: {
+                                        // Update the selected option
+                                        updateAnnotation(newOption: option)
+
+    //                                    selectedOption = (selectedOption == option) ? nil : option
+                                        
+    //                                    if option == .misidentified {
+    //                                        selectedClassIndex = index
+    //                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+    //                                        isShowingClassSelectionModal = true
+    //                                    }
+                                    }) {
+                                        Text(option.rawValue)
+                                            .font(.subheadline)
+                                            .frame(maxWidth: .infinity)
+                                            .padding()
+                                            .background(selectedOption == option ? Color.blue : Color.gray)
+                                            .foregroundColor(.white)
+                                            .cornerRadius(10)
+                                    }
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding()
+                        
+                        Button(action: {
+                            confirmAnnotation()
+                        }) {
+                            Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        }
+                        .padding()
                     }
-                    .padding()
-                    
-                    Button(action: {
-                        confirmAnnotation()
-                    }) {
-                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                    }
-                    .padding()
-                }
+//                }
             }
             .padding(.top, 20)
             .navigationBarTitle(AnnotationViewConstants.Texts.annotationViewTitle, displayMode: .inline)
@@ -147,6 +159,7 @@ struct AnnotationView: View {
             .onChange(of: annotationImageManager.selectedObjectId) { oldValue, newValue in
                 if let newValue = newValue {
                     annotationImageManager.updateObjectSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
+                    calculateWidth(selectedObjectId: newValue)
                     refreshOptions()
                 }
             }
@@ -179,6 +192,9 @@ struct AnnotationView: View {
 //            .sheet(isPresented: $isShowingClassSelectionModal) {
 //                classSelectionView()
 //            }
+            .sheet(isPresented: $isShowingAnnotationInstanceDetailView) {
+                annotationInstanceDetailView()
+            }
         }
     }
     
@@ -318,5 +334,79 @@ struct AnnotationView: View {
 
     func calculateProgress() -> Float {
         return Float(self.index) / Float(self.sharedImageData.segmentedIndices.count)
+    }
+    
+    // MARK: Width Field Demo: Temporary function to calculate width of a way-type object
+    func calculateWidth(selectedObjectId: UUID) {
+        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        var width: Float = 0.0
+        // If the current class is way-type, we should calculate the width of the selected object
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object
+           {
+            if (selectedObjectObject.calculatedWidth != nil) {
+                width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth ?? 0.0
+            } else {
+                // Calculate the width of the selected object
+                let wayBoundsWithDepth = getWayBoundsWithDepth(wayBounds: selectedObject.object?.wayBounds ?? [])
+                let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
+                if let wayBoundsWithDepth = wayBoundsWithDepth {
+                    width = objectLocation.getWayWidth(
+                        wayBoundsWithDepth: wayBoundsWithDepth,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                    selectedObjectObject.calculatedWidth = width
+                }
+            }
+        }
+        // Update the width in the annotationImageManager
+        annotationImageManager.selectedObjectWidth = width
+    }
+    
+    func calculateBreakage(selectedObjectId: UUID) {
+        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        var breakageStatus: Bool = false
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object,
+           let width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth {
+            breakageStatus = self.getBreakageStatus(
+                width: width,
+                wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+            selectedObjectObject.calculatedBreakage = breakageStatus
+        }
+        // Update the breakage status in the annotationImageManager
+        annotationImageManager.selectedObjectBreakage = breakageStatus
+    }
+    
+    func getBreakageStatus(width: Float, wayWidth: WayWidth?) -> Bool {
+        print("Way Width: \(wayWidth?.widths ?? [])")
+        guard let wayWidth = wayWidth else {
+            return false
+        }
+        let widths = wayWidth.widths
+        // Check if width is lower than mean - 2 standard deviations of the mean (if the length of widths array is greater than 3)
+        guard widths.count >= 3 else {
+            return false
+        }
+        let sum = widths.reduce(0, +)
+        let avg = sum / Float(widths.count)
+        let v = widths.reduce(0, { $0 + ($1-avg)*($1-avg) })
+        let stdDev = sqrt(v / (Float(widths.count)-1))
+        let lowerBound = avg - 2 * stdDev
+        print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
+        return width < lowerBound
     }
 }
