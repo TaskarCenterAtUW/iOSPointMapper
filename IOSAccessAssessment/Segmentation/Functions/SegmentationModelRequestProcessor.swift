@@ -53,7 +53,7 @@ struct SegmentationModelRequestProcessor {
             let segmentationBuffer = segmentationResult.first?.pixelBuffer
             
             let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
-            let grayscaleValuesToIndex = Constants.ClassConstants.labelToIndexMap
+            let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap
             let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
             let selectedIndicesSet = Set(selectedIndices)
             let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }

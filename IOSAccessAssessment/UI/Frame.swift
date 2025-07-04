@@ -17,7 +17,7 @@ struct VerticalFrame {
         // with the screen height acting as a threshold to support other frames and buttons
         // FIXME: Make this logic more robust to screen orientation
         //  so that we can eventually use other orientations
-        let aspectRatio = Constants.ClassConstants.inputSize.width / Constants.ClassConstants.inputSize.height
+        let aspectRatio = Constants.SelectedSegmentationConfig.inputSize.width / Constants.SelectedSegmentationConfig.inputSize.height
         
         let sideLength = min(width * 0.9 / aspectRatio, height * 0.40)
         let sideWidth = sideLength * aspectRatio

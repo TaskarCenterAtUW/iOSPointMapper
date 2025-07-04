@@ -9,7 +9,7 @@ import SwiftUI
 extension AnnotationView {
     @ViewBuilder
     func openAnnotationInstanceDetailView() -> some View {
-        let isWay = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]].isWay
+        let isWay = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]].isWay
         let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == annotationImageManager.selectedObjectId })
         let disabledStatus = (!isWay || (selectedObject?.isAll ?? false))
         

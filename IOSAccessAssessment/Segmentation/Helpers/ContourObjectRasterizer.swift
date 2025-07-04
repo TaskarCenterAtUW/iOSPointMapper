@@ -64,7 +64,7 @@ struct ContourObjectRasterizer {
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
-        let labelToColorMap = Constants.ClassConstants.labelToColorMap
+        let labelToColorMap = Constants.SelectedSegmentationConfig.labelToColorMap
         for object in objects {
             /// First, draw the contour
             if polygonConfig.draw {
@@ -139,7 +139,7 @@ struct ContourObjectRasterizer {
         
         baseUIImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
         
-        let labelToColorMap = Constants.ClassConstants.labelToColorMap
+        let labelToColorMap = Constants.SelectedSegmentationConfig.labelToColorMap
         for object in objects {
             /// First, draw the contour
             if polygonConfig.draw {
