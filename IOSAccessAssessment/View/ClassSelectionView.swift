@@ -11,7 +11,7 @@ extension AnnotationView {
     @ViewBuilder
     func classSelectionView() -> some View {
         if let selectedClassIndex = selectedClassIndex {
-            let filteredClasses = selection.map { Constants.ClassConstants.classNames[$0] }
+            let filteredClasses = selection.map { Constants.SelectedSegmentationConfig.classNames[$0] }
             
             // mapping between filtered and non-filtered
             let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0

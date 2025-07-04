@@ -10,7 +10,7 @@ import SwiftUI
 // Constants related to the supported classes
 struct Constants {
     // Supported Classes
-    static let ClassConstants: SegmentationClassConfig = SegmentationConfig.cocoCustom35Config
+    static let SelectedSegmentationConfig: SegmentationClassConfig = SegmentationConfig.cocoCustom35Config
     
     struct DepthConstants {
         static let inputSize: CGSize = CGSize(width: 518, height: 392)

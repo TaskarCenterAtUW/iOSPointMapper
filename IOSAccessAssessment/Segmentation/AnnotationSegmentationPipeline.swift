@@ -91,9 +91,9 @@ class AnnotationSegmentationPipeline {
     
     func setSelectionClasses(_ selectionClasses: [Int]) {
         self.selectionClasses = selectionClasses
-        self.selectionClassLabels = selectionClasses.map { Constants.ClassConstants.labels[$0] }
-        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.ClassConstants.grayscaleValues[$0] }
-        self.selectionClassColors = selectionClasses.map { Constants.ClassConstants.colors[$0] }
+        self.selectionClassLabels = selectionClasses.map { Constants.SelectedSegmentationConfig.labels[$0] }
+        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedSegmentationConfig.grayscaleValues[$0] }
+        self.selectionClassColors = selectionClasses.map { Constants.SelectedSegmentationConfig.colors[$0] }
         
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }

@@ -234,7 +234,7 @@ class SharedImageData: ObservableObject {
     // Check if we should add functionality to support multiple wayData of the same class in one changeset
     func appendNodeToWayGeometry(nodeData: NodeData, classLabel: UInt8) {
         // If the class is of type way, only then can we append to the wayGeometries
-        let isWay = Constants.ClassConstants.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        let isWay = Constants.SelectedSegmentationConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
         guard isWay else {
             print("Class \(classLabel) is not a way class")
             return
@@ -251,7 +251,7 @@ class SharedImageData: ObservableObject {
     }
     
     func appendWidthToWayWidth(width: Float, classLabel: UInt8) {
-        let isWay = Constants.ClassConstants.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        let isWay = Constants.SelectedSegmentationConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
         guard isWay else {
             print("Class \(classLabel) is not a way class")
             return

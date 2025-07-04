@@ -92,7 +92,7 @@ struct AnnotationView: View {
                     VStack {
                         HStack {
                             Spacer()
-                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.ClassConstants.classNames[sharedImageData.segmentedIndices[index]])")
+                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.SelectedSegmentationConfig.classNames[sharedImageData.segmentedIndices[index]])")
                             Spacer()
                         }
                         
@@ -225,7 +225,7 @@ struct AnnotationView: View {
             print("Index out of bounds in refreshView")
             return
         }
-        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         self.annotationImageManager.update(
             cameraImage: sharedImageData.cameraImage!,
             segmentationLabelImage: sharedImageData.segmentationLabelImage!,
@@ -284,12 +284,12 @@ struct AnnotationView: View {
                 depthValue = depthMapProcessor.getDepth(
                     segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                     depthImage: depthImage,
-                    classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+                    classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[index]])
             } else {
                 depthValue = depthMapProcessor.getDepthInRadius(
                     segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                     depthRadius: 5, depthImage: depthImage,
-                    classLabel: Constants.ClassConstants.labels[sharedImageData.segmentedIndices[index]])
+                    classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[index]])
             }
 //            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
@@ -303,7 +303,7 @@ struct AnnotationView: View {
         var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
         self.currentDepthValues = currentDepthValueString
         
-        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
         
         nextSegment()
@@ -311,7 +311,7 @@ struct AnnotationView: View {
     
     func confirmAnnotationWithoutDepth() {
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
-        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
         uploadNodeWithoutDepth(location: location, segmentationClass: segmentationClass)
         nextSegment()
@@ -338,7 +338,7 @@ struct AnnotationView: View {
     
     // MARK: Width Field Demo: Temporary function to calculate width of a way-type object
     func calculateWidth(selectedObjectId: UUID) {
-        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         if !(selectionClass.isWay) {
             return
         }
@@ -372,12 +372,12 @@ struct AnnotationView: View {
     }
     
     func calculateBreakage(selectedObjectId: UUID) {
-        let selectionClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         if !(selectionClass.isWay) {
             return
         }
         
-        let segmentationClass = Constants.ClassConstants.classes[sharedImageData.segmentedIndices[index]]
+        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         var breakageStatus: Bool = false
         if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
            let selectedObjectObject = selectedObject.object,

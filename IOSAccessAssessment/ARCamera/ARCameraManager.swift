@@ -162,8 +162,8 @@ extension ARCameraManager {
         ]
         let cameraPixelBufferAttributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferWidthKey as String: Constants.ClassConstants.inputSize.width,
-            kCVPixelBufferHeightKey as String: Constants.ClassConstants.inputSize.height,
+            kCVPixelBufferWidthKey as String: Constants.SelectedSegmentationConfig.inputSize.width,
+            kCVPixelBufferHeightKey as String: Constants.SelectedSegmentationConfig.inputSize.height,
             kCVPixelBufferCGImageCompatibilityKey as String: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
             kCVPixelBufferMetalCompatibilityKey as String: true,
@@ -186,8 +186,8 @@ extension ARCameraManager {
         ]
         let depthPixelBufferAttributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_DepthFloat32,
-            kCVPixelBufferWidthKey as String: Constants.ClassConstants.inputSize.width,
-            kCVPixelBufferHeightKey as String: Constants.ClassConstants.inputSize.height,
+            kCVPixelBufferWidthKey as String: Constants.SelectedSegmentationConfig.inputSize.width,
+            kCVPixelBufferHeightKey as String: Constants.SelectedSegmentationConfig.inputSize.height,
             kCVPixelBufferCGImageCompatibilityKey as String: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
             kCVPixelBufferMetalCompatibilityKey as String: true,
@@ -207,8 +207,8 @@ extension ARCameraManager {
     
     func orientAndFixCameraFrame(_ frame: CVPixelBuffer) -> CIImage {
         let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
+            width: Constants.SelectedSegmentationConfig.inputSize.width,
+            height: Constants.SelectedSegmentationConfig.inputSize.height
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
         cameraImage = CIImageUtils.resizeWithAspectThenCrop(cameraImage, to: croppedSize)
@@ -226,8 +226,8 @@ extension ARCameraManager {
     
     func orientAndFixCameraImage(_ image: CIImage) -> CIImage {
         let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
+            width: Constants.SelectedSegmentationConfig.inputSize.width,
+            height: Constants.SelectedSegmentationConfig.inputSize.height
         )
         var cameraImage = CIImageUtils.resizeWithAspectThenCrop(image, to: croppedSize)
         cameraImage = cameraImage.oriented(
@@ -244,8 +244,8 @@ extension ARCameraManager {
     
     func orientAndFixDepthFrame(_ frame: CVPixelBuffer) -> CIImage {
         let croppedSize: CGSize = CGSize(
-            width: Constants.ClassConstants.inputSize.width,
-            height: Constants.ClassConstants.inputSize.height
+            width: Constants.SelectedSegmentationConfig.inputSize.width,
+            height: Constants.SelectedSegmentationConfig.inputSize.height
         )
         
         var depthImage = CIImage(cvPixelBuffer: frame)

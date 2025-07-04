@@ -148,7 +148,7 @@ class AnnotationImageManager: ObservableObject {
         let objectsUIImage = UIImage(
             cgImage: ContourObjectRasterizer.rasterizeContourObjects(
                 objects: inputDetectedObjects,
-                size: Constants.ClassConstants.inputSize,
+                size: Constants.SelectedSegmentationConfig.inputSize,
                 polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
                 boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
                 wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
@@ -180,7 +180,7 @@ class AnnotationImageManager: ObservableObject {
             }
         }
         newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: baseImage, objects: oldObjects, size: Constants.ClassConstants.inputSize,
+            baseImage: baseImage, objects: oldObjects, size: Constants.SelectedSegmentationConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
@@ -196,7 +196,7 @@ class AnnotationImageManager: ObservableObject {
         }
         newImage = newImage ?? baseImage
         newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: newImage!, objects: newObjects, size: Constants.ClassConstants.inputSize,
+            baseImage: newImage!, objects: newObjects, size: Constants.SelectedSegmentationConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),

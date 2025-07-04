@@ -115,7 +115,7 @@ struct SetupView: View {
 //                    .foregroundColor(.gray)
                 
                 List {
-                    ForEach(0..<Constants.ClassConstants.classNames.count, id: \.self) { index in
+                    ForEach(0..<Constants.SelectedSegmentationConfig.classNames.count, id: \.self) { index in
                         Button(action: {
                             if self.selection.contains(index) {
                                 self.selection.remove(index)
@@ -123,7 +123,7 @@ struct SetupView: View {
                                 self.selection.insert(index)
                             }
                         }) {
-                            Text(Constants.ClassConstants.classNames[index])
+                            Text(Constants.SelectedSegmentationConfig.classNames[index])
                                 .foregroundColor(
                                     self.selection.contains(index)
                                     ? SetupViewConstants.Colors.selectedClass
