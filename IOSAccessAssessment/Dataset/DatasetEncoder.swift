@@ -16,7 +16,7 @@ enum DatasetEncoderStatus {
     case directoryCreationError
 }
 
-class DatasetEncoder {
+class DatasetEncoder {    
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
     
@@ -99,6 +99,8 @@ class DatasetEncoder {
         self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
         self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         
+        // TODO: Add error handling for each encoder
+        
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
     }
@@ -116,5 +118,11 @@ class DatasetEncoder {
         } catch let error {
             print("Could not write camera matrix. \(error.localizedDescription)")
         }
+    }
+    
+    func save() {
+        self.cameraTransformEncoder.done()
+        self.locationEncoder.done()
+        self.headingEncoder.done()
     }
 }

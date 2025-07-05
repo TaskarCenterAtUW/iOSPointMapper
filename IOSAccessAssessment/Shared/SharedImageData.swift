@@ -101,6 +101,12 @@ class SharedImageData: ObservableObject {
     @Published var isUploadReady: Bool = false
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     
+    // For given changeset
+    var currentDatasetEncoder: DatasetEncoder?    
+    
+    // For Current Capture
+    var currentCaptureId: UUID?
+    
     // TODO: Replace the following properties with a single ImageData object.
     var cameraImage: CIImage?
     var depthImage: CIImage?
