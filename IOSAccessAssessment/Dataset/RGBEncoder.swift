@@ -11,11 +11,11 @@ import UIKit
 
 class RGBEncoder {
     enum Status {
-        case allGood
-        case frameEncodingError
+        case ok
+        case fileCreationError
     }
     private let baseDirectory: URL
-    public var status: Status = Status.allGood
+    public var status: Status = Status.ok
 
     init(outDirectory: URL) {
         self.baseDirectory = outDirectory
@@ -23,7 +23,7 @@ class RGBEncoder {
             try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
         } catch let error {
             print("Could not create folder. \(error.localizedDescription)")
-            status = Status.frameEncodingError
+            status = Status.fileCreationError
         }
     }
 
