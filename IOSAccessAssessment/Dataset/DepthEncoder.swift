@@ -27,8 +27,8 @@ class DepthEncoder {
         }
     }
 
-    func save(ciImage: CIImage, frameNumber: Int) {
-        let filename = String(format: "%06d", frameNumber)
+    func save(ciImage: CIImage, frameNumber: UUID) {
+        let filename = String(frameNumber.uuidString)
         let image = UIImage(ciImage: ciImage)
         guard let data = image.pngData() else {
             print("Could not convert CIImage to PNG data for frame \(frameNumber).")

@@ -6,22 +6,22 @@
 //
 
 struct LocationData {
-    let timestamp: Date
+    let timestamp: TimeInterval
     let latitude: Double
     let longitude: Double
-    let altitude: Double
-    let horizontalAccuracy: Double
-    let verticalAccuracy: Double
-    let speed: Double
-    let course: Double
-    let floorLevel: Int
+//    let altitude: Double
+//    let horizontalAccuracy: Double
+//    let verticalAccuracy: Double
+//    let speed: Double
+//    let course: Double
+//    let floorLevel: Int
 }
 
 struct HeadingData {
-    let timestamp: Date
+    let timestamp: TimeInterval
     let magneticHeading: Double
     let trueHeading: Double
-    let headingAccuracy: Double
+//    let headingAccuracy: Double
 }
 
 class LocationEncoder {
@@ -34,16 +34,19 @@ class LocationEncoder {
         do {
             try "".write(to: self.path, atomically: true, encoding: .utf8)
             self.fileHandle = try FileHandle(forWritingTo: self.path)
-            let heading: String = "timestamp, latitude, longitude, altitude, horizontal_accuracy, vertical_accuracy, speed, course, floor_level\n"
+            let heading: String = "timestamp, frame, latitude, longitude\n"
+//            , altitude, horizontal_accuracy, vertical_accuracy, speed, course, floor_level\n"
             self.fileHandle.write(heading.data(using: .utf8)!)
         } catch let error {
             print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open imu file for writing.")
+            preconditionFailure("Can't open location file for writing.")
         }
     }
 
-    func add(locationData: LocationData) {
-        let line = "\(locationData.timestamp.timeIntervalSince1970), \(locationData.latitude), \(locationData.longitude), \(locationData.altitude), \(locationData.horizontalAccuracy), \(locationData.verticalAccuracy), \(locationData.speed), \(locationData.course), \(locationData.floorLevel)\n"
+    func add(locationData: LocationData, frameNumber: UUID) {
+        let frameNumber = String(frameNumber.uuidString)
+        let line = "\(locationData.timestamp), \(frameNumber), \(locationData.latitude), \(locationData.longitude)\n"
+//        , \(locationData.altitude), \(locationData.horizontalAccuracy), \(locationData.verticalAccuracy), \(locationData.speed), \(locationData.course), \(locationData.floorLevel)\n"
         self.fileHandle.write(line.data(using: .utf8)!)
     }
 
@@ -51,7 +54,7 @@ class LocationEncoder {
         do {
             try self.fileHandle.close()
         } catch let error {
-            print("Closing imu \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
+            print("Closing location \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
         }
     }
 }
@@ -66,16 +69,19 @@ class HeadingEncoder {
         do {
             try "".write(to: self.path, atomically: true, encoding: .utf8)
             self.fileHandle = try FileHandle(forWritingTo: self.path)
-            let heading: String = "timestamp, magnetic_heading, true_heading, heading_accuracy\n"
+            let heading: String = "timestamp, frame, magnetic_heading, true_heading\n"
+//            , heading_accuracy\n"
             self.fileHandle.write(heading.data(using: .utf8)!)
         } catch let error {
             print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open imu file for writing.")
+            preconditionFailure("Can't open heading file for writing.")
         }
     }
 
-    func add(headingData: HeadingData) {
-        let line = "\(headingData.timestamp.timeIntervalSince1970), \(headingData.magneticHeading), \(headingData.trueHeading), \(headingData.headingAccuracy)\n"
+    func add(headingData: HeadingData, frameNumber: UUID) {
+        let frameNumber = String(frameNumber.uuidString)
+        let line = "\(headingData.timestamp), \(frameNumber) \(headingData.magneticHeading), \(headingData.trueHeading)\n"
+//        , \(headingData.headingAccuracy)\n"
         self.fileHandle.write(line.data(using: .utf8)!)
     }
 
@@ -83,7 +89,7 @@ class HeadingEncoder {
         do {
             try self.fileHandle.close()
         } catch let error {
-            print("Closing imu \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
+            print("Closing heading \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
         }
     }
 }

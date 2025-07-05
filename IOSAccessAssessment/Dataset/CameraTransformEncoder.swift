@@ -26,17 +26,17 @@ class CameraTransformEncoder {
             self.fileHandle.write("timestamp, frame, rxx, rxy, rxz, ryx, ryy, ryz, rzx, rzy, rzz, x, y, z\n".data(using: .utf8)!)
         } catch let error {
             print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open odometry file for writing.")
+            preconditionFailure("Can't open camera transform file for writing.")
         }
     }
     
-    func add(transform: simd_float4x4, timestamp: TimeInterval, frameNumber: Int) {
+    func add(transform: simd_float4x4, timestamp: TimeInterval, frameNumber: UUID) {
         let rotationX = transform.columns.0
         let rotationY = transform.columns.1
         let rotationZ = transform.columns.2
         let translation = transform.columns.3
         
-        let frameNumber = String(format: "%06d", frameNumber)
+        let frameNumber = String(frameNumber.uuidString)
         let line = "\(timestamp), \(frameNumber), \(rotationX.x), \(rotationX.y), \(rotationX.z), \(rotationY.x), \(rotationY.y), \(rotationY.z), \(rotationZ.x), \(rotationZ.y), \(rotationZ.z), \(translation.x), \(translation.y), \(translation.z)\n"
         self.fileHandle.write(line.data(using: .utf8)!)
     }
@@ -45,7 +45,7 @@ class CameraTransformEncoder {
         do {
             try self.fileHandle.close()
         } catch let error {
-            print("Can't close odometry file \(self.path.absoluteString). \(error.localizedDescription)")
+            print("Can't close camera transform file \(self.path.absoluteString). \(error.localizedDescription)")
         }
     }
 }

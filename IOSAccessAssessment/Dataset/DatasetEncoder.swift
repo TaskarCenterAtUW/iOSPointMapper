@@ -18,7 +18,6 @@ enum DatasetEncoderStatus {
 
 class DatasetEncoder {
     private var datasetDirectory: URL
-    private var currentFrame: Int = -1
     private var savedFrames: Int = 0
     
     public let rgbFilePath: URL // Relative to app document directory.
@@ -37,6 +36,7 @@ class DatasetEncoder {
     private let headingEncoder: HeadingEncoder
     
     public var status = DatasetEncoderStatus.allGood
+    public var capturedFrameIds: Set<UUID> = []
     
     init(changesetId: String) {
         self.datasetDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -72,5 +72,49 @@ class DatasetEncoder {
         return directory
     }
     
+    public func addData(
+        frameId: UUID,
+        cameraImage: CIImage, depthImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        location: CLLocation?, heading: CLHeading? = nil,
+        timestamp: TimeInterval = Date().timeIntervalSince1970
+    ) {
+        if (self.capturedFrameIds.contains(frameId)) {
+            print("Frame with ID \(frameId) already exists. Skipping.")
+            return
+        }
+        
+        let frameNumber: UUID = frameId
+        
+        self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
+        self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
+//        self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
+        self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
+        self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
+        
+        let locationData = LocationData(timestamp: timestamp, latitude: location?.coordinate.latitude ?? 0.0,
+                                        longitude: location?.coordinate.longitude ?? 0.0)
+        let headingData = HeadingData(timestamp: timestamp, magneticHeading: heading?.magneticHeading ?? 0.0,
+                                      trueHeading: heading?.trueHeading ?? 0.0)
+        self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        
+        savedFrames = savedFrames + 1
+        self.capturedFrameIds.insert(frameNumber)
+    }
     
+    private func writeIntrinsics(cameraIntrinsics: simd_float3x3) {
+        let rows = cameraIntrinsics.transpose.columns
+        var csv: [String] = []
+        for row in [rows.0, rows.1, rows.2] {
+            let csvLine = "\(row.x), \(row.y), \(row.z)"
+            csv.append(csvLine)
+        }
+        let contents = csv.joined(separator: "\n")
+        do {
+            try contents.write(to: self.cameraMatrixPath, atomically: true, encoding: String.Encoding.utf8)
+        } catch let error {
+            print("Could not write camera matrix. \(error.localizedDescription)")
+        }
+    }
 }

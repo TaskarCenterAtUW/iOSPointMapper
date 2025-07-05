@@ -15,7 +15,6 @@ class ConfidenceEncoder {
     }
     private let baseDirectory: URL
     private let ciContext: CIContext
-    private var previousFrame: Int = -1
     public var status: Status = Status.ok
 
     init(outDirectory: URL) {
@@ -29,12 +28,8 @@ class ConfidenceEncoder {
         }
     }
 
-    func encodeFrame(frame: CVPixelBuffer, frameNumber: Int) {
-        if (previousFrame + 1) != frameNumber {
-            print("Confidence skipped a frame. \(previousFrame + 1) != \(frameNumber)")
-        }
-        previousFrame = frameNumber
-        let filename = String(format: "%06d", frameNumber)
+    func encodeFrame(frame: CVPixelBuffer, frameNumber: UUID) {
+        let filename = String(frameNumber.uuidString)
         let image = CIImage(cvPixelBuffer: frame)
         assert(CVPixelBufferGetPixelFormatType(frame) == kCVPixelFormatType_OneComponent8)
         let framePath = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
