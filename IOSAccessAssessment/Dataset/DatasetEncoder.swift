@@ -23,7 +23,7 @@ class DatasetEncoder {
     
     public let rgbFilePath: URL // Relative to app document directory.
     public let depthFilePath: URL // Relative to app document directory.
-    public let confidenceFilePath: URL // Relative to app document directory.
+//    public let confidenceFilePath: URL // Relative to app document directory.
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
@@ -31,6 +31,10 @@ class DatasetEncoder {
     
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
+//    private let confidenceEncoder: ConfidenceEncoder
+    private let cameraTransformEncoder: CameraTransformEncoder
+    private let locationEncoder: LocationEncoder
+    private let headingEncoder: HeadingEncoder
     
     public var status = DatasetEncoderStatus.allGood
     
@@ -39,7 +43,7 @@ class DatasetEncoder {
         datasetDirectory = DatasetEncoder.createDirectory(id: changesetId)
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
-        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
+//        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
@@ -47,6 +51,10 @@ class DatasetEncoder {
         
         self.rgbEncoder = RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = DepthEncoder(outDirectory: self.depthFilePath)
+//        self.confidenceEncoder = ConfidenceEncoder(outDirectory: self.confidenceFilePath)
+        self.cameraTransformEncoder = CameraTransformEncoder(url: self.cameraTransformPath)
+        self.locationEncoder = LocationEncoder(url: self.locationPath)
+        self.headingEncoder = HeadingEncoder(url: self.headingPath)
     }
     
     static private func createDirectory(id: String) -> URL {
@@ -63,4 +71,6 @@ class DatasetEncoder {
         }
         return directory
     }
+    
+    
 }

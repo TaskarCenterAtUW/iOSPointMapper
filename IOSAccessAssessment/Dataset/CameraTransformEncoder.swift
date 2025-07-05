@@ -9,7 +9,7 @@ import Foundation
 import Accelerate
 import ARKit
 
-class TransformEncoder {
+class CameraTransformEncoder {
     enum Status {
         case ok
         case fileCreationError

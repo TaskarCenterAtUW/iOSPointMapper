@@ -72,7 +72,8 @@
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
 		A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */; };
 		A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */; };
-		A3FE16652E18C54000DAE5BE /* TransformEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16642E18C53D00DAE5BE /* TransformEncoder.swift */; };
+		A3FE16652E18C54000DAE5BE /* CameraTransformEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */; };
+		A3FE16672E18C81800DAE5BE /* LocationEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */; };
 		A3FFAA732DE00B60002B99BD /* SegmentationARViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA722DE00B53002B99BD /* SegmentationARViewController.swift */; };
 		A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */; };
 		A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */; };
@@ -201,7 +202,8 @@
 		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBEncoder.swift; sourceTree = "<group>"; };
 		A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfidenceEncoder.swift; sourceTree = "<group>"; };
-		A3FE16642E18C53D00DAE5BE /* TransformEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformEncoder.swift; sourceTree = "<group>"; };
+		A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraTransformEncoder.swift; sourceTree = "<group>"; };
+		A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationEncoder.swift; sourceTree = "<group>"; };
 		A3FFAA722DE00B53002B99BD /* SegmentationARViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationARViewController.swift; sourceTree = "<group>"; };
 		A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraManager.swift; sourceTree = "<group>"; };
 		A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraUtils.swift; sourceTree = "<group>"; };
@@ -366,7 +368,8 @@
 		A305B05A2E1887AE00ECCF9B /* Dataset */ = {
 			isa = PBXGroup;
 			children = (
-				A3FE16642E18C53D00DAE5BE /* TransformEncoder.swift */,
+				A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */,
+				A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */,
 				A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */,
 				A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */,
 				A305B06B2E18A85D00ECCF9B /* DepthEncoder.swift */,
@@ -782,7 +785,7 @@
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				A3FFAA732DE00B60002B99BD /* SegmentationARViewController.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
-				A3FE16652E18C54000DAE5BE /* TransformEncoder.swift in Sources */,
+				A3FE16652E18C54000DAE5BE /* CameraTransformEncoder.swift in Sources */,
 				A305B06A2E189D8500ECCF9B /* CocoCustom35ClassConfig.swift in Sources */,
 				A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
@@ -803,6 +806,7 @@
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
+				A3FE16672E18C81800DAE5BE /* LocationEncoder.swift in Sources */,
 				A305B05F2E18978C00ECCF9B /* SegmentationConfig.swift in Sources */,
 				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,
 				A3FFAA7A2DE01A0F002B99BD /* ARContentView.swift in Sources */,
