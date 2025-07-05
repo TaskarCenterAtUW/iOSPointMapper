@@ -113,7 +113,7 @@ class AnnotationImageManager: ObservableObject {
         if inputLabelImage.extent.width == 0 || inputLabelImage.extent.height == 0 {
             print("Warning: inputLabelImage has zero width or height.")
         }
-        print("inputLabelImage pixelBuffer nil?: \(inputLabelImage.pixelBuffer == nil)")
+//        print("inputLabelImage pixelBuffer nil?: \(inputLabelImage.pixelBuffer == nil)")
         return (ciImage: inputLabelImage,
                 uiImage: segmentationUIImage)
     }

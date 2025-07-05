@@ -26,14 +26,14 @@ class DatasetEncoder {
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
-    public let headingPath: URL
+//    public let headingPath: URL
     
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
 //    private let confidenceEncoder: ConfidenceEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
-    private let headingEncoder: HeadingEncoder
+//    private let headingEncoder: HeadingEncoder
     
     public var status = DatasetEncoderStatus.allGood
     public var capturedFrameIds: Set<UUID> = []
@@ -47,19 +47,19 @@ class DatasetEncoder {
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
-        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
+//        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         
         self.rgbEncoder = RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = DepthEncoder(outDirectory: self.depthFilePath)
 //        self.confidenceEncoder = ConfidenceEncoder(outDirectory: self.confidenceFilePath)
         self.cameraTransformEncoder = CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = LocationEncoder(url: self.locationPath)
-        self.headingEncoder = HeadingEncoder(url: self.headingPath)
+//        self.headingEncoder = HeadingEncoder(url: self.headingPath)
     }
     
     static private func createDirectory(id: String) -> URL {
         let url = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first!
-        var directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: url)
+        let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: url)
         if FileManager.default.fileExists(atPath: directory.path) {
             // Return existing directory if it already exists
             return directory
@@ -76,7 +76,8 @@ class DatasetEncoder {
         frameId: UUID,
         cameraImage: CIImage, depthImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        location: CLLocation?, heading: CLHeading? = nil,
+        location: CLLocation?,
+//        heading: CLHeading?,
         timestamp: TimeInterval = Date().timeIntervalSince1970
     ) {
         if (self.capturedFrameIds.contains(frameId)) {
@@ -94,10 +95,10 @@ class DatasetEncoder {
         
         let locationData = LocationData(timestamp: timestamp, latitude: location?.coordinate.latitude ?? 0.0,
                                         longitude: location?.coordinate.longitude ?? 0.0)
-        let headingData = HeadingData(timestamp: timestamp, magneticHeading: heading?.magneticHeading ?? 0.0,
-                                      trueHeading: heading?.trueHeading ?? 0.0)
+//        let headingData = HeadingData(timestamp: timestamp, magneticHeading: heading?.magneticHeading ?? 0.0,
+//                                      trueHeading: heading?.trueHeading ?? 0.0)
         self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
-        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+//        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         
         // TODO: Add error handling for each encoder
         
@@ -123,6 +124,6 @@ class DatasetEncoder {
     func save() {
         self.cameraTransformEncoder.done()
         self.locationEncoder.done()
-        self.headingEncoder.done()
+//        self.headingEncoder.done()
     }
 }
