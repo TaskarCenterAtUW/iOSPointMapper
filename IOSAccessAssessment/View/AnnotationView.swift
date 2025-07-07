@@ -300,7 +300,7 @@ struct AnnotationView: View {
         }
         
         // Update the current depth values for display
-        var currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+        let currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
         self.currentDepthValues = currentDepthValueString
         
         let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]

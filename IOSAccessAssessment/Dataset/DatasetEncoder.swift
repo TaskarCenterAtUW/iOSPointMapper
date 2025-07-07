@@ -16,7 +16,13 @@ enum DatasetEncoderStatus {
     case directoryCreationError
 }
 
-class DatasetEncoder {    
+/**
+    Encoder for saving dataset frames and metadata.
+ 
+    This encoder saves RGB, depth, and segmentation images along with camera intrinsics, location, and other details.
+    Finally, it also adds a node to TDEI workspaces at the capture location.
+ */
+class DatasetEncoder {
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
     
@@ -96,6 +102,10 @@ class DatasetEncoder {
         }
         
         let frameNumber: UUID = frameId
+        let latitude = location?.coordinate.latitude ?? 0.0
+        let longitude = location?.coordinate.longitude ?? 0.0
+//        let magneticHeading = heading?.magneticHeading ?? 0.0
+//        let trueHeading = heading?.trueHeading ?? 0.0
         
         self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
         self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
@@ -104,10 +114,8 @@ class DatasetEncoder {
         self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
         self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
         
-        let locationData = LocationData(timestamp: timestamp, latitude: location?.coordinate.latitude ?? 0.0,
-                                        longitude: location?.coordinate.longitude ?? 0.0)
-//        let headingData = HeadingData(timestamp: timestamp, magneticHeading: heading?.magneticHeading ?? 0.0,
-//                                      trueHeading: heading?.trueHeading ?? 0.0)
+        let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
+//        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
         self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
 //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         
@@ -116,6 +124,9 @@ class DatasetEncoder {
         }
         
         // TODO: Add error handling for each encoder
+        
+        // Add a capture point to the TDEI workspaces
+        uploadCapturePoint(location: (latitude: latitude, longitude: longitude))
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
@@ -140,5 +151,25 @@ class DatasetEncoder {
         self.cameraTransformEncoder.done()
         self.locationEncoder.done()
 //        self.headingEncoder.done()
+    }
+    
+    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+        guard let nodeLatitude = location?.latitude,
+              let nodeLongitude = location?.longitude
+        else { return }
+        
+        let tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
+        
+        var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
+        
+        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+            switch result {
+            case .success(let response):
+                print("Changes uploaded successfully.")
+            case .failure(let error):
+                print("Failed to upload changes: \(error.localizedDescription)")
+            }
+        }
     }
 }
