@@ -22,18 +22,22 @@ class DatasetEncoder {
     
     public let rgbFilePath: URL // Relative to app document directory.
     public let depthFilePath: URL // Relative to app document directory.
+    public let segmentationFilePath: URL // Relative to app document directory.
 //    public let confidenceFilePath: URL // Relative to app document directory.
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
 //    public let headingPath: URL
+    public let otherDetailsPath: URL
     
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
+    private let segmentationEncoder: SegmentationEncoder
 //    private let confidenceEncoder: ConfidenceEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
+    private let otherDetailsEncoder: OtherDetailsEncoder
     
     public var status = DatasetEncoderStatus.allGood
     public var capturedFrameIds: Set<UUID> = []
@@ -43,18 +47,22 @@ class DatasetEncoder {
         datasetDirectory = DatasetEncoder.createDirectory(id: changesetId)
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
+        self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
 //        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
+        self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         
         self.rgbEncoder = RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = DepthEncoder(outDirectory: self.depthFilePath)
+        self.segmentationEncoder = SegmentationEncoder(outDirectory: self.segmentationFilePath)
 //        self.confidenceEncoder = ConfidenceEncoder(outDirectory: self.confidenceFilePath)
         self.cameraTransformEncoder = CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
+        self.otherDetailsEncoder = OtherDetailsEncoder(url: self.otherDetailsPath)
     }
     
     static private func createDirectory(id: String) -> URL {
@@ -75,9 +83,11 @@ class DatasetEncoder {
     public func addData(
         frameId: UUID,
         cameraImage: CIImage, depthImage: CIImage,
+        segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         location: CLLocation?,
 //        heading: CLHeading?,
+        otherDetails: OtherDetailsData?,
         timestamp: TimeInterval = Date().timeIntervalSince1970
     ) {
         if (self.capturedFrameIds.contains(frameId)) {
@@ -89,6 +99,7 @@ class DatasetEncoder {
         
         self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
         self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
+        self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
 //        self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
         self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
         self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
@@ -99,6 +110,10 @@ class DatasetEncoder {
 //                                      trueHeading: heading?.trueHeading ?? 0.0)
         self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
 //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        
+        if let otherDetailsData = otherDetails {
+            self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
+        }
         
         // TODO: Add error handling for each encoder
         

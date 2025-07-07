@@ -51,6 +51,7 @@ struct SegmentationModelRequestProcessor {
             
             guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
             let segmentationBuffer = segmentationResult.first?.pixelBuffer
+            print("Segmentation Buffer type: \(String(describing: segmentationBuffer?.pixelFormatName()))")
             
             let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
             let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap

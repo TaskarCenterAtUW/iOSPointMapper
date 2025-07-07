@@ -9,6 +9,12 @@ import Foundation
 import Accelerate
 import ARKit
 
+struct OtherDetailsData {
+    let timestamp: TimeInterval
+    let deviceOrientation: UIDeviceOrientation
+    let originalSize: CGSize
+}
+
 class OtherDetailsEncoder {
     enum Status {
         case ok
@@ -30,13 +36,13 @@ class OtherDetailsEncoder {
         }
     }
     
-    func add(deviceOrientation: UIDeviceOrientation = .portrait, originalSize: CGSize, timestamp: TimeInterval, frameNumber: UUID) {
+    func add(otherDetails: OtherDetailsData, frameNumber: UUID) {
         let frameNumber = String(frameNumber.uuidString)
-        let deviceOrientationString: String = String(deviceOrientation.rawValue)
-        let originalWidth = String(Float(originalSize.width))
-        let originalHeight = String(Float(originalSize.height))
+        let deviceOrientationString: String = String(otherDetails.deviceOrientation.rawValue)
+        let originalWidth = String(Float(otherDetails.originalSize.width))
+        let originalHeight = String(Float(otherDetails.originalSize.height))
         
-        let line = "\(timestamp), \(frameNumber), \(deviceOrientationString), \(originalWidth), \(originalHeight)\n"
+        let line = "\(otherDetails.timestamp), \(frameNumber), \(deviceOrientationString), \(originalWidth), \(originalHeight)\n"
         self.fileHandle.write(line.data(using: .utf8)!)
     }
     
