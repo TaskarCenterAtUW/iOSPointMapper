@@ -92,7 +92,8 @@ extension AnnotationView {
             self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.removeLast()
         } else {
             let className = segmentationClass.name
-            let wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
+            var wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
+            wayTags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
             
             var nodeRefs: [String] = []
             if let nodeData = nodeData {
@@ -211,7 +212,11 @@ extension AnnotationView {
               let nodeLongitude = location?.longitude
         else { return }
         
-        let tags: [String: String] = [APIConstants.TagKeys.classKey: segmentationClass.name]
+        var tags: [String: String] = [APIConstants.TagKeys.classKey: segmentationClass.name]
+        tags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
+        // nodeLatitude and nodeLongitude work because they are the same as the capture location.
+        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
+        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
         
         var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
@@ -276,6 +281,10 @@ extension AnnotationView {
         let className = segmentationClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
         tags[APIConstants.TagKeys.depthKey] = String(format: "%.4f", annotatedDetectedObject.depthValue)
+        tags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
+        // 0.0 because it is better to know that the location is not available than to have an incorrect value.
+        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", objectLocation.latitude ?? 0.0)
+        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", objectLocation.longitude ?? 0.0)
         
         if isWay {
             // MARK: Width Field Demo: Use the calculated or validated width for the way bounds if present
@@ -355,7 +364,7 @@ extension AnnotationView {
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
-            
+        
         guard let depthValues = depthValues else {
             print("Failed to get depth values for way bounds")
             return wayPoints.map { SIMD3<Float>(x: $0.x, y: $0.y, z: 0) }

@@ -30,11 +30,17 @@ struct APIConstants {
         static let classKey = "demo:class"
         static let widthKey = "demo:width"
         static let depthKey = "demo:depth"
-        static let calculatedWidthKey = "demo:demo:calculatedWidth"
+        static let calculatedWidthKey = "demo:calculatedWidth"
         static let breakageKey = "demo:breakage"
+        
+        static let captureLatitudeKey = "demo:captureLatitude"
+        static let captureLongitudeKey = "demo:captureLongitude"
+        static let amenityKey = "amenity"
     }
     
     enum OtherConstants {
         static let classLabelPlaceholder = "Unknown"
+        
+        static let capturePointAmenity = "hospital" // Tempoary value for demo purposes
     }
 }
