@@ -33,8 +33,9 @@ struct APIConstants {
         static let calculatedWidthKey = "demo:calculatedWidth"
         static let breakageKey = "demo:breakage"
         
+        static let captureLatitudeKey = "demo:captureLatitude"
+        static let captureLongitudeKey = "demo:captureLongitude"
         static let amenityKey = "amenity"
-        
     }
     
     enum OtherConstants {

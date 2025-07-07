@@ -126,7 +126,7 @@ class DatasetEncoder {
         // TODO: Add error handling for each encoder
         
         // Add a capture point to the TDEI workspaces
-        uploadCapturePoint(location: (latitude: latitude, longitude: longitude))
+        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
@@ -153,19 +153,22 @@ class DatasetEncoder {
 //        self.headingEncoder.done()
     }
     
-    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?) {
+    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, frameId: UUID) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
         
-        let tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
+        var tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
+        tags[APIConstants.TagKeys.captureIdKey] = frameId.uuidString
+        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
+        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
         
-        var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
         ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
             switch result {
-            case .success(let response):
+            case .success(_):
                 print("Changes uploaded successfully.")
             case .failure(let error):
                 print("Failed to upload changes: \(error.localizedDescription)")
