@@ -318,21 +318,7 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
-        // Add current capture data to the dataset
-        if let currentCaptureId = sharedImageData.currentCaptureId,
-           sharedImageData.currentDatasetEncoder?.capturedFrameIds.contains(currentCaptureId) == false,
-            let cameraImage = sharedImageData.cameraImage,
-            let depthImage = sharedImageData.depthImage,
-            let latitude = objectLocation.latitude,
-           let longitude = objectLocation.longitude {
-            sharedImageData.currentDatasetEncoder?.addData(
-                frameId: currentCaptureId,
-                cameraImage: cameraImage, depthImage: depthImage,
-                cameraTransform: sharedImageData.cameraTransform, cameraIntrinsics: sharedImageData.cameraIntrinsics,
-                location: CLLocation(latitude: latitude, longitude: longitude),
-                timestamp: Date().timeIntervalSince1970)
-        }
-        
+        self.saveCapturedData()
         self.isDepthModalPresented = true
     }
     
@@ -423,5 +409,22 @@ struct AnnotationView: View {
         let lowerBound = avg - 2 * stdDev
         print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
         return width < lowerBound
+    }
+    
+    func saveCapturedData() {
+        // Add current capture data to the dataset
+        if let currentCaptureId = sharedImageData.currentCaptureId,
+           sharedImageData.currentDatasetEncoder?.capturedFrameIds.contains(currentCaptureId) == false,
+            let cameraImage = sharedImageData.cameraImage,
+            let depthImage = sharedImageData.depthImage,
+            let latitude = objectLocation.latitude,
+           let longitude = objectLocation.longitude {
+            sharedImageData.currentDatasetEncoder?.addData(
+                frameId: currentCaptureId,
+                cameraImage: cameraImage, depthImage: depthImage,
+                cameraTransform: sharedImageData.cameraTransform, cameraIntrinsics: sharedImageData.cameraIntrinsics,
+                location: CLLocation(latitude: latitude, longitude: longitude),
+                timestamp: Date().timeIntervalSince1970)
+        }
     }
 }
