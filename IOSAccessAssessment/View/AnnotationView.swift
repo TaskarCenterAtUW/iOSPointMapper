@@ -318,6 +318,7 @@ struct AnnotationView: View {
     }
     
     func nextSegment() {
+        self.saveCapturedData()
         self.isDepthModalPresented = true
     }
     
@@ -408,5 +409,31 @@ struct AnnotationView: View {
         let lowerBound = avg - 2 * stdDev
         print("Width: \(width), Avg: \(avg), StdDev: \(stdDev), Lower Bound: \(lowerBound)")
         return width < lowerBound
+    }
+    
+    func saveCapturedData() {
+        // Add current capture data to the dataset
+        if let currentCaptureId = sharedImageData.currentCaptureId,
+           sharedImageData.currentDatasetEncoder?.capturedFrameIds.contains(currentCaptureId) == false,
+           let cameraImage = sharedImageData.cameraImage,
+           let depthImage = sharedImageData.depthImage,
+           let segmentationLabelImage = sharedImageData.segmentationLabelImage,
+           let latitude = objectLocation.latitude,
+           let longitude = objectLocation.longitude {
+            let timestamp = Date().timeIntervalSince1970
+            let otherDetails = OtherDetailsData(
+                timestamp: timestamp, deviceOrientation: sharedImageData.deviceOrientation ?? .portrait,
+                originalSize: sharedImageData.originalImageSize ?? cameraImage.extent.size
+            )
+            
+            sharedImageData.currentDatasetEncoder?.addData(
+                frameId: currentCaptureId,
+                cameraImage: cameraImage, depthImage: depthImage,
+                segmentationLabelImage: segmentationLabelImage,
+                cameraTransform: sharedImageData.cameraTransform, cameraIntrinsics: sharedImageData.cameraIntrinsics,
+                location: CLLocation(latitude: latitude, longitude: longitude),
+                otherDetails: otherDetails,
+                timestamp: timestamp)
+        }
     }
 }

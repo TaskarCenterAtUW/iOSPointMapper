@@ -144,6 +144,8 @@ struct ARContentView: View {
                     print("Performing depth estimation because LiDAR is not available.")
                     self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
                 }
+                // MARK: Save the current capture as a unique id
+                self.sharedImageData.currentCaptureId = UUID()
                 self.navigateToAnnotationView = true
             } else {
                 let cameraTransform = output.additionalPayload[ARContentViewConstants.Payload.cameraTransform] as? simd_float4x4 ?? self.sharedImageData.cameraTransform

@@ -206,6 +206,9 @@ struct SetupView: View {
                 print("Opened changeset with ID: \(changesetId)")
                 DispatchQueue.main.async {
                     changesetOpenViewModel.isChangesetOpened = true
+                    
+                    // Open a dataset encoder for the changeset
+                    sharedImageData.currentDatasetEncoder = DatasetEncoder(changesetId: changesetId)
                 }
             case .failure(let error):
                 DispatchQueue.main.async {
@@ -224,6 +227,8 @@ struct SetupView: View {
                 print("Changeset closed successfully.")
                 DispatchQueue.main.async {
                     sharedImageData.refreshData()
+                    sharedImageData.currentDatasetEncoder?.save()
+                    
                     openChangeset()
                 }
             case .failure(let error):
