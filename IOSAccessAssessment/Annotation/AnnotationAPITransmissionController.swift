@@ -306,6 +306,7 @@ extension AnnotationView {
                 }
             }
             tags[APIConstants.TagKeys.widthKey] = String(format: "%.4f", width)
+            
             var breakageStatus: Bool = false
             if annotatedDetectedObject.object?.calculatedBreakage != nil {
                 breakageStatus = annotatedDetectedObject.object?.finalBreakage ??
@@ -317,6 +318,26 @@ extension AnnotationView {
                     wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
             }
             tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
+            
+            var slope: Float = 0.0
+            if annotatedDetectedObject.object?.calculatedSlope != nil {
+                slope = annotatedDetectedObject.object?.finalSlope ?? annotatedDetectedObject.object?.calculatedSlope ?? 0.0
+                tags[APIConstants.TagKeys.calculatedSlopeKey] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedSlope ?? 0.0)
+            } else {
+                let lowerAndUpperPointsWithDepth = getWayLowerAndUpperPointsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
+                if let lowerAndUpperPointsWithDepth = lowerAndUpperPointsWithDepth {
+                    slope = objectLocation.getWaySlope(
+                        wayLowerPoint: lowerAndUpperPointsWithDepth.lower,
+                        wayUpperPoint: lowerAndUpperPointsWithDepth.upper,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                }
+            }
+            tags[APIConstants.TagKeys.slopeKey] = String(format: "%.4f", slope)
         }
         print("Tags for node: \(tags)")
         
@@ -378,5 +399,123 @@ extension AnnotationView {
             return SIMD3<Float>(x: point.x, y: point.y, z: depthValues[index])
         }
         return wayBoundsWithDepth
+    }
+    
+    func getWayLowerAndUpperPointsWithDepth(wayBounds: [SIMD2<Float>]) -> (lower: SIMD3<Float>, upper: SIMD3<Float>)? {
+        guard wayBounds.count == 4 else {
+            print("Invalid way bounds")
+            return nil
+        }
+        let lowerLeft = wayBounds[0]
+        let upperLeft = wayBounds[1]
+        let upperRight = wayBounds[2]
+        let lowerRight = wayBounds[3]
+        
+        let lowerPoint: SIMD2<Float> = SIMD2<Float>(
+            x: (lowerLeft.x + lowerRight.x) / 2,
+            y: (lowerLeft.y + lowerRight.y) / 2
+        )
+        let upperPoint: SIMD2<Float> = SIMD2<Float>(
+            x: (upperLeft.x + upperRight.x) / 2,
+            y: (upperLeft.y + upperRight.y) / 2
+        )
+        let wayPoints: [SIMD2<Float>] = [lowerPoint, upperPoint]
+        
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            print("Depth map processor is nil")
+            return nil
+        }
+        let depthImageDimensions = depthMapProcessor.getDepthImageDimensions()
+        let wayCGPoints: [CGPoint] = wayPoints.map {
+            CGPoint(
+                x: CGFloat($0.x) * CGFloat(depthImageDimensions.width),
+                y: CGFloat($0.y) * CGFloat(depthImageDimensions.height)
+            )
+        }
+        
+        var depthValues: [Float]?
+        if let segmentationLabelImage = self.annotationImageManager.annotatedSegmentationLabelImage,
+           segmentationLabelImage.pixelBuffer != nil,
+           let depthImage = self.sharedImageData.depthImage {
+            depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
+                segmentationLabelImage: segmentationLabelImage,
+                at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
+                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+        } else {
+            depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
+        }
+        
+        guard let depthValues = depthValues else {
+            print("Failed to get depth values for way bounds")
+            return (lower: SIMD3<Float>(x: lowerPoint.x, y: lowerPoint.y, z: 0),
+                    upper: SIMD3<Float>(x: upperPoint.x, y: upperPoint.y, z: 0))
+        }
+        guard depthValues.count == wayPoints.count else {
+            print("Depth values count does not match way bounds count")
+            return (lower: SIMD3<Float>(x: lowerPoint.x, y: lowerPoint.y, z: 0),
+                    upper: SIMD3<Float>(x: upperPoint.x, y: upperPoint.y, z: 0))
+        }
+        let lowerPointWithDepth = SIMD3<Float>(x: lowerPoint.x, y: lowerPoint.y, z: depthValues[0])
+        let upperPointWithDepth = SIMD3<Float>(x: upperPoint.x, y: upperPoint.y, z: depthValues[1])
+        return (lower: lowerPointWithDepth, upper: upperPointWithDepth)
+    }
+    
+    func getWayLeftAndRightPointsWithDepth(wayBounds: [SIMD2<Float>]) -> (left: SIMD3<Float>, right: SIMD3<Float>)? {
+        guard wayBounds.count == 4 else {
+            print("Invalid way bounds")
+            return nil
+        }
+        let lowerLeft = wayBounds[0]
+        let upperLeft = wayBounds[1]
+        let upperRight = wayBounds[2]
+        let lowerRight = wayBounds[3]
+        
+        let leftPoint: SIMD2<Float> = SIMD2<Float>(
+            x: (lowerLeft.x + upperLeft.x) / 2,
+            y: (lowerLeft.y + upperLeft.y) / 2
+        )
+        let rightPoint: SIMD2<Float> = SIMD2<Float>(
+            x: (lowerRight.x + upperRight.x) / 2,
+            y: (lowerRight.y + upperRight.y) / 2
+        )
+        let wayPoints: [SIMD2<Float>] = [leftPoint, rightPoint]
+        
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            print("Depth map processor is nil")
+            return nil
+        }
+        let depthImageDimensions = depthMapProcessor.getDepthImageDimensions()
+        let wayCGPoints: [CGPoint] = wayPoints.map {
+            CGPoint(
+                x: CGFloat($0.x) * CGFloat(depthImageDimensions.width),
+                y: CGFloat($0.y) * CGFloat(depthImageDimensions.height)
+            )
+        }
+        
+        var depthValues: [Float]?
+        if let segmentationLabelImage = self.annotationImageManager.annotatedSegmentationLabelImage,
+           segmentationLabelImage.pixelBuffer != nil,
+           let depthImage = self.sharedImageData.depthImage {
+            depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
+                segmentationLabelImage: segmentationLabelImage,
+                at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
+                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+        } else {
+            depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
+        }
+        
+        guard let depthValues = depthValues else {
+            print("Failed to get depth values for way bounds")
+            return (left: SIMD3<Float>(x: leftPoint.x, y: leftPoint.y, z: 0),
+                    right: SIMD3<Float>(x: rightPoint.x, y: rightPoint.y, z: 0))
+        }
+        guard depthValues.count == wayPoints.count else {
+            print("Depth values count does not match way bounds count")
+            return (left: SIMD3<Float>(x: leftPoint.x, y: leftPoint.y, z: 0),
+                    right: SIMD3<Float>(x: rightPoint.x, y: rightPoint.y, z: 0))
+        }
+        let leftPointWithDepth = SIMD3<Float>(x: leftPoint.x, y: leftPoint.y, z: depthValues[0])
+        let rightPointWithDepth = SIMD3<Float>(x: rightPoint.x, y: rightPoint.y, z: depthValues[1])
+        return (left: leftPointWithDepth, right: rightPointWithDepth)
     }
 }

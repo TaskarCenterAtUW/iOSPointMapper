@@ -372,6 +372,42 @@ struct AnnotationView: View {
         annotationImageManager.selectedObjectWidth = width
     }
     
+    // MARK: Slope Field Demo: Temporary function to calculate slope with depth
+    func calculateSlope(selectedObjectId: UUID) {
+        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        var slope: Float = 0.0
+        // If the current class is way-type, we should calculate the slope of the selected object
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object
+        {
+            if (selectedObjectObject.calculatedSlope != nil) {
+                slope = selectedObjectObject.finalSlope ?? selectedObjectObject.calculatedSlope ?? 0.0
+            } else {
+                // Calculate the slope of the selected object
+                let lowerAndUpperPointsWithDepth = getWayLowerAndUpperPointsWithDepth(wayBounds: selectedObject.object?.wayBounds ?? [])
+                let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
+                if let lowerAndUpperPointsWithDepth = lowerAndUpperPointsWithDepth {
+                    slope = objectLocation.getWaySlope(
+                        wayLowerPoint: lowerAndUpperPointsWithDepth.lower,
+                        wayUpperPoint: lowerAndUpperPointsWithDepth.upper,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                    selectedObjectObject.calculatedSlope = slope
+                }
+            }
+        }
+        // Update the slope in the annotationImageManager
+        annotationImageManager.selectedObjectSlope = slope
+    }
+    
     func calculateBreakage(selectedObjectId: UUID) {
         let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         if !(selectionClass.isWay) {
