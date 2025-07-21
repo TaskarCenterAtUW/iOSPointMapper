@@ -251,6 +251,38 @@ extension ObjectLocation {
         return slopeInDegrees
     }
     
+    func getWayCrossSlope(
+        wayLeftPoint: SIMD3<Float>,
+        wayRightPoint: SIMD3<Float>,
+        imageSize: CGSize,
+        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+        originalImageSize: CGSize
+    ) -> Float {
+        let leftPointDelta = getDeltaFromPoint(
+            pointWithDepth: wayLeftPoint, imageSize: imageSize,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
+        let rightPointDelta = getDeltaFromPoint(
+            pointWithDepth: wayRightPoint, imageSize: imageSize,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
+        
+        let verticalDistance = rightPointDelta.y - leftPointDelta.y
+        let horizontalDistance = simd_distance(
+            SIMD2<Float>(rightPointDelta.x, rightPointDelta.z),
+            SIMD2<Float>(leftPointDelta.x, leftPointDelta.z))
+        guard horizontalDistance != 0 else {
+            print("Horizontal distance is zero, cannot calculate cross slope")
+            return 0.0
+        }
+        let crossSlope = atan(verticalDistance / horizontalDistance)
+        let crossSlopeInDegrees = crossSlope * 180.0 / .pi // Convert to degrees
+        
+        return crossSlopeInDegrees
+    }
+    
     func getDeltaFromPoint(pointWithDepth: SIMD3<Float>, imageSize: CGSize,
                                cameraTransform: simd_float4x4 = matrix_identity_float4x4,
                                cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,

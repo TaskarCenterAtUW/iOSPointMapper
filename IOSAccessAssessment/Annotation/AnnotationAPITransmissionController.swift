@@ -338,6 +338,26 @@ extension AnnotationView {
                 }
             }
             tags[APIConstants.TagKeys.slopeKey] = String(format: "%.4f", slope)
+            
+            var crossSlope: Float = 0.0
+            if annotatedDetectedObject.object?.calculatedCrossSlope != nil {
+                crossSlope = annotatedDetectedObject.object?.finalCrossSlope ?? annotatedDetectedObject.object?.calculatedCrossSlope ?? 0.0
+                tags[APIConstants.TagKeys.calculatedCrossSlopeKey] = String(format: "%.4f", annotatedDetectedObject.object?.calculatedCrossSlope ?? 0.0)
+            } else {
+                let leftAndRightPointsWithDepth = getWayLeftAndRightPointsWithDepth(wayBounds: annotatedDetectedObject.object?.wayBounds ?? [])
+                if let leftAndRightPointsWithDepth = leftAndRightPointsWithDepth {
+                    crossSlope = objectLocation.getWayCrossSlope(
+                        wayLeftPoint: leftAndRightPointsWithDepth.left,
+                        wayRightPoint: leftAndRightPointsWithDepth.right,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                }
+            }
+            tags[APIConstants.TagKeys.crossSlopeKey] = String(format: "%.4f", crossSlope)
         }
         print("Tags for node: \(tags)")
         

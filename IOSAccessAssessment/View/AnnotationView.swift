@@ -160,6 +160,9 @@ struct AnnotationView: View {
                 if let newValue = newValue {
                     annotationImageManager.updateObjectSelection(previousSelectedObjectId: oldValue, selectedObjectId: newValue)
                     calculateWidth(selectedObjectId: newValue)
+                    calculateSlope(selectedObjectId: newValue)
+                    calculateCrossSlope(selectedObjectId: newValue)
+                    calculateBreakage(selectedObjectId: newValue)
                     refreshOptions()
                 }
             }
@@ -406,6 +409,41 @@ struct AnnotationView: View {
         }
         // Update the slope in the annotationImageManager
         annotationImageManager.selectedObjectSlope = slope
+    }
+    
+    // MARK: Cross-Slope Field Demo: Temporary function to calculate cross-slope with depth
+    func calculateCrossSlope(selectedObjectId: UUID) {
+        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectionClass.isWay) {
+            return
+        }
+        
+        var crossSlope: Float = 0.0
+        // If the current class is way-type, we should calculate the cross-slope of the selected object
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            if (selectedObjectObject.calculatedCrossSlope != nil) {
+                crossSlope = selectedObjectObject.finalCrossSlope ?? selectedObjectObject.calculatedCrossSlope ?? 0.0
+            } else {
+                // Calculate the cross-slope of the selected object
+                let leftAndRightPointsWithDepth = getWayLeftAndRightPointsWithDepth(wayBounds: selectedObject.object?.wayBounds ?? [])
+                let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
+                if let leftAndRightPointsWithDepth = leftAndRightPointsWithDepth {
+                    crossSlope = objectLocation.getWayCrossSlope(
+                        wayLeftPoint: leftAndRightPointsWithDepth.left,
+                        wayRightPoint: leftAndRightPointsWithDepth.right,
+                        imageSize: annotationImageManager.segmentationUIImage?.size ?? CGSize.zero,
+                        cameraTransform: self.sharedImageData.cameraTransform,
+                        cameraIntrinsics: self.sharedImageData.cameraIntrinsics,
+                        deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
+                        originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
+                    )
+                    selectedObjectObject.calculatedCrossSlope = crossSlope
+                }
+            }
+        }
+        // Update the cross-slope in the annotationImageManager
+        annotationImageManager.selectedObjectCrossSlope = crossSlope
     }
     
     func calculateBreakage(selectedObjectId: UUID) {
