@@ -310,6 +310,7 @@ extension AnnotationView {
             if annotatedDetectedObject.object?.calculatedBreakage != nil {
                 breakageStatus = annotatedDetectedObject.object?.finalBreakage ??
                 annotatedDetectedObject.object?.calculatedBreakage ?? false
+                tags[APIConstants.TagKeys.calculatedBreakageKey] = String(breakageStatus)
             } else {
                 breakageStatus = self.getBreakageStatus(
                     width: width,

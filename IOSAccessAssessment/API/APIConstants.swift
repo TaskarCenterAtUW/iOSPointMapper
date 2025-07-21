@@ -30,8 +30,14 @@ struct APIConstants {
         static let classKey = "demo:class"
         static let widthKey = "demo:width"
         static let depthKey = "demo:depth"
-        static let calculatedWidthKey = "demo:calculatedWidth"
         static let breakageKey = "demo:breakage"
+        static let slopeKey = "demo:slope"
+        static let crossSlopeKey = "demo:crossSlope"
+        
+        static let calculatedWidthKey = "demo:calculatedWidth"
+        static let calculatedBreakageKey = "demo:calculatedBreakage"
+        static let calculatedSlopeKey = "demo:calculatedSlope"
+        static let calculatedCrossSlopeKey = "demo:calculatedCrossSlope"
         
         static let captureLatitudeKey = "demo:captureLatitude"
         static let captureLongitudeKey = "demo:captureLongitude"

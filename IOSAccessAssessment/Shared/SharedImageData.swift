@@ -30,6 +30,14 @@ class DetectedObject {
     var calculatedBreakage: Bool? // Indicates if the object is broken or not
     var finalBreakage: Bool? // Final indication of breakage after validation
     
+    // MARK: Slope Field Demo: Temporary properties for object slope if it is a way-type object
+    var calculatedSlope: Float? // Slope of the object in degrees
+    var finalSlope: Float? // Final slope of the object in degrees after validation
+    
+    // MARK: Cross-Slope Field Demo: Temporary properties for object cross-slope if it is a way-type object
+    var calculatedCrossSlope: Float? // Cross-slope of the object in degrees
+    var finalCrossSlope: Float? // Final cross-slope of the object in degrees after validation
+    
     init(classLabel: UInt8, centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float, isCurrent: Bool, wayBounds: [SIMD2<Float>]? = nil) {
         self.classLabel = classLabel
         self.centroid = centroid
