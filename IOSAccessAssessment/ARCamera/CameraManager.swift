@@ -1,14 +1,17 @@
 //
-//  ARCameraManager.swift
+//  CameraManager.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 5/22/25.
+//  Created by Kohei Matsushima on 2024/03/29.
 //
 
-import ARKit
+import Foundation
+import SwiftUI
 import Combine
+import simd
+import AVFoundation
 
-enum ARCameraManagerError: Error, LocalizedError {
+enum CameraManagerError: Error, LocalizedError {
     case pixelBufferPoolCreationFailed
     
     var errorDescription: String? {
@@ -19,11 +22,19 @@ enum ARCameraManagerError: Error, LocalizedError {
     }
 }
 
-final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
-    let session = ARSession()
+/**
+    CameraManager is responsible for managing the camera stream and processing the captured frames.
+ */
+class CameraManager: ObservableObject, CaptureDataReceiver {
     
     var sharedImageData: SharedImageData?
-    var segmentationPipeline: SegmentationARPipeline?
+    var segmentationPipeline: SegmentationPipeline?
+
+    @Published var isFilteringDepth: Bool {
+        didSet {
+            controller.isFilteringEnabled = isFilteringDepth
+        }
+    }
     
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
@@ -32,17 +43,14 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     @Published var isProcessingCapturedResult = false
     @Published var dataAvailable = false
-    var isDepthSupported: Bool = false
-    
-    // Frame rate-related properties
-    var frameRate: Int = 5
-    var lastFrameTime: TimeInterval = 0
     
     // Temporary image data
     @Published var cameraUIImage: UIImage?
     @Published var depthUIImage: UIImage?
     
+    let controller: CameraController
     var cancellables = Set<AnyCancellable>()
+    var session: AVCaptureSession { controller.captureSession }
     
     var ciContext = CIContext(options: nil)
     var cameraPixelBufferPool: CVPixelBufferPool? = nil
@@ -50,16 +58,18 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     var depthPixelBufferPool: CVPixelBufferPool? = nil
     var depthColorSpace: CGColorSpace? = nil
     
-    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationARPipeline) {
+    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationPipeline) {
         self.sharedImageData = sharedImageData
         self.segmentationPipeline = segmentationPipeline
-        super.init()
+        
+        controller = CameraController()
+        isFilteringDepth = true
+        controller.startStream()
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
-        session.delegate = self
-        runSession()
+        controller.delegate = self
         
         do {
             try setUpPixelBufferPools()
@@ -68,60 +78,19 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         }
     }
     
-    func runSession() {
-        let config = ARWorldTrackingConfiguration()
-        config.worldAlignment = .gravityAndHeading
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            config.frameSemantics = [.smoothedSceneDepth]
-            isDepthSupported = true
-        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            config.frameSemantics = [.sceneDepth]
-            isDepthSupported = true
-        } else {
-            print("Scene depth not supported")
-        }
-        session.run(config, options: [.resetTracking, .removeExistingAnchors])
-    }
-    
-    func setFrameRate(_ frameRate: Int) {
-        self.frameRate = frameRate
-    }
-    
     func resumeStream() {
-        runSession()
+        controller.startStream()
         isProcessingCapturedResult = false
     }
     
     func stopStream() {
-        session.pause()
+        controller.stopStream()
         isProcessingCapturedResult = false
     }
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        let camera = frame.camera
-        
-        let transform = camera.transform
-        let intrinsics = camera.intrinsics
-        
-        if !checkFrameWithinFrameRate(frame: frame) {
-            return
-        }
-        
-//        let cameraImage: CIImage = orientAndFixCameraFrame(frame.capturedImage)
-        var cameraImage = CIImage(cvPixelBuffer: frame.capturedImage)
-        let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
-        cameraImage = orientAndFixCameraImage(cameraImage)
-        var depthImage: CIImage? = nil
-        if let depthMap = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap {
-            depthImage = orientAndFixDepthFrame(depthMap)
-        } else {
-            print("Depth map not available")
-        }
-        
-        let additionalPayload = getAdditionalPayload(
-            cameraTransform: transform, intrinsics: intrinsics, originalCameraImageSize: originalCameraImageSize
-        )
-        
+    func onNewData(cameraPixelBuffer: CVPixelBuffer, depthPixelBuffer: CVPixelBuffer?) {
+        let cameraImage = self.orientAndFixCameraFrame(cameraPixelBuffer)
+        let depthImage = self.isFilteringDepth ? self.orientAndFixDepthFrame(depthPixelBuffer!) : nil
         DispatchQueue.main.async {
             if self.isProcessingCapturedResult {
                 return
@@ -131,41 +100,20 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             self.sharedImageData?.depthImage = depthImage
             
             self.cameraUIImage = UIImage(ciImage: cameraImage)
-            if depthImage != nil { self.depthUIImage = UIImage(ciImage: depthImage!) }
+            self.depthUIImage = UIImage(ciImage: depthImage!)
             
             self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
-                                                      deviceOrientation: self.deviceOrientation,
-                                                      additionalPayload: additionalPayload
-            )
+                                                      deviceOrientation: self.deviceOrientation)
             
             if self.dataAvailable == false {
                 self.dataAvailable = true
             }
         }
     }
-    
-    private func getAdditionalPayload(
-        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
-    ) -> [String: Any] {
-        var additionalPayload: [String: Any] = [:]
-        additionalPayload[ARContentViewConstants.Payload.cameraTransform] = cameraTransform
-        additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] = intrinsics
-        additionalPayload[ARContentViewConstants.Payload.originalImageSize] = originalCameraImageSize
-        return additionalPayload
-    }
-    
-    func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {
-        let currentTime = frame.timestamp
-        let withinFrameRate = currentTime - lastFrameTime >= (1.0 / Double(frameRate))
-        if withinFrameRate {
-            lastFrameTime = currentTime
-        }
-        return withinFrameRate
-    }
 }
 
 // Functions to orient and fix the camera and depth frames
-extension ARCameraManager {
+extension CameraManager {
     func setUpPixelBufferPools() throws {
         // Set up the pixel buffer pool for future flattening of camera images
         let cameraPixelBufferPoolAttributes: [String: Any] = [
@@ -187,7 +135,7 @@ extension ARCameraManager {
             &cameraPixelBufferPool
         )
         guard cameraStatus == kCVReturnSuccess else {
-            throw ARCameraManagerError.pixelBufferPoolCreationFailed
+            throw CameraManagerError.pixelBufferPoolCreationFailed
         }
         cameraColorSpace = CGColorSpaceCreateDeviceRGB()
         
@@ -211,7 +159,7 @@ extension ARCameraManager {
             &depthPixelBufferPool
         )
         guard depthStatus == kCVReturnSuccess else {
-            throw ARCameraManagerError.pixelBufferPoolCreationFailed
+            throw CameraManagerError.pixelBufferPoolCreationFailed
         }
         depthColorSpace = nil
     }
@@ -223,24 +171,6 @@ extension ARCameraManager {
         )
         var cameraImage = CIImage(cvPixelBuffer: frame)
         cameraImage = CIImageUtils.resizeWithAspectThenCrop(cameraImage, to: croppedSize)
-        cameraImage = cameraImage.oriented(
-            CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
-        )
-        let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
-            cameraImage,
-            size: croppedSize,
-            pixelBufferPool: cameraPixelBufferPool!,
-            colorSpace: cameraColorSpace
-        )
-        return renderedCameraPixelBuffer != nil ? CIImage(cvPixelBuffer: renderedCameraPixelBuffer!) : cameraImage
-    }
-    
-    func orientAndFixCameraImage(_ image: CIImage) -> CIImage {
-        let croppedSize: CGSize = CGSize(
-            width: Constants.SelectedSegmentationConfig.inputSize.width,
-            height: Constants.SelectedSegmentationConfig.inputSize.height
-        )
-        var cameraImage = CIImageUtils.resizeWithAspectThenCrop(image, to: croppedSize)
         cameraImage = cameraImage.oriented(
             CameraOrientation.getCGImageOrientationForBackCamera(currentDeviceOrientation: self.deviceOrientation)
         )

@@ -187,47 +187,6 @@ extension ObjectLocation {
     func getWayWidth(
         wayBoundsWithDepth: [SIMD3<Float>], imageSize: CGSize,
         cameraTransform: simd_float4x4 = matrix_identity_float4x4,
-        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3
-    ) -> Float {
-        guard wayBoundsWithDepth.count == 4 else {
-            print("Invalid way bounds")
-            return 0.0
-        }
-        
-        let fx = cameraIntrinsics.columns.0.x
-        let fy = cameraIntrinsics.columns.1.y
-        let cx = cameraIntrinsics.columns.2.x
-        let cy = cameraIntrinsics.columns.2.y
-        
-        func imageToCameraSpace(x: Int, y: Int, z: Float) -> SIMD3<Float> {
-            let X = (Float(x) - cx) * z / fx
-            let Y = (Float(y) - cy) * z / fy
-            let Z = z
-            return SIMD3<Float>(X, Y, Z)
-        }
-        
-        let wayPointsInCameraSpace = wayBoundsWithDepth.map { point in
-            return imageToCameraSpace(x: Int(point.x), y: Int(point.y), z: point.z)
-        }
-        
-        let lowerLeft = wayPointsInCameraSpace[0]
-        let upperLeft = wayPointsInCameraSpace[1]
-        let upperRight = wayPointsInCameraSpace[2]
-        let lowerRight = wayPointsInCameraSpace[3]
-        
-        // Calculate the width in camera space
-        let lowerWidth = simd_distance(lowerLeft, lowerRight)
-        let upperWidth = simd_distance(upperLeft, upperRight)
-        
-        // Average the widths
-        let widthInMeters = (lowerWidth + upperWidth) / 2.0
-        
-        return widthInMeters
-    }
-    
-    func getWayWidth(
-        wayBoundsWithDepth: [SIMD3<Float>], imageSize: CGSize,
-        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
         cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
         deviceOrientation: UIDeviceOrientation = .landscapeLeft,
         originalImageSize: CGSize
@@ -258,6 +217,38 @@ extension ObjectLocation {
         let widthInMeters = (lowerWidth + upperWidth) / 2.0
         
         return widthInMeters
+    }
+    
+    func getWaySlope(
+        wayLowerPoint: SIMD3<Float>,
+        wayUpperPoint: SIMD3<Float>,
+        imageSize: CGSize,
+        cameraTransform: simd_float4x4 = matrix_identity_float4x4,
+        cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
+        deviceOrientation: UIDeviceOrientation = .landscapeLeft,
+        originalImageSize: CGSize
+    ) -> Float {
+        let lowerPointDelta = getDeltaFromPoint(
+            pointWithDepth: wayLowerPoint, imageSize: imageSize,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
+        let upperPointDelta = getDeltaFromPoint(
+            pointWithDepth: wayUpperPoint, imageSize: imageSize,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation, originalImageSize: originalImageSize)
+        
+        let verticalDistance = upperPointDelta.y - lowerPointDelta.y
+        let horizontalDistance = simd_distance(
+            SIMD2<Float>(upperPointDelta.x, upperPointDelta.z),
+            SIMD2<Float>(lowerPointDelta.x, lowerPointDelta.z))
+        guard horizontalDistance != 0 else {
+            print("Horizontal distance is zero, cannot calculate slope")
+            return 0.0
+        }
+        let slope = atan(verticalDistance / horizontalDistance)
+        let slopeInDegrees = slope * 180.0 / .pi // Convert to degrees
+        
+        return slopeInDegrees
     }
     
     func getDeltaFromPoint(pointWithDepth: SIMD3<Float>, imageSize: CGSize,

@@ -31,6 +31,7 @@
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
 		A30D057E2E2B106200316FB5 /* CocoCustom11ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
+		A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
@@ -156,6 +157,7 @@
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
 		A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom11ClassConfig.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
+		A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
@@ -549,6 +551,7 @@
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
+				A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */,
 				A3E84ECD2DDAAECB0096A645 /* Helpers */,
 			);
 			path = Camera;
@@ -740,6 +743,7 @@
 				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */,
+				A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
