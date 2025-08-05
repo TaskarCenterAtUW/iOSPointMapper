@@ -26,10 +26,13 @@ class AnnotationImageManager: ObservableObject {
     @State private var transformedLabelImages: [CIImage]? = nil
     
     @Published var annotatedSegmentationLabelImage: CIImage? = nil
+    @Published var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
+    
     @Published var selectedObjectId: UUID? = nil
     @Published var selectedObjectWidth: Float? = nil // MARK: Width Field Demo: Temporary property to hold the selected object width
     @Published var selectedObjectBreakage: Bool? = nil // MARK: Breakage Field Demo: Temporary property to hold the selected object breakage status
-    @Published var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
+    @Published var selectedObjectSlope: Float? = nil // MARK: Slope Field Demo: Temporary property to hold the selected object slope value
+    @Published var selectedObjectCrossSlope: Float? = nil // MARK: Cross Slope Field Demo: Temporary property to hold the selected object cross slope value
     
     // Helpers
     private let annotationCIContext = CIContext()

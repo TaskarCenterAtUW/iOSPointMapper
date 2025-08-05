@@ -38,11 +38,25 @@ extension AnnotationView {
                 self.updateSelectedObjectBreakage(selectedObjectId: selectedObjectId, breakageStatus: newValue)
             }
         )
+        let selectedObjectSlope: Binding<Float> = Binding(
+            get: { self.annotationImageManager.selectedObjectSlope ?? 0.0 },
+            set: { newValue in
+                self.updateSelectedObjectSlope(selectedObjectId: selectedObjectId, slope: newValue)
+            }
+        )
+        let selectedObjectCrossSlope: Binding<Float> = Binding(
+            get: { self.annotationImageManager.selectedObjectCrossSlope ?? 0.0 },
+            set: { newValue in
+                self.updateSelectedObjectCrossSlope(selectedObjectId: selectedObjectId, crossSlope: newValue)
+            }
+        )
         
         AnnotationInstanceDetailView(
             selectedObjectId: selectedObjectId,
             selectedObjectWidth: selectedObjectWidth,
-            selectedObjectBreakage: selectedObjectBreakage
+            selectedObjectBreakage: selectedObjectBreakage,
+            selectedObjectSlope: selectedObjectSlope,
+            selectedObjectCrossSlope: selectedObjectCrossSlope
         )
     }
     
@@ -63,12 +77,32 @@ extension AnnotationView {
             annotationImageManager.selectedObjectBreakage = breakageStatus
         }
     }
+            
+    // MARK: Slope Field Demo: Temporary method to update the slope of the selected object
+    func updateSelectedObjectSlope(selectedObjectId: UUID, slope: Float) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalSlope = slope
+            annotationImageManager.selectedObjectSlope = slope
+        }
+    }
+    
+    // MARK: Cross Slope Field Demo: Temporary method to update the cross slope of the selected object
+    func updateSelectedObjectCrossSlope(selectedObjectId: UUID, crossSlope: Float) {
+        if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
+           let selectedObjectObject = selectedObject.object {
+            selectedObjectObject.finalCrossSlope = crossSlope
+            annotationImageManager.selectedObjectCrossSlope = crossSlope
+        }
+    }
 }
 
 struct AnnotationInstanceDetailView: View {
     var selectedObjectId: UUID
     @Binding var selectedObjectWidth: Float
     @Binding var selectedObjectBreakage: Bool
+    @Binding var selectedObjectSlope: Float
+    @Binding var selectedObjectCrossSlope: Float
     
     @Environment(\.presentationMode) var presentationMode
     
@@ -100,6 +134,18 @@ struct AnnotationInstanceDetailView: View {
                     Toggle(isOn: $selectedObjectBreakage) {
                         Text("Potential Breakage")
                     }
+                }
+                
+                Section(header: Text("Slope")) {
+                    TextField("Slope in degrees", value: $selectedObjectSlope, formatter: numberFormatter)
+                        .keyboardType(.decimalPad)
+                        .submitLabel(.done)
+                }
+                
+                Section(header: Text("Cross Slope")) {
+                    TextField("Cross Slope in degrees", value: $selectedObjectCrossSlope, formatter: numberFormatter)
+                        .keyboardType(.decimalPad)
+                        .submitLabel(.done)
                 }
             }
         }

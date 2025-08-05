@@ -1,5 +1,5 @@
 //
-//  SegmentationPipeline.swift
+//  SegmentationARPipeline.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 4/17/25.

@@ -13,10 +13,7 @@
 		3222F92B2B622E0A0019A079 /* IOSAccessAssessmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F92A2B622E0A0019A079 /* IOSAccessAssessmentTests.swift */; };
 		3222F9352B622E0A0019A079 /* IOSAccessAssessmentUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */; };
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
-		55659C082BB785CB0094DF01 /* CameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C072BB785CB0094DF01 /* CameraController.swift */; };
-		55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0C2BB786100094DF01 /* CameraManager.swift */; };
 		55659C102BB7863F0094DF01 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0F2BB7863F0094DF01 /* SetupView.swift */; };
-		55659C122BB786580094DF01 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C112BB786580094DF01 /* ContentView.swift */; };
 		55659C142BB786700094DF01 /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C132BB786700094DF01 /* AnnotationView.swift */; };
 		55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C2F2832C00078D00B633D7 /* ObjectLocation.swift */; };
 		A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */ = {isa = PBXBuildFile; fileRef = A300C7672D6A92DE00D54778 /* OtherConversions.mm */; };
@@ -34,10 +31,10 @@
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
 		A30D057E2E2B106200316FB5 /* CocoCustom11ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
+		A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
-		A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AEC82DB638AB002D7598 /* CameraUtils.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
 		A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
@@ -45,7 +42,6 @@
 		A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3A2DD9B03000455E45 /* OSMElement.swift */; };
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
-		A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070902CE0536D0028CAC5 /* CameraDevice.swift */; };
 		A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B070992CE0B6E50028CAC5 /* Frame.swift */; };
 		A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */; };
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
@@ -94,10 +90,8 @@
 		DA6332E72BAE3998009C80F9 /* espnetv2_pascal_256.mlmodel in Resources */ = {isa = PBXBuildFile; fileRef = 3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */; };
 		DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B42CA38C11003666D8 /* Constants.swift */; };
 		DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */; };
-		DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */; };
 		DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */; };
 		DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */; };
-		DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */; };
 		DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */; };
 		DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */; };
 		DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */; };
@@ -145,10 +139,7 @@
 		3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITests.swift; sourceTree = "<group>"; };
 		3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = espnetv2_pascal_256.mlmodel; sourceTree = "<group>"; };
-		55659C072BB785CB0094DF01 /* CameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
-		55659C0C2BB786100094DF01 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
 		55659C0F2BB7863F0094DF01 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
-		55659C112BB786580094DF01 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		55659C132BB786700094DF01 /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		55C2F2832C00078D00B633D7 /* ObjectLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectLocation.swift; sourceTree = "<group>"; };
 		A300C7662D6A92DE00D54778 /* OtherConversions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = OtherConversions.hpp; sourceTree = "<group>"; };
@@ -166,10 +157,10 @@
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
 		A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom11ClassConfig.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
+		A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
-		A362AEC82DB638AB002D7598 /* CameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraUtils.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapProcessor.swift; sourceTree = "<group>"; };
 		A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationInstanceDetailView.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
@@ -178,7 +169,6 @@
 		A39C9F3A2DD9B03000455E45 /* OSMElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMElement.swift; sourceTree = "<group>"; };
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
-		A3B070902CE0536D0028CAC5 /* CameraDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraDevice.swift; sourceTree = "<group>"; };
 		A3B070992CE0B6E50028CAC5 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
 		A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
@@ -228,10 +218,8 @@
 		CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserStateViewModel.swift; sourceTree = "<group>"; };
 		DAA7F8B42CA38C11003666D8 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
-		DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationViewController.swift; sourceTree = "<group>"; };
 		DAA7F8C12CA684AF003666D8 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
-		DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIImageUtils.swift; sourceTree = "<group>"; };
 		DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CVPixelBufferUtils.swift; sourceTree = "<group>"; };
 		DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrayscaleToColorCIFilter.swift; sourceTree = "<group>"; };
@@ -366,7 +354,6 @@
 				A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */,
 				CAA947752CDE6FBB000C6918 /* LoginView.swift */,
 				55659C0F2BB7863F0094DF01 /* SetupView.swift */,
-				55659C112BB786580094DF01 /* ContentView.swift */,
 				A3FFAA792DE01A0F002B99BD /* ARContentView.swift */,
 				55659C132BB786700094DF01 /* AnnotationView.swift */,
 				DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */,
@@ -512,7 +499,6 @@
 			children = (
 				A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */,
 				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
-				A362AEC82DB638AB002D7598 /* CameraUtils.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -565,12 +551,8 @@
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
+				A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */,
 				A3E84ECD2DDAAECB0096A645 /* Helpers */,
-				A3B070902CE0536D0028CAC5 /* CameraDevice.swift */,
-				55659C0C2BB786100094DF01 /* CameraManager.swift */,
-				55659C072BB785CB0094DF01 /* CameraController.swift */,
-				DAA7F8BC2CA67A5A003666D8 /* CameraViewController.swift */,
-				DAA7F8C32CA68513003666D8 /* AnnotationCameraViewController.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -761,6 +743,7 @@
 				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */,
+				A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorCIFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				DAA7F8C02CA68400003666D8 /* SegmentationViewController.swift in Sources */,
@@ -768,10 +751,8 @@
 				A3E84ED22DDAD41E0096A645 /* AnnotationAPITransmissionController.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */,
-				DAA7F8BD2CA67A5A003666D8 /* CameraViewController.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */,
-				55659C082BB785CB0094DF01 /* CameraController.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
 				A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */,
@@ -784,14 +765,11 @@
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
 				A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
-				55659C122BB786580094DF01 /* ContentView.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
-				A3B070912CE053710028CAC5 /* CameraDevice.swift in Sources */,
 				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */,
 				A300C7682D6A92DE00D54778 /* OtherConversions.mm in Sources */,
 				A3B0709A2CE0B6E80028CAC5 /* Frame.swift in Sources */,
-				55659C0D2BB786100094DF01 /* CameraManager.swift in Sources */,
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */,
@@ -807,7 +785,6 @@
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
-				DAA7F8C42CA68513003666D8 /* AnnotationCameraViewController.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */,
 				A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */,
@@ -817,7 +794,6 @@
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,
 				A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */,
-				A362AEC92DB638AE002D7598 /* CameraUtils.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
