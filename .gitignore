@@ -17,3 +17,5 @@ Frameworks/*
 # No additional model updates for now. These will be added to separate storage
 *.mlpackage
 *.mlmodel
+
+*.mlperf
