@@ -27,10 +27,15 @@ Note: While adding the frameworks, Xcode may not recognize the framework. In tha
 
 ## Other Resources
 
-1. [Machine Learning Pipeline](https://github.com/himanshunaidu/ML_Pipeline_iOSPointMapper): The machine learning repository used to perform ML model inference, conversion and additional analysis.\
+1. Machine Learning\
+[Main Repository](https://github.com/himanshunaidu/ML_Pipeline_iOSPointMapper): The machine learning repository used to perform ML model inference, conversion and additional analysis.\
 Currently, the repository does not support training of models, and this is done in separate repositories:
 - [EdgeNets](https://github.com/sacmehta/EdgeNets): For ESPNetv2
 - [BiSeNet](https://github.com/himanshunaidu/ML_Pipeline_iOSPointMapper): (Fork) For BiSeNet and BiSeNetV2
+
+2. Data Collection\
+[iOSPointMapperDataCollector](https://github.com/himanshunaidu/iOSPointMapperDataCollector): (Fork) The iOS app used to collect datasets for the project. \
+[StrayVisualizer](https://github.com/himanshunaidu/StrayVisualizer): The repository used to process the collected data and visualize it.
 
 
 ## Interest Form
