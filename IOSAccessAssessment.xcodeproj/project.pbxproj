@@ -55,6 +55,7 @@
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */; };
 		A3D127372D5D12320081DFF4 /* OpenCVWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */; };
+		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
@@ -186,6 +187,7 @@
 		A3D127342D5D0E4B0081DFF4 /* OpenCVWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OpenCVWrapper.h; sourceTree = "<group>"; };
 		A3D127352D5D12320081DFF4 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3D127362D5D12320081DFF4 /* OpenCVWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = OpenCVWrapper.mm; sourceTree = "<group>"; };
+		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
@@ -549,6 +551,7 @@
 		CAF812C32CFA108100D44B84 /* ViewModel */ = {
 			isa = PBXGroup;
 			children = (
+				A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */,
 				CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */,
 			);
 			path = ViewModel;
@@ -798,6 +801,7 @@
 				A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
+				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,
 				A36CF16B2D62E5A50081F82E /* Watershed.cpp in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,

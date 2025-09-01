@@ -19,6 +19,10 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 30) {
+            Label("Login", systemImage: "lock.shield")
+                .font(.largeTitle)
+                .bold()
+            
             TextField("Username", text: $username)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .autocapitalization(.none)
