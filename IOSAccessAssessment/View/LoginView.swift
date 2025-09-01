@@ -69,6 +69,7 @@ struct LoginView: View {
                 
                 switch result {
                 case .success(let response):
+                    keychainService.setValue(self.username, for: .username)
                     keychainService.setValue(response.accessToken, for: .accessToken)
                     let expirationDate = Date().addingTimeInterval(TimeInterval(response.expiresIn))
                     keychainService.setDate(expirationDate, for: .expirationDate)

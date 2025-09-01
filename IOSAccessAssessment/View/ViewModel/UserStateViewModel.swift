@@ -17,6 +17,10 @@ class UserStateViewModel: ObservableObject {
         isAuthenticated = keychainService.isTokenValid()
     }
     
+    func getUsername() -> String? {
+        return keychainService.getValue(for: .username)
+    }
+    
     func loginSuccess() {
         isAuthenticated = true
     }

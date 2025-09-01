@@ -9,7 +9,7 @@ import SwiftUI
 
 enum WorkspaceSelectionViewConstants {
     enum Texts {
-        static let workspaceListViewTitle: String = "Workspace List View"
+        static let workspaceListViewTitle: String = "Workspaces"
         static let noWorkspacesAvailable: String = "No workspaces available."
         
         static let selectWorkspacePrompt: String = "Select a workspace from the list below:"
@@ -26,7 +26,9 @@ struct WorkspaceSelectionView: View {
     var body: some View {
         VStack {
             Text(WorkspaceSelectionViewConstants.Texts.workspaceListViewTitle)
-                .font(.headline)
+                .font(.title)
+                .bold()
+                .padding(.bottom, 20)
             
             VStack {
                 Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
@@ -97,7 +99,7 @@ struct WorkspaceListView: View {
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
             }
         }

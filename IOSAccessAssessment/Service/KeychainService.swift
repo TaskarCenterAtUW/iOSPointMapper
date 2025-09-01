@@ -9,6 +9,7 @@ import Foundation
 import Security
 
 enum KeychainKey: String {
+    case username
     case accessToken
     case expirationDate
     case refreshToken
