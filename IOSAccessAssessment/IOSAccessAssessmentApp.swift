@@ -38,5 +38,8 @@ struct IOSAccessAssessmentApp: App {
                     .environmentObject(userState)
             }
         }
+        .onChange(of: workspaceViewModel.isWorkspaceSelected) { newValue, oldValue in
+            print("Workspace selection changed: \(newValue)") // Debugging line
+        }
     }
 }

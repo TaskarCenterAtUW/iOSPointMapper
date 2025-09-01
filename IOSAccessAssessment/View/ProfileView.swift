@@ -11,6 +11,7 @@ enum ProfileViewConstants {
     enum Texts {
         static let profileTitle: String = "Profile"
         static let usernameLabel: String = "Username: "
+        static let switchWorkspaceButtonText = "Switch Workspace"
         static let logoutButtonText = "Log out"
         
         static let usernamePlaceholder = "User"
@@ -26,6 +27,7 @@ struct ProfileView: View {
     @State private var showLogoutConfirmation: Bool = false
     
     @EnvironmentObject var userState: UserStateViewModel
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -33,6 +35,19 @@ struct ProfileView: View {
             Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
 //                .padding()
                 .padding(.bottom, 40)
+            
+            Button(action: {
+                print("Switch Workspace tapped")
+                workspaceViewModel.clearWorkspaceSelection()
+                self.dismiss()
+            }) {
+                Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
+                    .foregroundColor(.white)
+                    .bold()
+                    .padding()
+            }
+            .background(Color.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
             
             Button(action: {
                 showLogoutConfirmation = true
@@ -66,6 +81,7 @@ struct ProfileView: View {
             isPresented: $showLogoutConfirmation
         ) {
             Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
+                workspaceViewModel.clearWorkspaceSelection()
                 userState.logout()
             }
             Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }

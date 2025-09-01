@@ -31,4 +31,9 @@ class WorkspaceViewModel: ObservableObject {
         self.workspaceId = id
         self.isWorkspaceSelected = true
     }
+    
+    func clearWorkspaceSelection() {
+        self.workspaceId = nil
+        self.isWorkspaceSelected = false
+    }
 }
