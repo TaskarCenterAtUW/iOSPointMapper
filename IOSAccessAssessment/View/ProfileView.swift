@@ -30,11 +30,6 @@ struct ProfileView: View {
     
     var body: some View {
         VStack {
-            Text(ProfileViewConstants.Texts.profileTitle)
-                .font(.title)
-                .bold()
-                .padding(.bottom, 20)
-            
             Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
 //                .padding()
                 .padding(.bottom, 40)
@@ -62,6 +57,7 @@ struct ProfileView: View {
             
             Spacer()
         }
+        .navigationBarTitle(ProfileViewConstants.Texts.profileTitle, displayMode: .inline)
         .onAppear {
             username = userState.getUsername() ?? ProfileViewConstants.Texts.usernamePlaceholder
         }

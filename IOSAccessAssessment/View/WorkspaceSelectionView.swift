@@ -24,12 +24,7 @@ struct WorkspaceSelectionView: View {
     @State var primaryWorkspaces: [Workspace] = []
     
     var body: some View {
-        VStack {
-            Text(WorkspaceSelectionViewConstants.Texts.workspaceListViewTitle)
-                .font(.title)
-                .bold()
-                .padding(.bottom, 20)
-            
+        return NavigationStack {
             VStack {
                 Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
                     .padding(.bottom, 10)
@@ -61,6 +56,20 @@ struct WorkspaceSelectionView: View {
                         .italic()
                 }
             }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitle(WorkspaceSelectionViewConstants.Texts.workspaceListViewTitle, displayMode: .inline)
+            .navigationBarItems(
+                leading:
+                    NavigationLink(destination: ProfileView()) {
+                        Image(systemName: SetupViewConstants.Images.profileIcon)
+                            .resizable()
+                            .frame(
+                                width: SetupViewConstants.Constraints.logoutIconSize,
+                                height: SetupViewConstants.Constraints.logoutIconSize
+                            )
+                            .bold()
+                    }
+            )
         }
         .padding()
         .task {
