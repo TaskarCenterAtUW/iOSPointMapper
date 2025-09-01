@@ -19,6 +19,10 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 30) {
+            Label("Login", systemImage: "lock.shield")
+                .font(.largeTitle)
+                .bold()
+            
             TextField("Username", text: $username)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .autocapitalization(.none)
@@ -52,7 +56,7 @@ struct LoginView: View {
         }
         .padding()
         .frame(maxWidth: 500)
-        .preferredColorScheme(.dark)
+//        .preferredColorScheme(.dark)
     }
     
     private func login() {
@@ -65,6 +69,7 @@ struct LoginView: View {
                 
                 switch result {
                 case .success(let response):
+                    keychainService.setValue(self.username, for: .username)
                     keychainService.setValue(response.accessToken, for: .accessToken)
                     let expirationDate = Date().addingTimeInterval(TimeInterval(response.expiresIn))
                     keychainService.setDate(expirationDate, for: .expirationDate)

@@ -8,6 +8,7 @@
 struct APIConstants {
     enum Constants {
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
+        static let workspacesAPIBaseUrl = "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
         static let workspaceId = "288"
     }
     

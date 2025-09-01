@@ -26,7 +26,7 @@ enum ARContentViewConstants {
     
     enum Colors {
         static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
-        static let unselectedClass = Color.white
+        static let unselectedClass = Color.primary
     }
     
     enum Constraints {
@@ -83,7 +83,7 @@ struct ARContentView: View {
                         Image(systemName: ARContentViewConstants.Images.cameraIcon)
                             .resizable()
                             .frame(width: 60, height: 60)
-                            .foregroundColor(.white)
+//                            .foregroundColor(.white)
                     }
                 }
             }

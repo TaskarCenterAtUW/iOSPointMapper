@@ -15,4 +15,8 @@ struct Constants {
     struct DepthConstants {
         static let inputSize: CGSize = CGSize(width: 518, height: 392)
     }
+    
+    struct WorkspaceConstants {
+        static let primaryWorkspaceIds: [String] = ["288"]
+    }
 }

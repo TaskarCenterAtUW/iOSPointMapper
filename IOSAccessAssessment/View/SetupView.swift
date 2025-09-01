@@ -28,13 +28,14 @@ enum SetupViewConstants {
     }
     
     enum Images {
+        static let profileIcon = "person.crop.circle"
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
         static let uploadIcon = "arrow.up"
     }
     
     enum Colors {
         static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
-        static let unselectedClass = Color.white
+        static let unselectedClass = Color.primary
     }
     
     enum Constraints {
@@ -75,8 +76,8 @@ struct SetupView: View {
         return (self.selection.count == 0)
     }
     
-    @EnvironmentObject var userState: UserStateViewModel
-    @State private var showLogoutConfirmation = false
+//    @EnvironmentObject var userState: UserStateViewModel
+//    @State private var showLogoutConfirmation = false
     
     @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
@@ -137,36 +138,47 @@ struct SetupView: View {
             .navigationBarTitle(SetupViewConstants.Texts.setupViewTitle, displayMode: .inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(
-                leading: Button(action: {
-                    showLogoutConfirmation = true
-                }) {
-                    Image(systemName: SetupViewConstants.Images.logoutIcon)
-                        .resizable()
-                        .frame(
-                            width: SetupViewConstants.Constraints.logoutIconSize,
-                            height: SetupViewConstants.Constraints.logoutIconSize
-                        )
-                        .foregroundColor(.white)
-                        .bold()
-                },
+//                leading: Button(action: {
+//                    showLogoutConfirmation = true
+//                }) {
+//                    Image(systemName: SetupViewConstants.Images.logoutIcon)
+//                        .resizable()
+//                        .frame(
+//                            width: SetupViewConstants.Constraints.logoutIconSize,
+//                            height: SetupViewConstants.Constraints.logoutIconSize
+//                        )
+////                        .foregroundColor(.white)
+//                        .bold()
+//                },
+                leading:
+                    NavigationLink(destination: ProfileView()) {
+                        Image(systemName: SetupViewConstants.Images.profileIcon)
+                            .resizable()
+                            .frame(
+                                width: SetupViewConstants.Constraints.logoutIconSize,
+                                height: SetupViewConstants.Constraints.logoutIconSize
+                            )
+                            .bold()
+                    }
+                ,
                 trailing:
                     NavigationLink(destination: ARContentView(selection: Array(selection))) {
                         Text(SetupViewConstants.Texts.nextButton)
-                            .foregroundStyle(isSelectionEmpty ? Color.gray : Color.white)
+                            .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)
                             .font(.headline)
                     }
                     .disabled(isSelectionEmpty)
             )
             // Alert for logout confirmation
-            .alert(
-                SetupViewConstants.Texts.confirmationDialogTitle,
-                isPresented: $showLogoutConfirmation
-            ) {
-                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
-                    userState.logout()
-                }
-                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
-            }
+//            .alert(
+//                SetupViewConstants.Texts.confirmationDialogTitle,
+//                isPresented: $showLogoutConfirmation
+//            ) {
+//                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
+//                    userState.logout()
+//                }
+//                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
+//            }
             // Alert for changeset opening error
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showOpeningRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
@@ -196,7 +208,7 @@ struct SetupView: View {
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
-        .environment(\.colorScheme, .dark)
+//        .environment(\.colorScheme, .dark)
     }
     
     private func openChangeset() {
