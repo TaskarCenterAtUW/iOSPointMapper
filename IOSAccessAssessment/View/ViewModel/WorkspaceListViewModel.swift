@@ -10,7 +10,7 @@ import Foundation
 /**
     ViewModel to manage the state of workspace selection
  */
-class WorkspaceListViewModel: ObservableObject {
+class WorkspaceViewModel: ObservableObject {
     
     @Published var isWorkspaceSelected: Bool = false
     

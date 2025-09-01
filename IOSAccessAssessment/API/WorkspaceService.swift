@@ -12,7 +12,7 @@ struct Workspace: Codable, Hashable {
     let id: Int
     let type: String?
     let title: String
-    let description: String
+    let description: String?
     let externalAppAccess: Int
 //    let kartaViewToken: String?
     
@@ -28,9 +28,9 @@ struct Workspace: Codable, Hashable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(Int.self, forKey: .id)
-        type = try? container.decode(String.self, forKey: .type)
+        type = try? container.decodeIfPresent(String.self, forKey: .type) ?? "osw"
         title = try container.decode(String.self, forKey: .title)
-        description = try container.decode(String.self, forKey: .description)
+        description = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
         externalAppAccess = try container.decode(Int.self, forKey: .externalAppAccess)
     }
 }
@@ -62,15 +62,27 @@ class WorkspaceService {
     private let accessToken = KeychainService().getValue(for: .accessToken)
 //    public var workspaces: [Workspace] = []
     
-    func fetchWorkspaces(location: CLLocationCoordinate2D, radius: Int = 2000) async throws -> [Workspace] {
-        guard let url = URL(string: "\(APIConstants.Constants.baseUrl)/workspaces/mine?lat=\(location.latitude)&lon=\(location.longitude)&radius=\(radius)")
-        else {
+    func fetchWorkspaces(location: CLLocationCoordinate2D?, radius: Int = 2000) async throws -> [Workspace] {
+        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl) else {
             throw APIError.invalidURL
         }
+        var comps = URLComponents(url: base.appendingPathComponent("workspaces/mine"), resolvingAgainstBaseURL: false)
+        comps?.queryItems = [
+            URLQueryItem(name: "radius", value: "\(radius)")
+        ]
+        if let location = location {
+            comps?.queryItems?.append(contentsOf: [
+                URLQueryItem(name: "lat", value: "\(location.latitude)"),
+                URLQueryItem(name: "lon", value: "\(location.longitude)")
+            ])
+        }
+        guard let url = comps?.url else { throw APIError.invalidURL }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        print("Requesting workspaces with URL: \(url.absoluteString)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
