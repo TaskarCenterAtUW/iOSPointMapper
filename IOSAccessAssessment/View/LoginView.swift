@@ -56,7 +56,7 @@ struct LoginView: View {
         }
         .padding()
         .frame(maxWidth: 500)
-        .preferredColorScheme(.dark)
+//        .preferredColorScheme(.dark)
     }
     
     private func login() {

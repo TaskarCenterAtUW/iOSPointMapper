@@ -34,7 +34,7 @@ enum SetupViewConstants {
     
     enum Colors {
         static let selectedClass = Color(red: 187/255, green: 134/255, blue: 252/255)
-        static let unselectedClass = Color.white
+        static let unselectedClass = Color.primary
     }
     
     enum Constraints {
@@ -146,13 +146,13 @@ struct SetupView: View {
                             width: SetupViewConstants.Constraints.logoutIconSize,
                             height: SetupViewConstants.Constraints.logoutIconSize
                         )
-                        .foregroundColor(.white)
+//                        .foregroundColor(.white)
                         .bold()
                 },
                 trailing:
                     NavigationLink(destination: ARContentView(selection: Array(selection))) {
                         Text(SetupViewConstants.Texts.nextButton)
-                            .foregroundStyle(isSelectionEmpty ? Color.gray : Color.white)
+                            .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)
                             .font(.headline)
                     }
                     .disabled(isSelectionEmpty)
@@ -196,7 +196,7 @@ struct SetupView: View {
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
-        .environment(\.colorScheme, .dark)
+//        .environment(\.colorScheme, .dark)
     }
     
     private func openChangeset() {
