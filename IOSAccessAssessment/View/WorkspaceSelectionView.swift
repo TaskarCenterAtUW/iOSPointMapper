@@ -80,9 +80,12 @@ struct WorkspaceSelectionView: View {
     
     func loadWorkspaces() async {
         do {
-            let workspaces = try await WorkspaceService.shared.fetchWorkspaces(location: nil, radius: 2000)
+            var workspaces = try await WorkspaceService.shared.fetchWorkspaces(location: nil, radius: 2000)
             let primaryWorkspaces = workspaces.filter { workspace in
                 return Constants.WorkspaceConstants.primaryWorkspaceIds.contains("\(workspace.id)")
+            }
+            workspaces = workspaces.filter { workspace in
+                return workspace.externalAppAccess == 1
             }
             self.workspaces = workspaces
             self.primaryWorkspaces = primaryWorkspaces
