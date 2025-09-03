@@ -81,6 +81,7 @@ struct WorkspaceSelectionView: View {
     func loadWorkspaces() async {
         do {
             var workspaces = try await WorkspaceService.shared.fetchWorkspaces(location: nil, radius: 2000)
+            // MARK: Eventually, we should ensure that even primary workspaces have externalAppAccess enabled
             let primaryWorkspaces = workspaces.filter { workspace in
                 return Constants.WorkspaceConstants.primaryWorkspaceIds.contains("\(workspace.id)")
             }
