@@ -183,14 +183,14 @@ struct AnnotationView: View {
             } message: {
                 Text(AnnotationViewConstants.Texts.depthOrSegmentationUnavailableText)
             }
-            .alert("Current Depth Value", isPresented: $isDepthModalPresented) {
-                Button("OK") {
-                    isDepthModalPresented = false
-                    nextSegmentTrue()
-                }
-            } message: {
-                Text(currentDepthValues)
-            }
+//            .alert("Current Depth Value", isPresented: $isDepthModalPresented) {
+//                Button("OK") {
+//                    isDepthModalPresented = false
+//                    nextSegmentTrue()
+//                }
+//            } message: {
+//                Text(currentDepthValues)
+//            }
             // TODO: Need to check if the following vetting is necessary
 //            .sheet(isPresented: $isShowingClassSelectionModal) {
 //                classSelectionView()
@@ -322,7 +322,8 @@ struct AnnotationView: View {
     
     func nextSegment() {
         self.saveCapturedData()
-        self.isDepthModalPresented = true
+//        self.isDepthModalPresented = true
+        nextSegmentTrue()
     }
     
     func nextSegmentTrue() {
