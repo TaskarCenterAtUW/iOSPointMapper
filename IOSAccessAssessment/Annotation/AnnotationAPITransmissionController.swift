@@ -40,7 +40,8 @@ extension AnnotationView {
         let allObjects = annotatedDetectedObjects.filter { $0.isAll }
         // If the "all" object has selected option as .discard, we discard all objects.
         if let allObject = allObjects.first, allObject.selectedOption == .classOption(.discard) {
-            print("Discarding all objects")
+//            print("Discarding all objects")
+            updateUploadStatus(true, message: AnnotationViewConstants.Texts.discardingAllObjectsMessage)
             return
         }
         let uploadObjects = annotatedDetectedObjects.filter { annotatedDetectedObject in
@@ -52,7 +53,7 @@ extension AnnotationView {
                     annotatedDetectedObject.selectedOption != .individualOption(.discard))
         }
         guard !uploadObjects.isEmpty else {
-            print("No objects to upload")
+            updateUploadStatus(true, message: AnnotationViewConstants.Texts.noObjectsToUploadMessage)
             return
         }
         
@@ -111,13 +112,14 @@ extension AnnotationView {
         }
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            print("Failed to upload changes. Workspace ID is nil")
+            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: wayDataOperations) { result in
             switch result {
             case .success(let response):
                 print("Changes uploaded successfully.")
+                updateUploadStatus(true)
                 DispatchQueue.main.async {
                     sharedImageData.isUploadReady = true
                     
@@ -161,7 +163,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                print("Failed to upload changes: \(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }
@@ -182,13 +184,14 @@ extension AnnotationView {
         }
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            print("Failed to upload changes. Workspace ID is nil")
+            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
             switch result {
             case .success(let response):
                 print("Changes uploaded successfully.")
+                updateUploadStatus(true)
                 DispatchQueue.main.async {
                     sharedImageData.isUploadReady = true
                     
@@ -209,7 +212,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                print("Failed to upload changes: \(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }
@@ -230,7 +233,7 @@ extension AnnotationView {
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            print("Failed to upload changes. Workspace ID is nil")
+            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
@@ -239,7 +242,7 @@ extension AnnotationView {
                 print("Changes uploaded successfully.")
                 DispatchQueue.main.async {
                     sharedImageData.isUploadReady = true
-                    
+                    updateUploadStatus(true)
                     guard let nodeMap = response.nodes else {
                         print("Node map is nil")
                         return
@@ -256,7 +259,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                print("Failed to upload changes: \(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }
@@ -285,7 +288,7 @@ extension AnnotationView {
             deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
             originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
         )
-        self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
+//        self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return nil }

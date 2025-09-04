@@ -26,6 +26,15 @@ enum AnnotationViewConstants {
         static let confirmAnnotationFailedConfirmText = "Yes"
         static let confirmAnnotationFailedCancelText = "No"
         
+        static let uploadFailedTitle = "Upload Failed"
+        static let uploadFailedMessage = "Failed to upload the annotated data. Please try again."
+        
+        // Upload status messages
+        static let discardingAllObjectsMessage = "Discarding all objects"
+        static let noObjectsToUploadMessage = "No objects to upload"
+        static let workspaceIdNilMessage = "Workspace ID is nil"
+        static let apiFailedMessage = "API failed"
+        
         static let selectCorrectAnnotationText = "Select correct annotation"
         static let doneText = "Done"
     }
@@ -53,8 +62,11 @@ struct AnnotationView: View {
     @State var selectedClassIndex: Int? = nil
     @State private var tempSelectedClassIndex: Int = 0
     
-    @State private var isDepthModalPresented: Bool = false
-    @State var currentDepthValues: String = ""
+    @State var isUploadFailedModalPresented: Bool = false
+    @State var uploadErrorMessage: String = ""
+    
+//    @State private var isDepthModalPresented: Bool = false
+//    @State var currentDepthValues: String = ""
     
     @StateObject var annotationImageManager = AnnotationImageManager()
     
@@ -199,6 +211,13 @@ struct AnnotationView: View {
             .sheet(isPresented: $isShowingAnnotationInstanceDetailView) {
                 annotationInstanceDetailView()
             }
+            .alert(AnnotationViewConstants.Texts.uploadFailedTitle, isPresented: $isUploadFailedModalPresented) {
+                Button("OK") {
+                    isUploadFailedModalPresented = false
+                }
+            } message: {
+                Text(uploadErrorMessage)
+            }
         }
     }
     
@@ -268,7 +287,7 @@ struct AnnotationView: View {
     }
     
     func confirmAnnotation() {
-        var currentDepthValues: [Float] = []
+//        var currentDepthValues: [Float] = []
         
         var depthValue: Float = 0.0
         guard let depthMapProcessor = depthMapProcessor,
@@ -299,13 +318,13 @@ struct AnnotationView: View {
             annotatedDetectedObject.depthValue = depthValue
             
 //            currentDepthValues.append(depthValue)
-            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.x ?? 0))
-            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.y ?? 0))
+//            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.x ?? 0))
+//            currentDepthValues.append(Float(annotatedDetectedObject.object?.centroid.y ?? 0))
         }
         
         // Update the current depth values for display
-        let currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
-        self.currentDepthValues = currentDepthValueString
+//        let currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
+//        self.currentDepthValues = currentDepthValueString
         
         let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
         uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
@@ -336,6 +355,11 @@ struct AnnotationView: View {
         } else {
             self.dismiss()
         }
+    }
+    
+    func updateUploadStatus(_ status: Bool, message: String = "") {
+        uploadErrorMessage = message
+        isUploadFailedModalPresented = !status
     }
 
     func calculateProgress() -> Float {
