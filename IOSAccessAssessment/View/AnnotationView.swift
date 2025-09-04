@@ -41,6 +41,7 @@ struct AnnotationView: View {
     var objectLocation: ObjectLocation
     
     @EnvironmentObject var sharedImageData: SharedImageData
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
     @State var index = 0

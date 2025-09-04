@@ -16,6 +16,7 @@ enum SetupViewConstants {
         static let changesetOpeningErrorTitle = "Changeset failed to open. Please retry."
         static let changesetOpeningRetryText = "Retry"
         static let changesetOpeningRetryMessageText = "Failed to open changeset."
+        static let workspaceIdMissingMessageText = "Workspace ID is missing."
         static let changesetClosingErrorTitle = "Changeset failed to close. Please retry."
         static let changesetClosingRetryText = "Retry"
         static let changesetClosingRetryMessageText = "Failed to close changeset."
@@ -76,6 +77,7 @@ struct SetupView: View {
         return (self.selection.count == 0)
     }
     
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
 //    @EnvironmentObject var userState: UserStateViewModel
 //    @State private var showLogoutConfirmation = false
     
@@ -212,7 +214,15 @@ struct SetupView: View {
     }
     
     private func openChangeset() {
-        ChangesetService.shared.openChangeset { result in
+        guard let workspaceId = workspaceViewModel.workspaceId else {
+            DispatchQueue.main.async {
+                changesetOpenViewModel.update(
+                    isChangesetOpened: false, showOpeningRetryAlert: true,
+                    openRetryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(SetupViewConstants.Texts.workspaceIdMissingMessageText)")
+            }
+            return
+        }
+        ChangesetService.shared.openChangeset(workspaceId: workspaceId) { result in
             switch result {
             case .success(let changesetId):
                 print("Opened changeset with ID: \(changesetId)")
@@ -220,7 +230,7 @@ struct SetupView: View {
                     changesetOpenViewModel.isChangesetOpened = true
                     
                     // Open a dataset encoder for the changeset
-                    sharedImageData.currentDatasetEncoder = DatasetEncoder(changesetId: changesetId)
+                    sharedImageData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: changesetId)
                 }
             case .failure(let error):
                 DispatchQueue.main.async {

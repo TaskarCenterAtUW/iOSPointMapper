@@ -19,7 +19,6 @@ class ChangesetService {
     // TODO: Replace with globally available APIConstants
     private enum Constants {
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
-        static let workspaceId = "288"
     }
     
     static let shared = ChangesetService()
@@ -28,7 +27,7 @@ class ChangesetService {
     private let accessToken = KeychainService().getValue(for: .accessToken)
     private(set) var changesetId: String?
     
-    func openChangeset(completion: @escaping (Result<String, Error>) -> Void) {
+    func openChangeset(workspaceId: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "\(Constants.baseUrl)/changeset/create"),
               let accessToken
         else { return }
@@ -36,7 +35,7 @@ class ChangesetService {
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue(workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
         
         guard let xmlData = """
@@ -72,7 +71,7 @@ class ChangesetService {
         }.resume()
     }
     
-    func performUpload(operations: [ChangesetDiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
+    func performUpload(workspaceId: String, operations: [ChangesetDiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
         guard let changesetId,
               let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
@@ -108,7 +107,7 @@ class ChangesetService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue(Constants.workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue(workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
         request.httpBody = osmChangeXML.data(using: .utf8)
 

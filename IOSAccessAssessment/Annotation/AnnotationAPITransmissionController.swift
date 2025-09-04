@@ -110,7 +110,11 @@ extension AnnotationView {
             self.sharedImageData.wayWidthHistory[segmentationClass.labelValue, default: []].append(wayWidth)
         }
         
-        ChangesetService.shared.performUpload(operations: wayDataOperations) { result in
+        guard let workspaceId = workspaceViewModel.workspaceId else {
+            print("Failed to upload changes. Workspace ID is nil")
+            return
+        }
+        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: wayDataOperations) { result in
             switch result {
             case .success(let response):
                 print("Changes uploaded successfully.")
@@ -177,7 +181,11 @@ extension AnnotationView {
             return ChangesetDiffOperation.create(nodeData)
         }
         
-        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+        guard let workspaceId = workspaceViewModel.workspaceId else {
+            print("Failed to upload changes. Workspace ID is nil")
+            return
+        }
+        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
             switch result {
             case .success(let response):
                 print("Changes uploaded successfully.")
@@ -221,7 +229,11 @@ extension AnnotationView {
         var nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
-        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+        guard let workspaceId = workspaceViewModel.workspaceId else {
+            print("Failed to upload changes. Workspace ID is nil")
+            return
+        }
+        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
             switch result {
             case .success(let response):
                 print("Changes uploaded successfully.")
