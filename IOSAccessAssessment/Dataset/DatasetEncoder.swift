@@ -23,6 +23,9 @@ enum DatasetEncoderStatus {
     Finally, it also adds a node to TDEI workspaces at the capture location.
  */
 class DatasetEncoder {
+    private var workspaceId: String
+    
+    private var workspaceDirectory: URL
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
     
@@ -48,9 +51,15 @@ class DatasetEncoder {
     public var status = DatasetEncoderStatus.allGood
     public var capturedFrameIds: Set<UUID> = []
     
-    init(changesetId: String) {
+    init(workspaceId: String, changesetId: String) {
+        self.workspaceId = workspaceId
+        
         self.datasetDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        datasetDirectory = DatasetEncoder.createDirectory(id: changesetId)
+        // Create workspace Directory if it doesn't exist
+        self.workspaceDirectory = DatasetEncoder.createDirectory(id: workspaceId)
+        // if workspace directory exists, create dataset directory inside it
+        datasetDirectory = DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
+        
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
@@ -71,9 +80,12 @@ class DatasetEncoder {
         self.otherDetailsEncoder = OtherDetailsEncoder(url: self.otherDetailsPath)
     }
     
-    static private func createDirectory(id: String) -> URL {
-        let url = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first!
-        let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: url)
+    static private func createDirectory(id: String, relativeTo: URL? = nil) -> URL {
+        var relativeTo = relativeTo
+        if relativeTo == nil {
+            relativeTo = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first!
+        }
+        let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: relativeTo)
         if FileManager.default.fileExists(atPath: directory.path) {
             // Return existing directory if it already exists
             return directory
@@ -166,7 +178,7 @@ class DatasetEncoder {
         let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
-        ChangesetService.shared.performUpload(operations: nodeDataOperations) { result in
+        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
             switch result {
             case .success(_):
                 print("Changes uploaded successfully.")

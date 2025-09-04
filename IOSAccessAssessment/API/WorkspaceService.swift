@@ -63,7 +63,9 @@ class WorkspaceService {
 //    public var workspaces: [Workspace] = []
     
     func fetchWorkspaces(location: CLLocationCoordinate2D?, radius: Int = 2000) async throws -> [Workspace] {
-        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl) else {
+        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl),
+              let accessToken
+        else {
             throw APIError.invalidURL
         }
         var comps = URLComponents(url: base.appendingPathComponent("workspaces/mine"), resolvingAgainstBaseURL: false)
@@ -80,6 +82,7 @@ class WorkspaceService {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         print("Requesting workspaces with URL: \(url.absoluteString)")
