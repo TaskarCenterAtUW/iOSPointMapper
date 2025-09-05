@@ -6,6 +6,7 @@
 //
 
 import Combine
+import UIKit
 
 final class OrientationObserver: ObservableObject {
     @Published var deviceOrientation: UIDeviceOrientation = UIDevice.current.orientation

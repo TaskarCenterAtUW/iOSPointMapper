@@ -4,6 +4,7 @@
 //
 //  Created by Himanshu on 7/4/25.
 //
+import Foundation
 
 struct LocationData {
     let timestamp: TimeInterval

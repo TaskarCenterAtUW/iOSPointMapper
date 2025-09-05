@@ -4,6 +4,8 @@
 //
 //  Created by Himanshu on 7/4/25.
 //
+import Foundation
+import CoreImage
 
 extension SegmentationConfig {
     static let cityscapes: SegmentationClassConfig = SegmentationClassConfig(

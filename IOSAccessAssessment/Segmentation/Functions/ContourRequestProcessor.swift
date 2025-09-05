@@ -5,6 +5,7 @@
 //  Created by Himanshu on 5/5/25.
 //
 import Vision
+import CoreImage
 
 /**
     ContourRequestProcessor is a struct that processes contour detection requests using Vision framework.

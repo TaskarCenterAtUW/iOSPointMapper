@@ -7,6 +7,7 @@
 
 import OrderedCollections
 import simd
+import Foundation
 
 class CentroidTracker {
     private var nextObjectID: UUID;
