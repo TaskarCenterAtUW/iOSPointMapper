@@ -5,6 +5,8 @@
 //  Created by Himanshu on 7/4/25.
 //
 
+import CoreImage
+
 struct DimensionBasedMaskBounds {
     var minX: Float
     var maxX: Float

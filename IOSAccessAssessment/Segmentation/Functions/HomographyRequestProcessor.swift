@@ -6,6 +6,7 @@
 //
 import Vision
 import simd
+import CoreImage
 
 struct HomographyRequestProcessor {
     /// Computes the homography transform for the reference image and the floating image.

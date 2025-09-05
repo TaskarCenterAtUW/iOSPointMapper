@@ -4,6 +4,8 @@
 //
 //  Created by Himanshu on 4/30/25.
 //
+import Foundation
+import UIKit
 
 /**
  A class that contains helper methods to manage camera orientation related tasks.

@@ -6,6 +6,7 @@
 //
 import CoreML
 import Vision
+import CoreImage
 
 /**
     A struct to handle the segmentation model request processing.

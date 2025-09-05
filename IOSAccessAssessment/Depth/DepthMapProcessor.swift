@@ -4,6 +4,8 @@
 //
 //  Created by Himanshu on 4/21/25.
 //
+import CoreImage
+import CoreVideo
 
 struct DepthMapProcessor {
     var depthImage: CIImage
