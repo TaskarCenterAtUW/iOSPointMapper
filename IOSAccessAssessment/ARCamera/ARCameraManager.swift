@@ -9,10 +9,13 @@ import ARKit
 import Combine
 
 enum ARCameraManagerError: Error, LocalizedError {
+    case sessionConfigurationFailed
     case pixelBufferPoolCreationFailed
     
     var errorDescription: String? {
         switch self {
+        case .sessionConfigurationFailed:
+            return "AR session configuration failed."
         case .pixelBufferPoolCreationFailed:
             return "Failed to create pixel buffer pool."
         }
@@ -59,16 +62,19 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
         session.delegate = self
-        runSession()
         
         do {
+            try runSession()
             try setUpPixelBufferPools()
         } catch {
-            fatalError("Failed to set up pixel buffer pools: \(error.localizedDescription)")
+            fatalError("Failed to set up Camera Manager: \(error.localizedDescription)")
         }
     }
     
-    func runSession() {
+    func runSession() throws {
+        if ARWorldTrackingConfiguration.isSupported == false {
+            throw ARCameraManagerError.sessionConfigurationFailed
+        }
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravityAndHeading
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
@@ -88,7 +94,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     
     func resumeStream() {
-        runSession()
+        do {
+            try runSession()
+        } catch {
+            fatalError("Failed to resume AR session: \(error.localizedDescription)")
+        }
         isProcessingCapturedResult = false
     }
     
