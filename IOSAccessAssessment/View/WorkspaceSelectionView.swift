@@ -16,6 +16,14 @@ enum WorkspaceSelectionViewConstants {
         static let primaryWorkspaces: String = "Primary Workspaces"
         static let allWorkspaces: String = "All Workspaces"
     }
+    
+    enum Images {
+        static let refreshIcon: String = "arrow.clockwise.circle"
+    }
+    
+    enum Constraints {
+        static let refreshIconSize: CGFloat = 20
+    }
 }
 
 struct WorkspaceSelectionView: View {
@@ -50,6 +58,11 @@ struct WorkspaceSelectionView: View {
                     ScrollView(.vertical) {
                         WorkspaceListView(workspaces: workspaces, workspaceViewModel: workspaceViewModel)
                     }
+                    .refreshable {
+                        Task {
+                            await loadWorkspaces()
+                        }
+                    }
                 } else {
                     Text(WorkspaceSelectionViewConstants.Texts.noWorkspacesAvailable)
                         .foregroundColor(.gray)
@@ -66,6 +79,20 @@ struct WorkspaceSelectionView: View {
                             .frame(
                                 width: SetupViewConstants.Constraints.logoutIconSize,
                                 height: SetupViewConstants.Constraints.logoutIconSize
+                            )
+                            .bold()
+                    },
+                trailing:
+                    Button(action: {
+                        Task {
+                            await loadWorkspaces()
+                        }
+                    }) {
+                        Image(systemName: WorkspaceSelectionViewConstants.Images.refreshIcon)
+                            .resizable()
+                            .frame(
+                                width: WorkspaceSelectionViewConstants.Constraints.refreshIconSize,
+                                height: WorkspaceSelectionViewConstants.Constraints.refreshIconSize
                             )
                             .bold()
                     }
