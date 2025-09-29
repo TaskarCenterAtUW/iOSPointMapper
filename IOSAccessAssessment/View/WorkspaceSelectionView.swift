@@ -58,6 +58,11 @@ struct WorkspaceSelectionView: View {
                     ScrollView(.vertical) {
                         WorkspaceListView(workspaces: workspaces, workspaceViewModel: workspaceViewModel)
                     }
+                    .refreshable {
+                        Task {
+                            await loadWorkspaces()
+                        }
+                    }
                 } else {
                     Text(WorkspaceSelectionViewConstants.Texts.noWorkspacesAvailable)
                         .foregroundColor(.gray)
