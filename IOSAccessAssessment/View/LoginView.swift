@@ -31,6 +31,16 @@ struct LoginView: View {
             SecureField("Password", text: $password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
+            Menu {
+                ForEach(APIEnvironment.allCases, id: \.self) { environment in
+                    Text(environment.rawValue)
+                }
+            }
+            label: {
+                Text("TDEI: \(APIEnvironment.default.rawValue)")
+                    .foregroundColor(.blue)
+            }
+            
             if let errorMessage = errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
