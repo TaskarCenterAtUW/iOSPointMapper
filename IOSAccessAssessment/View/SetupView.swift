@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 enum SetupViewConstants {
     enum Texts {
@@ -26,12 +27,43 @@ enum SetupViewConstants {
         static let confirmationDialogCancelText = "Cancel"
         
         static let nextButton = "Next"
+        
+        // ChangesetInfoTip
+        static let changesetInfoTipTitle = "Upload Changeset"
+        static let changesetInfoTipMessage = "Upload your collected data as a changeset to the workspace."
+        static let changesetInfoTipLearnMoreButtonTitle = "Learn More"
+        
+        // ChangesetInfoLearnMoreSheetView
+        static let changesetInfoLearnMoreSheetTitle = "About Changesets"
+        static let changesetInfoLearnMoreSheetMessage = """
+        A changeset is a collection of changes made to the workspace. It allows you to group related modifications together for easier management and tracking.
+        
+        Click the Upload Changeset button to upload your collected data as a changeset to the workspace.
+        """
+        
+        // SelectClassesInfoTip
+        static let selectClassesInfoTipTitle = "Select Classes"
+        static let selectClassesInfoTipMessage = "Please select the type of environment objects that you want the application to map during the mapping session."
+        static let selectClassesInfoTipLearnMoreButtonTitle = "Learn More"
+        
+        // SelectClassesInfoLearnMoreSheetView
+        static let selectClassesInfoLearnMoreSheetTitle = "About Class Selection"
+        static let selectClassesInfoLearnMoreSheetMessage = """
+        Each class represents a specific type of object or feature in the environment, such as sidewalks, buildings, traffic signs, etc.
+        
+        Selecting specific classes helps the application focus on mapping the objects that are most relevant to your needs. 
+        
+        Please select the classes you want to identify during the mapping session from the list provided.
+        """
     }
     
     enum Images {
         static let profileIcon = "person.crop.circle"
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
         static let uploadIcon = "arrow.up"
+        
+        // ChangesetInfoTip
+        static let infoIcon = "info.circle"
     }
     
     enum Colors {
@@ -41,6 +73,54 @@ enum SetupViewConstants {
     
     enum Constraints {
         static let logoutIconSize: CGFloat = 20
+    }
+    
+    enum Identifiers {
+        static let changesetInfoTipLearnMoreActionId: String = "changeset-learn-more"
+        static let selectClassesInfoTipLearnMoreActionId: String = "select-classes-learn-more"
+    }
+}
+
+struct ChangesetInfoTip: Tip {
+    
+    var title: Text {
+        Text(SetupViewConstants.Texts.changesetInfoTipTitle)
+    }
+    var message: Text? {
+        Text(SetupViewConstants.Texts.changesetInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: SetupViewConstants.Images.infoIcon)
+            .resizable()
+//            .frame(width: 30, height: 30)
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: SetupViewConstants.Identifiers.changesetInfoTipLearnMoreActionId,
+            title: SetupViewConstants.Texts.changesetInfoTipLearnMoreButtonTitle
+        )
+    }
+}
+
+struct SelectClassesInfoTip: Tip {
+    
+    var title: Text {
+        Text(SetupViewConstants.Texts.selectClassesInfoTipTitle)
+    }
+    var message: Text? {
+        Text(SetupViewConstants.Texts.selectClassesInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: SetupViewConstants.Images.infoIcon)
+            .resizable()
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: SetupViewConstants.Identifiers.selectClassesInfoTipLearnMoreActionId,
+            title: SetupViewConstants.Texts.selectClassesInfoTipLearnMoreButtonTitle
+        )
     }
 }
 
@@ -88,12 +168,27 @@ struct SetupView: View {
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
+    var changesetInfoTip = ChangesetInfoTip()
+    @State private var showChangesetLearnMoreSheet = false
+    var selectClassesInfoTip = SelectClassesInfoTip()
+    @State private var showSelectClassesLearnMoreSheet = false
+    
     var body: some View {
         return NavigationStack {
             VStack(alignment: .leading) {
                 HStack {
-                    Text(SetupViewConstants.Texts.uploadChangesetTitle)
-                        .font(.subheadline)
+                    HStack {
+                        Text(SetupViewConstants.Texts.uploadChangesetTitle)
+                            .font(.headline)
+                        Button(action: {
+                            showChangesetLearnMoreSheet = true
+                        }) {
+                            Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                        }
+                        Spacer()
+                    }
                     
                     Spacer()
                     
@@ -110,12 +205,33 @@ struct SetupView: View {
                     .disabled(!sharedImageData.isUploadReady)
                 }
                 .padding(.bottom, 10)
+                TipView(changesetInfoTip, arrowEdge: .top) { action in
+                    if action.id == SetupViewConstants.Identifiers.changesetInfoTipLearnMoreActionId {
+                        showChangesetLearnMoreSheet = true
+                    }
+                }
                 
                 Divider()
                 
-                Text(SetupViewConstants.Texts.selectClassesText)
-                    .font(.subheadline)
-//                    .foregroundColor(.gray)
+                HStack {
+                    Text(SetupViewConstants.Texts.selectClassesText)
+                        .font(.headline)
+    //                    .foregroundColor(.gray)
+                    Button(action: {
+                        showSelectClassesLearnMoreSheet = true
+                    }) {
+                        Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                    }
+                    Spacer()
+                }
+                .padding(.bottom, 10)
+                TipView(selectClassesInfoTip, arrowEdge: .top) { action in
+                    if action.id == SetupViewConstants.Identifiers.selectClassesInfoTipLearnMoreActionId {
+                        showSelectClassesLearnMoreSheet = true
+                    }
+                }
                 
                 List {
                     ForEach(0..<Constants.SelectedSegmentationConfig.classNames.count, id: \.self) { index in
@@ -140,18 +256,6 @@ struct SetupView: View {
             .navigationBarTitle(SetupViewConstants.Texts.setupViewTitle, displayMode: .inline)
             .navigationBarBackButtonHidden(true)
             .navigationBarItems(
-//                leading: Button(action: {
-//                    showLogoutConfirmation = true
-//                }) {
-//                    Image(systemName: SetupViewConstants.Images.logoutIcon)
-//                        .resizable()
-//                        .frame(
-//                            width: SetupViewConstants.Constraints.logoutIconSize,
-//                            height: SetupViewConstants.Constraints.logoutIconSize
-//                        )
-////                        .foregroundColor(.white)
-//                        .bold()
-//                },
                 leading:
                     NavigationLink(destination: ProfileView()) {
                         Image(systemName: SetupViewConstants.Images.profileIcon)
@@ -205,6 +309,12 @@ struct SetupView: View {
                 if !changesetOpenViewModel.isChangesetOpened {
                     openChangeset()
                 }
+            }
+            .sheet(isPresented: $showChangesetLearnMoreSheet) {
+                ChangesetLearnMoreSheetView()
+            }
+            .sheet(isPresented: $showSelectClassesLearnMoreSheet) {
+                SelectClassesLearnMoreSheetView()
             }
         }
         .environmentObject(self.sharedImageData)
@@ -261,5 +371,51 @@ struct SetupView: View {
                 }
             }
         }
+    }
+}
+
+struct ChangesetLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+//            Image(systemName: "number")
+//                .resizable()
+//                .scaledToFit()
+//                .frame(width: 160)
+//                .foregroundColor(.accentColor)
+            Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetTitle)
+                .font(.title)
+            Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetMessage)
+            .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
+    }
+}
+
+struct SelectClassesLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            //            Image(systemName: "number")
+            //                .resizable()
+            //                .scaledToFit()
+            //                .frame(width: 160)
+            //                .foregroundColor(.accentColor)
+            Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetTitle)
+                .font(.title)
+            Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetMessage)
+                .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }

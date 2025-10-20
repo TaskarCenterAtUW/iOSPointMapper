@@ -6,10 +6,11 @@
 //
 
 import SwiftUI
+import TipKit
 
 enum ProfileViewConstants {
     enum Texts {
-        static let profileTitle: String = "Profile"
+        static let profileTitle: String = "User Settings"
         static let usernameLabel: String = "Username: "
         static let switchWorkspaceButtonText = "Switch Workspace"
         static let logoutButtonText = "Log out"
@@ -30,24 +31,45 @@ struct ProfileView: View {
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
+    var workspaceInfoTip = WorkspaceInfoTip()
+    @State private var showWorkspaceLearnMoreSheet = false
+    
     var body: some View {
         VStack {
             Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
 //                .padding()
                 .padding(.bottom, 40)
             
-            Button(action: {
-                print("Switch Workspace tapped")
-                workspaceViewModel.clearWorkspaceSelection()
-                self.dismiss()
-            }) {
-                Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
-                    .foregroundColor(.white)
-                    .bold()
-                    .padding()
+            HStack {
+                Spacer()
+                Button(action: {
+                    showWorkspaceLearnMoreSheet = true
+                }) {
+                    Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                }
+                .padding(.trailing, 5)
             }
-            .background(Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                Button(action: {
+                    workspaceViewModel.clearWorkspaceSelection()
+                    self.dismiss()
+                }) {
+                    Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
+                        .foregroundColor(.white)
+                        .bold()
+                        .padding()
+                }
+                .background(Color.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            )
+            .padding(.vertical, 20)
+            TipView(workspaceInfoTip, arrowEdge: .top) { action in
+                if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
+                    showWorkspaceLearnMoreSheet = true
+                }
+            }
             
             Button(action: {
                 showLogoutConfirmation = true
@@ -85,6 +107,9 @@ struct ProfileView: View {
                 userState.logout()
             }
             Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
+        }
+        .sheet(isPresented: $showWorkspaceLearnMoreSheet) {
+            WorkspaceSelectionLearnMoreSheetView()
         }
     }
 }

@@ -6,12 +6,21 @@
 //
 
 import SwiftUI
+import TipKit
 
 @main
 struct IOSAccessAssessmentApp: App {
     @StateObject private var userState = UserStateViewModel()
     @StateObject private var workspaceViewModel = WorkspaceViewModel()
     private let authService = AuthService()
+    
+    init() {
+        do {
+            try setupTips()
+        } catch {
+            print("Error initializing tips: \(error)")
+        }
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -41,5 +50,13 @@ struct IOSAccessAssessmentApp: App {
         .onChange(of: workspaceViewModel.isWorkspaceSelected) { newValue, oldValue in
             print("Workspace selection changed: \(newValue)") // Debugging line
         }
+    }
+    
+    private func setupTips() throws {
+        // Purge all TipKit-related data.
+        try Tips.resetDatastore()
+        
+        // Configure and load all tips in the app.
+        try Tips.configure()
     }
 }

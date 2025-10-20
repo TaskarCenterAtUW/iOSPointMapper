@@ -11,7 +11,7 @@ import simd
 
 enum AnnotationViewConstants {
     enum Texts {
-        static let annotationViewTitle = "Annotation View"
+        static let annotationViewTitle = "Annotation"
         
         static let selectedClassPrefixText = "Selected class: "
         static let finishText = "Finish"
@@ -37,11 +37,29 @@ enum AnnotationViewConstants {
         
         static let selectCorrectAnnotationText = "Select correct annotation"
         static let doneText = "Done"
+        
+        // SelectObjectInfoTip
+        static let selectObjectInfoTipTitle = "Select an Object"
+        static let selectObjectInfoTipMessage = "Please select the object that you want to annotate individually"
+        static let selectObjectInfoTipLearnMoreButtonTitle = "Learn More"
+        
+        // SelectObjectInfoLearnMoreSheetView
+        static let selectObjectInfoLearnMoreSheetTitle = "Annotating an Object"
+        static let selectObjectInfoLearnMoreSheetMessage = """
+        For each class/type of object, the app can identify multiple instances within the same image. 
+        
+        **Select All**: Default option; you can annotate all instances of a particular class/type together.
+        
+        **Individual**: You can select a particular object from the dropdown menu if you wish to provide specific annotations for individual instances.
+        
+        **Ellipsis [...]**: For each object, you can also view its details by tapping the ellipsis button next to the dropdown menu.
+        """
     }
     
     enum Images {
         static let checkIcon = "checkmark"
         static let ellipsisIcon = "ellipsis"
+        static let infoIcon = "info.circle"
     }
 }
 
@@ -84,6 +102,9 @@ struct AnnotationView: View {
         return nf
     }()
     
+//    var selectObjectInfoTip = SelectObjectInfoTip()
+    @State private var showSelectObjectLearnMoreSheet: Bool = false
+    
     var body: some View {
         if (!self.isValid()) {
             // FIXME: When no segments are available, this view does not dismiss anymore.
@@ -102,62 +123,79 @@ struct AnnotationView: View {
                     Spacer()
                 }
 //                ScrollView(.vertical) {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.SelectedSegmentationConfig.classNames[sharedImageData.segmentedIndices[index]])")
-                            Spacer()
-                        }
-                        
-                        HStack {
-                            Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
-                                ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
-                                    Text(object.label ?? "")
-                                        .tag(object.id)
-                                }
-                            }
-                            openAnnotationInstanceDetailView()
-                        }
-                        
-                        ProgressBar(value: calculateProgress())
-                        
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 10) {
-                                ForEach(options, id: \.self) { option in
-                                    Button(action: {
-                                        // Update the selected option
-                                        updateAnnotation(newOption: option)
-
-    //                                    selectedOption = (selectedOption == option) ? nil : option
-                                        
-    //                                    if option == .misidentified {
-    //                                        selectedClassIndex = index
-    //                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
-    //                                        isShowingClassSelectionModal = true
-    //                                    }
-                                    }) {
-                                        Text(option.rawValue)
-                                            .font(.subheadline)
-                                            .frame(maxWidth: .infinity)
-                                            .padding()
-                                            .background(selectedOption == option ? Color.blue : Color.gray)
-                                            .foregroundColor(.white)
-                                            .cornerRadius(10)
-                                    }
-                                }
-                            }
-                            Spacer()
-                        }
-                        .padding()
-                        
-                        Button(action: {
-                            confirmAnnotation()
-                        }) {
-                            Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                        }
-                        .padding()
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.SelectedSegmentationConfig.classNames[sharedImageData.segmentedIndices[index]])")
+                        Spacer()
                     }
+                    
+                    HStack {
+                        Spacer()
+                        Picker(AnnotationViewConstants.Texts.selectObjectText, selection: $annotationImageManager.selectedObjectId) {
+                            ForEach(annotationImageManager.annotatedDetectedObjects ?? [], id: \.id) { object in
+                                Text(object.label ?? "")
+                                    .tag(object.id)
+                            }
+                        }
+                        openAnnotationInstanceDetailView()
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 30)
+                    .overlay(
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                showSelectObjectLearnMoreSheet = true
+                            }) {
+                                Image(systemName: AnnotationViewConstants.Images.infoIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            .padding(.trailing, 10)
+                        }
+                    )
+                    
+                    ProgressBar(value: calculateProgress())
+                    
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 10) {
+                            ForEach(options, id: \.self) { option in
+                                Button(action: {
+                                    // Update the selected option
+                                    updateAnnotation(newOption: option)
+
+//                                    selectedOption = (selectedOption == option) ? nil : option
+                                    
+//                                    if option == .misidentified {
+//                                        selectedClassIndex = index
+//                                        tempSelectedClassIndex = sharedImageData.segmentedIndices[index]
+//                                        isShowingClassSelectionModal = true
+//                                    }
+                                }) {
+                                    Text(option.rawValue)
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(selectedOption == option ? Color.blue : Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
+                                }
+                            }
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    
+                    Button(action: {
+                        confirmAnnotation()
+                    }) {
+                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                    }
+                    .padding()
+                }
 //                }
             }
             .padding(.top, 20)
@@ -210,6 +248,10 @@ struct AnnotationView: View {
 //            }
             .sheet(isPresented: $isShowingAnnotationInstanceDetailView) {
                 annotationInstanceDetailView()
+            }
+            .sheet(isPresented: $showSelectObjectLearnMoreSheet) {
+                SelectObjectLearnMoreSheetView()
+                    .presentationDetents([.medium, .large])
             }
             .alert(AnnotationViewConstants.Texts.uploadFailedTitle, isPresented: $isUploadFailedModalPresented) {
                 Button("OK") {
@@ -535,5 +577,28 @@ struct AnnotationView: View {
                 otherDetails: otherDetails,
                 timestamp: timestamp)
         }
+    }
+}
+
+struct SelectObjectLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            //            Image(systemName: "number")
+            //                .resizable()
+            //                .scaledToFit()
+            //                .frame(width: 160)
+            //                .foregroundColor(.accentColor)
+            Text(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetTitle)
+                .font(.title)
+            Text(.init(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetMessage))
+                .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }

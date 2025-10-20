@@ -14,7 +14,7 @@ import MetalKit
 
 enum ARContentViewConstants {
     enum Texts {
-        static let contentViewTitle = "Camera View"
+        static let contentViewTitle = "Capture"
         
         static let cameraInProgressText = "Camera settings in progress"
     }
