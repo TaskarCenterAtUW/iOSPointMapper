@@ -20,6 +20,13 @@ enum WorkspaceSelectionViewConstants {
         // WorkspaceInfoTip
         static let workspaceInfoTipTitle: String = "Workspace"
         static let workspaceInfoTipMessage: String = "A working space where one can edit OpenSidewalk (OSW) data"
+        static let workspaceInfoTipLearnMoreButtonTitle: String = "Learn More"
+        
+        // WorkspaceSelectionLearnMoreSheetView
+        static let workspaceSelectionLearnMoreSheetTitle: String = "Workspace"
+        static let workspaceSelectionLearnMoreSheetMessage: String = """
+            A working space where one can edit OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
+            """
     }
     
     enum Images {
@@ -32,24 +39,31 @@ enum WorkspaceSelectionViewConstants {
     enum Constraints {
         static let refreshIconSize: CGFloat = 20
     }
+    
+    enum Identifiers {
+        static let workspaceInfoTipLearnMoreActionId: String = "learn-more"
+    }
 }
 
 struct WorkspaceInfoTip: Tip {
     
     var title: Text {
-        Text("Workspace")
+        Text(WorkspaceSelectionViewConstants.Texts.workspaceInfoTipTitle)
     }
     var message: Text? {
-        Text("A working space where one can edit OpenSidewalk (OSW) data")
+        Text(WorkspaceSelectionViewConstants.Texts.workspaceInfoTipMessage)
     }
     var image: Image? {
-        Image(systemName: "info.circle")
+        Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
             .resizable()
 //            .frame(width: 30, height: 30)
     }
     var actions: [Action] {
         // Define a learn more button.
-        Action(id: "learn-more", title: "Learn More")
+        Action(
+            id: WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId,
+            title: WorkspaceSelectionViewConstants.Texts.workspaceInfoTipLearnMoreButtonTitle
+        )
     }
 }
 
@@ -76,7 +90,7 @@ struct WorkspaceSelectionView: View {
                 }
                 .padding(.vertical, 10)
                 TipView(infoTip, arrowEdge: .top) { action in
-                    if action.id == "learn-more" {
+                    if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
                         showLearnMoreSheet = true
                     }
                 }
@@ -206,11 +220,9 @@ struct WorkspaceSelectionLearnMoreSheetView: View {
 //                .scaledToFit()
 //                .frame(width: 160)
 //                .foregroundColor(.accentColor)
-            Text("Workspace")
+            Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetTitle)
                 .font(.title)
-            Text("""
-                A working space where one can edit OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
-                """)
+            Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetMessage)
             .foregroundStyle(.secondary)
             Button("Dismiss") {
                 dismiss()
