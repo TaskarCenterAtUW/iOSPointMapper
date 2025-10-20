@@ -19,13 +19,13 @@ enum WorkspaceSelectionViewConstants {
         
         // WorkspaceInfoTip
         static let workspaceInfoTipTitle: String = "Workspace"
-        static let workspaceInfoTipMessage: String = "A working space where one can edit OpenSidewalk (OSW) data"
+        static let workspaceInfoTipMessage: String = "A working space where one can edit and contribute to OpenSidewalk (OSW) data"
         static let workspaceInfoTipLearnMoreButtonTitle: String = "Learn More"
         
         // WorkspaceSelectionLearnMoreSheetView
         static let workspaceSelectionLearnMoreSheetTitle: String = "Workspace"
         static let workspaceSelectionLearnMoreSheetMessage: String = """
-            A working space where one can edit OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
+            A working space where one can edit and contribute to OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
             """
     }
     
@@ -79,7 +79,7 @@ struct WorkspaceSelectionView: View {
         return NavigationStack {
             VStack {
                 HStack {
-                    Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
+                    Spacer()
                     Button(action: {
                         showLearnMoreSheet = true
                     }) {
@@ -88,7 +88,12 @@ struct WorkspaceSelectionView: View {
                             .frame(width: 20, height: 20)
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 20)
+                .overlay(
+                    Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
+                        .padding(.horizontal, 20)
+                        .fixedSize(horizontal: false, vertical: true)
+                )
                 TipView(infoTip, arrowEdge: .top) { action in
                     if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
                         showLearnMoreSheet = true
