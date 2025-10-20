@@ -117,8 +117,6 @@ struct WorkspaceSelectionView: View {
                 HStack {
                     Text(WorkspaceSelectionViewConstants.Texts.allWorkspaces)
                         .font(.headline)
-                        .padding(.top, 20)
-                        .padding(.bottom, 5)
                     Button(action: {
                         Task {
                             await loadWorkspaces()
@@ -133,6 +131,9 @@ struct WorkspaceSelectionView: View {
                             .bold()
                     }
                 }
+                .padding(.top, 20)
+                .padding(.bottom, 5)
+                
                 if workspaces.count > 0 {
                     ScrollView(.vertical) {
                         WorkspaceListView(workspaces: workspaces, workspaceViewModel: workspaceViewModel)
