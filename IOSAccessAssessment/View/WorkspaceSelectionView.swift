@@ -6,23 +6,50 @@
 //
 
 import SwiftUI
+import TipKit
 
 enum WorkspaceSelectionViewConstants {
     enum Texts {
         static let workspaceListViewTitle: String = "Workspaces"
         static let noWorkspacesAvailable: String = "No workspaces available."
         
-        static let selectWorkspacePrompt: String = "Select a workspace from the list below:"
+        static let selectWorkspacePrompt: String = "Select a workspace from the list below"
         static let primaryWorkspaces: String = "Primary Workspaces"
         static let allWorkspaces: String = "All Workspaces"
+        
+        // WorkspaceInfoTip
+        static let workspaceInfoTipTitle: String = "Workspace"
+        static let workspaceInfoTipMessage: String = "A working space where one can edit OpenSidewalk (OSW) data"
     }
     
     enum Images {
         static let refreshIcon: String = "arrow.clockwise.circle"
+        
+        // WorkspaceInfoTip
+        static let infoIcon: String = "info.circle"
     }
     
     enum Constraints {
         static let refreshIconSize: CGFloat = 20
+    }
+}
+
+struct WorkspaceInfoTip: Tip {
+    
+    var title: Text {
+        Text("Workspace")
+    }
+    var message: Text? {
+        Text("A working space where one can edit OpenSidewalk (OSW) data")
+    }
+    var image: Image? {
+        Image(systemName: "info.circle")
+            .resizable()
+//            .frame(width: 30, height: 30)
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(id: "learn-more", title: "Learn More")
     }
 }
 
@@ -31,15 +58,33 @@ struct WorkspaceSelectionView: View {
     @State var workspaces: [Workspace] = []
     @State var primaryWorkspaces: [Workspace] = []
     
+    var infoTip = WorkspaceInfoTip()
+    @State private var showLearnMoreSheet = false
+    
     var body: some View {
         return NavigationStack {
             VStack {
-                Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
-                    .padding(.bottom, 10)
+                HStack {
+                    Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
+                    Button(action: {
+                        showLearnMoreSheet = true
+                    }) {
+                        Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                    }
+                }
+                .padding(.vertical, 10)
+                TipView(infoTip, arrowEdge: .top) { action in
+                    if action.id == "learn-more" {
+                        showLearnMoreSheet = true
+                    }
+                }
                 
                 if primaryWorkspaces.count > 0 {
                     Text(WorkspaceSelectionViewConstants.Texts.primaryWorkspaces)
-                        .font(.subheadline)
+                        .font(.headline)
+                        .padding(.top, 20)
                         .padding(.bottom, 5)
                     
                     ViewThatFits(in: .vertical) {
@@ -50,11 +95,26 @@ struct WorkspaceSelectionView: View {
                     }
                 }
                 
-                if workspaces.count > 0 {
+                HStack {
                     Text(WorkspaceSelectionViewConstants.Texts.allWorkspaces)
-                        .font(.subheadline)
+                        .font(.headline)
+                        .padding(.top, 20)
                         .padding(.bottom, 5)
-                    
+                    Button(action: {
+                        Task {
+                            await loadWorkspaces()
+                        }
+                    }) {
+                        Image(systemName: WorkspaceSelectionViewConstants.Images.refreshIcon)
+                            .resizable()
+                            .frame(
+                                width: WorkspaceSelectionViewConstants.Constraints.refreshIconSize,
+                                height: WorkspaceSelectionViewConstants.Constraints.refreshIconSize
+                            )
+                            .bold()
+                    }
+                }
+                if workspaces.count > 0 {
                     ScrollView(.vertical) {
                         WorkspaceListView(workspaces: workspaces, workspaceViewModel: workspaceViewModel)
                     }
@@ -67,6 +127,7 @@ struct WorkspaceSelectionView: View {
                     Text(WorkspaceSelectionViewConstants.Texts.noWorkspacesAvailable)
                         .foregroundColor(.gray)
                         .italic()
+                        .padding(.top, 10)
                 }
             }
             .navigationBarBackButtonHidden(true)
@@ -81,26 +142,14 @@ struct WorkspaceSelectionView: View {
                                 height: SetupViewConstants.Constraints.logoutIconSize
                             )
                             .bold()
-                    },
-                trailing:
-                    Button(action: {
-                        Task {
-                            await loadWorkspaces()
-                        }
-                    }) {
-                        Image(systemName: WorkspaceSelectionViewConstants.Images.refreshIcon)
-                            .resizable()
-                            .frame(
-                                width: WorkspaceSelectionViewConstants.Constraints.refreshIconSize,
-                                height: WorkspaceSelectionViewConstants.Constraints.refreshIconSize
-                            )
-                            .bold()
-                    }
-            )
+                    })
         }
         .padding()
         .task {
             await loadWorkspaces()
+        }
+        .sheet(isPresented: $showLearnMoreSheet) {
+            WorkspaceSelectionLearnMoreSheetView()
         }
 //        .environment(\.colorScheme, .dark)
     }
@@ -143,5 +192,30 @@ struct WorkspaceListView: View {
                 }
             }
         }
+    }
+}
+
+struct WorkspaceSelectionLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+//            Image(systemName: "number")
+//                .resizable()
+//                .scaledToFit()
+//                .frame(width: 160)
+//                .foregroundColor(.accentColor)
+            Text("Workspace")
+                .font(.title)
+            Text("""
+                A working space where one can edit OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
+                """)
+            .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }
