@@ -10,7 +10,7 @@ import TipKit
 
 enum ProfileViewConstants {
     enum Texts {
-        static let profileTitle: String = "Profile"
+        static let profileTitle: String = "User Settings"
         static let usernameLabel: String = "Username: "
         static let switchWorkspaceButtonText = "Switch Workspace"
         static let logoutButtonText = "Log out"
@@ -49,6 +49,7 @@ struct ProfileView: View {
                         .resizable()
                         .frame(width: 20, height: 20)
                 }
+                .padding(.trailing, 5)
             }
             .overlay(
                 Button(action: {

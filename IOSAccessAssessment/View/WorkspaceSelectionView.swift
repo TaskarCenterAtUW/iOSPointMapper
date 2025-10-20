@@ -87,6 +87,7 @@ struct WorkspaceSelectionView: View {
                             .resizable()
                             .frame(width: 20, height: 20)
                     }
+                    .padding(.trailing, 5)
                 }
                 .padding(.vertical, 20)
                 .overlay(

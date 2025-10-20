@@ -20,6 +20,7 @@ extension AnnotationView {
         }
         .buttonStyle(.bordered)
         .disabled(disabledStatus)
+        .padding(.horizontal, 5)
     }
     
     // Will be used to display the details of the selected annotation instance.
