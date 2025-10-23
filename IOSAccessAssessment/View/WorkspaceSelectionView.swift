@@ -171,6 +171,7 @@ struct WorkspaceSelectionView: View {
         }
         .sheet(isPresented: $showLearnMoreSheet) {
             WorkspaceSelectionLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
         }
 //        .environment(\.colorScheme, .dark)
     }

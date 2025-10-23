@@ -110,6 +110,7 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showWorkspaceLearnMoreSheet) {
             WorkspaceSelectionLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
         }
     }
 }
