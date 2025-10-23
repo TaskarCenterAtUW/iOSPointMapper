@@ -312,9 +312,11 @@ struct SetupView: View {
             }
             .sheet(isPresented: $showChangesetLearnMoreSheet) {
                 ChangesetLearnMoreSheetView()
+                    .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showSelectClassesLearnMoreSheet) {
                 SelectClassesLearnMoreSheetView()
+                    .presentationDetents([.medium, .large])
             }
         }
         .environmentObject(self.sharedImageData)

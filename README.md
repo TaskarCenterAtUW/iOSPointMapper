@@ -21,6 +21,10 @@ Currently, the repository does not support training of models, and this is done 
 [iOSPointMapperDataCollector](https://github.com/himanshunaidu/iOSPointMapperDataCollector): (Fork) The iOS app used to collect datasets for the project. \
 [StrayVisualizer](https://github.com/himanshunaidu/StrayVisualizer): The repository used to process the collected data and visualize it.
 
+3. Surface Integrity Analysis\
+[SurfaceIntegrityAnalysis](https://github.com/himanshunaidu/SurfaceIntegrityAnalysis): The main repository used to perform research on surface integrity analysis. \
+[iOSSurfaceIntegrityChecker](https://github.com/himanshunaidu/iOSSurfaceIntegrityChecker): The iOS prototype repository used to test surface integrity algorithms on iOS.
+
 
 ## Interest Form
 
