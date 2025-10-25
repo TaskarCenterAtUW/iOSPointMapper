@@ -277,7 +277,7 @@
 				A39C9F392DD9B01200455E45 /* API */,
 				A305B05A2E1887AE00ECCF9B /* Dataset */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
-				CAA947772CDE7001000C6918 /* Service */,
+				CAA947772CDE7001000C6918 /* Auth */,
 				DAA7F8C62CA76514003666D8 /* Image */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
@@ -506,14 +506,14 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
-		CAA947772CDE7001000C6918 /* Service */ = {
+		CAA947772CDE7001000C6918 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
 				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
 				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
 			);
-			path = Service;
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		CAF812C32CFA108100D44B84 /* ViewModel */ = {

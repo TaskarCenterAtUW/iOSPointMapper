@@ -50,7 +50,7 @@ struct ARLegacyContentView: View {
     
     @StateObject var objectLocation = ObjectLocation()
     
-    @State private var manager: ARCameraManager?
+    @State private var manager: ARLegacyCameraManager?
     @State private var navigateToAnnotationView = false
     
     var isCameraStoppedPayload = [ARLegacyContentViewConstants.Payload.isCameraStopped: true]
@@ -108,7 +108,7 @@ struct ARLegacyContentView: View {
             if (manager == nil) {
                 segmentationPipeline.setSelectionClasses(selection)
                 segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
-                manager = ARCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
+                manager = ARLegacyCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
             }

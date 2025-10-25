@@ -50,50 +50,12 @@ struct ARContentView: View {
     
     @StateObject var objectLocation = ObjectLocation()
     
-    @State private var manager: ARCameraManager?
+    @State private var manager: ARCameraManager = ARCameraManager()
     @State private var navigateToAnnotationView = false
-    
-    var isCameraStoppedPayload = [ARContentViewConstants.Payload.isCameraStopped: true]
-    
-    // For deciding the layout
-    private var isLandscape: Bool {
-        CameraOrientation.isLandscapeOrientation(currentDeviceOrientation: manager?.deviceOrientation ?? .portrait)
-    }
     
     var body: some View {
         Group {
-            if manager?.dataAvailable ?? false {
-                orientationStack {
-                    HostedSegmentationViewController(
-                        segmentationImage: Binding(
-                            get: { manager?.cameraUIImage ?? UIImage() },
-                            set: { manager?.cameraUIImage = $0 }
-                    ))
-                    HostedSegmentationViewController(segmentationImage: $segmentationPipeline.segmentationResultUIImage)
-                    Button {
-                        objectLocation.setLocationAndHeading()
-                        manager?.stopStream()
-                        var additionalPayload: [String: Any] = isCameraStoppedPayload
-                        additionalPayload[ARContentViewConstants.Payload.originalImageSize] = sharedImageData.originalImageSize
-                        let deviceOrientation = sharedImageData.deviceOrientation ?? manager?.deviceOrientation ?? .portrait
-                        segmentationPipeline.processFinalRequest(with: sharedImageData.cameraImage!, previousImage: nil,
-                                                                 deviceOrientation: deviceOrientation,
-                                                                 additionalPayload: additionalPayload)
-                    } label: {
-                        Image(systemName: ARContentViewConstants.Images.cameraIcon)
-                            .resizable()
-                            .frame(width: 60, height: 60)
-//                            .foregroundColor(.white)
-                    }
-                }
-            }
-            else {
-                VStack {
-                    SpinnerView()
-                    Text(ARContentViewConstants.Texts.cameraInProgressText)
-                        .padding(.top, 20)
-                }
-            }
+            HostedARCameraViewContainer(arCameraManager: manager)
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
@@ -103,71 +65,8 @@ struct ARContentView: View {
         }
         .navigationBarTitle(ARContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
-            navigateToAnnotationView = false
-            
-            if (manager == nil) {
-                segmentationPipeline.setSelectionClasses(selection)
-                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
-                manager = ARCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
-            } else {
-                manager?.resumeStream()
-            }
         }
         .onDisappear {
-            manager?.stopStream()
-        }
-    }
-    
-    @ViewBuilder
-    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        if isLandscape {
-            HStack(content: content)
-        } else {
-            VStack(content: content)
-        }
-    }
-    
-    private func segmentationPipelineCompletionHandler(results: Result<SegmentationARPipelineResults, Error>) -> Void {
-        switch results {
-        case .success(let output):
-            self.sharedImageData.segmentationLabelImage = output.segmentationImage
-            self.sharedImageData.segmentedIndices = output.segmentedIndices
-            self.sharedImageData.detectedObjectMap = output.detectedObjectMap
-            self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
-            
-            self.sharedImageData.deviceOrientation = output.deviceOrientation
-            self.sharedImageData.originalImageSize = output.additionalPayload[ARContentViewConstants.Payload.originalImageSize] as? CGSize
-            
-            if let isStopped = output.additionalPayload[ARContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
-                // Perform depth estimation only if LiDAR is not available
-                if (!sharedImageData.isLidarAvailable) {
-                    print("Performing depth estimation because LiDAR is not available.")
-                    self.sharedImageData.depthImage = depthModel.performDepthEstimation(sharedImageData.cameraImage!)
-                }
-                // MARK: Save the current capture as a unique id
-                self.sharedImageData.currentCaptureId = UUID()
-                self.navigateToAnnotationView = true
-            } else {
-                let cameraTransform = output.additionalPayload[ARContentViewConstants.Payload.cameraTransform] as? simd_float4x4 ?? self.sharedImageData.cameraTransform
-                self.sharedImageData.cameraTransform = cameraTransform
-                let cameraIntrinsics = output.additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] as? simd_float3x3 ?? self.sharedImageData.cameraIntrinsics
-                self.sharedImageData.cameraIntrinsics = cameraIntrinsics
-                
-                // Saving history
-                self.sharedImageData.recordImageData(imageData: ImageData(
-                    cameraImage: nil, depthImage: nil,
-                    segmentationLabelImage: output.segmentationImage,
-                    segmentedIndices: output.segmentedIndices, detectedObjectMap: output.detectedObjectMap,
-                    cameraTransform: cameraTransform,
-                    cameraIntrinsics: cameraIntrinsics,
-                    transformMatrixToPreviousFrame: output.transformMatrixFromPreviousFrame?.inverse
-                ))
-            }
-            return
-        case .failure(let error):
-//            fatalError("Unable to process segmentation \(error.localizedDescription)")
-            print("Unable to process segmentation \(error.localizedDescription)")
-            return
         }
     }
 }
