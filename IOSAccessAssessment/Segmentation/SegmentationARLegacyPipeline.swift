@@ -12,7 +12,7 @@ import CoreML
 import OrderedCollections
 import simd
 
-enum SegmentationARPipelineError: Error, LocalizedError {
+enum SegmentationARLegacyPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case invalidSegmentation
@@ -38,23 +38,26 @@ enum SegmentationARPipelineError: Error, LocalizedError {
     }
 }
 
-struct SegmentationARPipelineResults {
+struct SegmentationARLegacyPipelineResults {
     var segmentationImage: CIImage
     var segmentationResultUIImage: UIImage
     var segmentedIndices: [Int]
     var detectedObjectMap: [UUID: DetectedObject]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
+    var deviceOrientation: UIDeviceOrientation? = nil
     // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
          detectedObjectMap: [UUID: DetectedObject], transformMatrixFromPreviousFrame: simd_float3x3? = nil,
+         deviceOrientation: UIDeviceOrientation? = nil,
          additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
         self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
+        self.deviceOrientation = deviceOrientation
         self.additionalPayload = additionalPayload
     }
 }
@@ -63,12 +66,12 @@ struct SegmentationARPipelineResults {
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
     Currently, a giant monolithic class that handles all the requests. Will be refactored in the future to divide the request types into separate classes.
  */
-class SegmentationARPipeline: ObservableObject {
+class SegmentationARLegacyPipeline: ObservableObject {
     // TODO: Update this to multiple states (one for each of segmentation, contour detection, etc.)
     //  to pipeline the processing.
     //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
     var isProcessing = false
-    var completionHandler: ((Result<SegmentationARPipelineResults, Error>) -> Void)?
+    var completionHandler: ((Result<SegmentationARLegacyPipelineResults, Error>) -> Void)?
     
     var selectionClasses: [Int] = []
     var selectionClassLabels: [UInt8] = []
@@ -118,18 +121,17 @@ class SegmentationARPipeline: ObservableObject {
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
-    func setCompletionHandler(_ completionHandler: @escaping (Result<SegmentationARPipelineResults, Error>) -> Void) {
+    func setCompletionHandler(_ completionHandler: @escaping (Result<SegmentationARLegacyPipelineResults, Error>) -> Void) {
         self.completionHandler = completionHandler
     }
     
     /**
         Function to process the segmentation request with the given CIImage.
+        MARK: Because the orientation issues have been handled in the caller function, we will not be making changes here for now.
      */
-    func processRequest(
-        with cIImage: CIImage,
-        highPriority: Bool = false,
-        additionalPayload: [String: Any] = [:]) {
-        if (self.isProcessing && !highPriority) {
+    func processRequest(with cIImage: CIImage, previousImage: CIImage?, deviceOrientation: UIDeviceOrientation = .portrait,
+                        additionalPayload: [String: Any] = [:]) {
+        if self.isProcessing {
             DispatchQueue.main.async {
                 self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
             }
@@ -137,35 +139,71 @@ class SegmentationARPipeline: ObservableObject {
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
-            if highPriority {
-                while self.isProcessing {
-                    Thread.sleep(forTimeInterval: 0.01) // Sleep for a short duration to avoid busy waiting
-                }
-            }
-            
             self.isProcessing = true
             
             do {
-                let processedImageResults = try self.processImage(cIImage)
+                let processedImageResults = try self.processImage(
+                    cIImage, previousImage: previousImage, deviceOrientation: deviceOrientation
+                )
                 DispatchQueue.main.async {
                     self.segmentationResultUIImage = processedImageResults.segmentationResultUIImage
                     
-                    self.completionHandler?(.success(SegmentationARPipelineResults(
+                    self.completionHandler?(.success(SegmentationARLegacyPipelineResults(
                         segmentationImage: processedImageResults.segmentationImage,
                         segmentationResultUIImage: processedImageResults.segmentationResultUIImage,
                         segmentedIndices: processedImageResults.segmentedIndices,
                         detectedObjectMap: processedImageResults.detectedObjectMap,
                         transformMatrixFromPreviousFrame: processedImageResults.transformMatrixFromPreviousFrame,
+                        deviceOrientation: deviceOrientation,
                         additionalPayload: additionalPayload
                     )))
                 }
-            } catch let error as SegmentationARPipelineError {
+            } catch let error as SegmentationARLegacyPipelineError {
                 DispatchQueue.main.async {
                     self.completionHandler?(.failure(error))
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.completionHandler?(.failure(SegmentationARPipelineError.unexpectedError))
+                    self.completionHandler?(.failure(SegmentationARLegacyPipelineError.unexpectedError))
+                }
+            }
+            self.isProcessing = false
+        }
+    }
+    
+    func processFinalRequest(with cIImage: CIImage, previousImage: CIImage?, deviceOrientation: UIDeviceOrientation = .portrait,
+                             additionalPayload: [String: Any] = [:]) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Wait for the current processing to finish
+            while self.isProcessing {
+                Thread.sleep(forTimeInterval: 0.01) // Sleep for a short duration to avoid busy waiting
+            }
+            self.isProcessing = true
+            
+            do {
+                let processedImageResults = try self.processImage(
+                    cIImage, previousImage: previousImage, deviceOrientation: deviceOrientation
+                )
+                DispatchQueue.main.async {
+                    self.segmentationResultUIImage = processedImageResults.segmentationResultUIImage
+                    
+                    self.completionHandler?(.success(SegmentationARLegacyPipelineResults(
+                        segmentationImage: processedImageResults.segmentationImage,
+                        segmentationResultUIImage: processedImageResults.segmentationResultUIImage,
+                        segmentedIndices: processedImageResults.segmentedIndices,
+                        detectedObjectMap: processedImageResults.detectedObjectMap,
+                        transformMatrixFromPreviousFrame: processedImageResults.transformMatrixFromPreviousFrame,
+                        deviceOrientation: deviceOrientation,
+                        additionalPayload: additionalPayload
+                    )))
+                }
+            } catch let error as SegmentationARLegacyPipelineError {
+                DispatchQueue.main.async {
+                    self.completionHandler?(.failure(error))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.completionHandler?(.failure(SegmentationARLegacyPipelineError.unexpectedError))
                 }
             }
             self.isProcessing = false
@@ -176,7 +214,7 @@ class SegmentationARPipeline: ObservableObject {
      Function to process the given CIImage.
      This function will perform the processing within the thread in which it is called.
      It does not check if the pipeline is already processing a request, or even look for the completion handler.
-     It will either return the SegmentationARPipelineResults or throw an error.
+     It will either return the SegmentationARLegacyPipelineResults or throw an error.
      
      The entire procedure has the following main steps:
      1. Get the segmentation mask from the camera image using the segmentation model
@@ -186,10 +224,10 @@ class SegmentationARPipeline: ObservableObject {
      5. Return the segmentation image, segmented indices, detected objects, and the transform matrix to the caller function
      */
     func processImage(_ cIImage: CIImage, previousImage: CIImage? = nil,
-                      deviceOrientation: UIDeviceOrientation = .portrait) throws -> SegmentationARPipelineResults {
+                      deviceOrientation: UIDeviceOrientation = .portrait) throws -> SegmentationARLegacyPipelineResults {
         let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
         guard let segmentationImage = segmentationResults?.segmentationImage else {
-            throw SegmentationARPipelineError.invalidSegmentation
+            throw SegmentationARLegacyPipelineError.invalidSegmentation
         }
         
         // MARK: Ignoring the contour detection and object tracking for now
@@ -211,12 +249,13 @@ class SegmentationARPipeline: ObservableObject {
             ciImage: self.grayscaleToColorMasker.outputImage!,
             scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
         
-        return SegmentationARPipelineResults(
+        return SegmentationARLegacyPipelineResults(
             segmentationImage: segmentationImage,
             segmentationResultUIImage: segmentationResultUIImage,
             segmentedIndices: segmentationResults?.segmentedIndices ?? [],
             detectedObjectMap: Dictionary(uniqueKeysWithValues: self.centroidTracker.detectedObjectMap.map { ($0.key, $0.value) }),
-            transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame
+            transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame,
+            deviceOrientation: deviceOrientation
         )
     }
     

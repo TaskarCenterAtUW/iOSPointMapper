@@ -17,6 +17,10 @@ enum ARContentViewConstants {
         static let contentViewTitle = "Capture"
         
         static let cameraInProgressText = "Camera settings in progress"
+        
+        // Manager Status Alert
+        static let managerStatusAlertTitleKey = "Error"
+        static let managerStatusAlertDismissButtonKey = "OK"
     }
     
     enum Images {
@@ -41,21 +45,41 @@ enum ARContentViewConstants {
     }
 }
 
+class ManagerStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        objectWillChange.send()
+        
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 struct ARContentView: View {
     var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var depthModel: DepthModel
+    @Environment(\.dismiss) var dismiss
     
     @StateObject var objectLocation = ObjectLocation()
+
+    @State private var manager: ARCameraManager? = nil
+    @State private var managerStatusViewModel = ManagerStatusViewModel()
     
-    @State private var manager: ARCameraManager = ARCameraManager()
     @State private var navigateToAnnotationView = false
     
     var body: some View {
         Group {
-            HostedARCameraViewContainer(arCameraManager: manager)
+            // Show the camera view once manager is initialized, otherwise a loading indicator
+            if let manager = manager {
+                HostedARCameraViewContainer(arCameraManager: manager)
+            } else {
+                ProgressView(ARContentViewConstants.Texts.cameraInProgressText)
+            }
         }
         .navigationDestination(isPresented: $navigateToAnnotationView) {
             AnnotationView(
@@ -65,8 +89,24 @@ struct ARContentView: View {
         }
         .navigationBarTitle(ARContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
+            navigateToAnnotationView = false
+            
+            segmentationPipeline.setSelectionClasses(selection)
+//                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
+            do {
+                manager = try ARCameraManager(segmentationPipeline: segmentationPipeline)
+            } catch let error {
+                managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+            }
         }
         .onDisappear {
         }
+        .alert(ARContentViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+            Button(ARContentViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                dismiss()
+            }
+        }, message: {
+            Text(managerStatusViewModel.errorMessage)
+        })
     }
 }

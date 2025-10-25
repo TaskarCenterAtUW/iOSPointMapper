@@ -31,6 +31,7 @@
 		A31A1E722EAC41F4008B30B7 /* ARLegacyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E712EAC41F4008B30B7 /* ARLegacyContentView.swift */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
 		A31A1E762EAC448D008B30B7 /* ARLegacyCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E752EAC448D008B30B7 /* ARLegacyCameraManager.swift */; };
+		A31A1E792EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E782EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A3471BA22DB1C81300FEB845 /* SegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */; };
@@ -157,6 +158,7 @@
 		A31A1E712EAC41F4008B30B7 /* ARLegacyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARLegacyContentView.swift; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
 		A31A1E752EAC448D008B30B7 /* ARLegacyCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARLegacyCameraManager.swift; sourceTree = "<group>"; };
+		A31A1E782EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationARLegacyPipeline.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationPipeline.swift; sourceTree = "<group>"; };
@@ -545,6 +547,7 @@
 				A3FFAA722DE00B53002B99BD /* SegmentationARViewController.swift */,
 				A3471BA12DB1C81000FEB845 /* SegmentationPipeline.swift */,
 				A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */,
+				A31A1E782EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift */,
 				A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */,
 			);
 			path = Segmentation;
@@ -738,6 +741,7 @@
 				A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
 				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
+				A31A1E792EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,

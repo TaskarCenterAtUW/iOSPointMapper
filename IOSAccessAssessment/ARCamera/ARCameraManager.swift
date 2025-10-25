@@ -23,12 +23,15 @@ enum ARCameraManagerError: Error, LocalizedError {
 }
 
 final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
+    var segmentationPipeline: SegmentationARPipeline
+    
     @Published var isProcessingCapturedResult = false
     
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
         }
     }
+    var cancellables = Set<AnyCancellable>()
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
@@ -40,7 +43,20 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
 //    var depthPixelBufferPool: CVPixelBufferPool? = nil
 //    var depthColorSpace: CGColorSpace? = nil
     
-    override init() {
+    init(segmentationPipeline: SegmentationARPipeline) throws {
+        self.segmentationPipeline = segmentationPipeline
+        
+        super.init()
+        
+        NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
+            self.deviceOrientation = UIDevice.current.orientation
+        }.store(in: &cancellables)
+        
+        do {
+            try setUpPixelBufferPools()
+        } catch let error as ARCameraManagerError {
+            throw error
+        }
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -134,7 +150,7 @@ extension ARCameraManager {
             &cameraPixelBufferPool
         )
         guard cameraStatus == kCVReturnSuccess else {
-            throw ARLegacyCameraManagerError.pixelBufferPoolCreationFailed
+            throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
         cameraColorSpace = CGColorSpaceCreateDeviceRGB()
     }
