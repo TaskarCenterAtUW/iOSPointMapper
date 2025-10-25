@@ -33,7 +33,58 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
     
+    // Properties for processing camera and depth frames
+    var ciContext = CIContext(options: nil)
+    var cameraPixelBufferPool: CVPixelBufferPool? = nil
+    var cameraColorSpace: CGColorSpace? = nil
+//    var depthPixelBufferPool: CVPixelBufferPool? = nil
+//    var depthColorSpace: CGColorSpace? = nil
+    
     override init() {
+    }
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        guard checkFrameWithinFrameRate(frame: frame) else {
+            return
+        }
+        
+        let pixelBuffer = frame.capturedImage
+        let cameraTransform = frame.camera.transform
+        let cameraIntrinsics = frame.camera.intrinsics
+        
+        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
+        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
+        
+        let exifOrientation: CGImagePropertyOrientation = exifOrientationForCurrentDevice()
+        
+        processCameraBuffer(
+            pixelBuffer: pixelBuffer, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
+    }
+    
+    private func processCameraBuffer(
+        pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
+    ) {
+        autoreleasepool {
+            var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
+            let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
+            let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
+            
+            cameraImage = cameraImage.oriented(orientation)
+            cameraImage = CIImageUtils.centerCropAspectFit(cameraImage, to: croppedSize)
+            
+            let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
+                cameraImage,
+                size: croppedSize,
+                pixelBufferPool: cameraPixelBufferPool!,
+                colorSpace: cameraColorSpace
+            )
+            guard let renderedCameraPixelBufferUnwrapped = renderedCameraPixelBuffer else {
+                return
+            }
+            let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
+        }
     }
     
     func setFrameRate(_ frameRate: Int) {
@@ -49,20 +100,55 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         return withinFrameRate
     }
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        guard checkFrameWithinFrameRate(frame: frame) else {
-            return
+    private func exifOrientationForCurrentDevice() -> CGImagePropertyOrientation {
+        // If you lock to portrait + back camera, returning .right is enough.
+        switch UIDevice.current.orientation {
+        case .landscapeLeft:  return .up
+        case .landscapeRight: return .down
+        case .portraitUpsideDown: return .left
+        default: return .right // portrait (back camera)
+        }
+    }
+}
+
+// Functions to orient and fix the camera and depth frames
+extension ARCameraManager {
+    func setUpPixelBufferPools() throws {
+        // Set up the pixel buffer pool for future flattening of camera images
+        let cameraPixelBufferPoolAttributes: [String: Any] = [
+            kCVPixelBufferPoolMinimumBufferCountKey as String: 5
+        ]
+        let cameraPixelBufferAttributes: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: Constants.SelectedSegmentationConfig.inputSize.width,
+            kCVPixelBufferHeightKey as String: Constants.SelectedSegmentationConfig.inputSize.height,
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
+            kCVPixelBufferMetalCompatibilityKey as String: true,
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+        ]
+        let cameraStatus = CVPixelBufferPoolCreate(
+            kCFAllocatorDefault,
+            cameraPixelBufferPoolAttributes as CFDictionary,
+            cameraPixelBufferAttributes as CFDictionary,
+            &cameraPixelBufferPool
+        )
+        guard cameraStatus == kCVReturnSuccess else {
+            throw ARLegacyCameraManagerError.pixelBufferPoolCreationFailed
+        }
+        cameraColorSpace = CGColorSpaceCreateDeviceRGB()
+    }
+    
+    private func renderCIImageToPixelBuffer(
+        _ image: CIImage, size: CGSize,
+        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil) -> CVPixelBuffer? {
+        var pixelBufferOut: CVPixelBuffer?
+        let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
+        guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
+            return nil
         }
         
-        let pixelBuffer = frame.capturedImage
-        
-        let cIImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let cameraTransform = frame.camera.transform
-        let cameraIntrinsics = frame.camera.intrinsics
-        
-        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
-        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
-        
-        
+        ciContext.render(image, to: pixelBuffer, bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
+        return pixelBuffer
     }
 }

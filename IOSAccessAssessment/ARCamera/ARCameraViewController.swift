@@ -30,7 +30,7 @@ final class ARCameraViewController: UIViewController {
     /**
      A static frame view to show the bounds of segmentation
      */
-    private let segmentationFrameView: UIImageView = {
+    private let segmentationBoundingFrameView: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
@@ -82,8 +82,8 @@ final class ARCameraViewController: UIViewController {
             arView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         
-        arView.addSubview(segmentationFrameView)
-        applyViewLayoutIfNeeded(view: segmentationFrameView)
+        arView.addSubview(segmentationBoundingFrameView)
+        applyViewLayoutIfNeeded(view: segmentationBoundingFrameView)
         arView.addSubview(segmentationImageView)
         applyViewLayoutIfNeeded(view: segmentationImageView)
         applyDebugIfNeeded()
