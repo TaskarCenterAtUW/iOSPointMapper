@@ -63,25 +63,23 @@ struct SegmentationARPipelineResults {
     Currently, a giant monolithic class that handles all the requests. Will be refactored in the future to divide the request types into separate classes.
  */
 final class SegmentationARPipeline: ObservableObject {
-    // TODO: Update this to multiple states (one for each of segmentation, contour detection, etc.)
-    //  to pipeline the processing.
-    //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
     private var isProcessing = false
+    private var currentTask: Task<SegmentationARPipelineResults?, Error>?
     
-    var selectionClasses: [Int] = []
-    var selectionClassLabels: [UInt8] = []
-    var selectionClassGrayscaleValues: [Float] = []
-    var selectionClassColors: [CIColor] = []
+    private var selectionClasses: [Int] = []
+    private var selectionClassLabels: [UInt8] = []
+    private var selectionClassGrayscaleValues: [Float] = []
+    private var selectionClassColors: [CIColor] = []
     
     // TODO: Check what would be the appropriate value for this
-    var contourEpsilon: Float = 0.01
+    private var contourEpsilon: Float = 0.01
     // TODO: Check what would be the appropriate value for this
     // For normalized points
-    var perimeterThreshold: Float = 0.01
+    private var perimeterThreshold: Float = 0.01
     
-    let grayscaleToColorMasker = GrayscaleToColorCIFilter()
-    var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
-    var contourRequestProcessor: ContourRequestProcessor?
+    private let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
+    private var contourRequestProcessor: ContourRequestProcessor?
     
     init() {
         self.segmentationModelRequestProcessor = SegmentationModelRequestProcessor(
@@ -110,35 +108,29 @@ final class SegmentationARPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
      */
-    func processRequest(with cIImage: CIImage, highPriority: Bool = false) {
-        if (self.isProcessing && !highPriority) {
-            return
+    func processRequest(with cIImage: CIImage, highPriority: Bool = false) async throws -> SegmentationARPipelineResults? {
+        if (highPriority) {
+            self.currentTask?.cancel()
+        } else {
+            if ((currentTask != nil) && !currentTask!.isCancelled) {
+                return nil
+            }
         }
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            if highPriority {
-                while self.isProcessing {
-                    Thread.sleep(forTimeInterval: 0.01) // Sleep for a short duration to avoid busy waiting
-                }
-            }
-            self.isProcessing = true
+        let newTask = Task { [weak self] () throws -> SegmentationARPipelineResults? in
+            guard let self = self else { return nil }
             
-            do {
-                let processedImageResults = try self.processImage(cIImage)
-                return
-//                SegmentationARPipelineResults(
-//                    segmentationImage: processedImageResults.segmentationImage,
-//                    segmentationResultUIImage: processedImageResults.segmentationResultUIImage,
-//                    segmentedIndices: processedImageResults.segmentedIndices,
-//                    detectedObjectMap: processedImageResults.detectedObjectMap
-//                )
-            } catch let error as SegmentationARPipelineError {
-                return
-            } catch {
-                return
-            }
-            self.isProcessing = false
+            let results = try self.processImage(cIImage)
+            return SegmentationARPipelineResults(
+                segmentationImage: results.segmentationImage,
+                segmentationResultUIImage: results.segmentationResultUIImage,
+                segmentedIndices: results.segmentedIndices,
+                detectedObjectMap: results.detectedObjectMap
+            )
         }
+        
+        self.currentTask = newTask
+        return try await newTask.value
     }
     
     /**

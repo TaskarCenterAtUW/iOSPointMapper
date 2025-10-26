@@ -87,7 +87,7 @@ struct ARContentView: View {
             segmentationPipeline.setSelectionClasses(selection)
 //                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
-                manager = try ARCameraManager(segmentationPipeline: segmentationPipeline)
+                manager = try ARCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
             } catch let error {
                 managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
