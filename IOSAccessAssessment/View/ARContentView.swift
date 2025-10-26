@@ -36,13 +36,6 @@ enum ARContentViewConstants {
     enum Constraints {
         static let logoutIconSize: CGFloat = 20
     }
-    
-    enum Payload {
-        static let isCameraStopped = "isStopped"
-        static let cameraTransform = "cameraTransform"
-        static let cameraIntrinsics = "cameraIntrinsics"
-        static let originalImageSize = "originalImageSize"
-    }
 }
 
 class ManagerStatusViewModel: ObservableObject {

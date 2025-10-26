@@ -48,13 +48,12 @@ struct SegmentationARPipelineResults {
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
-         detectedObjectMap: [UUID: DetectedObject], transformMatrixFromPreviousFrame: simd_float3x3? = nil,
+         detectedObjectMap: [UUID: DetectedObject],
          additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
         self.segmentationResultUIImage = segmentationResultUIImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
-        self.transformMatrixFromPreviousFrame = transformMatrixFromPreviousFrame
         self.additionalPayload = additionalPayload
     }
 }
@@ -63,20 +62,16 @@ struct SegmentationARPipelineResults {
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
     Currently, a giant monolithic class that handles all the requests. Will be refactored in the future to divide the request types into separate classes.
  */
-class SegmentationARPipeline: ObservableObject {
+final class SegmentationARPipeline: ObservableObject {
     // TODO: Update this to multiple states (one for each of segmentation, contour detection, etc.)
     //  to pipeline the processing.
     //  This will help in more efficiently batching the requests, but will also be quite complex to handle.
-    var isProcessing = false
-    var completionHandler: ((Result<SegmentationARPipelineResults, Error>) -> Void)?
+    private var isProcessing = false
     
     var selectionClasses: [Int] = []
     var selectionClassLabels: [UInt8] = []
     var selectionClassGrayscaleValues: [Float] = []
     var selectionClassColors: [CIColor] = []
-    
-    // MARK: Temporary segmentationRequest UIImage. Later we should move this mapping to the SharedImageData in ContentView
-    @Published var segmentationResultUIImage: UIImage?
     
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
@@ -87,8 +82,6 @@ class SegmentationARPipeline: ObservableObject {
     let grayscaleToColorMasker = GrayscaleToColorCIFilter()
     var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     var contourRequestProcessor: ContourRequestProcessor?
-    var homographyRequestProcessor: HomographyRequestProcessor?
-    let centroidTracker = CentroidTracker()
     
     init() {
         self.segmentationModelRequestProcessor = SegmentationModelRequestProcessor(
@@ -97,15 +90,11 @@ class SegmentationARPipeline: ObservableObject {
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
             selectionClassLabels: self.selectionClassLabels)
-        self.homographyRequestProcessor = HomographyRequestProcessor()
     }
     
     func reset() {
         self.isProcessing = false
         self.setSelectionClasses([])
-        self.segmentationResultUIImage = nil
-        // TODO: No reset function for maskers and processors
-        self.centroidTracker.reset()
     }
     
     func setSelectionClasses(_ selectionClasses: [Int]) {
@@ -118,21 +107,11 @@ class SegmentationARPipeline: ObservableObject {
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
     }
     
-    func setCompletionHandler(_ completionHandler: @escaping (Result<SegmentationARPipelineResults, Error>) -> Void) {
-        self.completionHandler = completionHandler
-    }
-    
     /**
         Function to process the segmentation request with the given CIImage.
      */
-    func processRequest(
-        with cIImage: CIImage,
-        highPriority: Bool = false,
-        additionalPayload: [String: Any] = [:]) {
+    func processRequest(with cIImage: CIImage, highPriority: Bool = false) {
         if (self.isProcessing && !highPriority) {
-            DispatchQueue.main.async {
-                self.completionHandler?(.failure(SegmentationPipelineError.isProcessingTrue))
-            }
             return
         }
         
@@ -142,31 +121,21 @@ class SegmentationARPipeline: ObservableObject {
                     Thread.sleep(forTimeInterval: 0.01) // Sleep for a short duration to avoid busy waiting
                 }
             }
-            
             self.isProcessing = true
             
             do {
                 let processedImageResults = try self.processImage(cIImage)
-                DispatchQueue.main.async {
-                    self.segmentationResultUIImage = processedImageResults.segmentationResultUIImage
-                    
-                    self.completionHandler?(.success(SegmentationARPipelineResults(
-                        segmentationImage: processedImageResults.segmentationImage,
-                        segmentationResultUIImage: processedImageResults.segmentationResultUIImage,
-                        segmentedIndices: processedImageResults.segmentedIndices,
-                        detectedObjectMap: processedImageResults.detectedObjectMap,
-                        transformMatrixFromPreviousFrame: processedImageResults.transformMatrixFromPreviousFrame,
-                        additionalPayload: additionalPayload
-                    )))
-                }
+                return
+//                SegmentationARPipelineResults(
+//                    segmentationImage: processedImageResults.segmentationImage,
+//                    segmentationResultUIImage: processedImageResults.segmentationResultUIImage,
+//                    segmentedIndices: processedImageResults.segmentedIndices,
+//                    detectedObjectMap: processedImageResults.detectedObjectMap
+//                )
             } catch let error as SegmentationARPipelineError {
-                DispatchQueue.main.async {
-                    self.completionHandler?(.failure(error))
-                }
+                return
             } catch {
-                DispatchQueue.main.async {
-                    self.completionHandler?(.failure(SegmentationARPipelineError.unexpectedError))
-                }
+                return
             }
             self.isProcessing = false
         }
@@ -181,12 +150,9 @@ class SegmentationARPipeline: ObservableObject {
      The entire procedure has the following main steps:
      1. Get the segmentation mask from the camera image using the segmentation model
      2. Get the objects from the segmentation image
-     3. Get the homography transform matrix from the previous image to the current image
-     4. Update the centroid tracker with the detected objects and the transform matrix (Currently, the results of this are not effectively utilized)
-     5. Return the segmentation image, segmented indices, detected objects, and the transform matrix to the caller function
+     5. Return the segmentation image, segmented indices, and detected objects, to the caller function
      */
-    func processImage(_ cIImage: CIImage, previousImage: CIImage? = nil,
-                      deviceOrientation: UIDeviceOrientation = .portrait) throws -> SegmentationARPipelineResults {
+    func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
         let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
         guard let segmentationImage = segmentationResults?.segmentationImage else {
             throw SegmentationARPipelineError.invalidSegmentation
@@ -195,14 +161,8 @@ class SegmentationARPipeline: ObservableObject {
         // MARK: Ignoring the contour detection and object tracking for now
         // Get the objects from the segmentation image
         let detectedObjects = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
-
-        // If a previous image is provided, get the homography transform matrix from the previous image to the current image
-        var transformMatrixFromPreviousFrame: simd_float3x3? = nil
-        if let previousImage = previousImage {
-            transformMatrixFromPreviousFrame = self.homographyRequestProcessor?.getHomographyTransform(
-                referenceImage: cIImage, floatingImage: previousImage) ?? nil
-        }
-        self.centroidTracker.update(objects: detectedObjects, transformMatrix: transformMatrixFromPreviousFrame)
+        // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
+        let detectedObjectMap: [UUID: DetectedObject] = Dictionary(uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) })
         
         self.grayscaleToColorMasker.inputImage = segmentationImage
         self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
@@ -215,8 +175,7 @@ class SegmentationARPipeline: ObservableObject {
             segmentationImage: segmentationImage,
             segmentationResultUIImage: segmentationResultUIImage,
             segmentedIndices: segmentationResults?.segmentedIndices ?? [],
-            detectedObjectMap: Dictionary(uniqueKeysWithValues: self.centroidTracker.detectedObjectMap.map { ($0.key, $0.value) }),
-            transformMatrixFromPreviousFrame: transformMatrixFromPreviousFrame
+            detectedObjectMap: detectedObjectMap
         )
     }
     

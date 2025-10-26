@@ -22,9 +22,17 @@ enum ARCameraManagerError: Error, LocalizedError {
     }
 }
 
+enum ARCameraManagerConstants {
+    enum Payload {
+        static let isCameraStopped = "isStopped"
+        static let cameraTransform = "cameraTransform"
+        static let cameraIntrinsics = "cameraIntrinsics"
+        static let originalImageSize = "originalImageSize"
+    }
+}
+
 final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     var segmentationPipeline: SegmentationARPipeline
-    
     @Published var isProcessingCapturedResult = false
     
     @Published var deviceOrientation = UIDevice.current.orientation {
@@ -63,6 +71,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         guard checkFrameWithinFrameRate(frame: frame) else {
             return
         }
+        if isProcessingCapturedResult {
+            return
+        }
+        isProcessingCapturedResult = true
         
         let pixelBuffer = frame.capturedImage
         let cameraTransform = frame.camera.transform
@@ -82,25 +94,27 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) {
-        autoreleasepool {
-            var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
-            let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
-            let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
-            
-            cameraImage = cameraImage.oriented(orientation)
-            cameraImage = CIImageUtils.centerCropAspectFit(cameraImage, to: croppedSize)
-            
-            let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
-                cameraImage,
-                size: croppedSize,
-                pixelBufferPool: cameraPixelBufferPool!,
-                colorSpace: cameraColorSpace
-            )
-            guard let renderedCameraPixelBufferUnwrapped = renderedCameraPixelBuffer else {
-                return
-            }
-            let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
+        var cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
+        let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
+        
+        cameraImage = cameraImage.oriented(orientation)
+        cameraImage = CIImageUtils.centerCropAspectFit(cameraImage, to: croppedSize)
+        
+        let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
+            cameraImage,
+            size: croppedSize,
+            pixelBufferPool: cameraPixelBufferPool!,
+            colorSpace: cameraColorSpace
+        )
+        guard let renderedCameraPixelBufferUnwrapped = renderedCameraPixelBuffer else {
+            return
         }
+        let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
+        
+        let additionalPayload = getAdditionalPayload(
+            cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalCameraImageSize
+        )
     }
     
     func setFrameRate(_ frameRate: Int) {
@@ -124,6 +138,16 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         case .portraitUpsideDown: return .left
         default: return .right // portrait (back camera)
         }
+    }
+    
+    private func getAdditionalPayload(
+        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
+    ) -> [String: Any] {
+        var additionalPayload: [String: Any] = [:]
+        additionalPayload[ARCameraManagerConstants.Payload.cameraTransform] = cameraTransform
+        additionalPayload[ARCameraManagerConstants.Payload.cameraIntrinsics] = intrinsics
+        additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
+        return additionalPayload
     }
 }
 
