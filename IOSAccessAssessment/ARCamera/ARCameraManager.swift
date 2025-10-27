@@ -207,9 +207,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
         
-        var detectedObjectMap = segmentationResults.detectedObjectMap.map { (id: UUID, obj: DetectedObject) in
-            var alignedObj = alignObject(obj, orientation: orientation, imageSize: croppedSize, originalSize: originalSize)
-        }
+        let detectedObjectMap = alignDetectedObjects(
+            segmentationResults.detectedObjectMap,
+            orientation: orientation, imageSize: croppedSize, originalSize: originalSize
+        )
         
         // Create segmentation frame
         let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
@@ -224,7 +225,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             segmentationColorImage: segmentationColorImage,
             segmentationBoundingFrameImage: segmentationBoundingFrameImage,
             segmentedIndices: segmentationResults.segmentedIndices,
-            detectedObjectMap: segmentationResults.detectedObjectMap, // MARK: Need to orient this object map as well
+            detectedObjectMap: detectedObjectMap,
             additionalPayload: additionalPayload
         )
         return cameraImageResults
@@ -243,25 +244,31 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         return withinFrameRate
     }
     
-    private func alignObject(_ object: DetectedObject, orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize) -> DetectedObject {
-        var orientationTransform = orientation.getNormalizedToUpTransform().inverted()
+    private func alignDetectedObjects(
+        _ detectedObjectMap: [UUID: DetectedObject],
+        orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize
+    ) -> [UUID: DetectedObject] {
+        let orientationTransform = orientation.getNormalizedToUpTransform().inverted()
+        // To revert the center-cropping effect to map back to original image size
+        let revertTransform = CenterCropTransformUtils.revertCenterCropAspectFitNormalizedTransform(
+            imageSize: imageSize, from: originalSize)
+        let alignTransform = orientationTransform.concatenating(revertTransform)
         
-        // Align the bounding box
-        let boundingBox = object.boundingBox
-        let alignedBox = boundingBox.applying(orientationTransform)
-        // Revert the center-cropping effect to map back to original image size
-        let transformeddBox = CenterCropTransformUtils.revertCenterCropAspectFitRect(
-            alignedBox, imageSize: imageSize, from: originalSize
-        )
-        let finalBox = CGRect(
-            x: transformeddBox.origin.x * transformeddBox.width,
-            y: (1 - (transformeddBox.origin.y + transformeddBox.size.height)) * transformeddBox.height,
-            width: transformeddBox.size.width * transformeddBox.width,
-            height: transformeddBox.size.height * transformeddBox.height
-        )
-//        
-//        return finalBox
-        return object
+        let alignedObjectMap: [UUID: DetectedObject] = detectedObjectMap.mapValues { object in
+            var alignedObject = object
+            alignedObject.centroid = object.centroid.applying(alignTransform)
+            alignedObject.boundingBox = object.boundingBox.applying(alignTransform)
+            alignedObject.normalizedPoints = object.normalizedPoints.map { point_simd in
+                return CGPoint(x: CGFloat(point_simd.x), y: CGFloat(point_simd.y))
+            }.map { point in
+                return point.applying(alignTransform)
+            }.map { point in
+                return SIMD2<Float>(x: Float(point.x), y: Float(point.y))
+            }
+            return alignedObject
+        }
+        
+        return alignedObjectMap
     }
     
     private func getSegmentationBoundingFrame(

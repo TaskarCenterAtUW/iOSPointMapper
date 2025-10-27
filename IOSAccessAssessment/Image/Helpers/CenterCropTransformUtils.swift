@@ -100,7 +100,7 @@ struct CenterCropTransformUtils {
     }
     
     /**
-     This function returns the transformation to revert the effect of `centerCrop`.
+     This function returns the transformation to revert the effect of `centerCropAspectFit`.
      */
     static func revertCenterCropAspectFitTransform(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
         let sourceAspect = imageSize.width / imageSize.height
@@ -174,5 +174,33 @@ struct CenterCropTransformUtils {
         }
         let revertedRect = rect.applying(transform)
         return revertedRect
+    }
+    
+    /**
+     This function returns the transformation to reverse the effect of `centerCropAspectFit` on normalized co-ordinates.
+     */
+    static func revertCenterCropAspectFitNormalizedTransform(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
+        let sourceAspect = imageSize.width / imageSize.height
+        let destAspect = originalSize.width / originalSize.height
+        
+        var transform: CGAffineTransform = .identity
+        if sourceAspect < destAspect {
+            // Image was cropped horizontally because original is wider
+            let scale = imageSize.height / originalSize.height
+            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
+            let xOffset = (originalSize.width - newImageSize.width) / (2 * originalSize.width)
+            let widthScale = newImageSize.width / originalSize.width
+            transform = CGAffineTransform(scaleX: widthScale, y: 1)
+                .translatedBy(x: xOffset / widthScale, y: 0)
+        } else {
+            // Image was cropped vertically because original is taller
+            let scale = imageSize.width / originalSize.width
+            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
+            let yOffset = (originalSize.height - newImageSize.height) / (2 * originalSize.height)
+            let heightScale = newImageSize.height / originalSize.height
+            transform = CGAffineTransform(scaleX: 1, y: heightScale)
+                .translatedBy(x: 0, y: yOffset / heightScale)
+        }
+        return transform
     }
 }
