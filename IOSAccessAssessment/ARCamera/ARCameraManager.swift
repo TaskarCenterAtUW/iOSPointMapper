@@ -103,20 +103,18 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let cameraTransform = frame.camera.transform
         let cameraIntrinsics = frame.camera.intrinsics
         
-        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
-        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
+//        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
+//        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
         
-        let exifOrientation: CGImagePropertyOrientation = exifOrientationForCurrentDevice()
+//        let exifOrientation: CGImagePropertyOrientation = exifOrientationForCurrentDevice()
+        let exifOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForBackCamera(
+            currentDeviceOrientation: deviceOrientation
+        )
         
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
         
         Task {
             do {
-                let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
-                let additionalPayload = getAdditionalPayload(
-                    cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalCameraImageSize
-                )
-                
                 let segmentationResults = try await processCameraImage(
                     image: cameraImage, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                 )
@@ -124,16 +122,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     throw ARCameraManagerError.segmentationProcessingFailed
                 }
                 await MainActor.run {
-                    self.segmentationResults = SegmentationARPipelineResults(
-                        segmentationImage: segmentationResults.segmentationImage,
-                        segmentationResultUIImage: segmentationResults.segmentationResultUIImage,
-                        segmentedIndices: segmentationResults.segmentedIndices,
-                        detectedObjectMap: segmentationResults.detectedObjectMap,
-                        additionalPayload: additionalPayload
-                    )
+                    self.segmentationResults = segmentationResults
                     
                     self.outputConsumer?.cameraManager(
-                        self, segmentationOverlay: segmentationResults.segmentationResultUIImage, for: frame
+                        self, segmentationOverlay: segmentationResults.segmentationColorImage, for: frame
                     )
                 }
             } catch {
@@ -149,6 +141,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
+        let originalSize: CGSize = CGSize(
+            width: image.extent.width,
+            height: image.extent.height
+        )
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
         
         var inputImage = image.oriented(orientation)
@@ -166,6 +162,15 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(with: renderedCameraImage)
+        
+        let segmentationImage = segmentationResults.segmentationImage
+        let segmentationColorImage = segmentationResults.segmentationColorImage
+        
+        let inverseOrientation = orientation.inverted
+        
+        let additionalPayload = getAdditionalPayload(
+            cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
+        )
         return segmentationResults
     }
     
@@ -180,16 +185,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             lastFrameTime = currentTime
         }
         return withinFrameRate
-    }
-    
-    private func exifOrientationForCurrentDevice() -> CGImagePropertyOrientation {
-        // If you lock to portrait + back camera, returning .right is enough.
-        switch UIDevice.current.orientation {
-        case .landscapeLeft:  return .up
-        case .landscapeRight: return .down
-        case .portraitUpsideDown: return .left
-        default: return .right // portrait (back camera)
-        }
     }
     
     private func getAdditionalPayload(

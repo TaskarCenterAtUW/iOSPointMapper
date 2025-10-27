@@ -13,14 +13,16 @@ import CoreImage.CIFilterBuiltins
 import simd
 
 /// The consumer of post-processed camera outputs (e.g., overlay images).
+@MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraManager(_ manager: ARSessionCameraProcessingDelegate,
-                       segmentationOverlay image: UIImage,
+                       segmentationOverlay image: CIImage,
                        for frame: ARFrame)
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
     /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
+    @MainActor
     var outputConsumer: ARSessionCameraProcessingOutputConsumer? { get set }
 }
 
@@ -28,6 +30,7 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
     A  specialview controller that manages the AR camera view and segmentation display.
     Requires an ARSessionCameraProcessingDelegate to process camera frames (not just any ARSessionDelegate).
  */
+@MainActor
 final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
     var arCameraManager: ARCameraManager
     
@@ -134,9 +137,9 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
 //        print("container:", view.bounds, "arView:", arView.frame)
     }
 
-    deinit {
-        pauseSession()
-    }
+//    deinit {
+//        pauseSession()
+//    }
     
     func runSessionIfNeeded() {
         let config = ARWorldTrackingConfiguration()
@@ -161,8 +164,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         arView.session.pause()
     }
     
-    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationOverlay image: UIImage, for frame: ARFrame) {
-        
+    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationOverlay image: CIImage, for frame: ARFrame) {
+//        self.segmentationImageView.image = image
     }
 }
 

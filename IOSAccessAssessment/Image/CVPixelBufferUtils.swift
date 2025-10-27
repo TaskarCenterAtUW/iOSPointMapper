@@ -103,7 +103,7 @@ struct CVPixelBufferUtils {
         let width = Int(targetSize.width)
         let height = Int(targetSize.height)
         
-        var pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
+        let pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
         
         guard let blankPixelBuffer = pixelBuffer else { return nil }
         

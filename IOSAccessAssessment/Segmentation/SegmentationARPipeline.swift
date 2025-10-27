@@ -40,18 +40,18 @@ enum SegmentationARPipelineError: Error, LocalizedError {
 
 struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
-    var segmentationResultUIImage: UIImage
+    var segmentationColorImage: CIImage
     var segmentedIndices: [Int]
     var detectedObjectMap: [UUID: DetectedObject]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
-    init(segmentationImage: CIImage, segmentationResultUIImage: UIImage, segmentedIndices: [Int],
+    init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedIndices: [Int],
          detectedObjectMap: [UUID: DetectedObject],
          additionalPayload: [String: Any] = [:]) {
         self.segmentationImage = segmentationImage
-        self.segmentationResultUIImage = segmentationResultUIImage
+        self.segmentationColorImage = segmentationColorImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
         self.additionalPayload = additionalPayload
@@ -127,7 +127,7 @@ final class SegmentationARPipeline: ObservableObject {
             let results = try self.processImage(cIImage)
             return SegmentationARPipelineResults(
                 segmentationImage: results.segmentationImage,
-                segmentationResultUIImage: results.segmentationResultUIImage,
+                segmentationColorImage: results.segmentationColorImage,
                 segmentedIndices: results.segmentedIndices,
                 detectedObjectMap: results.detectedObjectMap
             )
@@ -163,13 +163,16 @@ final class SegmentationARPipeline: ObservableObject {
         self.grayscaleToColorMasker.inputImage = segmentationImage
         self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
         self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
-        let segmentationResultUIImage = UIImage(
-            ciImage: self.grayscaleToColorMasker.outputImage!,
-            scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
+        guard let segmentationColorImage = self.grayscaleToColorMasker.outputImage else {
+            throw SegmentationARPipelineError.invalidSegmentation
+        }
+//        let segmentationResultUIImage = UIImage(
+//            ciImage: self.grayscaleToColorMasker.outputImage!,
+//            scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
         
         return SegmentationARPipelineResults(
             segmentationImage: segmentationImage,
-            segmentationResultUIImage: segmentationResultUIImage,
+            segmentationColorImage: segmentationColorImage,
             segmentedIndices: segmentationResults?.segmentedIndices ?? [],
             detectedObjectMap: detectedObjectMap
         )

@@ -63,3 +63,19 @@ class CameraOrientation {
         return currentDeviceOrientation == .landscapeLeft || currentDeviceOrientation == .landscapeRight
     }
 }
+
+extension CGImagePropertyOrientation {
+    var inverted: CGImagePropertyOrientation {
+        switch self {
+        case .up: return .up
+        case .down: return .down
+        case .left: return .right
+        case .right: return .left
+        case .upMirrored: return .upMirrored
+        case .downMirrored: return .downMirrored
+        case .leftMirrored: return .rightMirrored
+        case .rightMirrored: return .leftMirrored
+        @unknown default: return .up
+        }
+    }
+}
