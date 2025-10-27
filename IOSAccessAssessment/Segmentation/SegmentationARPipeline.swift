@@ -146,7 +146,7 @@ final class SegmentationARPipeline: ObservableObject {
      The entire procedure has the following main steps:
      1. Get the segmentation mask from the camera image using the segmentation model
      2. Get the objects from the segmentation image
-     5. Return the segmentation image, segmented indices, and detected objects, to the caller function
+     3. Return the segmentation image, segmented indices, and detected objects, to the caller function
      */
     func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
         let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil

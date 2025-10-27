@@ -11,7 +11,7 @@ import UIKit
 /**
  A custom Image that displays a bounding box around the region of segmentation
  */
-struct FrameRasterizer {    
+struct FrameRasterizer {
     /**
      This function creates a CGImage with a bounding box drawn on it.
      */
@@ -19,7 +19,7 @@ struct FrameRasterizer {
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
-        let frameRect = CIImageUtils.centerCropAspectFitRect(imageSize: imageSize, to: frameSize)
+        let frameRect = CenterCropTransformUtils.centerCropAspectFitBoundingRect(imageSize: imageSize, to: frameSize)
         
         context.setStrokeColor(UIColor.white.cgColor)
         context.setShadow(offset: .zero, blur: 5.0, color: UIColor.black.cgColor)

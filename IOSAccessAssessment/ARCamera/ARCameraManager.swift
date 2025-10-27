@@ -173,7 +173,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
         
         var inputImage = image.oriented(orientation)
-        inputImage = CIImageUtils.centerCropAspectFit(inputImage, to: croppedSize)
+        inputImage = CenterCropTransformUtils.centerCropAspectFit(inputImage, to: croppedSize)
         
         let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
             inputImage,
@@ -191,19 +191,25 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         var segmentationImage = segmentationResults.segmentationImage
         var segmentationColorImage = segmentationResults.segmentationColorImage
         
-        let inverseOrientation = orientation.inverted
+        let inverseOrientation = orientation.inverted()
         
         segmentationImage = segmentationImage.oriented(inverseOrientation)
-        segmentationImage = CIImageUtils.revertCenterCropAspectFit(segmentationImage, originalSize: originalSize)
+        segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
         
         segmentationColorImage = segmentationColorImage.oriented(inverseOrientation)
-        segmentationColorImage = CIImageUtils.revertCenterCropAspectFit(segmentationColorImage, originalSize: originalSize)
+        segmentationColorImage = CenterCropTransformUtils.revertCenterCropAspectFit(
+            segmentationColorImage, from: originalSize
+        )
         segmentationColorImage = segmentationColorImage.oriented(orientation)
         guard let segmentationColorCGImage = ciContext.createCGImage(
             segmentationColorImage, from: segmentationColorImage.extent) else {
             throw ARCameraManagerError.cameraImageRenderingFailed
         }
         segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
+        
+        var detectedObjectMap = segmentationResults.detectedObjectMap.map { (id: UUID, obj: DetectedObject) in
+            var alignedObj = alignObject(obj, orientation: orientation, imageSize: croppedSize, originalSize: originalSize)
+        }
         
         // Create segmentation frame
         let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
@@ -237,14 +243,25 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         return withinFrameRate
     }
     
-    private func getAdditionalPayload(
-        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
-    ) -> [String: Any] {
-        var additionalPayload: [String: Any] = [:]
-        additionalPayload[ARCameraManagerConstants.Payload.cameraTransform] = cameraTransform
-        additionalPayload[ARCameraManagerConstants.Payload.cameraIntrinsics] = intrinsics
-        additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
-        return additionalPayload
+    private func alignObject(_ object: DetectedObject, orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize) -> DetectedObject {
+        var orientationTransform = orientation.getNormalizedToUpTransform().inverted()
+        
+        // Align the bounding box
+        let boundingBox = object.boundingBox
+        let alignedBox = boundingBox.applying(orientationTransform)
+        // Revert the center-cropping effect to map back to original image size
+        let transformeddBox = CenterCropTransformUtils.revertCenterCropAspectFitRect(
+            alignedBox, imageSize: imageSize, from: originalSize
+        )
+        let finalBox = CGRect(
+            x: transformeddBox.origin.x * transformeddBox.width,
+            y: (1 - (transformeddBox.origin.y + transformeddBox.size.height)) * transformeddBox.height,
+            width: transformeddBox.size.width * transformeddBox.width,
+            height: transformeddBox.size.height * transformeddBox.height
+        )
+//        
+//        return finalBox
+        return object
     }
     
     private func getSegmentationBoundingFrame(
@@ -261,6 +278,16 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         segmentationFrameImage = CIImage(cgImage: segmentationFrameOrientedCGImage)
         return segmentationFrameImage
+    }
+    
+    private func getAdditionalPayload(
+        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
+    ) -> [String: Any] {
+        var additionalPayload: [String: Any] = [:]
+        additionalPayload[ARCameraManagerConstants.Payload.cameraTransform] = cameraTransform
+        additionalPayload[ARCameraManagerConstants.Payload.cameraIntrinsics] = intrinsics
+        additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
+        return additionalPayload
     }
 }
 

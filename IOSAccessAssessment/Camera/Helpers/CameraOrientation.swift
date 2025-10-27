@@ -65,7 +65,7 @@ class CameraOrientation {
 }
 
 extension CGImagePropertyOrientation {
-    var inverted: CGImagePropertyOrientation {
+    func inverted() -> CGImagePropertyOrientation {
         switch self {
         case .up: return .up
         case .down: return .down
@@ -77,5 +77,49 @@ extension CGImagePropertyOrientation {
         case .rightMirrored: return .leftMirrored
         @unknown default: return .up
         }
+    }
+    
+    func getNormalizedToUpTransform() -> CGAffineTransform {
+        var t = CGAffineTransform.identity
+
+        // First handle the 90/180° rotations (use unit size = 1)
+        switch self {
+        case .down, .downMirrored:
+            // rotate 180° around origin, then move back into [0,1]^2
+            t = t.translatedBy(x: 1, y: 1)
+            t = t.rotated(by: .pi)
+
+        case .left, .leftMirrored:
+            // rotate +90° (CCW), then shift into [0,1]^2
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.rotated(by: .pi / 2)
+
+        case .right, .rightMirrored:
+            // rotate -90° (CW), then shift into [0,1]^2
+            t = t.translatedBy(x: 0, y: 1)
+            t = t.rotated(by: -.pi / 2)
+
+        case .up, .upMirrored:
+            break
+        }
+
+        // Then handle the mirror variants (horizontal flip)
+        switch self {
+        case .upMirrored, .downMirrored:
+            // flip horizontally
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.scaledBy(x: -1, y: 1)
+
+        case .leftMirrored, .rightMirrored:
+            // after 90° rotation, width/height swap;
+            // still a horizontal flip in the rotated space
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.scaledBy(x: -1, y: 1)
+
+        case .up, .down, .left, .right:
+            break
+        }
+
+        return t
     }
 }
