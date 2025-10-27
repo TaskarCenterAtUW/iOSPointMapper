@@ -84,7 +84,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        view.clipsToBounds = true
+        view.clipsToBounds = true
         aspectConstraint = view.widthAnchor.constraint(equalTo: view.heightAnchor, multiplier: aspectMultiplier)
         aspectConstraint.priority = .required
         aspectConstraint.isActive = true
@@ -99,21 +99,23 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         ])
         
         arView.addSubview(segmentationBoundingFrameView)
-        applyViewLayoutIfNeeded(view: segmentationBoundingFrameView)
+        applyViewLayoutIfNeeded(subview: segmentationBoundingFrameView)
         arView.addSubview(segmentationImageView)
-        applyViewLayoutIfNeeded(view: segmentationImageView)
+        applyViewLayoutIfNeeded(subview: segmentationImageView)
         applyDebugIfNeeded()
 
         arView.session.delegate = arCameraManager
         arCameraManager.outputConsumer = self
     }
     
-    func applyViewLayoutIfNeeded(view: UIView) {
-        NSLayoutConstraint.deactivate(view.constraints)
+    func applyViewLayoutIfNeeded(subview: UIView) {
+        NSLayoutConstraint.deactivate(subview.constraints)
         NSLayoutConstraint.activate([
-            view.topAnchor.constraint(equalTo: view.topAnchor),
-            view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            view.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            subview.topAnchor.constraint(equalTo: view.topAnchor),
+            subview.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+//            view.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            subview.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            subview.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
     
@@ -165,7 +167,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationOverlay image: CIImage, for frame: ARFrame) {
-//        self.segmentationImageView.image = image
+        self.segmentationImageView.image = UIImage(ciImage: image)
     }
 }
 

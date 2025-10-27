@@ -163,15 +163,34 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(with: renderedCameraImage)
         
-        let segmentationImage = segmentationResults.segmentationImage
-        let segmentationColorImage = segmentationResults.segmentationColorImage
+        var segmentationImage = segmentationResults.segmentationImage
+        var segmentationColorImage = segmentationResults.segmentationColorImage
         
         let inverseOrientation = orientation.inverted
+        
+        segmentationImage = segmentationImage.oriented(inverseOrientation)
+        segmentationImage = CIImageUtils.revertCenterCropAspectFit(segmentationImage, originalSize: originalSize)
+        
+        segmentationColorImage = segmentationColorImage.oriented(inverseOrientation)
+        segmentationColorImage = CIImageUtils.revertCenterCropAspectFit(segmentationColorImage, originalSize: originalSize)
+        segmentationColorImage = segmentationColorImage.oriented(orientation)
+        guard let segmentationColorCGImage = ciContext.createCGImage(
+            segmentationColorImage, from: segmentationColorImage.extent) else {
+            throw ARCameraManagerError.cameraImageRenderingFailed
+        }
+        segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
         
         let additionalPayload = getAdditionalPayload(
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
         )
-        return segmentationResults
+        let segmentationResultsFinal = SegmentationARPipelineResults(
+            segmentationImage: segmentationImage,
+            segmentationColorImage: segmentationColorImage,
+            segmentedIndices: segmentationResults.segmentedIndices,
+            detectedObjectMap: segmentationResults.detectedObjectMap, // MARK: Need to orient this object map as well
+            additionalPayload: additionalPayload
+        )
+        return segmentationResultsFinal
     }
     
     func setFrameRate(_ frameRate: Int) {
