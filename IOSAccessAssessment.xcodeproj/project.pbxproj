@@ -51,6 +51,7 @@
 		A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
+		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
 		A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
@@ -176,6 +177,7 @@
 		A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourObjectRasterizer.swift; sourceTree = "<group>"; };
 		A3C22FD02CF1643E00533BF7 /* SharedImageData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImageData.swift; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
+		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionView.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -501,6 +503,7 @@
 		A3FFAA762DE01631002B99BD /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
 				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
 			);
 			path = Helpers;
@@ -778,6 +781,7 @@
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
+				A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */,
 				A3FE16672E18C81800DAE5BE /* LocationEncoder.swift in Sources */,
 				A305B05F2E18978C00ECCF9B /* SegmentationConfig.swift in Sources */,
 				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,

@@ -16,7 +16,8 @@ import simd
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraManager(_ manager: ARSessionCameraProcessingDelegate,
-                       segmentationOverlay image: CIImage,
+                       segmentationImage: CIImage,
+                       segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame)
 }
 
@@ -166,8 +167,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         arView.session.pause()
     }
     
-    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationOverlay image: CIImage, for frame: ARFrame) {
-        self.segmentationImageView.image = UIImage(ciImage: image)
+    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationImage: CIImage,
+                       segmentationBoundingFrameImage: CIImage?, for frame: ARFrame) {
+        self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+        if let boundingFrameImage = segmentationBoundingFrameImage {
+            self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
+        } else {
+            self.segmentationBoundingFrameView.image = nil
+        }
     }
 }
 

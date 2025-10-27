@@ -62,11 +62,35 @@ struct CIImageUtils {
     }
     
     /**
+     Rectangle for the center-crop with aspect-fit resizing.
+     */
+    static func centerCropAspectFitRect(imageSize: CGSize, to size: CGSize) -> CGRect {
+        let sourceAspect = imageSize.width / imageSize.height
+        let destAspect = size.width / size.height
+        
+        var rect: CGRect = .zero
+        var scale: CGFloat = 1.0
+        var xOffset: CGFloat = 0.0
+        var yOffset: CGFloat = 0.0
+        if sourceAspect > destAspect {
+            scale = imageSize.height / size.height
+            xOffset = (imageSize.width - (size.width * scale)) / 2
+        } else {
+            scale = imageSize.width / size.width
+            yOffset = (imageSize.height - (size.height * scale)) / 2
+        }
+        rect.size = CGSize(width: size.width * scale, height: size.height * scale)
+        rect.origin = CGPoint(x: xOffset, y: yOffset)
+        return rect
+    }
+    
+    /**
      Center-crop with aspect-fit resizing.
      
      This function resizes a CIImage to match the specified size by:
         - First, resizing the image to match the smaller dimension while maintaining the aspect ratio.
         - Then, cropping the image to the specified size while centering it.
+     It thus gets the largest possible subregion of the image that fits within the target size without distortion.
      */
     static func centerCropAspectFit(_ image: CIImage, to size: CGSize) -> CIImage {
         let sourceAspect = image.extent.width / image.extent.height

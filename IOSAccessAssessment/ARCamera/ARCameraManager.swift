@@ -39,6 +39,29 @@ enum ARCameraManagerConstants {
     }
 }
 
+struct ARCameraManagerCameraImageResults {
+    var segmentationImage: CIImage
+    var segmentationColorImage: CIImage
+    var segmentationBoundingFrameImage: CIImage? = nil
+    var segmentedIndices: [Int]
+    var detectedObjectMap: [UUID: DetectedObject]
+    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
+    // TODO: Have some kind of type-safe payload for additional data to make it easier to use
+    var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
+    
+    init(segmentationImage: CIImage, segmentationColorImage: CIImage,
+         segmentationBoundingFrameImage: CIImage? = nil, segmentedIndices: [Int],
+         detectedObjectMap: [UUID: DetectedObject],
+         additionalPayload: [String: Any] = [:]) {
+        self.segmentationImage = segmentationImage
+        self.segmentationColorImage = segmentationColorImage
+        self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
+        self.segmentedIndices = segmentedIndices
+        self.detectedObjectMap = detectedObjectMap
+        self.additionalPayload = additionalPayload
+    }
+}
+
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -71,7 +94,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
 //    var depthPixelBufferPool: CVPixelBufferPool? = nil
 //    var depthColorSpace: CGColorSpace? = nil
     
-    @Published var segmentationResults: SegmentationARPipelineResults?
+    @Published var cameraImageResults: ARCameraManagerCameraImageResults?
     
     override init() {
         super.init()
@@ -115,17 +138,19 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         
         Task {
             do {
-                let segmentationResults = try await processCameraImage(
+                let cameraImageResults = try await processCameraImage(
                     image: cameraImage, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                 )
-                guard let segmentationResults else {
+                guard let cameraImageResults else {
                     throw ARCameraManagerError.segmentationProcessingFailed
                 }
                 await MainActor.run {
-                    self.segmentationResults = segmentationResults
+                    self.cameraImageResults = cameraImageResults
                     
                     self.outputConsumer?.cameraManager(
-                        self, segmentationOverlay: segmentationResults.segmentationColorImage, for: frame
+                        self, segmentationImage: cameraImageResults.segmentationColorImage,
+                        segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
+                        for: frame
                     )
                 }
             } catch {
@@ -137,7 +162,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     private func processCameraImage(
         image: CIImage, orientation: CGImagePropertyOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
-    ) async throws -> SegmentationARPipelineResults? {
+    ) async throws -> ARCameraManagerCameraImageResults? {
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
@@ -180,17 +205,23 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
         
+        // Create segmentation frame
+        let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
+            imageSize: originalSize, frameSize: croppedSize, orientation: orientation
+        )
         let additionalPayload = getAdditionalPayload(
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
         )
-        let segmentationResultsFinal = SegmentationARPipelineResults(
+        
+        let cameraImageResults = ARCameraManagerCameraImageResults(
             segmentationImage: segmentationImage,
             segmentationColorImage: segmentationColorImage,
+            segmentationBoundingFrameImage: segmentationBoundingFrameImage,
             segmentedIndices: segmentationResults.segmentedIndices,
             detectedObjectMap: segmentationResults.detectedObjectMap, // MARK: Need to orient this object map as well
             additionalPayload: additionalPayload
         )
-        return segmentationResultsFinal
+        return cameraImageResults
     }
     
     func setFrameRate(_ frameRate: Int) {
@@ -214,6 +245,22 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         additionalPayload[ARCameraManagerConstants.Payload.cameraIntrinsics] = intrinsics
         additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
         return additionalPayload
+    }
+    
+    private func getSegmentationBoundingFrame(
+        imageSize: CGSize, frameSize: CGSize, orientation: CGImagePropertyOrientation
+    ) -> CIImage? {
+        guard let segmentationFrameCGImage = FrameRasterizer.create(imageSize: imageSize, frameSize: frameSize) else {
+            return nil
+        }
+        var segmentationFrameImage = CIImage(cgImage: segmentationFrameCGImage)
+        segmentationFrameImage = segmentationFrameImage.oriented(orientation)
+        guard let segmentationFrameOrientedCGImage = ciContext.createCGImage(
+            segmentationFrameImage, from: segmentationFrameImage.extent) else {
+            return nil
+        }
+        segmentationFrameImage = CIImage(cgImage: segmentationFrameOrientedCGImage)
+        return segmentationFrameImage
     }
 }
 
