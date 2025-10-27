@@ -16,6 +16,7 @@ import simd
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraManager(_ manager: ARSessionCameraProcessingDelegate,
+                       cameraAspectMultipler: CGFloat,
                        segmentationImage: CIImage,
                        segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame)
@@ -42,7 +43,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }()
     private var aspectConstraint: NSLayoutConstraint!
     // MARK: Hard-coded aspect ratio constraint of 4:3. Need to make it dependent on camera feed.
-    private var aspectMultiplier: CGFloat = 3/4
+    private var aspectMultiplier: CGFloat = 1.0
     
     /**
      A static frame view to show the bounds of segmentation
@@ -85,32 +86,35 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.clipsToBounds = true
-        aspectConstraint = view.widthAnchor.constraint(equalTo: view.heightAnchor, multiplier: aspectMultiplier)
-        aspectConstraint.priority = .required
-        aspectConstraint.isActive = true
-        
         view.addSubview(arView)
         arView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            arView.topAnchor.constraint(equalTo: view.topAnchor),
-            arView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            arView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            arView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
         
         arView.addSubview(segmentationBoundingFrameView)
-        applyViewLayoutIfNeeded(subview: segmentationBoundingFrameView)
         arView.addSubview(segmentationImageView)
-        applyViewLayoutIfNeeded(subview: segmentationImageView)
         applyDebugIfNeeded()
+        
+        updateLayoutViews(aspectMultiplier: aspectMultiplier)
 
         arView.session.delegate = arCameraManager
         arCameraManager.outputConsumer = self
     }
     
-    func applyViewLayoutIfNeeded(subview: UIView) {
-        NSLayoutConstraint.deactivate(subview.constraints)
+    private func updateLayoutViews(aspectMultiplier: CGFloat) {
+        NSLayoutConstraint.deactivate(arView.constraints)
+        NSLayoutConstraint.deactivate(segmentationImageView.constraints)
+        NSLayoutConstraint.deactivate(segmentationBoundingFrameView.constraints)
+        
+        view.clipsToBounds = true
+        aspectConstraint = view.widthAnchor.constraint(equalTo: view.heightAnchor, multiplier: aspectMultiplier)
+        aspectConstraint.priority = .required
+        aspectConstraint.isActive = true
+        
+        applyLayoutConstraints(subview: arView)
+        applyLayoutConstraints(subview: segmentationBoundingFrameView)
+        applyLayoutConstraints(subview: segmentationImageView)
+    }
+    
+    private func applyLayoutConstraints(subview: UIView) {
         NSLayoutConstraint.activate([
             subview.topAnchor.constraint(equalTo: view.topAnchor),
             subview.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -167,8 +171,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         arView.session.pause()
     }
     
-    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate, segmentationImage: CIImage,
-                       segmentationBoundingFrameImage: CIImage?, for frame: ARFrame) {
+    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate,
+                       cameraAspectMultipler: CGFloat,
+                       segmentationImage: CIImage, segmentationBoundingFrameImage: CIImage?,
+                       for frame: ARFrame) {
+        if abs(cameraAspectMultipler - aspectMultiplier) > 0.01 {
+            aspectMultiplier = cameraAspectMultipler
+            updateLayoutViews(aspectMultiplier: aspectMultiplier)
+        }
         self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)

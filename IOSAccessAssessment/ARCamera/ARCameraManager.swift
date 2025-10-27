@@ -40,24 +40,22 @@ enum ARCameraManagerConstants {
 }
 
 struct ARCameraManagerCameraImageResults {
-    var segmentationImage: CIImage
+    var imageData: ImageData
+    var cameraAspectMultiplier: CGFloat
     var segmentationColorImage: CIImage
     var segmentationBoundingFrameImage: CIImage? = nil
-    var segmentedIndices: [Int]
-    var detectedObjectMap: [UUID: DetectedObject]
-    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
+    
     // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
-    init(segmentationImage: CIImage, segmentationColorImage: CIImage,
-         segmentationBoundingFrameImage: CIImage? = nil, segmentedIndices: [Int],
-         detectedObjectMap: [UUID: DetectedObject],
+    init(imageData: ImageData,
+         cameraAspectMultiplier: CGFloat,
+         segmentationColorImage: CIImage, segmentationBoundingFrameImage: CIImage? = nil,
          additionalPayload: [String: Any] = [:]) {
-        self.segmentationImage = segmentationImage
+        self.imageData = imageData
+        self.cameraAspectMultiplier = cameraAspectMultiplier
         self.segmentationColorImage = segmentationColorImage
         self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
-        self.segmentedIndices = segmentedIndices
-        self.detectedObjectMap = detectedObjectMap
         self.additionalPayload = additionalPayload
     }
 }
@@ -129,17 +127,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
 //        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
 //        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
         
-//        let exifOrientation: CGImagePropertyOrientation = exifOrientationForCurrentDevice()
-        let exifOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForBackCamera(
-            currentDeviceOrientation: deviceOrientation
-        )
-        
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
         
         Task {
             do {
                 let cameraImageResults = try await processCameraImage(
-                    image: cameraImage, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+                    image: cameraImage, deviceOrientation: deviceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                 )
                 guard let cameraImageResults else {
                     throw ARCameraManagerError.segmentationProcessingFailed
@@ -148,7 +141,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraImageResults = cameraImageResults
                     
                     self.outputConsumer?.cameraManager(
-                        self, segmentationImage: cameraImageResults.segmentationColorImage,
+                        self, cameraAspectMultipler: cameraImageResults.cameraAspectMultiplier,
+                        segmentationImage: cameraImageResults.segmentationColorImage,
                         segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                         for: frame
                     )
@@ -159,8 +153,20 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
     }
     
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        guard isConfigured else {
+            return
+        }
+    }
+    
+    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        guard isConfigured else {
+            return
+        }
+    }
+    
     private func processCameraImage(
-        image: CIImage, orientation: CGImagePropertyOrientation,
+        image: CIImage, deviceOrientation: UIDeviceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> ARCameraManagerCameraImageResults? {
         guard let segmentationPipeline = segmentationPipeline else {
@@ -171,9 +177,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             height: image.extent.height
         )
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForBackCamera(
+            currentDeviceOrientation: deviceOrientation
+        )
         
-        var inputImage = image.oriented(orientation)
-        inputImage = CenterCropTransformUtils.centerCropAspectFit(inputImage, to: croppedSize)
+        let orientedImage = image.oriented(imageOrientation)
+        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
         let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
             inputImage,
@@ -191,7 +200,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         var segmentationImage = segmentationResults.segmentationImage
         var segmentationColorImage = segmentationResults.segmentationColorImage
         
-        let inverseOrientation = orientation.inverted()
+        let inverseOrientation = imageOrientation.inverted()
         
         segmentationImage = segmentationImage.oriented(inverseOrientation)
         segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
@@ -200,7 +209,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         segmentationColorImage = CenterCropTransformUtils.revertCenterCropAspectFit(
             segmentationColorImage, from: originalSize
         )
-        segmentationColorImage = segmentationColorImage.oriented(orientation)
+        segmentationColorImage = segmentationColorImage.oriented(imageOrientation)
         guard let segmentationColorCGImage = ciContext.createCGImage(
             segmentationColorImage, from: segmentationColorImage.extent) else {
             throw ARCameraManagerError.cameraImageRenderingFailed
@@ -209,23 +218,32 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         
         let detectedObjectMap = alignDetectedObjects(
             segmentationResults.detectedObjectMap,
-            orientation: orientation, imageSize: croppedSize, originalSize: originalSize
+            orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
         )
         
+        let cameraAspectMultiplier = orientedImage.extent.width / orientedImage.extent.height
         // Create segmentation frame
         let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
-            imageSize: originalSize, frameSize: croppedSize, orientation: orientation
+            imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
         )
         let additionalPayload = getAdditionalPayload(
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
         )
         
-        let cameraImageResults = ARCameraManagerCameraImageResults(
-            segmentationImage: segmentationImage,
-            segmentationColorImage: segmentationColorImage,
-            segmentationBoundingFrameImage: segmentationBoundingFrameImage,
+        let cameraImageData = ImageData(
+            segmentationLabelImage: segmentationImage,
             segmentedIndices: segmentationResults.segmentedIndices,
             detectedObjectMap: detectedObjectMap,
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics,
+            deviceOrientation: deviceOrientation,
+            originalImageSize: originalSize
+        )
+        let cameraImageResults = ARCameraManagerCameraImageResults(
+            imageData: cameraImageData,
+            cameraAspectMultiplier: cameraAspectMultiplier,
+            segmentationColorImage: segmentationColorImage,
+            segmentationBoundingFrameImage: segmentationBoundingFrameImage,
             additionalPayload: additionalPayload
         )
         return cameraImageResults
@@ -235,7 +253,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.frameRate = frameRate
     }
     
-    func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {
+    private func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {
         let currentTime = frame.timestamp
         let withinFrameRate = currentTime - lastFrameTime >= (1.0 / Double(frameRate))
         if withinFrameRate {
