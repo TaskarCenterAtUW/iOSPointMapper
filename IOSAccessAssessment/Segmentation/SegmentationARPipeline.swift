@@ -64,7 +64,7 @@ struct SegmentationARPipelineResults {
  */
 final class SegmentationARPipeline: ObservableObject {
     private var isProcessing = false
-    private var currentTask: Task<SegmentationARPipelineResults?, Error>?
+    private var currentTask: Task<SegmentationARPipelineResults, Error>?
     
     private var selectionClasses: [Int] = []
     private var selectionClassLabels: [UInt8] = []
@@ -108,17 +108,21 @@ final class SegmentationARPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
      */
-    func processRequest(with cIImage: CIImage, highPriority: Bool = false) async throws -> SegmentationARPipelineResults? {
+    func processRequest(with cIImage: CIImage, highPriority: Bool = false) async throws -> SegmentationARPipelineResults {
         if (highPriority) {
             self.currentTask?.cancel()
         } else {
             if ((currentTask != nil) && !currentTask!.isCancelled) {
-                return nil
+                throw SegmentationARPipelineError.isProcessingTrue
             }
         }
         
-        let newTask = Task { [weak self] () throws -> SegmentationARPipelineResults? in
-            guard let self = self else { return nil }
+        let newTask = Task { [weak self] () throws -> SegmentationARPipelineResults in
+            guard let self = self else { throw SegmentationARPipelineError.unexpectedError }
+            defer {
+                self.currentTask = nil
+            }
+            try Task.checkCancellation()
             
             let results = try self.processImage(cIImage)
             return SegmentationARPipelineResults(

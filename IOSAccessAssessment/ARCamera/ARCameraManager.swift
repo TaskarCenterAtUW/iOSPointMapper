@@ -1,4 +1,3 @@
-//
 //  ARCameraManager.swift
 //  IOSAccessAssessment
 //
@@ -12,6 +11,7 @@ enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed
     case pixelBufferPoolCreationFailed
     case cameraImageRenderingFailed
+    case segmentationNotConfigured
     case segmentationProcessingFailed
     
     var errorDescription: String? {
@@ -22,6 +22,8 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Failed to create pixel buffer pool."
         case .cameraImageRenderingFailed:
             return "Failed to render camera image."
+        case .segmentationNotConfigured:
+            return "Segmentation pipeline not configured."
         case .segmentationProcessingFailed:
             return "Segmentation processing failed."
         }
@@ -37,11 +39,21 @@ enum ARCameraManagerConstants {
     }
 }
 
-final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
-    var sharedImageData: SharedImageData
-    var segmentationPipeline: SegmentationARPipeline
+/**
+    An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
+ 
+    Is configured through a two-step process to make initialization in SwiftUI easier.
+    - First, initialize with local properties (e.g. pixel buffer pools).
+    - Accept configuration of the SegmentationARPipeline through a separate `configure()` method.
+ */
+final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
+    var isConfigured: Bool {
+        return segmentationPipeline != nil
+    }
+    var segmentationPipeline: SegmentationARPipeline? = nil
     
-    var isProcessingCapturedResult = false
+    // Consumer that will receive processed overlays (weak to avoid retain cycles)
+    weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
     
     @Published var deviceOrientation = UIDevice.current.orientation {
         didSet {
@@ -61,15 +73,16 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     
     @Published var segmentationResults: SegmentationARPipelineResults?
     
-    init(sharedImageData: SharedImageData, segmentationPipeline: SegmentationARPipeline) throws {
-        self.sharedImageData = sharedImageData
-        self.segmentationPipeline = segmentationPipeline
-        
+    override init() {
         super.init()
         
         NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
             self.deviceOrientation = UIDevice.current.orientation
         }.store(in: &cancellables)
+    }
+    
+    func configure(segmentationPipeline: SegmentationARPipeline) throws {
+        self.segmentationPipeline = segmentationPipeline
         
         do {
             try setUpPixelBufferPools()
@@ -79,13 +92,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        guard isConfigured else {
+            return
+        }
         guard checkFrameWithinFrameRate(frame: frame) else {
             return
         }
-        if isProcessingCapturedResult {
-            return
-        }
-        isProcessingCapturedResult = true
         
         let pixelBuffer = frame.capturedImage
         let cameraTransform = frame.camera.transform
@@ -99,17 +111,15 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
         
         Task {
-            defer { isProcessingCapturedResult = false }
-            
             do {
-                let segmentationResults = try await processCameraImage(
-                    image: cameraImage, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-                )
                 let originalCameraImageSize = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
                 let additionalPayload = getAdditionalPayload(
                     cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalCameraImageSize
                 )
                 
+                let segmentationResults = try await processCameraImage(
+                    image: cameraImage, orientation: exifOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+                )
                 guard let segmentationResults else {
                     throw ARCameraManagerError.segmentationProcessingFailed
                 }
@@ -120,6 +130,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
                         segmentedIndices: segmentationResults.segmentedIndices,
                         detectedObjectMap: segmentationResults.detectedObjectMap,
                         additionalPayload: additionalPayload
+                    )
+                    
+                    self.outputConsumer?.cameraManager(
+                        self, segmentationOverlay: segmentationResults.segmentationResultUIImage, for: frame
                     )
                 }
             } catch {
@@ -132,6 +146,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         image: CIImage, orientation: CGImagePropertyOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> SegmentationARPipelineResults? {
+        guard let segmentationPipeline = segmentationPipeline else {
+            throw ARCameraManagerError.segmentationNotConfigured
+        }
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
         
         var inputImage = image.oriented(orientation)
@@ -148,7 +165,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionDelegate {
         }
         let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
         
-        let segmentationResults: SegmentationARPipelineResults? = try await segmentationPipeline.processRequest(with: renderedCameraImage)
+        let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(with: renderedCameraImage)
         return segmentationResults
     }
     

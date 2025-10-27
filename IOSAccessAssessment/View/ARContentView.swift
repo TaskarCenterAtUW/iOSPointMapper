@@ -60,7 +60,7 @@ struct ARContentView: View {
     
     @StateObject var objectLocation = ObjectLocation()
 
-    @State private var manager: ARCameraManager? = nil
+    @StateObject private var manager: ARCameraManager = ARCameraManager()
     @State private var managerStatusViewModel = ManagerStatusViewModel()
     
     @State private var navigateToAnnotationView = false
@@ -68,7 +68,7 @@ struct ARContentView: View {
     var body: some View {
         Group {
             // Show the camera view once manager is initialized, otherwise a loading indicator
-            if let manager = manager {
+            if manager.isConfigured {
                 HostedARCameraViewContainer(arCameraManager: manager)
             } else {
                 ProgressView(ARContentViewConstants.Texts.cameraInProgressText)
@@ -87,8 +87,8 @@ struct ARContentView: View {
             segmentationPipeline.setSelectionClasses(selection)
 //                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
-                manager = try ARCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
-            } catch let error {
+                try manager.configure(segmentationPipeline: segmentationPipeline)
+            } catch {
                 managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
