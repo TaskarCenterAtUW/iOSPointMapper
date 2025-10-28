@@ -25,7 +25,7 @@
 		A305B06A2E189D8500ECCF9B /* CocoCustom35ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */; };
 		A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B06B2E18A85D00ECCF9B /* DepthEncoder.swift */; };
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
-		A30D057E2E2B106200316FB5 /* CocoCustom11ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */; };
+		A30D057E2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D057D2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
 		A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */; };
 		A31A1E722EAC41F4008B30B7 /* ARLegacyContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E712EAC41F4008B30B7 /* ARLegacyContentView.swift */; };
@@ -153,7 +153,7 @@
 		A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom35ClassConfig.swift; sourceTree = "<group>"; };
 		A305B06B2E18A85D00ECCF9B /* DepthEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthEncoder.swift; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
-		A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom11ClassConfig.swift; sourceTree = "<group>"; };
+		A30D057D2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapillaryCustom11ClassConfig.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
 		A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		A31A1E712EAC41F4008B30B7 /* ARLegacyContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARLegacyContentView.swift; sourceTree = "<group>"; };
@@ -385,7 +385,7 @@
 				A305B0652E189C9400ECCF9B /* CityscapesSubsetClassConfig.swift */,
 				A305B0672E189CD000ECCF9B /* CocoCustom53ClassConfig.swift */,
 				A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */,
-				A30D057D2E2B106200316FB5 /* CocoCustom11ClassConfig.swift */,
+				A30D057D2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -794,7 +794,7 @@
 				A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */,
 				A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
-				A30D057E2E2B106200316FB5 /* CocoCustom11ClassConfig.swift in Sources */,
+				A30D057E2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

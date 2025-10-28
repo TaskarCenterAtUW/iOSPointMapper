@@ -52,6 +52,10 @@ enum ARCameraManagerConstants {
 }
 
 struct ARCameraImageResults {
+    let cameraImage: CIImage
+    var depthImage: CIImage? = nil
+    var confidenceImage: CIImage? = nil
+    
     let segmentationLabelImage: CIImage
     let segmentedIndices: [Int]
     let detectedObjectMap: [UUID: DetectedObject]
@@ -66,12 +70,19 @@ struct ARCameraImageResults {
     // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
-    init(segmentationLabelImage: CIImage, segmentedIndices: [Int],
-         detectedObjectMap: [UUID: DetectedObject],
-         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-         interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
-         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil,
-         additionalPayload: [String: Any] = [:]) {
+    init(
+        cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
+        segmentationLabelImage: CIImage, segmentedIndices: [Int],
+        detectedObjectMap: [UUID: DetectedObject],
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
+        segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil,
+        additionalPayload: [String: Any] = [:]
+    ) {
+        self.cameraImage = cameraImage
+        self.depthImage = depthImage
+        self.confidenceImage = confidenceImage
+        
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
@@ -169,10 +180,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let cameraTransform = frame.camera.transform
         let cameraIntrinsics = frame.camera.intrinsics
         
-//        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
-//        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
+        let depthBuffer = frame.smoothedSceneDepth?.depthMap ?? frame.sceneDepth?.depthMap
+        let depthConfidenceBuffer = frame.smoothedSceneDepth?.confidenceMap ?? frame.sceneDepth?.confidenceMap
         
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let depthImage: CIImage? = depthBuffer != nil ? CIImage(cvPixelBuffer: depthBuffer!) : nil
+        let confidenceImage: CIImage? = depthConfidenceBuffer != nil ? CIImage(cvPixelBuffer: depthConfidenceBuffer!) : nil
         
         // Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
         Task {
@@ -184,7 +197,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      throw ARCameraManagerError.segmentationProcessingFailed
                  }
                  await MainActor.run {
-                     self.cameraImageResults = cameraImageResults
+                     self.cameraImageResults = {
+                        var results = cameraImageResults
+                        results.depthImage = depthImage
+                        results.confidenceImage = confidenceImage
+                        return results
+                     }()
                      
                      self.outputConsumer?.cameraManager(
                          self, segmentationImage: cameraImageResults.segmentationColorImage,
@@ -202,6 +220,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
+        // TODO: Throttle with frame rate if needed
         Task {
             do {
                 try await processMeshAnchors(anchors)
@@ -215,6 +234,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
+        // TODO: Throttle with frame rate if needed
         Task {
             do {
                 try await processMeshAnchors(anchors)
@@ -296,6 +316,7 @@ extension ARCameraManager {
         )
         
         let cameraImageResults = ARCameraImageResults(
+            cameraImage: image,
             segmentationLabelImage: segmentationImage,
             segmentedIndices: segmentationResults.segmentedIndices,
             detectedObjectMap: detectedObjectMap,
@@ -386,13 +407,7 @@ extension ARCameraManager {
         let cameraTransform = cameraImageResults.cameraTransform
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
-        CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
-        let width = CVPixelBufferGetWidth(segmentationPixelBuffer)
-        let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
-        let bpr = CVPixelBufferGetBytesPerRow(segmentationPixelBuffer)
-        defer { CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly) }
         
-        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
         
     }
     

@@ -23,7 +23,7 @@ enum SegmentationARPipelineError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .isProcessingTrue:
-            return "The SegmentationPipeline is already processing a request."
+            return "The Segmentation Image Pipeline is already processing a request."
         case .emptySegmentation:
             return "The Segmentation array is Empty"
         case .invalidSegmentation:
@@ -33,7 +33,7 @@ enum SegmentationARPipelineError: Error, LocalizedError {
         case .invalidTransform:
             return "The Homography Transform is invalid"
         case .unexpectedError:
-            return "An unexpected error occurred in the SegmentationARPipeline."
+            return "An unexpected error occurred in the Segmentation Image Pipeline."
         }
     }
 }
@@ -44,17 +44,13 @@ struct SegmentationARPipelineResults {
     var segmentedIndices: [Int]
     var detectedObjectMap: [UUID: DetectedObject]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
-    // TODO: Have some kind of type-safe payload for additional data to make it easier to use
-    var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedIndices: [Int],
-         detectedObjectMap: [UUID: DetectedObject],
-         additionalPayload: [String: Any] = [:]) {
+         detectedObjectMap: [UUID: DetectedObject]) {
         self.segmentationImage = segmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedIndices = segmentedIndices
         self.detectedObjectMap = detectedObjectMap
-        self.additionalPayload = additionalPayload
     }
 }
 
@@ -125,13 +121,7 @@ final class SegmentationARPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            let results = try self.processImage(cIImage)
-            return SegmentationARPipelineResults(
-                segmentationImage: results.segmentationImage,
-                segmentationColorImage: results.segmentationColorImage,
-                segmentedIndices: results.segmentedIndices,
-                detectedObjectMap: results.detectedObjectMap
-            )
+            return try self.processImage(cIImage)
         }
         
         self.currentTask = newTask
@@ -149,7 +139,7 @@ final class SegmentationARPipeline: ObservableObject {
      2. Get the objects from the segmentation image
      3. Return the segmentation image, segmented indices, and detected objects, to the caller function
      */
-    func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
+    private func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
         let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
         guard let segmentationImage = segmentationResults?.segmentationImage else {
             throw SegmentationARPipelineError.invalidSegmentation
