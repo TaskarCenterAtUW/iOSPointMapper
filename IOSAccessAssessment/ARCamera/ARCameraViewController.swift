@@ -16,8 +16,7 @@ import simd
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraManager(_ manager: ARSessionCameraProcessingDelegate,
-                       cameraAspectMultipler: CGFloat,
-                       segmentationImage: CIImage,
+                       segmentationImage: CIImage?,
                        segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame)
 }
@@ -283,14 +282,13 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func cameraManager(_ manager: any ARSessionCameraProcessingDelegate,
-                       cameraAspectMultipler: CGFloat,
-                       segmentationImage: CIImage, segmentationBoundingFrameImage: CIImage?,
+                       segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame) {
-//        if abs(cameraAspectMultipler - aspectMultiplier) > 0.01 {
-//            aspectMultiplier = cameraAspectMultipler
-//            updateLayoutViews(aspectMultiplier: aspectMultiplier)
-//        }
-        self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+        if let segmentationImage = segmentationImage {
+            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+        } else {
+            self.segmentationImageView.image = nil
+        }
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
         } else {

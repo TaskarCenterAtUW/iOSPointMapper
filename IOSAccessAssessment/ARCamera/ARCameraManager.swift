@@ -7,6 +7,7 @@
 import ARKit
 import RealityKit
 import Combine
+import simd
 
 enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed
@@ -47,20 +48,34 @@ enum ARCameraManagerConstants {
 }
 
 struct ARCameraImageResults {
-    var imageData: ImageData
-    var cameraAspectMultiplier: CGFloat
-    var segmentationColorImage: CIImage
+    let segmentationLabelImage: CIImage
+    let segmentedIndices: [Int]
+    let detectedObjectMap: [UUID: DetectedObject]
+    let cameraTransform: simd_float4x4
+    let cameraIntrinsics: simd_float3x3
+    let interfaceOrientation: UIInterfaceOrientation
+    let originalImageSize: CGSize
+    
+    var segmentationColorImage: CIImage? = nil
     var segmentationBoundingFrameImage: CIImage? = nil
     
     // TODO: Have some kind of type-safe payload for additional data to make it easier to use
     var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
     
-    init(imageData: ImageData,
-         cameraAspectMultiplier: CGFloat,
-         segmentationColorImage: CIImage, segmentationBoundingFrameImage: CIImage? = nil,
+    init(segmentationLabelImage: CIImage, segmentedIndices: [Int],
+         detectedObjectMap: [UUID: DetectedObject],
+         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+         interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
+         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil,
          additionalPayload: [String: Any] = [:]) {
-        self.imageData = imageData
-        self.cameraAspectMultiplier = cameraAspectMultiplier
+        self.segmentationLabelImage = segmentationLabelImage
+        self.segmentedIndices = segmentedIndices
+        self.detectedObjectMap = detectedObjectMap
+        self.cameraTransform = cameraTransform
+        self.cameraIntrinsics = cameraIntrinsics
+        self.interfaceOrientation = interfaceOrientation
+        self.originalImageSize = originalImageSize
+        
         self.segmentationColorImage = segmentationColorImage
         self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
         self.additionalPayload = additionalPayload
@@ -74,8 +89,6 @@ struct ARCameraMeshResults {
     var modelEntity: ModelEntity
     var assignedColor: UIColor
     var lastUpdated: TimeInterval
-    
-    
 }
 
 /**
@@ -157,8 +170,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
         
         // Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
-        // inside the Task (as a local `let`) to avoid mutating a captured variable from concurrently
-        // executing code (Swift 6 strictness).
         Task {
              do {
                  let cameraImageResults = try await processCameraImage(
@@ -171,8 +182,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      self.cameraImageResults = cameraImageResults
                      
                      self.outputConsumer?.cameraManager(
-                         self, cameraAspectMultipler: cameraImageResults.cameraAspectMultiplier,
-                         segmentationImage: cameraImageResults.segmentationColorImage,
+                         self, segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
                      )
@@ -255,24 +265,23 @@ extension ARCameraManager {
             colorSpace: segmentationColorSpace
         )
         
-        var segmentationColorImage = segmentationResults.segmentationColorImage
-        segmentationColorImage = segmentationColorImage.oriented(inverseOrientation)
-        segmentationColorImage = CenterCropTransformUtils.revertCenterCropAspectFit(
-            segmentationColorImage, from: originalSize
+        var segmentationColorCIImage = segmentationResults.segmentationColorImage
+        segmentationColorCIImage = segmentationColorCIImage.oriented(inverseOrientation)
+        segmentationColorCIImage = CenterCropTransformUtils.revertCenterCropAspectFit(
+            segmentationColorCIImage, from: originalSize
         )
-        segmentationColorImage = segmentationColorImage.oriented(imageOrientation)
-        guard let segmentationColorCGImage = ciContext.createCGImage(
-            segmentationColorImage, from: segmentationColorImage.extent) else {
-            throw ARCameraManagerError.cameraImageRenderingFailed
+        segmentationColorCIImage = segmentationColorCIImage.oriented(imageOrientation)
+        let segmentationColorCGImage = ciContext.createCGImage(segmentationColorCIImage, from: segmentationColorCIImage.extent)
+        var segmentationColorImage: CIImage? = nil
+        if let segmentationColorCGImage = segmentationColorCGImage {
+            segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
         }
-        segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
         
         let detectedObjectMap = alignDetectedObjects(
             segmentationResults.detectedObjectMap,
             orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
         )
         
-        let cameraAspectMultiplier = orientedImage.extent.width / orientedImage.extent.height
         // Create segmentation frame
         let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
             imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
@@ -281,18 +290,14 @@ extension ARCameraManager {
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
         )
         
-        let cameraImageData = ImageData(
+        let cameraImageResults = ARCameraImageResults(
             segmentationLabelImage: segmentationImage,
             segmentedIndices: segmentationResults.segmentedIndices,
             detectedObjectMap: detectedObjectMap,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
             interfaceOrientation: interfaceOrientation,
-            originalImageSize: originalSize
-        )
-        let cameraImageResults = ARCameraImageResults(
-            imageData: cameraImageData,
-            cameraAspectMultiplier: cameraAspectMultiplier,
+            originalImageSize: originalSize,
             segmentationColorImage: segmentationColorImage,
             segmentationBoundingFrameImage: segmentationBoundingFrameImage,
             additionalPayload: additionalPayload
@@ -369,14 +374,12 @@ extension ARCameraManager {
         guard let cameraImageResults = cameraImageResults else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
-        guard let segmentationLabelImage = cameraImageResults.imageData.segmentationLabelImage else {
-            throw ARCameraManagerError.cameraImageResultsUnavailable
-        }
+        let segmentationLabelImage = cameraImageResults.segmentationLabelImage
         guard let segmentationPixelBuffer = segmentationLabelImage.pixelBuffer else {
             throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
         }
-        let cameraTransform = cameraImageResults.imageData.cameraTransform
-        let cameraIntrinsics = cameraImageResults.imageData.cameraIntrinsics
+        let cameraTransform = cameraImageResults.cameraTransform
+        let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
         CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
         let width = CVPixelBufferGetWidth(segmentationPixelBuffer)
