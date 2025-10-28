@@ -26,6 +26,9 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
     /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
     @MainActor
     var outputConsumer: ARSessionCameraProcessingOutputConsumer? { get set }
+    /// This method will help set up any configuration that depends on the video format image resolution.
+    @MainActor
+    func setVideoFormatImageResolution(_ imageResolution: CGSize)
 }
 
 /**
@@ -250,11 +253,13 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
             config.frameSemantics.insert(.smoothedSceneDepth)
         }
-        arView.session.run(config, options: [])
-        
         // Update aspectRatio based on video format
         let videoFormat = config.videoFormat
         videoFormatImageResolution = videoFormat.imageResolution
+        // Run the session
+        arView.session.run(config, options: [])
+        // Set the image resolution in the camera manager
+        arCameraManager.setVideoFormatImageResolution(videoFormat.imageResolution)
     }
     
     /**
