@@ -1,5 +1,5 @@
 //
-//  GrayscaleToColorCIFilter.swift
+//  GrayscaleToColorFilter.swift
 //  IOSAccessAssessment
 //
 //  Created by TCAT on 9/27/24.
@@ -10,11 +10,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-class GrayscaleToColorCIFilter: CIFilter {
-    var inputImage: CIImage?
-    var grayscaleValues: [Float] = []
-    var colorValues: [CIColor] = []
-    
+struct GrayscaleToColorFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -23,7 +19,7 @@ class GrayscaleToColorCIFilter: CIFilter {
     
     private let ciContext: CIContext
 
-    override init() {
+    init() {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             fatalError("Error: Failed to initialize Metal resources")
@@ -39,19 +35,9 @@ class GrayscaleToColorCIFilter: CIFilter {
             fatalError("Error: Failed to initialize Metal pipeline")
         }
         self.pipeline = pipeline
-        super.init()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 
-    override var outputImage: CIImage? {
-        guard let inputImage = inputImage else { return nil }
-        return applyFilter(to: inputImage)
-    }
-
-    private func applyFilter(to inputImage: CIImage) -> CIImage? {
+    func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) -> CIImage? {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)

@@ -37,8 +37,6 @@ struct SegmentationModelRequestProcessor {
         request.imageCropAndScaleOption = .scaleFill
     }
     
-    // MARK: Currently we are relying on the synchronous nature of the request handler
-    // Need to check if this is always guaranteed.
     func processSegmentationRequest(with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up)
     -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
         do {

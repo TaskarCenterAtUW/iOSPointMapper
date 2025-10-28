@@ -60,7 +60,8 @@ struct SegmentationARPipelineResults {
 
 /**
     A class to handle segmentation as well as the post-processing of the segmentation results on demand.
-    Currently, a giant monolithic class that handles all the requests. Will be refactored in the future to divide the request types into separate classes.
+ 
+    TODO: Rename this to `SegmentationImagePipeline` since AR is not a necessary component here.
  */
 final class SegmentationARPipeline: ObservableObject {
     private var isProcessing = false
@@ -77,7 +78,7 @@ final class SegmentationARPipeline: ObservableObject {
     // For normalized points
     private var perimeterThreshold: Float = 0.01
     
-    private let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    private let grayscaleToColorMasker = GrayscaleToColorFilter()
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
     
@@ -160,10 +161,8 @@ final class SegmentationARPipeline: ObservableObject {
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedObjectMap: [UUID: DetectedObject] = Dictionary(uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) })
         
-        self.grayscaleToColorMasker.inputImage = segmentationImage
-        self.grayscaleToColorMasker.grayscaleValues = self.selectionClassGrayscaleValues
-        self.grayscaleToColorMasker.colorValues =  self.selectionClassColors
-        guard let segmentationColorImage = self.grayscaleToColorMasker.outputImage else {
+        guard let segmentationColorImage = self.grayscaleToColorMasker.apply(
+            to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors) else {
             throw SegmentationARPipelineError.invalidSegmentation
         }
 //        let segmentationResultUIImage = UIImage(

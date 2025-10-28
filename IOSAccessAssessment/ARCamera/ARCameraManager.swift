@@ -39,6 +39,10 @@ enum ARCameraManagerError: Error, LocalizedError {
 }
 
 enum ARCameraManagerConstants {
+    enum MeshResults {
+        static let meshAnchorEntityPlaceholderName = "ARCameraManager_MeshAnchorEntity"
+    }
+    
     enum Payload {
         static let isCameraStopped = "isStopped"
         static let cameraTransform = "cameraTransform"
@@ -86,8 +90,8 @@ struct ARCameraMeshResults {
     var meshAnchors: [ARMeshAnchor] = []
     
     let anchorEntity: AnchorEntity
-    var modelEntity: ModelEntity
-    var assignedColor: UIColor
+    var modelEntities: [UUID: ModelEntity] = [:]
+    var assignedColors: [UUID: UIColor] = [:] 
     var lastUpdated: TimeInterval
 }
 
@@ -124,6 +128,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var segmentationColorSpace: CGColorSpace? = nil
     
     @Published var cameraImageResults: ARCameraImageResults?
+    @Published var cameraMeshResults: ARCameraMeshResults?
     
     override init() {
         super.init()
@@ -388,6 +393,14 @@ extension ARCameraManager {
         defer { CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly) }
         
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        
+    }
+    
+    private func initializeMeshResultsIfNeeded() {
+        guard cameraMeshResults == nil else {
+            return
+        }
+        let anchorEntity = AnchorEntity(world: .zero)
         
     }
 }
