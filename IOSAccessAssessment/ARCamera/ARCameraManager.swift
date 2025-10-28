@@ -13,6 +13,8 @@ enum ARCameraManagerError: Error, LocalizedError {
     case cameraImageRenderingFailed
     case segmentationNotConfigured
     case segmentationProcessingFailed
+    case cameraImageResultsUnavailable
+    case segmentationImagePixelBufferUnavailable
     
     var errorDescription: String? {
         switch self {
@@ -26,6 +28,10 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Segmentation pipeline not configured."
         case .segmentationProcessingFailed:
             return "Segmentation processing failed."
+        case .cameraImageResultsUnavailable:
+            return "Camera image not processed."
+        case .segmentationImagePixelBufferUnavailable:
+            return "Segmentation image not backed by a pixel buffer."
         }
     }
 }
@@ -39,7 +45,7 @@ enum ARCameraManagerConstants {
     }
 }
 
-struct ARCameraManagerCameraImageResults {
+struct ARCameraImageResults {
     var imageData: ImageData
     var cameraAspectMultiplier: CGFloat
     var segmentationColorImage: CIImage
@@ -87,12 +93,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     // Properties for processing camera and depth frames
     var ciContext = CIContext(options: nil)
+    // Pixel buffer pools for rendering camera frames to fixed size as segmentation model input (pre-defined size)
     var cameraPixelBufferPool: CVPixelBufferPool? = nil
     var cameraColorSpace: CGColorSpace? = nil
 //    var depthPixelBufferPool: CVPixelBufferPool? = nil
 //    var depthColorSpace: CGColorSpace? = nil
     
-    @Published var cameraImageResults: ARCameraManagerCameraImageResults?
+    @Published var cameraImageResults: ARCameraImageResults?
     
     override init() {
         super.init()
@@ -106,7 +113,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.segmentationPipeline = segmentationPipeline
         
         do {
-            try setUpPixelBufferPools()
+            try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
         } catch let error as ARCameraManagerError {
             throw error
         }
@@ -157,54 +164,63 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
+        Task {
+            do {
+                try await processMeshAnchors(anchors)
+            } catch {
+                print("Error processing anchors: \(error.localizedDescription)")
+            }
+        }
     }
     
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         guard isConfigured else {
             return
         }
+        Task {
+            do {
+                try await processMeshAnchors(anchors)
+            } catch {
+                print("Error processing anchors: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func setFrameRate(_ frameRate: Int) {
+        self.frameRate = frameRate
     }
     
     private func processCameraImage(
         image: CIImage, deviceOrientation: UIDeviceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
-    ) async throws -> ARCameraManagerCameraImageResults? {
+    ) async throws -> ARCameraImageResults? {
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
-        let originalSize: CGSize = CGSize(
-            width: image.extent.width,
-            height: image.extent.height
-        )
+        let originalSize: CGSize = image.extent.size
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForBackCamera(
             currentDeviceOrientation: deviceOrientation
         )
+        let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = image.oriented(imageOrientation)
         let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
-        
-        let renderedCameraPixelBuffer = renderCIImageToPixelBuffer(
+        let renderedCameraPixelBuffer = try renderCIImageToPixelBuffer(
             inputImage,
             size: croppedSize,
             pixelBufferPool: cameraPixelBufferPool!,
             colorSpace: cameraColorSpace
         )
-        guard let renderedCameraPixelBufferUnwrapped = renderedCameraPixelBuffer else {
-            throw ARCameraManagerError.cameraImageRenderingFailed
-        }
-        let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBufferUnwrapped)
+        let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBuffer)
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(with: renderedCameraImage)
         
         var segmentationImage = segmentationResults.segmentationImage
-        var segmentationColorImage = segmentationResults.segmentationColorImage
-        
-        let inverseOrientation = imageOrientation.inverted()
-        
         segmentationImage = segmentationImage.oriented(inverseOrientation)
         segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
         
+        var segmentationColorImage = segmentationResults.segmentationColorImage
         segmentationColorImage = segmentationColorImage.oriented(inverseOrientation)
         segmentationColorImage = CenterCropTransformUtils.revertCenterCropAspectFit(
             segmentationColorImage, from: originalSize
@@ -239,7 +255,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             deviceOrientation: deviceOrientation,
             originalImageSize: originalSize
         )
-        let cameraImageResults = ARCameraManagerCameraImageResults(
+        let cameraImageResults = ARCameraImageResults(
             imageData: cameraImageData,
             cameraAspectMultiplier: cameraAspectMultiplier,
             segmentationColorImage: segmentationColorImage,
@@ -247,10 +263,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             additionalPayload: additionalPayload
         )
         return cameraImageResults
-    }
-    
-    func setFrameRate(_ frameRate: Int) {
-        self.frameRate = frameRate
     }
     
     private func checkFrameWithinFrameRate(frame: ARFrame) -> Bool {
@@ -273,7 +285,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let alignTransform = orientationTransform.concatenating(revertTransform)
         
         let alignedObjectMap: [UUID: DetectedObject] = detectedObjectMap.mapValues { object in
-            var alignedObject = object
+            let alignedObject = object
             alignedObject.centroid = object.centroid.applying(alignTransform)
             alignedObject.boundingBox = object.boundingBox.applying(alignTransform)
             alignedObject.normalizedPoints = object.normalizedPoints.map { point_simd in
@@ -314,19 +326,33 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
         return additionalPayload
     }
+    
+    private func processMeshAnchors(_ anchors: [ARAnchor]) async throws {
+        guard let cameraImageResults = cameraImageResults else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        guard let segmentationLabelImage = cameraImageResults.imageData.segmentationLabelImage else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        guard let segmentationPixelBuffer = segmentationLabelImage.pixelBuffer else {
+            throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
+        }
+        let cameraTransform = cameraImageResults.imageData.cameraTransform
+        let cameraIntrinsics = cameraImageResults.imageData.cameraIntrinsics
+    }
 }
 
 // Functions to orient and fix the camera and depth frames
 extension ARCameraManager {
-    func setUpPixelBufferPools() throws {
+    func setUpPreAllocatedPixelBufferPools(size: CGSize) throws {
         // Set up the pixel buffer pool for future flattening of camera images
         let cameraPixelBufferPoolAttributes: [String: Any] = [
             kCVPixelBufferPoolMinimumBufferCountKey as String: 5
         ]
         let cameraPixelBufferAttributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferWidthKey as String: Constants.SelectedSegmentationConfig.inputSize.width,
-            kCVPixelBufferHeightKey as String: Constants.SelectedSegmentationConfig.inputSize.height,
+            kCVPixelBufferWidthKey as String: size.width,
+            kCVPixelBufferHeightKey as String: size.height,
             kCVPixelBufferCGImageCompatibilityKey as String: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
             kCVPixelBufferMetalCompatibilityKey as String: true,
@@ -346,14 +372,47 @@ extension ARCameraManager {
     
     private func renderCIImageToPixelBuffer(
         _ image: CIImage, size: CGSize,
-        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil) -> CVPixelBuffer? {
+        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil) throws -> CVPixelBuffer {
         var pixelBufferOut: CVPixelBuffer?
         let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
         guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
-            return nil
+            throw ARCameraManagerError.cameraImageRenderingFailed
         }
         
         ciContext.render(image, to: pixelBuffer, bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
         return pixelBuffer
+    }
+    
+    /**
+     MARK: This function is not using a Pixel Buffer pool currently, which may lead to performance issues.
+        Consider updating it to use a pool similar to `renderCIImageToPixelBuffer`.
+     Need to confirm that the relevant images will have a fixed size before making this change.
+     
+     Relevant image: Segmentation images transformed to camera frame size.
+     (Hence, need to make sure that the camera feed from ARKit is always at a fixed size)
+     */
+    private func backCIImageToPixelBuffer(_ image: CIImage) throws -> CIImage {
+        var imageBuffer: CVPixelBuffer?
+        let attributes: [CFString: Any] = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
+            kCVPixelBufferIOSurfacePropertiesKey: [:] // Required for Metal/CoreImage
+        ]
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            Int(image.extent.width),
+            Int(image.extent.height),
+            kCVPixelFormatType_OneComponent8,
+            attributes as CFDictionary,
+            &imageBuffer
+        )
+        guard status == kCVReturnSuccess, let imageBuffer = imageBuffer else {
+            throw ARCameraManagerError.cameraImageRenderingFailed
+        }
+        // Render the CIImage to the pixel buffer
+        ciContext.render(image, to: imageBuffer, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceGray())
+        // Create a CIImage from the pixel buffer
+        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
+        return ciImage
     }
 }

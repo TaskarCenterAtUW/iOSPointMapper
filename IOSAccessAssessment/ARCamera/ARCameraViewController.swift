@@ -42,8 +42,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         return v
     }()
     private var aspectConstraint: NSLayoutConstraint!
-    // MARK: Hard-coded aspect ratio constraint of 4:3. Need to make it dependent on camera feed.
-    private var aspectMultiplier: CGFloat = 1.0
+    private var aspectMultiplier: CGFloat = 4/3
     
     /**
      A static frame view to show the bounds of segmentation
@@ -141,7 +140,6 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-//        print("container:", view.bounds, "arView:", arView.frame)
     }
 
 //    deinit {
@@ -160,6 +158,13 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             config.frameSemantics.insert(.smoothedSceneDepth)
         }
         arView.session.run(config, options: [])
+        
+        // Update aspectMultiplier based on video format
+//        let videoFormat = config.videoFormat
+//        let aspectRatio = CGFloat(videoFormat.imageResolution.width) / CGFloat(videoFormat.imageResolution.height)
+//        print("Video Format Resolution: \(videoFormat.imageResolution), Aspect Ratio: \(aspectRatio)")
+//        aspectMultiplier = aspectRatio
+//        updateLayoutViews(aspectMultiplier: aspectMultiplier)
     }
     
     /**
@@ -175,10 +180,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                        cameraAspectMultipler: CGFloat,
                        segmentationImage: CIImage, segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame) {
-        if abs(cameraAspectMultipler - aspectMultiplier) > 0.01 {
-            aspectMultiplier = cameraAspectMultipler
-            updateLayoutViews(aspectMultiplier: aspectMultiplier)
-        }
+//        if abs(cameraAspectMultipler - aspectMultiplier) > 0.01 {
+//            aspectMultiplier = cameraAspectMultipler
+//            updateLayoutViews(aspectMultiplier: aspectMultiplier)
+//        }
         self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
