@@ -41,7 +41,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
      */
     private let subView = UIView()
     private var aspectConstraint: NSLayoutConstraint!
-    private var aspectRatio: CGFloat = 4/3
+    private var aspectRatio: CGFloat = 3/4
     private var fitWidthConstraint: NSLayoutConstraint!
     private var fitHeightConstraint: NSLayoutConstraint!
     private var topAlignConstraint: [NSLayoutConstraint] = []
@@ -53,6 +53,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
     }()
+    private var videoFormatImageResolution: CGSize? = nil
     
     /**
      A static frame view to show the bounds of segmentation
@@ -138,12 +139,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         applyDebugIfNeeded()
         updateFitConstraints()
         updateAlignConstraints()
+        updateAspectRatio()
 
         arView.session.delegate = arCameraManager
         arCameraManager.outputConsumer = self
     }
     
     private func constraintChildViewToParent(childView: UIView, parentView: UIView) {
+        NSLayoutConstraint.deactivate(childView.constraints)
         NSLayoutConstraint.activate([
             childView.topAnchor.constraint(equalTo: parentView.topAnchor),
             childView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor),
@@ -152,8 +155,15 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         ])
     }
     
-    private func updateAspectRatio(_ newAspectRatio: CGFloat) {
-        aspectRatio = newAspectRatio
+    private func updateAspectRatio() {
+        if let videoFormatImageResolution = videoFormatImageResolution {
+            aspectRatio = videoFormatImageResolution.width / videoFormatImageResolution.height
+        }
+        if isPortrait() {
+            // The ARView aspect ratio for portrait is height / width
+            aspectRatio = 1 / aspectRatio
+        }
+        
         aspectConstraint.isActive = false
         aspectConstraint = subView.widthAnchor.constraint(
             equalTo: subView.heightAnchor,
@@ -164,29 +174,33 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     private func updateFitConstraints() {
-        // Decide whether to fit width or height based on container vs parent aspect
-        let parentAspectRatio = view.bounds.width / max(1, view.bounds.height)
-        // If parent is "wider" than content, fit height; otherwise fit width
-        if parentAspectRatio > aspectRatio {
-            fitWidthConstraint.isActive = false
-            fitHeightConstraint.isActive = true
-        } else {
+        if isPortrait() {
             fitHeightConstraint.isActive = false
             fitWidthConstraint.isActive = true
+        } else {
+            fitWidthConstraint.isActive = false
+            fitHeightConstraint.isActive = true
         }
     }
     
     private func updateAlignConstraints() {
-        // Decide whether to align top or leading based on container vs parent aspect
-        let parentAspectRatio = view.bounds.width / max(1, view.bounds.height)
-        // If parent is "wider" than content, align leading; otherwise align top
-        if parentAspectRatio > aspectRatio {
-            NSLayoutConstraint.deactivate(topAlignConstraint)
-            NSLayoutConstraint.activate(leadingAlignConstraint)
-        } else {
+        // If portrait, align top; else align leading
+        if isPortrait() {
             NSLayoutConstraint.deactivate(leadingAlignConstraint)
             NSLayoutConstraint.activate(topAlignConstraint)
+        } else {
+            NSLayoutConstraint.deactivate(topAlignConstraint)
+            NSLayoutConstraint.activate(leadingAlignConstraint)
         }
+    }
+    
+    private func isPortrait() -> Bool {
+        // Prefer interface orientation when available (matches UI layout)
+        if let io = view.window?.windowScene?.interfaceOrientation {
+            return io.isPortrait
+        }
+        // Fallback for early lifecycle / no window
+        return view.bounds.height >= view.bounds.width
     }
     
     func applyDebugIfNeeded() {
@@ -208,6 +222,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         super.viewDidLayoutSubviews()
         updateFitConstraints()
         updateAlignConstraints()
+        updateAspectRatio()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -215,6 +230,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         coordinator.animate(alongsideTransition: { _ in
             self.updateFitConstraints()
             self.updateAlignConstraints()
+            self.updateAspectRatio()
             self.view.layoutIfNeeded()
         })
     }
@@ -236,12 +252,9 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
         arView.session.run(config, options: [])
         
-        // Update aspectMultiplier based on video format
-//        let videoFormat = config.videoFormat
-//        let aspectRatio = CGFloat(videoFormat.imageResolution.width) / CGFloat(videoFormat.imageResolution.height)
-//        print("Video Format Resolution: \(videoFormat.imageResolution), Aspect Ratio: \(aspectRatio)")
-//        aspectMultiplier = aspectRatio
-//        updateLayoutViews(aspectMultiplier: aspectMultiplier)
+        // Update aspectRatio based on video format
+        let videoFormat = config.videoFormat
+        videoFormatImageResolution = videoFormat.imageResolution
     }
     
     /**
