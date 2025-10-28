@@ -36,13 +36,23 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
 final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
     var arCameraManager: ARCameraManager
     
+    /**
+     Sub-view containing the other views
+     */
+    private let subView = UIView()
+    private var aspectConstraint: NSLayoutConstraint!
+    private var aspectRatio: CGFloat = 4/3
+    private var fitWidthConstraint: NSLayoutConstraint!
+    private var fitHeightConstraint: NSLayoutConstraint!
+    private var topAlignConstraint: [NSLayoutConstraint] = []
+    private var leadingAlignConstraint: [NSLayoutConstraint] = []
+    
     private let arView: ARView = {
         let v = ARView(frame: .zero)
         v.automaticallyConfigureSession = false
+        v.translatesAutoresizingMaskIntoConstraints = false
         return v
     }()
-    private var aspectConstraint: NSLayoutConstraint!
-    private var aspectMultiplier: CGFloat = 4/3
     
     /**
      A static frame view to show the bounds of segmentation
@@ -84,43 +94,99 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.clipsToBounds = true
         
-        view.addSubview(arView)
-        arView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(subView)
+        subView.clipsToBounds = true
         
-        arView.addSubview(segmentationBoundingFrameView)
-        arView.addSubview(segmentationImageView)
+        subView.translatesAutoresizingMaskIntoConstraints = false
+        aspectConstraint = subView.widthAnchor.constraint(
+            equalTo: subView.heightAnchor,
+            multiplier: aspectRatio
+        )
+        aspectConstraint.priority = .required
+        
+        NSLayoutConstraint.deactivate(subView.constraints)
+        let subViewBoundsConstraints: [NSLayoutConstraint] = [
+            subView.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor),
+            subView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor),
+            subView.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+            subView.bottomAnchor.constraint(lessThanOrEqualTo: view.bottomAnchor),
+            aspectConstraint
+        ]
+        NSLayoutConstraint.activate(subViewBoundsConstraints)
+        
+        fitWidthConstraint = subView.widthAnchor.constraint(equalTo: view.widthAnchor)
+        fitHeightConstraint = subView.heightAnchor.constraint(equalTo: view.heightAnchor)
+        topAlignConstraint = [
+            subView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            subView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        ]
+        leadingAlignConstraint = [
+            subView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            subView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ]
+        
+        subView.addSubview(arView)
+        subView.addSubview(segmentationBoundingFrameView)
+        subView.addSubview(segmentationImageView)
+        
+        constraintChildViewToParent(childView: arView, parentView: subView)
+        constraintChildViewToParent(childView: segmentationBoundingFrameView, parentView: subView)
+        constraintChildViewToParent(childView: segmentationImageView, parentView: subView)
+        
         applyDebugIfNeeded()
-        
-        updateLayoutViews(aspectMultiplier: aspectMultiplier)
+        updateFitConstraints()
+        updateAlignConstraints()
 
         arView.session.delegate = arCameraManager
         arCameraManager.outputConsumer = self
     }
     
-    private func updateLayoutViews(aspectMultiplier: CGFloat) {
-        NSLayoutConstraint.deactivate(arView.constraints)
-        NSLayoutConstraint.deactivate(segmentationImageView.constraints)
-        NSLayoutConstraint.deactivate(segmentationBoundingFrameView.constraints)
-        
-        view.clipsToBounds = true
-        aspectConstraint = view.widthAnchor.constraint(equalTo: view.heightAnchor, multiplier: aspectMultiplier)
-        aspectConstraint.priority = .required
-        aspectConstraint.isActive = true
-        
-        applyLayoutConstraints(subview: arView)
-        applyLayoutConstraints(subview: segmentationBoundingFrameView)
-        applyLayoutConstraints(subview: segmentationImageView)
+    private func constraintChildViewToParent(childView: UIView, parentView: UIView) {
+        NSLayoutConstraint.activate([
+            childView.topAnchor.constraint(equalTo: parentView.topAnchor),
+            childView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor),
+            childView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            childView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor)
+        ])
     }
     
-    private func applyLayoutConstraints(subview: UIView) {
-        NSLayoutConstraint.activate([
-            subview.topAnchor.constraint(equalTo: view.topAnchor),
-            subview.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//            view.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-            subview.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            subview.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
+    private func updateAspectRatio(_ newAspectRatio: CGFloat) {
+        aspectRatio = newAspectRatio
+        aspectConstraint.isActive = false
+        aspectConstraint = subView.widthAnchor.constraint(
+            equalTo: subView.heightAnchor,
+            multiplier: aspectRatio
+        )
+        aspectConstraint.isActive = true
+        view.setNeedsLayout()
+    }
+    
+    private func updateFitConstraints() {
+        // Decide whether to fit width or height based on container vs parent aspect
+        let parentAspectRatio = view.bounds.width / max(1, view.bounds.height)
+        // If parent is "wider" than content, fit height; otherwise fit width
+        if parentAspectRatio > aspectRatio {
+            fitWidthConstraint.isActive = false
+            fitHeightConstraint.isActive = true
+        } else {
+            fitHeightConstraint.isActive = false
+            fitWidthConstraint.isActive = true
+        }
+    }
+    
+    private func updateAlignConstraints() {
+        // Decide whether to align top or leading based on container vs parent aspect
+        let parentAspectRatio = view.bounds.width / max(1, view.bounds.height)
+        // If parent is "wider" than content, align leading; otherwise align top
+        if parentAspectRatio > aspectRatio {
+            NSLayoutConstraint.deactivate(topAlignConstraint)
+            NSLayoutConstraint.activate(leadingAlignConstraint)
+        } else {
+            NSLayoutConstraint.deactivate(leadingAlignConstraint)
+            NSLayoutConstraint.activate(topAlignConstraint)
+        }
     }
     
     func applyDebugIfNeeded() {
@@ -140,6 +206,17 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateFitConstraints()
+        updateAlignConstraints()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.updateFitConstraints()
+            self.updateAlignConstraints()
+            self.view.layoutIfNeeded()
+        })
     }
 
 //    deinit {

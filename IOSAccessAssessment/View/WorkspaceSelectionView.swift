@@ -89,10 +89,10 @@ struct WorkspaceSelectionView: View {
                     }
                     .padding(.trailing, 5)
                 }
-                .padding(.vertical, 20)
+                .padding(.vertical, 5)
                 .overlay(
                     Text(WorkspaceSelectionViewConstants.Texts.selectWorkspacePrompt)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 10)
                         .fixedSize(horizontal: false, vertical: true)
                 )
                 TipView(infoTip, arrowEdge: .top) { action in
@@ -104,8 +104,7 @@ struct WorkspaceSelectionView: View {
                 if primaryWorkspaces.count > 0 {
                     Text(WorkspaceSelectionViewConstants.Texts.primaryWorkspaces)
                         .font(.headline)
-                        .padding(.top, 20)
-                        .padding(.bottom, 5)
+                        .padding(.top, 5)
                     
                     ViewThatFits(in: .vertical) {
                         WorkspaceListView(workspaces: primaryWorkspaces, workspaceViewModel: workspaceViewModel)
@@ -132,8 +131,7 @@ struct WorkspaceSelectionView: View {
                             .bold()
                     }
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 5)
+                .padding(.top, 10)
                 
                 if workspaces.count > 0 {
                     ScrollView(.vertical) {
@@ -148,7 +146,7 @@ struct WorkspaceSelectionView: View {
                     Text(WorkspaceSelectionViewConstants.Texts.noWorkspacesAvailable)
                         .foregroundColor(.gray)
                         .italic()
-                        .padding(.top, 10)
+                        .padding(.top, 5)
                 }
             }
             .navigationBarBackButtonHidden(true)
