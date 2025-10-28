@@ -5,6 +5,7 @@
 //
 
 import ARKit
+import RealityKit
 import Combine
 
 enum ARCameraManagerError: Error, LocalizedError {
@@ -66,6 +67,17 @@ struct ARCameraImageResults {
     }
 }
 
+struct ARCameraMeshResults {
+    var meshAnchors: [ARMeshAnchor] = []
+    
+    let anchorEntity: AnchorEntity
+    var modelEntity: ModelEntity
+    var assignedColor: UIColor
+    var lastUpdated: TimeInterval
+    
+    
+}
+
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -82,12 +94,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
     var imageResolution: CGSize = .zero
-    
-    @Published var deviceOrientation = UIDevice.current.orientation {
-        didSet {
-        }
-    }
-    var cancellables = Set<AnyCancellable>()
+    var interfaceOrientation: UIInterfaceOrientation = .portrait
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
@@ -107,10 +114,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     override init() {
         super.init()
-        
-        NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification).sink { _ in
-            self.deviceOrientation = UIDevice.current.orientation
-        }.store(in: &cancellables)
     }
     
     func configure(segmentationPipeline: SegmentationARPipeline) throws {
@@ -132,6 +135,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
     }
     
+    func setOrientation(_ orientation: UIInterfaceOrientation) {
+        self.interfaceOrientation = orientation
+    }
+    
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         guard isConfigured else {
             return
@@ -149,28 +156,31 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         
         let cameraImage = CIImage(cvPixelBuffer: pixelBuffer)
         
+        // Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
+        // inside the Task (as a local `let`) to avoid mutating a captured variable from concurrently
+        // executing code (Swift 6 strictness).
         Task {
-            do {
-                let cameraImageResults = try await processCameraImage(
-                    image: cameraImage, deviceOrientation: deviceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-                )
-                guard let cameraImageResults else {
-                    throw ARCameraManagerError.segmentationProcessingFailed
-                }
-                await MainActor.run {
-                    self.cameraImageResults = cameraImageResults
-                    
-                    self.outputConsumer?.cameraManager(
-                        self, cameraAspectMultipler: cameraImageResults.cameraAspectMultiplier,
-                        segmentationImage: cameraImageResults.segmentationColorImage,
-                        segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
-                        for: frame
-                    )
-                }
-            } catch {
-                print("Error processing camera image: \(error.localizedDescription)")
-            }
-        }
+             do {
+                 let cameraImageResults = try await processCameraImage(
+                     image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+                 )
+                 guard let cameraImageResults else {
+                     throw ARCameraManagerError.segmentationProcessingFailed
+                 }
+                 await MainActor.run {
+                     self.cameraImageResults = cameraImageResults
+                     
+                     self.outputConsumer?.cameraManager(
+                         self, cameraAspectMultipler: cameraImageResults.cameraAspectMultiplier,
+                         segmentationImage: cameraImageResults.segmentationColorImage,
+                         segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
+                         for: frame
+                     )
+                 }
+             } catch {
+                 print("Error processing camera image: \(error.localizedDescription)")
+             }
+         }
     }
     
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
@@ -202,9 +212,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     func setFrameRate(_ frameRate: Int) {
         self.frameRate = frameRate
     }
-    
+}
+
+// Functions to handle the image processing pipeline
+extension ARCameraManager {
     private func processCameraImage(
-        image: CIImage, deviceOrientation: UIDeviceOrientation,
+        image: CIImage, interfaceOrientation: UIInterfaceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> ARCameraImageResults? {
         guard let cameraPixelBufferPool = cameraPixelBufferPool,
@@ -216,8 +229,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         let originalSize: CGSize = image.extent.size
         let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
-        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForBackCamera(
-            currentDeviceOrientation: deviceOrientation
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
         )
         let inverseOrientation = imageOrientation.inverted()
         
@@ -274,7 +287,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             detectedObjectMap: detectedObjectMap,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
-            deviceOrientation: deviceOrientation,
+            interfaceOrientation: interfaceOrientation,
             originalImageSize: originalSize
         )
         let cameraImageResults = ARCameraImageResults(
@@ -348,7 +361,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
         return additionalPayload
     }
-    
+}
+
+// Functions to handle the mesh processing pipeline
+extension ARCameraManager {
     private func processMeshAnchors(_ anchors: [ARAnchor]) async throws {
         guard let cameraImageResults = cameraImageResults else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
@@ -361,12 +377,21 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         let cameraTransform = cameraImageResults.imageData.cameraTransform
         let cameraIntrinsics = cameraImageResults.imageData.cameraIntrinsics
+        
+        CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
+        let width = CVPixelBufferGetWidth(segmentationPixelBuffer)
+        let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
+        let bpr = CVPixelBufferGetBytesPerRow(segmentationPixelBuffer)
+        defer { CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly) }
+        
+        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        
     }
 }
 
 // Functions to orient and fix the camera and depth frames
 extension ARCameraManager {
-    func setUpPreAllocatedPixelBufferPools(size: CGSize) throws {
+    private func setUpPreAllocatedPixelBufferPools(size: CGSize) throws {
         // Set up the pixel buffer pool for future flattening of camera images
         let cameraPixelBufferPoolAttributes: [String: Any] = [
             kCVPixelBufferPoolMinimumBufferCountKey as String: 5
@@ -406,7 +431,7 @@ extension ARCameraManager {
         return pixelBuffer
     }
     
-    func setupSegmentationPixelBufferPool(size: CGSize) throws {
+    private func setupSegmentationPixelBufferPool(size: CGSize) throws {
         // Set up the pixel buffer pool for future flattening of segmentation images
         let segmentationPixelBufferPoolAttributes: [String: Any] = [
             kCVPixelBufferPoolMinimumBufferCountKey as String: 5

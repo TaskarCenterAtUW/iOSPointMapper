@@ -29,6 +29,8 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
     /// This method will help set up any configuration that depends on the video format image resolution.
     @MainActor
     func setVideoFormatImageResolution(_ imageResolution: CGSize)
+    @MainActor
+    func setOrientation(_ orientation: UIInterfaceOrientation)
 }
 
 /**
@@ -138,14 +140,15 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         constraintChildViewToParent(childView: arView, parentView: subView)
         constraintChildViewToParent(childView: segmentationBoundingFrameView, parentView: subView)
         constraintChildViewToParent(childView: segmentationImageView, parentView: subView)
+
+        arView.session.delegate = arCameraManager
+        arCameraManager.outputConsumer = self
         
         applyDebugIfNeeded()
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
-
-        arView.session.delegate = arCameraManager
-        arCameraManager.outputConsumer = self
+        arCameraManager.setOrientation(getOrientation())
     }
     
     private func constraintChildViewToParent(childView: UIView, parentView: UIView) {
@@ -197,13 +200,19 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    private func isPortrait() -> Bool {
-        // Prefer interface orientation when available (matches UI layout)
+    func getOrientation() -> UIInterfaceOrientation {
         if let io = view.window?.windowScene?.interfaceOrientation {
-            return io.isPortrait
+            return io
         }
         // Fallback for early lifecycle / no window
-        return view.bounds.height >= view.bounds.width
+        if view.bounds.height >= view.bounds.width {
+            return .portrait
+        }
+        return .landscapeLeft
+    }
+    
+    private func isPortrait() -> Bool {
+        return getOrientation().isPortrait
     }
     
     func applyDebugIfNeeded() {
@@ -226,6 +235,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
+        arCameraManager.setOrientation(getOrientation())
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -234,6 +244,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             self.updateFitConstraints()
             self.updateAlignConstraints()
             self.updateAspectRatio()
+            self.arCameraManager.setOrientation(self.getOrientation())
             self.view.layoutIfNeeded()
         })
     }
