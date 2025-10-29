@@ -15,10 +15,15 @@ import simd
 /// The consumer of post-processed camera outputs (e.g., overlay images).
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
-    func cameraManager(_ manager: ARSessionCameraProcessingDelegate,
-                       segmentationImage: CIImage?,
-                       segmentationBoundingFrameImage: CIImage?,
-                       for frame: ARFrame)
+    func cameraManagerImage(_ manager: ARSessionCameraProcessingDelegate,
+                            segmentationImage: CIImage?,
+                            segmentationBoundingFrameImage: CIImage?,
+                            for frame: ARFrame
+    )
+    func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
+                           modelEntityResources: [Int: ModelEntityResource],
+                           for anchors: [ARAnchor]
+    )
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
@@ -85,8 +90,11 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
-    
     private let processQueue = DispatchQueue(label: "ar.host.process.queue")
+    
+    // Mesh-related properties
+    private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
+    private var meshEntities: [Int: ModelEntity] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -268,6 +276,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         videoFormatImageResolution = videoFormat.imageResolution
         // Run the session
         arView.session.run(config, options: [])
+        // Add Anchor Entity
+        arView.scene.addAnchor(anchorEntity)
         // Set the image resolution in the camera manager
         arCameraManager.setVideoFormatImageResolution(videoFormat.imageResolution)
     }
@@ -281,19 +291,73 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         arView.session.pause()
     }
     
-    func cameraManager(_ manager: any ARSessionCameraProcessingDelegate,
+    func cameraManagerImage(_ manager: any ARSessionCameraProcessingDelegate,
                        segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame) {
-        if let segmentationImage = segmentationImage {
-            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
-        } else {
-            self.segmentationImageView.image = nil
-        }
+//        if let segmentationImage = segmentationImage {
+//            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+//        } else {
+//            self.segmentationImageView.image = nil
+//        }
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
         } else {
             self.segmentationBoundingFrameView.image = nil
         }
+    }
+    
+    func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
+                           modelEntityResources: [Int : ModelEntityResource],
+                           for anchors: [ARAnchor]) {
+        for (anchorIndex, modelEntityResource) in modelEntityResources {
+            let modelEntity = createMeshEntity(
+                triangles: modelEntityResource.triangles,
+                color: modelEntityResource.color,
+                name: modelEntityResource.name
+            )
+            guard let modelEntity = modelEntity else {
+                continue
+            }
+            if let existingEntity = meshEntities[anchorIndex] {
+                existingEntity.model = modelEntity.model
+            } else {
+                meshEntities[anchorIndex] = modelEntity
+                anchorEntity.addChild(modelEntity)
+            }
+        }
+    }
+    
+    private func createMeshEntity(
+        triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)],
+        color: UIColor = .green,
+        opacity: Float = 0.4,
+        name: String = "Mesh"
+    ) -> ModelEntity? {
+        if (triangles.isEmpty) {
+            return nil
+        }
+        
+        var positions: [SIMD3<Float>] = []
+        var indices: [UInt32] = []
+
+        for (i, triangle) in triangles.enumerated() {
+            let baseIndex = UInt32(i * 3)
+            positions.append(triangle.0)
+            positions.append(triangle.1)
+            positions.append(triangle.2)
+            indices.append(contentsOf: [baseIndex, baseIndex + 1, baseIndex + 2])
+        }
+
+        var meshDescriptors = MeshDescriptor(name: name)
+        meshDescriptors.positions = MeshBuffers.Positions(positions)
+        meshDescriptors.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [meshDescriptors]) else {
+            return nil
+        }
+
+        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
+        let entity = ModelEntity(mesh: mesh, materials: [material])
+        return entity
     }
 }
 

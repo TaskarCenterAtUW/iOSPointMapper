@@ -86,6 +86,7 @@ struct ARContentView: View {
             navigateToAnnotationView = false
             
             segmentationPipeline.setSelectionClasses(selection)
+            segmentationMeshPiepline.setSelectionClasses(selection)
 //                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
                 try manager.configure(

@@ -27,10 +27,14 @@ enum SegmentationMeshPipelineError: Error, LocalizedError {
     }
 }
 
+struct ModelEntityResource {
+    let triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]
+    let color: UIColor
+    let name: String
+}
+
 struct SegmentationMeshPipelineResults {
-    let classModelEntities: [Int: ModelEntity]
-    let classColors: [Int: UIColor]
-    let classNames: [Int: String]
+    let classModelEntityResources: [Int: ModelEntityResource]
 }
 
 /**
@@ -159,9 +163,9 @@ final class SegmentationMeshPipeline: ObservableObject {
                     continue
                 }
                 let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
-                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
-                    continue
-                }
+//                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
+//                    continue
+//                }
                 
                 let edge1 = worldVertices[1] - worldVertices[0]
                 let edge2 = worldVertices[2] - worldVertices[0]
@@ -171,30 +175,28 @@ final class SegmentationMeshPipeline: ObservableObject {
                 triangleNormalArrays[segmentationClassIndex].append(normal)
             }
         }
+        // Temp
+        var totalTriangles = 0
         
-        var classModelEntities: [Int: ModelEntity] = [:]
-        var classColors: [Int: UIColor] = [:]
-        var classNames: [Int: String] = [:]
+        var classModelEntityResources: [Int: ModelEntityResource] = [:]
         for index in 0..<self.selectionClasses.count {
             let triangles = triangleArrays[index]
+            guard !triangles.isEmpty else {
+                continue
+            }
+            totalTriangles += triangles.count
             let color = UIColor(ciColor: self.selectionClassColors[index])
             let name = self.selectionClassNames[index]
-            
-            guard let meshEntity = createMeshEntity(
+            let modelEntityResource: ModelEntityResource = ModelEntityResource(
                 triangles: triangles,
                 color: color,
                 name: name
-            ) else {
-                continue
-            }
-            classModelEntities[self.selectionClasses[index]] = meshEntity
-            classColors[self.selectionClasses[index]] = color
-            classNames[self.selectionClasses[index]] = name
+            )
+            classModelEntityResources[self.selectionClasses[index]] = modelEntityResource
         }
+        print("SegmentationMeshPipeline: Generated total \(totalTriangles) triangles across \(classModelEntityResources.count) classes.")
         
-        return SegmentationMeshPipelineResults(
-            classModelEntities: classModelEntities, classColors: classColors, classNames: classNames
-        )
+        return SegmentationMeshPipelineResults(classModelEntityResources: classModelEntityResources)
     }
 }
 
@@ -280,6 +282,9 @@ extension SegmentationMeshPipeline {
         return value
     }
     
+    /**
+     NOTE: May not be able to use this as it seemingly needs to run on the main thread.
+     */
     private func createMeshEntity(
         triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)],
         color: UIColor = .green,
@@ -308,7 +313,7 @@ extension SegmentationMeshPipeline {
             return nil
         }
 
-        var material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
+        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
         let entity = ModelEntity(mesh: mesh, materials: [material])
         return entity
     }

@@ -104,26 +104,17 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    let anchorEntity: AnchorEntity
-    var classModelEntities: [Int: ModelEntity] = [:]
-    var classColors: [Int: UIColor] = [:]
-    var classNames: [Int: String] = [:]
+    var classModelEntityResources: [Int: ModelEntityResource]
     var lastUpdated: TimeInterval
     
     var meshAnchors: [ARMeshAnchor] = []
     
     init(
-        anchorEntity: AnchorEntity,
-        classModelEntities: [Int: ModelEntity] = [:],
-        classColors: [Int: UIColor] = [:],
-        classNames: [Int: String] = [:],
+        classModelEntityResources: [Int: ModelEntityResource],
         lastUpdated: TimeInterval,
         meshAnchors: [ARMeshAnchor] = []
     ) {
-        self.anchorEntity = anchorEntity
-        self.classModelEntities = classModelEntities
-        self.classColors = classColors
-        self.classNames = classNames
+        self.classModelEntityResources = classModelEntityResources
         self.lastUpdated = lastUpdated
         self.meshAnchors = meshAnchors
     }
@@ -225,8 +216,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         results.confidenceImage = confidenceImage
                         return results
                      }()
-                     
-                     self.outputConsumer?.cameraManager(
+                     self.outputConsumer?.cameraManagerImage(
                          self, segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
@@ -245,13 +235,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         // TODO: Throttle with frame rate if needed
         Task {
             do {
-                initializeMeshResultsIfNeeded()
-                guard let anchorEntity = cameraMeshResults?.anchorEntity else {
-                    throw ARCameraManagerError.anchorEntityNotCreated
-                }
-                let cameraMeshResults = try await processMeshAnchors(anchors, anchorEntity: anchorEntity)
+                let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
+                    self.outputConsumer?.cameraManagerMesh(
+                        self, modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        for: anchors
+                    )
                 }
             } catch {
                 print("Error processing anchors: \(error.localizedDescription)")
@@ -266,13 +256,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         // TODO: Throttle with frame rate if needed
         Task {
             do {
-                initializeMeshResultsIfNeeded()
-                guard let anchorEntity = cameraMeshResults?.anchorEntity else {
-                    throw ARCameraManagerError.anchorEntityNotCreated
-                }
-                let cameraMeshResults = try await processMeshAnchors(anchors, anchorEntity: anchorEntity)
+                let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
+                    self.outputConsumer?.cameraManagerMesh(
+                        self, modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        for: anchors
+                    )
                 }
             } catch {
                 print("Error processing anchors: \(error.localizedDescription)")
@@ -432,7 +422,7 @@ extension ARCameraManager {
 
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
-    private func processMeshAnchors(_ anchors: [ARAnchor], anchorEntity: AnchorEntity) async throws -> ARCameraMeshResults {
+    private func processMeshAnchors(_ anchors: [ARAnchor]) async throws -> ARCameraMeshResults {
         guard let segmentationMeshPipeline = segmentationMeshPipeline else {
             throw ARCameraManagerError.segmentationMeshNotConfigured
         }
@@ -449,21 +439,7 @@ extension ARCameraManager {
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
         return ARCameraMeshResults(
-            anchorEntity: anchorEntity,
-            classModelEntities: segmentationMeshResults.classModelEntities,
-            classColors: segmentationMeshResults.classColors,
-            classNames: segmentationMeshResults.classNames,
-            lastUpdated: Date().timeIntervalSince1970
-        )
-    }
-    
-    private func initializeMeshResultsIfNeeded() {
-        guard cameraMeshResults == nil else {
-            return
-        }
-        let anchorEntity = AnchorEntity(world: .zero)
-        cameraMeshResults = ARCameraMeshResults(
-            anchorEntity: anchorEntity,
+            classModelEntityResources: segmentationMeshResults.classModelEntityResources,
             lastUpdated: Date().timeIntervalSince1970
         )
     }
