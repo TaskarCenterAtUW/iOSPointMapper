@@ -166,6 +166,7 @@ struct SetupView: View {
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
+    @StateObject private var segmentationMeshPipeline: SegmentationMeshPipeline = SegmentationMeshPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
     var changesetInfoTip = ChangesetInfoTip()
@@ -323,6 +324,7 @@ struct SetupView: View {
         }
         .environmentObject(self.sharedImageData)
         .environmentObject(self.segmentationPipeline)
+        .environmentObject(self.segmentationMeshPipeline)
         .environmentObject(self.depthModel)
 //        .environment(\.colorScheme, .dark)
     }

@@ -55,6 +55,7 @@ struct ARContentView: View {
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
+    @EnvironmentObject var segmentationMeshPiepline: SegmentationMeshPipeline
     @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
     
@@ -87,7 +88,9 @@ struct ARContentView: View {
             segmentationPipeline.setSelectionClasses(selection)
 //                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
-                try manager.configure(segmentationPipeline: segmentationPipeline)
+                try manager.configure(
+                    segmentationPipeline: segmentationPipeline, segmentationMeshPipeline: segmentationMeshPiepline
+                )
             } catch {
                 managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
