@@ -101,8 +101,8 @@ struct ARCameraMeshResults {
     var meshAnchors: [ARMeshAnchor] = []
     
     let anchorEntity: AnchorEntity
-    var modelEntities: [UUID: ModelEntity] = [:]
-    var assignedColors: [UUID: UIColor] = [:] 
+    var classModelEntities: [Int: ModelEntity] = [:]
+    var classColors: [Int: UIColor] = [:]
     var lastUpdated: TimeInterval
 }
 
@@ -263,7 +263,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.segmentationNotConfigured
         }
         let originalSize: CGSize = image.extent.size
-        let croppedSize = SegmentationConfig.cocoCustom11Config.inputSize
+        let croppedSize = SegmentationConfig.mapillaryCustom11Config.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

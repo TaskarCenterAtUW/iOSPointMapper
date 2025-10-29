@@ -7,7 +7,9 @@
 
 import SwiftUI
 
-// Constants related to the supported classes
+/**
+ Global Constants used across the app.
+ */
 struct Constants {
     // Supported Classes
     static let SelectedSegmentationConfig: SegmentationClassConfig = SegmentationConfig.mapillaryCustom11Config

@@ -6,6 +6,7 @@
 //
 
 import CoreImage
+import ARKit
 
 struct DimensionBasedMaskBounds {
     var minX: Float
@@ -27,9 +28,14 @@ struct SegmentationClass {
     let defaultFrameUnionWeight: Float // Weight for the default frame when calculating the union of masks
     let lastFrameUnionWeight: Float // Weight for the last frame when calculating the union of masks
     
+    // Constants related to mesh
+    let meshClassification: [ARMeshClassification]? // Optional mesh classification for the segmentation class
+    
     init(name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil,
-         unionOfMasksThreshold: Float = 3, defaultFrameWeight: Float = 1, lastFrameWeight: Float = 2) {
+         unionOfMasksThreshold: Float = 3, defaultFrameWeight: Float = 1, lastFrameWeight: Float = 2,
+         meshClassification: [ARMeshClassification]? = nil
+    ) {
         self.name = name
         self.grayscaleValue = grayscaleValue
         self.labelValue = labelValue
@@ -39,6 +45,7 @@ struct SegmentationClass {
         self.unionOfMasksThreshold = unionOfMasksThreshold
         self.defaultFrameUnionWeight = defaultFrameWeight
         self.lastFrameUnionWeight = lastFrameWeight
+        self.meshClassification = meshClassification
     }
 }
 

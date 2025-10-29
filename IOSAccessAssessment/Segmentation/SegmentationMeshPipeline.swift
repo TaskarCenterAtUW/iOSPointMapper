@@ -28,8 +28,9 @@ enum SegmentationMeshPipelineError: Error, LocalizedError {
 }
 
 struct SegmentationMeshPipelineResults {
-    var modelEntities: [UUID: ModelEntity] = [:]
-    var assignedColors: [UUID: UIColor] = [:]
+    let classModelEntities: [Int: ModelEntity]
+    let classColors: [Int: UIColor]
+    let classNames: [Int: String]
 }
 
 /**
@@ -43,6 +44,9 @@ final class SegmentationMeshPipeline: ObservableObject {
     private var selectionClassLabels: [UInt8] = []
     private var selectionClassGrayscaleValues: [Float] = []
     private var selectionClassColors: [CIColor] = []
+    private var selectionClassNames: [String] = []
+    private var selectionClassMeshClassifications: [[ARMeshClassification]?] = []
+    private var selectionClassLabelToIndexMap: [UInt8: Int] = [:]
     
     func reset() {
         self.isProcessing = false
@@ -54,6 +58,16 @@ final class SegmentationMeshPipeline: ObservableObject {
         self.selectionClassLabels = selectionClasses.map { Constants.SelectedSegmentationConfig.labels[$0] }
         self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedSegmentationConfig.grayscaleValues[$0] }
         self.selectionClassColors = selectionClasses.map { Constants.SelectedSegmentationConfig.colors[$0] }
+        self.selectionClassNames = selectionClasses.map { Constants.SelectedSegmentationConfig.classNames[$0] }
+        self.selectionClassMeshClassifications = selectionClasses.map {
+            Constants.SelectedSegmentationConfig.classes[$0].meshClassification ?? nil
+        }
+        
+        var selectionClassLabelToIndexMap: [UInt8: Int] = [:]
+        for (index, label) in self.selectionClassLabels.enumerated() {
+            selectionClassLabelToIndexMap[label] = index
+        }
+        self.selectionClassLabelToIndexMap = selectionClassLabelToIndexMap
     }
     
     /**
@@ -79,7 +93,7 @@ final class SegmentationMeshPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            return try self.processMesh(with: anchors, segmentationImage: segmentationImage,
+            return try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
                 cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
         }
         
@@ -92,7 +106,7 @@ final class SegmentationMeshPipeline: ObservableObject {
      
         Note: Assumes that the segmentationImage dimensions match the camera image dimensions.
      */
-    private func processMesh(
+    private func processMeshAnchors(
         with anchors: [ARAnchor], segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws -> SegmentationMeshPipelineResults {
@@ -108,9 +122,10 @@ final class SegmentationMeshPipeline: ObservableObject {
         
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
         
-        var triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)] = []
-        var triangleNormals: [SIMD3<Float>] = []
+        var triangleArrays: [[(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]] = self.selectionClasses.map { _ in [] }
+        var triangleNormalArrays: [[SIMD3<Float>]] = self.selectionClasses.map { _ in [] }
         
+        // Iterate through each mesh anchor and process its geometry
         for meshAnchor in meshAnchors {
             let geometry = meshAnchor.geometry
             let transform = meshAnchor.transform
@@ -140,19 +155,72 @@ final class SegmentationMeshPipeline: ObservableObject {
                     width: width, height: height, bytesPerRow: bpr) else {
                     continue
                 }
+                guard let segmentationClassIndex = self.selectionClassLabelToIndexMap[segmentationValue] else {
+                    continue
+                }
+                let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
+                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
+                    continue
+                }
                 
                 let edge1 = worldVertices[1] - worldVertices[0]
                 let edge2 = worldVertices[2] - worldVertices[0]
                 let normal = normalize(cross(edge1, edge2))
                 
-                triangles.append((worldVertices[0], worldVertices[1], worldVertices[2]))
-                triangleNormals.append(normal)
+                triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
+                triangleNormalArrays[segmentationClassIndex].append(normal)
             }
         }
         
-        return SegmentationMeshPipelineResults(modelEntities: [:], assignedColors: [:])
+        var classModelEntities: [Int: ModelEntity] = [:]
+        var classColors: [Int: UIColor] = [:]
+        var classNames: [Int: String] = [:]
+        for index in 0..<self.selectionClasses.count {
+            let triangles = triangleArrays[index]
+            let color = UIColor(ciColor: self.selectionClassColors[index])
+            let name = self.selectionClassNames[index]
+            
+            guard let meshEntity = createMeshEntity(
+                triangles: triangles,
+                color: color,
+                name: name
+            ) else {
+                continue
+            }
+            classModelEntities[self.selectionClasses[index]] = meshEntity
+            classColors[self.selectionClasses[index]] = color
+            classNames[self.selectionClasses[index]] = name
+        }
+        
+        return SegmentationMeshPipelineResults(
+            classModelEntities: classModelEntities, classColors: classColors, classNames: classNames
+        )
+    }
+}
+
+/**
+ Helper methods to retrieve mesh-related data.
+ 
+ NOTE: It may be prudent to move these to a separate utility file, or add these as extensions to ARMeshGeometry.
+ */
+extension SegmentationMeshPipeline {
+    private func getClassification(at faceIndex: Int, classifications: ARGeometrySource) -> ARMeshClassification {
+        let classificationAddress = classifications.buffer.contents().advanced(by: classifications.offset + (classifications.stride * Int(faceIndex)))
+        let classificationValue = Int(classificationAddress.assumingMemoryBound(to: UInt8.self).pointee)
+        return ARMeshClassification(rawValue: classificationValue) ?? .none
     }
     
+    private func getVertex(at vertexIndex: Int, vertices: ARGeometrySource) -> SIMD3<Float> {
+        let vertexPointer = vertices.buffer.contents().advanced(by: vertices.offset + (vertices.stride * Int(vertexIndex)))
+        let vertex = vertexPointer.assumingMemoryBound(to: SIMD3<Float>.self).pointee
+        return vertex
+    }
+}
+
+/**
+ Helper methods to process 3D points, polygons and segmentation data.
+ */
+extension SegmentationMeshPipeline {
     private func getWorldVertex(vertex: SIMD3<Float>, anchorTransform: simd_float4x4) -> SIMD3<Float> {
         let worldVertex4D = (anchorTransform * SIMD4(vertex.x, vertex.y, vertex.z, 1.0))
         return SIMD3(worldVertex4D.x, worldVertex4D.y, worldVertex4D.z)
@@ -211,23 +279,37 @@ final class SegmentationMeshPipeline: ObservableObject {
         let value = ptr[iy * bytesPerRow + ix]
         return value
     }
-}
-
-/**
- Helper methods to retrieve mesh-related data.
- 
- NOTE: It may be prudent to move these to a separate utility file, or add these as extensions to ARMeshGeometry.
- */
-extension SegmentationMeshPipeline {
-    private func getClassification(at faceIndex: Int, classifications: ARGeometrySource) -> ARMeshClassification {
-        let classificationAddress = classifications.buffer.contents().advanced(by: classifications.offset + (classifications.stride * Int(faceIndex)))
-        let classificationValue = Int(classificationAddress.assumingMemoryBound(to: UInt8.self).pointee)
-        return ARMeshClassification(rawValue: classificationValue) ?? .none
-    }
     
-    private func getVertex(at vertexIndex: Int, vertices: ARGeometrySource) -> SIMD3<Float> {
-        let vertexPointer = vertices.buffer.contents().advanced(by: vertices.offset + (vertices.stride * Int(vertexIndex)))
-        let vertex = vertexPointer.assumingMemoryBound(to: SIMD3<Float>.self).pointee
-        return vertex
+    private func createMeshEntity(
+        triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)],
+        color: UIColor = .green,
+        opacity: Float = 0.4,
+        name: String = "Mesh"
+    ) -> ModelEntity? {
+        if (triangles.isEmpty) {
+            return nil
+        }
+        
+        var positions: [SIMD3<Float>] = []
+        var indices: [UInt32] = []
+
+        for (i, triangle) in triangles.enumerated() {
+            let baseIndex = UInt32(i * 3)
+            positions.append(triangle.0)
+            positions.append(triangle.1)
+            positions.append(triangle.2)
+            indices.append(contentsOf: [baseIndex, baseIndex + 1, baseIndex + 2])
+        }
+
+        var meshDescriptors = MeshDescriptor(name: name)
+        meshDescriptors.positions = MeshBuffers.Positions(positions)
+        meshDescriptors.primitives = .triangles(indices)
+        guard let mesh = try? MeshResource.generate(from: [meshDescriptors]) else {
+            return nil
+        }
+
+        var material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
+        let entity = ModelEntity(mesh: mesh, materials: [material])
+        return entity
     }
 }
