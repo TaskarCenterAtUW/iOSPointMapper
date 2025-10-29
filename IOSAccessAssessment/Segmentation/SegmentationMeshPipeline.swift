@@ -131,6 +131,7 @@ final class SegmentationMeshPipeline: ObservableObject {
         
         // Iterate through each mesh anchor and process its geometry
         for meshAnchor in meshAnchors {
+            let start = DispatchTime.now()
             let geometry = meshAnchor.geometry
             let transform = meshAnchor.transform
             
@@ -163,9 +164,9 @@ final class SegmentationMeshPipeline: ObservableObject {
                     continue
                 }
                 let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
-//                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
-//                    continue
-//                }
+                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
+                    continue
+                }
                 
                 let edge1 = worldVertices[1] - worldVertices[0]
                 let edge2 = worldVertices[2] - worldVertices[0]
@@ -174,9 +175,9 @@ final class SegmentationMeshPipeline: ObservableObject {
                 triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
                 triangleNormalArrays[segmentationClassIndex].append(normal)
             }
+            let end = DispatchTime.now()
+            print("SegmentationMeshPipeline for anchor with \(geometry.faces.count) faces took \((end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000) ms")
         }
-        // Temp
-        var totalTriangles = 0
         
         var classModelEntityResources: [Int: ModelEntityResource] = [:]
         for index in 0..<self.selectionClasses.count {
@@ -184,7 +185,6 @@ final class SegmentationMeshPipeline: ObservableObject {
             guard !triangles.isEmpty else {
                 continue
             }
-            totalTriangles += triangles.count
             let color = UIColor(ciColor: self.selectionClassColors[index])
             let name = self.selectionClassNames[index]
             let modelEntityResource: ModelEntityResource = ModelEntityResource(
@@ -194,7 +194,6 @@ final class SegmentationMeshPipeline: ObservableObject {
             )
             classModelEntityResources[self.selectionClasses[index]] = modelEntityResource
         }
-        print("SegmentationMeshPipeline: Generated total \(totalTriangles) triangles across \(classModelEntityResources.count) classes.")
         
         return SegmentationMeshPipelineResults(classModelEntityResources: classModelEntityResources)
     }

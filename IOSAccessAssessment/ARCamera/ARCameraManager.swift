@@ -141,6 +141,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
+    var meshFrameRate: Int = 2
+    var lastMeshFrameTime: TimeInterval = 0
     
     // Properties for processing camera and depth frames
     var ciContext = CIContext(options: nil)
@@ -442,6 +444,14 @@ extension ARCameraManager {
             classModelEntityResources: segmentationMeshResults.classModelEntityResources,
             lastUpdated: Date().timeIntervalSince1970
         )
+    }
+    
+    private func checkMeshWithinMeshFrameRate(currentTime: TimeInterval) -> Bool {
+        let withinFrameRate = currentTime - lastMeshFrameTime >= (1.0 / Double(meshFrameRate))
+        if withinFrameRate {
+            lastMeshFrameTime = currentTime
+        }
+        return withinFrameRate
     }
 }
 
