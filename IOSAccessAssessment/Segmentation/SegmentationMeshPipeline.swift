@@ -97,8 +97,10 @@ final class SegmentationMeshPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            return try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
-                cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
+            return try Foundation.autoreleasepool {
+                try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
+                    cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
+            }
         }
         
         self.currentTask = newTask
@@ -131,7 +133,6 @@ final class SegmentationMeshPipeline: ObservableObject {
         
         // Iterate through each mesh anchor and process its geometry
         for meshAnchor in meshAnchors {
-            let start = DispatchTime.now()
             let geometry = meshAnchor.geometry
             let transform = meshAnchor.transform
             
@@ -175,8 +176,6 @@ final class SegmentationMeshPipeline: ObservableObject {
                 triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
                 triangleNormalArrays[segmentationClassIndex].append(normal)
             }
-            let end = DispatchTime.now()
-            print("SegmentationMeshPipeline for anchor with \(geometry.faces.count) faces took \((end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000) ms")
         }
         
         var classModelEntityResources: [Int: ModelEntityResource] = [:]

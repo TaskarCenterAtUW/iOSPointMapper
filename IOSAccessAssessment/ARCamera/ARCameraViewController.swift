@@ -294,11 +294,9 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     func cameraManagerImage(_ manager: any ARSessionCameraProcessingDelegate,
                        segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame) {
-//        if let segmentationImage = segmentationImage {
-//            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
-//        } else {
-//            self.segmentationImageView.image = nil
-//        }
+        if let segmentationImage = segmentationImage {
+            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+        }
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
         } else {

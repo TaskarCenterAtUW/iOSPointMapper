@@ -120,6 +120,14 @@ struct ARCameraMeshResults {
     }
 }
 
+struct ARCameraCache {
+    var cameraImageSize: CGSize?
+    
+    init(cameraImageSize: CGSize? = nil) {
+        self.cameraImageSize = cameraImageSize
+    }
+}
+
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -141,7 +149,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
-    var meshFrameRate: Int = 2
+    var meshFrameRate: Int = 15
     var lastMeshFrameTime: TimeInterval = 0
     
     // Properties for processing camera and depth frames
@@ -157,6 +165,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     @Published var cameraImageResults: ARCameraImageResults?
     @Published var cameraMeshResults: ARCameraMeshResults?
+    var cameraCache: ARCameraCache = ARCameraCache()
     
     override init() {
         super.init()
@@ -234,6 +243,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
+//        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+//            return
+//        }
         // TODO: Throttle with frame rate if needed
         Task {
             do {
@@ -255,6 +267,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
+//        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+//            return
+//        }
         // TODO: Throttle with frame rate if needed
         Task {
             do {
@@ -336,9 +351,13 @@ extension ARCameraManager {
         )
         
         // Create segmentation frame
-        let segmentationBoundingFrameImage = getSegmentationBoundingFrame(
-            imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
-        )
+        var segmentationBoundingFrameImage: CIImage? = nil
+        if (cameraCache.cameraImageSize == nil || cameraCache.cameraImageSize != originalSize) {
+            segmentationBoundingFrameImage = getSegmentationBoundingFrame(
+                imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
+            )
+            cameraCache.cameraImageSize = originalSize
+        }
         let additionalPayload = getAdditionalPayload(
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
         )
@@ -395,6 +414,9 @@ extension ARCameraManager {
         return alignedObjectMap
     }
     
+    /**
+     TODO: Cache the bounding frame image for performance improvement, and only update if frame size or orientation changes.
+     */
     private func getSegmentationBoundingFrame(
         imageSize: CGSize, frameSize: CGSize, orientation: CGImagePropertyOrientation
     ) -> CIImage? {

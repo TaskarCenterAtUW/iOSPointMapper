@@ -19,3 +19,6 @@ Frameworks/*
 *.mlmodel
 
 *.mlperf
+
+## Traces
+traces/
