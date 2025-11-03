@@ -7,52 +7,164 @@
 import ARKit
 import RealityKit
 
+@MainActor
+struct MeshVertex {
+    var position: SIMD3<Float> = .zero
+    var color: UInt32 = .zero
+}
+
+extension MeshVertex {
+    static var vertexAttributes: [LowLevelMesh.Attribute] = [
+        .init(semantic: .position, format: .float3, offset: MemoryLayout<Self>.offset(of: \.position)!),
+        .init(semantic: .color, format: .uchar4Normalized_bgra, offset: MemoryLayout<Self>.offset(of: \.color)!)
+    ]
+    
+    static var vertexLayouts: [LowLevelMesh.Layout] = [
+        .init(bufferIndex: 0, bufferStride: MemoryLayout<Self>.stride)
+    ]
+    
+    static var descriptor: LowLevelMesh.Descriptor {
+        var desc = LowLevelMesh.Descriptor()
+        desc.vertexAttributes = MeshVertex.vertexAttributes
+        desc.vertexLayouts = MeshVertex.vertexLayouts
+        desc.indexType = .uint32
+        return desc
+    }
+}
+
+@MainActor
 final class MeshRecord {
     let entity: ModelEntity
-    let mesh: MeshResource
-    // Reused CPU arrays
-    var positions: [SIMD3<Float>] = []
-    var indices: [UInt32] = []
+    let mesh: LowLevelMesh
     var name: String
     
     init(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)], color: UIColor, opacity: Float, name: String) throws {
+        self.mesh = try MeshRecord.generateMesh(with: triangles)
+        self.entity = try MeshRecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
         self.name = name
-
-        var base: UInt32 = 0
-        for t in triangles {
-            positions.append(t.0); positions.append(t.1); positions.append(t.2)
-            indices.append(base); indices.append(base &+ 1); indices.append(base &+ 2)
-            base &+= 3
-        }
-        
-        var meshDescriptor = MeshDescriptor(name: name)
-        meshDescriptor.positions = .init(positions)
-        meshDescriptor.primitives = .triangles(indices)
-        self.mesh = try MeshResource.generate(from: [meshDescriptor])
-
-        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
-        self.entity = ModelEntity(mesh: mesh, materials: [material])
     }
     
     func replace(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws {
-        // Reuse capacity
-        positions.removeAll(keepingCapacity: true)
-        indices.removeAll(keepingCapacity: true)
-        positions.reserveCapacity(triangles.count * 3)
-        indices.reserveCapacity(triangles.count * 3)
-        
-        var base: UInt32 = 0
-        for t in triangles {
-            positions.append(t.0); positions.append(t.1); positions.append(t.2)
-            indices.append(base); indices.append(base &+ 1); indices.append(base &+ 2)
-            base &+= 3
+        MeshRecord.updateMesh(mesh: self.mesh, with: triangles)
+    }
+    
+    static func generateMesh(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws -> LowLevelMesh {
+        var desc = MeshVertex.descriptor
+        // Assign capacity based on triangle count (allocate extra space for future updates)
+        desc.vertexCapacity = triangles.count * 3 * 2
+        desc.indexCapacity = triangles.count * 3 * 2
+        let mesh = try LowLevelMesh(descriptor: desc)
+        mesh.withUnsafeMutableBytes(bufferIndex: 0) { rawBytes in
+            let vertices = rawBytes.bindMemory(to: MeshVertex.self)
+            var vertexIndex = 0
+            for triangle in triangles {
+                vertices[vertexIndex + 0].position = triangle.0
+                vertices[vertexIndex + 1].position = triangle.1
+                vertices[vertexIndex + 2].position = triangle.2
+                vertexIndex += 3
+            }
+        }
+        mesh.withUnsafeMutableIndices { rawIndices in
+            let indices = rawIndices.bindMemory(to: UInt32.self)
+            var index = 0
+            var vertexBase: UInt32 = 0
+            for _ in triangles {
+                indices[index + 0] = vertexBase + 0
+                indices[index + 1] = vertexBase + 1
+                indices[index + 2] = vertexBase + 2
+                index += 3
+                vertexBase &+= 3
+            }
         }
         
-        var desc = MeshDescriptor(name: name)
-        desc.positions = .init(positions)
-        desc.primitives = .triangles(indices)
+        var meshBounds = BoundingBox(min: .zero, max: .zero)
+        mesh.withUnsafeBytes(bufferIndex: 0) { rawBytes in
+            let vertices = rawBytes.bindMemory(to: MeshVertex.self)
+            meshBounds = computeBounds(UnsafeBufferPointer(start: vertices.baseAddress, count: triangles.count * 3), count: triangles.count * 3)
+        }
+        mesh.parts.replaceAll([
+            LowLevelMesh.Part(
+                indexCount: triangles.count * 3,
+                topology: .triangle,
+                bounds: meshBounds
+            )
+        ])
+        return mesh
+    }
+    
+    static func updateMesh(mesh: LowLevelMesh, with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) {
+        mesh.withUnsafeMutableBytes(bufferIndex: 0) { rawBytes in
+            let vertices = rawBytes.bindMemory(to: MeshVertex.self)
+            var vertexIndex = 0
+            for triangle in triangles {
+                vertices[vertexIndex + 0].position = triangle.0
+                vertices[vertexIndex + 1].position = triangle.1
+                vertices[vertexIndex + 2].position = triangle.2
+                vertexIndex += 3
+            }
+        }
+        mesh.withUnsafeMutableIndices { rawIndices in
+            let indices = rawIndices.bindMemory(to: UInt32.self)
+            var index = 0
+            var vertexBase: UInt32 = 0
+            for _ in triangles {
+                indices[index + 0] = vertexBase + 0
+                indices[index + 1] = vertexBase + 1
+                indices[index + 2] = vertexBase + 2
+                index += 3
+                vertexBase &+= 3
+            }
+        }
         
-        let newMesh = try MeshResource.generate(from: [desc])
-        self.entity.model?.mesh = newMesh
+        var meshBounds = BoundingBox(min: .zero, max: .zero)
+        mesh.withUnsafeBytes(bufferIndex: 0) { rawBytes in
+            let vertices = rawBytes.bindMemory(to: MeshVertex.self)
+            meshBounds = computeBounds(UnsafeBufferPointer(start: vertices.baseAddress, count: triangles.count * 3), count: triangles.count * 3)
+        }
+        mesh.parts.replaceAll([
+            LowLevelMesh.Part(
+                indexCount: triangles.count * 3,
+                topology: .triangle,
+                bounds: meshBounds
+            )
+        ])
+    }
+
+    
+    static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
+        let resource = try MeshResource(from: mesh)
+
+        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
+        let modelComponent = ModelComponent(mesh: resource, materials: [material])
+
+
+        let entity = ModelEntity(mesh: resource, materials: [material])
+        entity.name = name
+        return entity
+    }
+    
+    @inline(__always)
+    static func computeBounds(_ verts: UnsafeBufferPointer<MeshVertex>, count: Int) -> BoundingBox {
+        guard count > 0 else { return BoundingBox(min: .zero, max: .zero) }
+
+        var minV = SIMD3<Float>(  Float.greatestFiniteMagnitude,
+                                  Float.greatestFiniteMagnitude,
+                                  Float.greatestFiniteMagnitude)
+        var maxV = SIMD3<Float>( -Float.greatestFiniteMagnitude,
+                                 -Float.greatestFiniteMagnitude,
+                                 -Float.greatestFiniteMagnitude)
+
+        for i in 0..<count {
+            let p = verts[i].position
+            minV = simd_min(minV, p)
+            maxV = simd_max(maxV, p)
+        }
+
+        // Small padding so tiny numerical changes don’t get culled
+        let eps: Float = 0.005
+        minV -= SIMD3<Float>(repeating: eps)
+        maxV += SIMD3<Float>(repeating: eps)
+        return BoundingBox(min: minV,
+                           max: maxV)
     }
 }

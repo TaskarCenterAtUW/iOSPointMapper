@@ -243,9 +243,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
-//        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
-//            return
-//        }
+        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+            return
+        }
         // TODO: Throttle with frame rate if needed
         Task {
             do {
@@ -267,9 +267,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard isConfigured else {
             return
         }
-//        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
-//            return
-//        }
+        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+            return
+        }
         // TODO: Throttle with frame rate if needed
         Task {
             do {
