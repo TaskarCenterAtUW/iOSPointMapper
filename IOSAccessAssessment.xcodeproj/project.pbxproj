@@ -57,6 +57,7 @@
 		A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
+		A3DA4DA32EB82EA5005BB812 /* MeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
@@ -184,6 +185,7 @@
 		A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionView.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRecord.swift; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
@@ -506,6 +508,7 @@
 		A3FFAA762DE01631002B99BD /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */,
 				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
 				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
 			);
@@ -771,6 +774,7 @@
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
+				A3DA4DA32EB82EA5005BB812 /* MeshRecord.swift in Sources */,
 				A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */,
 				A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,

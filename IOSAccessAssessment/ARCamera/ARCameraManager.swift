@@ -352,7 +352,8 @@ extension ARCameraManager {
         
         // Create segmentation frame
         var segmentationBoundingFrameImage: CIImage? = nil
-        if (cameraCache.cameraImageSize == nil || cameraCache.cameraImageSize != originalSize) {
+        if (cameraCache.cameraImageSize == nil || cameraCache.cameraImageSize?.width != originalSize.width ||
+            cameraCache.cameraImageSize?.height != originalSize.height) {
             segmentationBoundingFrameImage = getSegmentationBoundingFrame(
                 imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
             )

@@ -94,7 +94,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [Int: ModelEntity] = [:]
+    private var meshEntities: [Int: MeshRecord] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -296,11 +296,11 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                        for frame: ARFrame) {
         if let segmentationImage = segmentationImage {
             self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+        } else {
+            self.segmentationImageView.image = nil
         }
         if let boundingFrameImage = segmentationBoundingFrameImage {
             self.segmentationBoundingFrameView.image = UIImage(ciImage: boundingFrameImage)
-        } else {
-            self.segmentationBoundingFrameView.image = nil
         }
     }
     
@@ -308,19 +308,25 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            modelEntityResources: [Int : ModelEntityResource],
                            for anchors: [ARAnchor]) {
         for (anchorIndex, modelEntityResource) in modelEntityResources {
-            let modelEntity = createMeshEntity(
-                triangles: modelEntityResource.triangles,
-                color: modelEntityResource.color,
-                name: modelEntityResource.name
-            )
-            guard let modelEntity = modelEntity else {
-                continue
-            }
-            if let existingEntity = meshEntities[anchorIndex] {
-                existingEntity.model = modelEntity.model
+            if let existingMeshRecord = meshEntities[anchorIndex] {
+                // Update existing mesh entity
+                do {
+                    try existingMeshRecord.replace(with: modelEntityResource.triangles)
+                } catch {
+                    print("Error updating mesh entity: \(error)")
+                }
             } else {
-                meshEntities[anchorIndex] = modelEntity
-                anchorEntity.addChild(modelEntity)
+                // Create new mesh entity
+                do {
+                    let meshRecord = try MeshRecord(
+                        with: modelEntityResource.triangles,
+                        color: modelEntityResource.color, opacity: 0.7, name: modelEntityResource.name
+                    )
+                    meshEntities[anchorIndex] = meshRecord
+                    anchorEntity.addChild(meshRecord.entity)
+                } catch {
+                    print("Error creating mesh entity: \(error)")
+                }
             }
         }
     }

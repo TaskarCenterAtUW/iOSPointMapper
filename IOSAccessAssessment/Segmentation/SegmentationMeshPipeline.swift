@@ -98,8 +98,9 @@ final class SegmentationMeshPipeline: ObservableObject {
             try Task.checkCancellation()
             
             return try Foundation.autoreleasepool {
-                try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
+                let results = try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
                     cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
+                return results
             }
         }
         
@@ -278,41 +279,5 @@ extension SegmentationMeshPipeline {
         let ptr = base.assumingMemoryBound(to: UInt8.self)
         let value = ptr[iy * bytesPerRow + ix]
         return value
-    }
-    
-    /**
-     NOTE: May not be able to use this as it seemingly needs to run on the main thread.
-     */
-    private func createMeshEntity(
-        triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)],
-        color: UIColor = .green,
-        opacity: Float = 0.4,
-        name: String = "Mesh"
-    ) -> ModelEntity? {
-        if (triangles.isEmpty) {
-            return nil
-        }
-        
-        var positions: [SIMD3<Float>] = []
-        var indices: [UInt32] = []
-
-        for (i, triangle) in triangles.enumerated() {
-            let baseIndex = UInt32(i * 3)
-            positions.append(triangle.0)
-            positions.append(triangle.1)
-            positions.append(triangle.2)
-            indices.append(contentsOf: [baseIndex, baseIndex + 1, baseIndex + 2])
-        }
-
-        var meshDescriptors = MeshDescriptor(name: name)
-        meshDescriptors.positions = MeshBuffers.Positions(positions)
-        meshDescriptors.primitives = .triangles(indices)
-        guard let mesh = try? MeshResource.generate(from: [meshDescriptors]) else {
-            return nil
-        }
-
-        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
-        let entity = ModelEntity(mesh: mesh, materials: [material])
-        return entity
     }
 }

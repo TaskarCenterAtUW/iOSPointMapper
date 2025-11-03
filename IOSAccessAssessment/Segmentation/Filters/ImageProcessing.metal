@@ -57,7 +57,7 @@ void colorMatchingKernelLUT (
     if (newColor.r == 0.0 && newColor.g == 0.0 && newColor.b == 0.0) {
         pixelColor = float4(0.0, 0.0, 0.0, 0.0);
     } else {
-        pixelColor = float4(newColor.r, newColor.g, newColor.b, 0.9);
+        pixelColor = float4(newColor.r, newColor.g, newColor.b, 0.4);
     }
     outputTexture.write(pixelColor, gid);
 }
