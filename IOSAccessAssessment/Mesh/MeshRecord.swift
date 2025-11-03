@@ -7,6 +7,9 @@
 import ARKit
 import RealityKit
 
+/**
+    A structure representing a vertex in the mesh with position and color attributes.
+ */
 @MainActor
 struct MeshVertex {
     var position: SIMD3<Float> = .zero
@@ -32,6 +35,9 @@ extension MeshVertex {
     }
 }
 
+/**
+    A record representing a mesh with associated ModelEntity and properties.
+ */
 @MainActor
 final class MeshRecord {
     let entity: ModelEntity
