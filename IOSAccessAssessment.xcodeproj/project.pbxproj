@@ -285,6 +285,7 @@
 				A3F38C4A2D38A2BF00900547 /* Depth */,
 				CAA947772CDE7001000C6918 /* Auth */,
 				DAA7F8C62CA76514003666D8 /* Image */,
+				A3DA4DA62EB9320E005BB812 /* Mesh */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 				DAA7F8BB2CA67A3C003666D8 /* Camera */,
@@ -477,6 +478,14 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
+		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
+			isa = PBXGroup;
+			children = (
+				A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */,
+			);
+			path = Mesh;
+			sourceTree = "<group>";
+		};
 		A3E84ECD2DDAAECB0096A645 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -508,7 +517,6 @@
 		A3FFAA762DE01631002B99BD /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */,
 				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
 				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
 			);

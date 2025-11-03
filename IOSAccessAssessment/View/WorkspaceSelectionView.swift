@@ -187,7 +187,7 @@ struct WorkspaceSelectionView: View {
             self.workspaces = workspaces
             self.primaryWorkspaces = primaryWorkspaces
         } catch {
-            print("Error loading workspaces: \(error)")
+            print("Error loading workspaces: \(error.localizedDescription)")
         }
     }
 }

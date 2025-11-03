@@ -43,6 +43,7 @@ struct SegmentationMeshPipelineResults {
 final class SegmentationMeshPipeline: ObservableObject {
     private var isProcessing = false
     private var currentTask: Task<SegmentationMeshPipelineResults, Error>?
+    private var timeoutInSeconds: Double = 1.0
     
     private var selectionClasses: [Int] = []
     private var selectionClassLabels: [UInt8] = []
@@ -97,15 +98,34 @@ final class SegmentationMeshPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            return try Foundation.autoreleasepool {
-                let results = try self.processMeshAnchors(with: anchors, segmentationImage: segmentationImage,
-                    cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
-                return results
-            }
+            let results = try await self.processMeshAnchorsWithTimeout(with: anchors, segmentationImage: segmentationImage,
+                cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
+            try Task.checkCancellation()
+            return results
         }
         
         self.currentTask = newTask
         return try await newTask.value
+    }
+    
+    private func processMeshAnchorsWithTimeout(
+        with anchors: [ARAnchor], segmentationImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
+    ) async throws -> SegmentationMeshPipelineResults {
+        try await withThrowingTaskGroup(of: SegmentationMeshPipelineResults.self) { group in
+            group.addTask {
+                return try self.processMeshAnchors(
+                    with: anchors, segmentationImage: segmentationImage,
+                    cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics)
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(self.timeoutInSeconds))
+                throw SegmentationMeshPipelineError.unexpectedError
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
     }
     
     /**
@@ -144,39 +164,43 @@ final class SegmentationMeshPipeline: ObservableObject {
             guard let classifications = classifications else {
                 continue
             }
-            for index in 0..<faces.count {
-                let face = faces[index]
-                let classification = getClassification(at: Int(index), classifications: classifications)
-                
-                let faceVertices = face.map { getVertex(at: Int($0), vertices: vertices) }
-                let worldVertices = faceVertices.map { getWorldVertex(vertex: $0, anchorTransform: transform) }
-                
-                let worldCentroid = (worldVertices[0] + worldVertices[1] + worldVertices[2]) / 3.0
-                guard let pixelPoint = projectWorldToPixel(
-                    worldCentroid, cameraTransform: cameraTransform, intrinsics: cameraIntrinsics,
-                    imageSize: CGSize(width: width, height: height)) else {
-                    continue
+            // Wrap in autoreleasepool to manage memory for large meshes
+            autoreleasepool {
+                for index in 0..<faces.count {
+                    let face = faces[index]
+                    let classification = getClassification(at: Int(index), classifications: classifications)
+                    
+                    let faceVertices = face.map { getVertex(at: Int($0), vertices: vertices) }
+                    let worldVertices = faceVertices.map { getWorldVertex(vertex: $0, anchorTransform: transform) }
+                    
+                    let worldCentroid = (worldVertices[0] + worldVertices[1] + worldVertices[2]) / 3.0
+                    guard let pixelPoint = projectWorldToPixel(
+                        worldCentroid, cameraTransform: cameraTransform, intrinsics: cameraIntrinsics,
+                        imageSize: CGSize(width: width, height: height)) else {
+                        continue
+                    }
+                    guard let segmentationValue = sampleSegmentationImage(
+                        segmentationPixelBuffer, at: pixelPoint,
+                        width: width, height: height, bytesPerRow: bpr) else {
+                        continue
+                    }
+                    guard let segmentationClassIndex = self.selectionClassLabelToIndexMap[segmentationValue] else {
+                        continue
+                    }
+                    let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
+                    guard meshClassifications == nil || meshClassifications!.contains(classification) else {
+                        continue
+                    }
+                    let edge1 = worldVertices[1] - worldVertices[0]
+                    let edge2 = worldVertices[2] - worldVertices[0]
+                    let normal = normalize(cross(edge1, edge2))
+                    
+                    triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
+                    triangleNormalArrays[segmentationClassIndex].append(normal)
                 }
-                guard let segmentationValue = sampleSegmentationImage(
-                    segmentationPixelBuffer, at: pixelPoint,
-                    width: width, height: height, bytesPerRow: bpr) else {
-                    continue
-                }
-                guard let segmentationClassIndex = self.selectionClassLabelToIndexMap[segmentationValue] else {
-                    continue
-                }
-                let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
-                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
-                    continue
-                }
-                
-                let edge1 = worldVertices[1] - worldVertices[0]
-                let edge2 = worldVertices[2] - worldVertices[0]
-                let normal = normalize(cross(edge1, edge2))
-                
-                triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
-                triangleNormalArrays[segmentationClassIndex].append(normal)
             }
+            
+            try Task.checkCancellation()
         }
         
         var classModelEntityResources: [Int: ModelEntityResource] = [:]

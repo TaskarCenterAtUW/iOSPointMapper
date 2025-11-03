@@ -35,24 +35,35 @@ extension MeshVertex {
 @MainActor
 final class MeshRecord {
     let entity: ModelEntity
-    let mesh: LowLevelMesh
-    var name: String
+    var mesh: LowLevelMesh
+    let name: String
+    let color: UIColor
+    let opacity: Float
     
     init(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)], color: UIColor, opacity: Float, name: String) throws {
         self.mesh = try MeshRecord.generateMesh(with: triangles)
         self.entity = try MeshRecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
         self.name = name
+        self.color = color
+        self.opacity = opacity
     }
     
     func replace(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws {
-        MeshRecord.updateMesh(mesh: self.mesh, with: triangles)
+        let updateResults = MeshRecord.updateAndCheckReplaceMesh(mesh: self.mesh, with: triangles)
+        if updateResults.isReplaced {
+            self.mesh = updateResults.mesh
+            let resource = try MeshResource(from: mesh)
+            self.entity.model?.mesh = resource
+        }
     }
     
     static func generateMesh(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws -> LowLevelMesh {
         var desc = MeshVertex.descriptor
         // Assign capacity based on triangle count (allocate extra space for future updates)
-        desc.vertexCapacity = triangles.count * 3 * 2
-        desc.indexCapacity = triangles.count * 3 * 2
+        let vertexCapacity = triangles.count * 3 * 2
+        let indexCapacity = triangles.count * 3 * 2
+        desc.vertexCapacity = vertexCapacity
+        desc.indexCapacity = indexCapacity
         let mesh = try LowLevelMesh(descriptor: desc)
         mesh.withUnsafeMutableBytes(bufferIndex: 0) { rawBytes in
             let vertices = rawBytes.bindMemory(to: MeshVertex.self)
@@ -92,7 +103,21 @@ final class MeshRecord {
         return mesh
     }
     
-    static func updateMesh(mesh: LowLevelMesh, with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) {
+    static func updateAndCheckReplaceMesh(
+        mesh: LowLevelMesh, with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]
+    ) -> (mesh: LowLevelMesh, isReplaced: Bool) {
+        var mesh = mesh
+        var isReplaced = false
+        // Recalculate the capacity if needed
+        if (mesh.descriptor.vertexCapacity < triangles.count * 3) || (mesh.descriptor.indexCapacity < triangles.count * 3) {
+            print("Replacing mesh due to insufficient capacity (have \(mesh.descriptor.vertexCapacity) vertices, need \(triangles.count * 3))")
+            isReplaced = true
+            var desc = MeshVertex.descriptor
+            desc.vertexCapacity = triangles.count * 3 * 2
+            desc.indexCapacity = triangles.count * 3 * 2
+            mesh = try! LowLevelMesh(descriptor: desc)
+        }
+        
         mesh.withUnsafeMutableBytes(bufferIndex: 0) { rawBytes in
             let vertices = rawBytes.bindMemory(to: MeshVertex.self)
             var vertexIndex = 0
@@ -128,6 +153,7 @@ final class MeshRecord {
                 bounds: meshBounds
             )
         ])
+        return (mesh, isReplaced)
     }
 
     
@@ -135,8 +161,6 @@ final class MeshRecord {
         let resource = try MeshResource(from: mesh)
 
         let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
-        let modelComponent = ModelComponent(mesh: resource, materials: [material])
-
 
         let entity = ModelEntity(mesh: resource, materials: [material])
         entity.name = name

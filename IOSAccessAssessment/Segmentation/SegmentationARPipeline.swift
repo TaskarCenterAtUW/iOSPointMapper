@@ -62,6 +62,7 @@ struct SegmentationARPipelineResults {
 final class SegmentationARPipeline: ObservableObject {
     private var isProcessing = false
     private var currentTask: Task<SegmentationARPipelineResults, Error>?
+    private var timeoutInSeconds: Double = 1.0
     
     private var selectionClasses: [Int] = []
     private var selectionClassLabels: [UInt8] = []
@@ -121,11 +122,28 @@ final class SegmentationARPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            return try self.processImage(cIImage)
+            let results = try await self.processImageWithTimeout(cIImage)
+            try Task.checkCancellation()
+            return results
         }
         
         self.currentTask = newTask
         return try await newTask.value
+    }
+    
+    private func processImageWithTimeout(_ cIImage: CIImage) async throws -> SegmentationARPipelineResults {
+        try await withThrowingTaskGroup(of: SegmentationARPipelineResults.self) { group in
+            group.addTask {
+                return try self.processImage(cIImage)
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(self.timeoutInSeconds))
+                throw SegmentationMeshPipelineError.unexpectedError
+            }
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
     }
     
     /**
@@ -138,6 +156,8 @@ final class SegmentationARPipeline: ObservableObject {
      1. Get the segmentation mask from the camera image using the segmentation model
      2. Get the objects from the segmentation image
      3. Return the segmentation image, segmented indices, and detected objects, to the caller function
+     
+     Since this function can be called within a Task, it checks for cancellation at various points to ensure that it can exit early if needed.
      */
     private func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
         let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
@@ -145,11 +165,15 @@ final class SegmentationARPipeline: ObservableObject {
             throw SegmentationARPipelineError.invalidSegmentation
         }
         
+        try Task.checkCancellation()
+        
         // MARK: Ignoring the contour detection and object tracking for now
         // Get the objects from the segmentation image
         let detectedObjects: [DetectedObject] = self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedObjectMap: [UUID: DetectedObject] = Dictionary(uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) })
+        
+        try Task.checkCancellation()
         
         guard let segmentationColorImage = self.grayscaleToColorMasker.apply(
             to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors) else {
