@@ -18,6 +18,8 @@ enum ARCameraManagerError: Error, LocalizedError {
     case segmentationProcessingFailed
     case cameraImageResultsUnavailable
     case segmentationImagePixelBufferUnavailable
+    case metalDeviceUnavailable
+    case meshSnapshotGeneratorUnavailable
     case anchorEntityNotCreated
     
     var errorDescription: String? {
@@ -38,6 +40,10 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Camera image not processed."
         case .segmentationImagePixelBufferUnavailable:
             return "Segmentation image not backed by a pixel buffer."
+        case .metalDeviceUnavailable:
+            return "Metal device unavailable."
+        case .meshSnapshotGeneratorUnavailable:
+            return "Mesh snapshot generator unavailable."
         case .anchorEntityNotCreated:
             return "Anchor Entity has not been created."
         }
@@ -137,10 +143,11 @@ struct ARCameraCache {
  */
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var isConfigured: Bool {
-        return segmentationPipeline != nil
+        return (segmentationPipeline != nil) && (segmentationMeshPipeline != nil) && (meshSnapshotGenerator != nil)
     }
     var segmentationPipeline: SegmentationARPipeline? = nil
     var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
+    var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -175,11 +182,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.segmentationPipeline = segmentationPipeline
         self.segmentationMeshPipeline = segmentationMeshPipeline
         
-        do {
-            try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
-        } catch let error as ARCameraManagerError {
-            throw error
+        // TODO: Create the device once and share across the app
+        let device = MTLCreateSystemDefaultDevice()
+        guard let device = device else {
+            throw ARCameraManagerError.metalDeviceUnavailable
         }
+        self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
+        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
@@ -451,9 +460,15 @@ extension ARCameraManager {
         guard let segmentationMeshPipeline = segmentationMeshPipeline else {
             throw ARCameraManagerError.segmentationMeshNotConfigured
         }
+        guard let meshSnapshotGenerator = meshSnapshotGenerator else {
+            throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
+        }
         guard let cameraImageResults = cameraImageResults else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
+        
+        // Generate mesh snapshot
+        try meshSnapshotGenerator.snapshotAnchors(anchors)
         
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
         let cameraTransform = cameraImageResults.cameraTransform

@@ -34,7 +34,7 @@ enum MeshSnapshotError: Error, LocalizedError {
 /**
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
-final class MeshGPUSnapshotCreator: NSObject {
+final class MeshGPUSnapshotGenerator: NSObject {
     private let defaultBufferSize: Int = 1024
     
     private let device: MTLDevice
@@ -62,6 +62,11 @@ final class MeshGPUSnapshotCreator: NSObject {
         }
     }
     
+    /**
+    Create or update the GPU snapshot for the given ARMeshAnchor
+     
+     TODO: Check possibility of blitting directly from MTLBuffer to MTLBuffer using a blit command encoder for better performance
+     */
     func createSnapshot(meshAnchor: ARMeshAnchor) throws {
         let geometry = meshAnchor.geometry
         let vertices = geometry.vertices               // ARGeometrySource (format .float3)
@@ -89,6 +94,7 @@ final class MeshGPUSnapshotCreator: NSObject {
         meshAnchorGPU.vertexCount = vertices.count
         
         // Assign index buffer
+        // MARK: This code assumes the index type will always be only UInt32
         let indexTypeSize = MemoryLayout<UInt32>.stride
         let indexByteCount = faces.count * faces.bytesPerIndex * faces.indexCountPerPrimitive
         try ensureCapacity(device: device, buf: &meshAnchorGPU.indexBuffer, requiredBytes: indexByteCount)
