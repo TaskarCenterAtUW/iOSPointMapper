@@ -481,7 +481,7 @@ extension ARCameraManager {
         let clock = ContinuousClock()
         let start = clock.now
         try meshSnapshotGenerator.snapshotAnchors(anchors)
-        try await segmentationMeshGPUPipeline.processRequest(
+        let resultsGPU = try await segmentationMeshGPUPipeline.processRequest(
             with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )

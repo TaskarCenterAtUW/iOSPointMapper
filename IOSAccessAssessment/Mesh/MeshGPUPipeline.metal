@@ -23,6 +23,7 @@ struct FaceOut {
 
 struct FaceParams {
     uint  faceCount;
+    uint totalCount;
     uint  indicesPerFace;   // 3
     bool  hasClass;         // classificationBuffer bound?
     float4x4 anchorTransform;
@@ -86,29 +87,33 @@ kernel void processMesh(
     float4 wp2 = Params.anchorTransform * float4(p2, 1.0);
     
     float4 centroid = (wp0 + wp1 + wp2) / 3.0;
-    
+//    
     // Project to camera space
-    float2 pixel = projectWorldPointToPixel(centroid.xyz, Params.viewMatrix, Params.intrinsics, Params.imageSize);
-    if (pixel.x < 0.0 || pixel.y < 0.0) {
-        // Not visible
-        return;
-    }
+//    float2 pixel = projectWorldPointToPixel(centroid.xyz, Params.viewMatrix, Params.intrinsics, Params.imageSize);
+//    if (pixel.x < 0.0 || pixel.y < 0.0) {
+//        // Not visible
+//        return;
+//    }
     
     // Get classification
+    uchar cls;
     if (Params.hasClass) {
-        uchar cls = classesOpt[faceId];
+        cls = classesOpt[faceId];
     } else {
-        uchar cls = -1;
+        cls = -1;
     }
     
-//
-//    // Write result
-//    FaceOut fo;
-//    fo.centroid = c;
-//    fo.normal   = n;
-//    fo.cls      = cls;
-//    fo.visible  = vis;
-//    fo._pad     = 0;
-//    outFaces[tid] = fo;
+    // reserve a slot if available
+    if (atomic_load_explicit(outCount, memory_order_relaxed) >= Params.totalCount) {
+        // No more space
+        return;
+    }
+    uint slot = atomic_fetch_add_explicit(outCount, 1u, memory_order_relaxed);
+    // Write result
+    Triangle outFace;
+    outFace.a = wp0.xyz;
+    outFace.b = wp1.xyz;
+    outFace.c = wp2.xyz;
+    outFaces[slot] = outFace;
 }
     
