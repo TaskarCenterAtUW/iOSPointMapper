@@ -38,7 +38,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
     private let defaultBufferSize: Int = 1024
     
     private let device: MTLDevice
-    private var meshAnchorsGPU: [UUID: MeshAnchorGPU] = [:]
+    var meshAnchorsGPU: [UUID: MeshAnchorGPU] = [:]
     
     init(device: MTLDevice) {
         self.device = device

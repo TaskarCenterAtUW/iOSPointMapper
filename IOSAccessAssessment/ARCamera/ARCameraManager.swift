@@ -147,7 +147,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     var segmentationPipeline: SegmentationARPipeline? = nil
     var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
+    
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var segmentationMeshGPUPipeline: SegmentationMeshGPUPipeline? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -188,6 +190,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             throw ARCameraManagerError.metalDeviceUnavailable
         }
         self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
+        self.segmentationMeshGPUPipeline = try SegmentationMeshGPUPipeline(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
     }
     
@@ -463,16 +466,27 @@ extension ARCameraManager {
         guard let meshSnapshotGenerator = meshSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }
+        guard let segmentationMeshGPUPipeline = segmentationMeshGPUPipeline else {
+            throw ARCameraManagerError.segmentationMeshNotConfigured
+        }
         guard let cameraImageResults = cameraImageResults else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
         
-        // Generate mesh snapshot
-        try meshSnapshotGenerator.snapshotAnchors(anchors)
-        
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
         let cameraTransform = cameraImageResults.cameraTransform
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
+        
+        // Generate mesh snapshot
+        let clock = ContinuousClock()
+        let start = clock.now
+        try meshSnapshotGenerator.snapshotAnchors(anchors)
+        try await segmentationMeshGPUPipeline.processRequest(
+            with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
+        let duration = clock.now - start
+        print("Mesh snapshot and segmentation processing took \(duration.formatted(.units(allowed: [.milliseconds, .seconds])))")
         
         let segmentationMeshResults: SegmentationMeshPipelineResults = try await segmentationMeshPipeline.processRequest(
             with: anchors, segmentationImage: segmentationLabelImage,
