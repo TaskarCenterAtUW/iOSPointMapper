@@ -11,6 +11,7 @@ struct MeshAnchorGPU {
     var vertexBuffer: MTLBuffer
     var indexBuffer: MTLBuffer
     var classificationBuffer: MTLBuffer? = nil
+    var anchorTransform: simd_float4x4
     var vertexCount: Int = 0
     var indexCount: Int = 0
     var faceCount: Int = 0
@@ -72,11 +73,14 @@ final class MeshGPUSnapshotGenerator: NSObject {
         let vertices = geometry.vertices               // ARGeometrySource (format .float3)
         let faces = geometry.faces                  // ARGeometryElement
         let classifications = geometry.classification
+        let anchorTransform = meshAnchor.transform
         
         var meshAnchorGPU: MeshAnchorGPU = try meshAnchorsGPU[meshAnchor.identifier] ?? {
             let vertexBuffer = try makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             let indexBuffer = try makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
-            return MeshAnchorGPU(vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: nil)
+            return MeshAnchorGPU(
+                vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: nil, anchorTransform: anchorTransform
+            )
         }()
         
         // Assign vertex buffer

@@ -39,12 +39,26 @@ struct FaceOut {
     var _pad: CUnsignedShort
 }
 
+struct MeshTriangle {
+    var a: simd_float3
+    var b: simd_float3
+    var c: simd_float3
+}
+
+//float4x4 anchorTransform;
+//float4x4 cameraTransform;
+//float4x4 viewMatrix;
+//float3x3 intrinsics;
+//uint2   imageSize;
 struct FaceParams {
     var faceCount: UInt32
     var indicesPerFace: UInt32
     var hasClass: Bool
-    var worldFromLocal: simd_float4x4
-    var viewProj: simd_float4x4
+    var anchorTransform: simd_float4x4
+    var cameraTransform: simd_float4x4
+    var viewMatrix: simd_float4x4
+    var intrinsics: simd_float3x3
+    var imageSize: simd_uint2
 }
 
 final class SegmentationMeshGPUPipeline: ObservableObject {
@@ -164,19 +178,24 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             throw SegmentationMeshPipelineError.emptySegmentation
         }
         
+        let totalFaceCount = meshAnchorSnapshot.reduce(0) { $0 + $1.value.faceCount }
+        let outBytes = totalFaceCount * MemoryLayout<MeshTriangle>.stride
+        var triangleOutBuffer: MTLBuffer = try MeshBufferUtils.makeBuffer(
+            device: self.device, length: MeshBufferUtils.defaultBufferSize, options: .storageModeShared
+        )
+        try MeshBufferUtils.ensureCapacity(device: self.device, buf: &triangleOutBuffer, requiredBytes: outBytes)
+        let triangleOutCount: MTLBuffer = try MeshBufferUtils.makeBuffer(
+            device: self.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
+        )
+        
         await withTaskGroup(of: Void.self) { group in
             for (_, meshAnchorGPU) in meshAnchorSnapshot {
                 group.addTask {
                     do {
-                        let outBytes = meshAnchorGPU.faceCount * MemoryLayout<FaceOut>.stride
-                        var faceOutBuffer: MTLBuffer = try MeshBufferUtils.makeBuffer(
-                            device: self.device, length: MeshBufferUtils.defaultBufferSize, options: .storageModeShared
-                        )
-                        try MeshBufferUtils.ensureCapacity(device: self.device, buf: &faceOutBuffer, requiredBytes: outBytes)
                         try self.processMeshAnchor(
                             meshAnchorGPU: meshAnchorGPU, segmentationPixelBuffer: segmentationPixelBuffer,
                             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
-                            outBuffer: faceOutBuffer
+                            triangleOutBuffer: triangleOutBuffer, triangleOutCount: triangleOutCount
                         )
                     } catch {
                         print("Error processing mesh anchor: \(error.localizedDescription)")
@@ -190,13 +209,18 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
     private func processMeshAnchor(
         meshAnchorGPU: MeshAnchorGPU, segmentationPixelBuffer: CVPixelBuffer,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        outBuffer: MTLBuffer
+        triangleOutBuffer: MTLBuffer, triangleOutCount: MTLBuffer
     ) throws {
         guard meshAnchorGPU.faceCount > 0 else { return }
         guard let commandBuffer = self.commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
         }
+        // Get extra params
+        let viewMatrix = simd_inverse(cameraTransform)
+        let imageSize = simd_uint2(UInt32(CVPixelBufferGetWidth(segmentationPixelBuffer)),
+                                      UInt32(CVPixelBufferGetHeight(segmentationPixelBuffer)))
+        
         commandEncoder.setComputePipelineState(self.pipelineState)
         
         commandEncoder.setBuffer(meshAnchorGPU.vertexBuffer, offset: 0, index: 0)
@@ -206,14 +230,16 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         } else {
             commandEncoder.setBuffer(nil, offset: 0, index: 2)
         }
-        commandEncoder.setBuffer(outBuffer, offset: 0, index: 3)
+        commandEncoder.setBuffer(triangleOutBuffer, offset: 0, index: 3)
+        commandEncoder.setBuffer(triangleOutCount, offset: 0, index: 4)
         var params = FaceParams(
             faceCount: UInt32(meshAnchorGPU.faceCount), indicesPerFace: 3, hasClass: meshAnchorGPU.classificationBuffer != nil,
-            worldFromLocal: cameraTransform, viewProj: cameraTransform
+            anchorTransform: meshAnchorGPU.anchorTransform, cameraTransform: cameraTransform,
+            viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
         )
         let paramsBufferPointer = paramsBuffer.contents()
         paramsBufferPointer.copyMemory(from: &params, byteCount: MemoryLayout<FaceParams>.stride)
-        commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 4)
+        commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
         
         let threadGroupSize = MTLSize(width: min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256), height: 1, depth: 1)
         let threadGroups = MTLSize(
