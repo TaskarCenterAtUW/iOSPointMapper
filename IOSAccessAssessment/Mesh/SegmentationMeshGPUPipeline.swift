@@ -199,11 +199,11 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
                 anchorTransform: meshAnchorGPU.anchorTransform, cameraTransform: cameraTransform,
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
-            let paramsBuffer = try MeshBufferUtils.makeBuffer(
-                device: self.device, length: MemoryLayout<FaceParams>.stride, options: .storageModeShared
-            )
-            let paramsPointer = paramsBuffer.contents()
-            paramsPointer.copyMemory(from: &params, byteCount: MemoryLayout<FaceParams>.stride)
+//            let paramsBuffer = try MeshBufferUtils.makeBuffer(
+//                device: self.device, length: MemoryLayout<FaceParams>.stride, options: .storageModeShared
+//            )
+//            let paramsPointer = paramsBuffer.contents()
+//            paramsPointer.copyMemory(from: &params, byteCount: MemoryLayout<FaceParams>.stride)
             
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
                 throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
@@ -214,7 +214,8 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             commandEncoder.setBuffer(meshAnchorGPU.classificationBuffer ?? nil, offset: 0, index: 2)
             commandEncoder.setBuffer(triangleOutBuffer, offset: 0, index: 3)
             commandEncoder.setBuffer(triangleOutCount, offset: 0, index: 4)
-            commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
+//            commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
+            commandEncoder.setBytes(&params, length: MemoryLayout<FaceParams>.stride, index: 5)
             commandEncoder.setBuffer(debugCounter, offset: 0, index: 6)
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)

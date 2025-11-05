@@ -50,8 +50,8 @@ final class MeshGPUSnapshotGenerator: NSObject {
     }
     
     func snapshotAnchors(_ anchors: [ARAnchor]) throws {
-        for anchor in anchors {
-            guard let meshAnchor = anchor as? ARMeshAnchor else { continue }
+        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        for (_, meshAnchor) in meshAnchors.enumerated() {
             try createSnapshot(meshAnchor: meshAnchor)
         }
     }

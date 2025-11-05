@@ -155,7 +155,7 @@ final class SegmentationMeshPipeline: ObservableObject {
         let viewTransform = simd_inverse(cameraTransform)
         
         // Iterate through each mesh anchor and process its geometry
-        for meshAnchor in meshAnchors {
+        for (_, meshAnchor) in meshAnchors.enumerated() {
             let geometry = meshAnchor.geometry
             let transform = meshAnchor.transform
             
@@ -167,39 +167,43 @@ final class SegmentationMeshPipeline: ObservableObject {
                 continue
             }
             // Wrap in autoreleasepool to manage memory for large meshes
-            autoreleasepool {
-                for index in 0..<faces.count {
-                    let face = faces[index]
-                    let classification = getClassification(at: Int(index), classifications: classifications)
-                    
-                    let faceVertices = face.map { getVertex(at: Int($0), vertices: vertices) }
-                    let worldVertices = faceVertices.map { getWorldVertex(vertex: $0, anchorTransform: transform) }
-                    
-                    let worldCentroid = (worldVertices[0] + worldVertices[1] + worldVertices[2]) / 3.0
-                    guard let pixelPoint = projectWorldToPixel(
-                        worldCentroid, viewTransform: viewTransform, intrinsics: cameraIntrinsics,
-                        imageSize: CGSize(width: width, height: height)) else {
-                        continue
-                    }
-                    guard let segmentationValue = sampleSegmentationImage(
-                        segmentationPixelBuffer, at: pixelPoint,
-                        width: width, height: height, bytesPerRow: bpr) else {
-                        continue
-                    }
-                    guard let segmentationClassIndex = self.selectionClassLabelToIndexMap[segmentationValue] else {
-                        continue
-                    }
-                    let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
-                    guard meshClassifications == nil || meshClassifications!.contains(classification) else {
-                        continue
-                    }
-                    let edge1 = worldVertices[1] - worldVertices[0]
-                    let edge2 = worldVertices[2] - worldVertices[0]
-                    let normal = normalize(cross(edge1, edge2))
-                    
-                    triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
-                    triangleNormalArrays[segmentationClassIndex].append(normal)
+            for index in 0..<faces.count {
+                let face = faces[index]
+                let classification = getClassification(at: Int(index), classifications: classifications)
+                
+                let faceVertices = face.map { getVertex(at: Int($0), vertices: vertices) }
+                let worldVertices = faceVertices.map { getWorldVertex(vertex: $0, anchorTransform: transform) }
+                
+                let worldCentroid = (worldVertices[0] + worldVertices[1] + worldVertices[2]) / 3.0
+                guard let pixelPoint = projectWorldToPixel(
+                    worldCentroid, viewTransform: viewTransform, intrinsics: cameraIntrinsics,
+                    imageSize: CGSize(width: width, height: height)) else {
+                    continue
                 }
+                if (index == 0) {
+                    print("First face vertex: \(faceVertices[0]), First World vertex: \(worldVertices[0]), Pixel Point: \(pixelPoint)")
+                    let worldVertex4D   = simd_float4(worldCentroid, 1.0)
+                    let cameraVertex   = viewTransform * worldVertex4D
+                    print("View Transform: \(viewTransform), Camera Vertex: \(cameraVertex)\n")
+                }
+                guard let segmentationValue = sampleSegmentationImage(
+                    segmentationPixelBuffer, at: pixelPoint,
+                    width: width, height: height, bytesPerRow: bpr) else {
+                    continue
+                }
+                guard let segmentationClassIndex = self.selectionClassLabelToIndexMap[segmentationValue] else {
+                    continue
+                }
+                let meshClassifications = self.selectionClassMeshClassifications[segmentationClassIndex]
+                guard meshClassifications == nil || meshClassifications!.contains(classification) else {
+                    continue
+                }
+                let edge1 = worldVertices[1] - worldVertices[0]
+                let edge2 = worldVertices[2] - worldVertices[0]
+                let normal = normalize(cross(edge1, edge2))
+                
+                triangleArrays[segmentationClassIndex].append((worldVertices[0], worldVertices[1], worldVertices[2]))
+                triangleNormalArrays[segmentationClassIndex].append(normal)
             }
             
             try Task.checkCancellation()

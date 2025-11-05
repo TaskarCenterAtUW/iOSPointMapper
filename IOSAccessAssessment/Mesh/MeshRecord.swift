@@ -120,7 +120,6 @@ final class MeshRecord {
         var isReplaced = false
         // Recalculate the capacity if needed
         if (mesh.descriptor.vertexCapacity < triangles.count * 3) || (mesh.descriptor.indexCapacity < triangles.count * 3) {
-            print("Replacing mesh due to insufficient capacity (have \(mesh.descriptor.vertexCapacity) vertices, need \(triangles.count * 3))")
             isReplaced = true
             var desc = MeshVertex.descriptor
             desc.vertexCapacity = triangles.count * 3 * 2

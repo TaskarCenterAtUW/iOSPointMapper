@@ -26,7 +26,7 @@ inline float2 projectWorldPointToPixel(
     float4 imageVertex = viewMatrix * worldPoint4;
     
     if (imageVertex.z > 0) {
-        return float2(-1000, -1000); // Point is behind the camera
+        return float2(-1, -1);
     }
     float3 imagePoint = imageVertex.xyz / imageVertex.z;
     float xNormalized = - imagePoint.x / imagePoint.z;
@@ -37,7 +37,7 @@ inline float2 projectWorldPointToPixel(
     
     if (pixelCoord.x < 0 || pixelCoord.x >= imageSize.x ||
         pixelCoord.y < 0 || pixelCoord.y >= imageSize.y) {
-        return float2(-2000, -2000); // Outside image bounds
+        return float2(-1, -1);
     }
     float2 pixelCoordRounded = round(pixelCoord);
     return pixelCoordRounded;
@@ -46,7 +46,7 @@ inline float2 projectWorldPointToPixel(
 kernel void processMesh(
     device const packed_float3*     positions      [[ buffer(0) ]],
     device const uint*              indices        [[ buffer(1) ]],
-    device const uchar*             classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
+    device const uint8_t*           classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
     device MeshTriangle*            outFaces       [[ buffer(3) ]],
     device atomic_uint*             outCount       [[ buffer(4) ]],
     constant FaceParams&            Params         [[ buffer(5) ]],
@@ -76,12 +76,6 @@ kernel void processMesh(
     float2 pixel = projectWorldPointToPixel(centroid.xyz, Params.viewMatrix, Params.intrinsics, Params.imageSize);
     if (pixel.x < 0.0 || pixel.y < 0.0) {
         // Not visible
-        // Debugging aid, count how many faces were culled
-        if (pixel.x == -1000 && pixel.y == -1000) {
-            atomic_fetch_add_explicit(&debugCounter[zBelowZero], 1u, memory_order_relaxed);
-        } else if (pixel.x == -2000 && pixel.y == -2000) {
-            atomic_fetch_add_explicit(&debugCounter[outsideImage], 1u, memory_order_relaxed);
-        }
         return;
     }
     
@@ -91,6 +85,9 @@ kernel void processMesh(
         cls = classesOpt[faceId];
     } else {
         cls = -1;
+    }
+    if (cls != 2) {
+        return;
     }
     
     // reserve a slot if available
@@ -106,4 +103,3 @@ kernel void processMesh(
     outFace.c = wp2.xyz;
     outFaces[slot] = outFace;
 }
-    
