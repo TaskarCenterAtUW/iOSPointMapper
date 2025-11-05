@@ -9,7 +9,6 @@ import SwiftUI
 import ARKit
 import RealityKit
 import simd
-import Metal
 
 enum SegmentationMeshGPUPipelineError: Error, LocalizedError {
     case isProcessingTrue
@@ -38,28 +37,8 @@ enum SegmentationMeshGPUPipelineError: Error, LocalizedError {
  These structs mirror the Metal shader structs for data exchange.
  TODO: Create a bridging header to use the Metal structs directly.
  */
-struct FaceOut {
-    var centroid: simd_float3
-    var normal: simd_float3
-    var cls: CUnsignedChar
-    var visible: CUnsignedChar
-    var _pad: CUnsignedShort
-}
-
 struct SegmentationMeshGPUPipelineResults {
     let triangles: [MeshTriangle]
-}
-
-struct FaceParams {
-    var faceCount: UInt32
-    var totalCount: UInt32
-    var indicesPerFace: UInt32
-    var hasClass: Bool
-    var anchorTransform: simd_float4x4
-    var cameraTransform: simd_float4x4
-    var viewMatrix: simd_float4x4
-    var intrinsics: simd_float3x3
-    var imageSize: simd_uint2
 }
 
 final class SegmentationMeshGPUPipeline: ObservableObject {
@@ -78,7 +57,6 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     let pipelineState: MTLComputePipelineState
-    let paramsBuffer: MTLBuffer
     
     init(device: MTLDevice) throws {
         self.device = device
@@ -90,8 +68,6 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             throw SegmentationMeshGPUPipelineError.metalInitializationError
         }
         self.pipelineState = try device.makeComputePipelineState(function: kernelFunction)
-        self.paramsBuffer = device.makeBuffer(length: MemoryLayout<FaceParams>.stride,
-                                              options: .storageModeShared)!
     }
     
     func reset() {
@@ -216,14 +192,16 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         for (_, meshAnchorGPU) in meshAnchorSnapshot {
             guard meshAnchorGPU.faceCount > 0 else { continue }
             
+            let hasClass: UInt32 = meshAnchorGPU.classificationBuffer != nil ? 1 : 0
             var params = FaceParams(
                 faceCount: UInt32(meshAnchorGPU.faceCount), totalCount: UInt32(totalFaceCount),
-                indicesPerFace: 3, hasClass: meshAnchorGPU.classificationBuffer != nil,
+                indicesPerFace: 3, hasClass: hasClass,
                 anchorTransform: meshAnchorGPU.anchorTransform, cameraTransform: cameraTransform,
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
-            let paramsBufferPointer = paramsBuffer.contents()
-            paramsBufferPointer.copyMemory(from: &params, byteCount: MemoryLayout<FaceParams>.stride)
+            let paramsBuffer = try MeshBufferUtils.makeBuffer(
+                device: self.device, length: MemoryLayout<FaceParams>.stride, options: .storageModeShared
+            )
             
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
                 throw SegmentationMeshGPUPipelineError.metalPipelineCreationError

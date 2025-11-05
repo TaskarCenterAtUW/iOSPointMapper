@@ -9,27 +9,6 @@
 using namespace metal;
 #import "ShaderTypes.h"
 
-// Face output written by the kernel (one per face)
-struct FaceOut {
-    float3 centroid;
-    float3 normal;
-    uchar  cls;     // semantic class, optional
-    uchar  visible; // 0/1 (set by your logic)
-    ushort _pad;    // pad to 16B alignment (Metal likes 16B alignment)
-};
-
-struct FaceParams {
-    uint  faceCount;
-    uint totalCount;
-    uint  indicesPerFace;   // 3
-    bool  hasClass;         // classificationBuffer bound?
-    float4x4 anchorTransform;
-    float4x4 cameraTransform;
-    float4x4 viewMatrix;
-    float3x3 intrinsics;
-    uint2   imageSize;
-};
-
 // For debugging
 enum DebugSlot : uint {
     zBelowZero = 0,
@@ -65,14 +44,14 @@ inline float2 projectWorldPointToPixel(
 }
 
 kernel void processMesh(
-    device const float3* positions      [[ buffer(0) ]],
-    device const uint*   indices        [[ buffer(1) ]],
-    device const uchar*  classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
-    device MeshTriangle*     outFaces       [[ buffer(3) ]],
-    device atomic_uint*  outCount       [[ buffer(4) ]],
-    constant FaceParams& Params         [[ buffer(5) ]],
-    device atomic_uint*  debugCounter   [[ buffer(6) ]],
-    uint                 faceId         [[ thread_position_in_grid ]]
+    device const float3*     positions      [[ buffer(0) ]],
+    device const uint*              indices        [[ buffer(1) ]],
+    device const uchar*             classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
+    device MeshTriangle*            outFaces       [[ buffer(3) ]],
+    device atomic_uint*             outCount       [[ buffer(4) ]],
+    constant FaceParams&            Params         [[ buffer(5) ]],
+    device atomic_uint*             debugCounter   [[ buffer(6) ]],
+    uint                            faceId         [[ thread_position_in_grid ]]
 ) {
     if (faceId >= Params.faceCount) return;
 
