@@ -152,6 +152,8 @@ final class SegmentationMeshPipeline: ObservableObject {
         var triangleArrays: [[(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]] = self.selectionClasses.map { _ in [] }
         var triangleNormalArrays: [[SIMD3<Float>]] = self.selectionClasses.map { _ in [] }
         
+        let viewTransform = simd_inverse(cameraTransform)
+        
         // Iterate through each mesh anchor and process its geometry
         for meshAnchor in meshAnchors {
             let geometry = meshAnchor.geometry
@@ -175,7 +177,7 @@ final class SegmentationMeshPipeline: ObservableObject {
                     
                     let worldCentroid = (worldVertices[0] + worldVertices[1] + worldVertices[2]) / 3.0
                     guard let pixelPoint = projectWorldToPixel(
-                        worldCentroid, cameraTransform: cameraTransform, intrinsics: cameraIntrinsics,
+                        worldCentroid, viewTransform: viewTransform, intrinsics: cameraIntrinsics,
                         imageSize: CGSize(width: width, height: height)) else {
                         continue
                     }
@@ -252,11 +254,10 @@ extension SegmentationMeshPipeline {
     }
     
     private func projectWorldToPixel(_ worldVertex: simd_float3,
-                             cameraTransform: simd_float4x4, // ARCamera.transform (camera->world)
+                             viewTransform: simd_float4x4, // ARCamera.transform (camera->world)
                              intrinsics K: simd_float3x3,
                              imageSize: CGSize) -> CGPoint? {
         // world -> camera
-        let viewTransform = simd_inverse(cameraTransform)
         let worldVertex4D   = simd_float4(worldVertex, 1.0)
         let cameraVertex   = viewTransform * worldVertex4D                                  // camera space
         let x = cameraVertex.x, y = cameraVertex.y, z = cameraVertex.z

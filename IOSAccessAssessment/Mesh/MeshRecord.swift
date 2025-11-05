@@ -55,12 +55,16 @@ final class MeshRecord {
     }
     
     func replace(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws {
+        let clock = ContinuousClock()
+        let startTime = clock.now
         let updateResults = MeshRecord.updateAndCheckReplaceMesh(mesh: self.mesh, with: triangles)
         if updateResults.isReplaced {
             self.mesh = updateResults.mesh
             let resource = try MeshResource(from: mesh)
             self.entity.model?.mesh = resource
         }
+        let duration = clock.now - startTime
+        print("Mesh \(name) updated in \(duration.formatted(.units(allowed: [.milliseconds]))))")
     }
     
     static func generateMesh(with triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)]) throws -> LowLevelMesh {

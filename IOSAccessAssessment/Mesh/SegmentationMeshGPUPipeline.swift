@@ -34,6 +34,10 @@ enum SegmentationMeshGPUPipelineError: Error, LocalizedError {
     }
 }
 
+/**
+ These structs mirror the Metal shader structs for data exchange.
+ TODO: Create a bridging header to use the Metal structs directly.
+ */
 struct FaceOut {
     var centroid: simd_float3
     var normal: simd_float3
@@ -191,6 +195,12 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         let triangleOutCount: MTLBuffer = try MeshBufferUtils.makeBuffer(
             device: self.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
+        // For debugging
+        let debugSlots = Int(3) // MARK: Hard-coded
+        let debugBytes = debugSlots * MemoryLayout<UInt32>.stride
+        let debugCounter: MTLBuffer = try MeshBufferUtils.makeBuffer(
+            device: self.device, length: debugBytes, options: .storageModeShared
+        )
         
         // Set up additional parameters
         let viewMatrix = simd_inverse(cameraTransform)
@@ -205,6 +215,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             throw SegmentationMeshGPUPipelineError.meshPipelineBlitEncoderError
         }
         blit.fill(buffer: triangleOutCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
+        blit.fill(buffer: debugCounter, range: 0..<debugBytes, value: 0)
         blit.endEncoding()
         let threadGroupSizeWidth = min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256)
         
@@ -230,6 +241,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             commandEncoder.setBuffer(triangleOutBuffer, offset: 0, index: 3)
             commandEncoder.setBuffer(triangleOutCount, offset: 0, index: 4)
             commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
+            commandEncoder.setBuffer(debugCounter, offset: 0, index: 6)
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
@@ -251,7 +263,13 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             start: triangleOutBufferPointer, count: Int(triangleOutCountValue)
         )
         let triangles = Array(triangleOutBufferView)
-        print("Total Count: \(totalFaceCount), Processed Triangle Count: \(triangleOutCountValue)")
+        
+        let debugCountPointer = debugCounter.contents().bindMemory(to: UInt32.self, capacity: debugSlots)
+        var debugCountValue: [UInt32] = []
+        for i in 0..<debugSlots {
+            debugCountValue.append(debugCountPointer.advanced(by: i).pointee)
+        }
+        print("Total Count: \(totalFaceCount), Processed Triangle Count: \(triangleOutCountValue), Debug Count: \(debugCountValue)")
         return SegmentationMeshGPUPipelineResults(triangles: triangles)
     }
 }

@@ -485,15 +485,22 @@ extension ARCameraManager {
             with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
+        let trianglesGPU = resultsGPU.triangles.map { triangle in
+            return (triangle.a, triangle.b, triangle.c)
+        }
+        let modelEntityResource = ModelEntityResource(triangles: trianglesGPU, color: .blue, name: "Main")
+        let classModelEntityResources: [Int: ModelEntityResource] = [
+            0: modelEntityResource
+        ]
         let duration = clock.now - start
         print("Mesh snapshot and segmentation processing took \(duration.formatted(.units(allowed: [.milliseconds, .seconds])))")
         
-        let segmentationMeshResults: SegmentationMeshPipelineResults = try await segmentationMeshPipeline.processRequest(
-            with: anchors, segmentationImage: segmentationLabelImage,
-            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-        )
+//        let segmentationMeshResults: SegmentationMeshPipelineResults = try await segmentationMeshPipeline.processRequest(
+//            with: anchors, segmentationImage: segmentationLabelImage,
+//            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+//        )
         return ARCameraMeshResults(
-            classModelEntityResources: segmentationMeshResults.classModelEntityResources,
+            classModelEntityResources: classModelEntityResources,
             lastUpdated: Date().timeIntervalSince1970
         )
     }
