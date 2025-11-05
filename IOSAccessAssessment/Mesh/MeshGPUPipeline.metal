@@ -25,7 +25,7 @@ inline float2 projectWorldPointToPixel(
     float4 worldPoint4 = float4(worldPoint, 1.0);
     float4 imageVertex = viewMatrix * worldPoint4;
     
-    if (imageVertex.z < 0) {
+    if (imageVertex.z > 0) {
         return float2(-1000, -1000); // Point is behind the camera
     }
     float3 imagePoint = imageVertex.xyz / imageVertex.z;
@@ -44,7 +44,7 @@ inline float2 projectWorldPointToPixel(
 }
 
 kernel void processMesh(
-    device const float3*     positions      [[ buffer(0) ]],
+    device const packed_float3*     positions      [[ buffer(0) ]],
     device const uint*              indices        [[ buffer(1) ]],
     device const uchar*             classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
     device MeshTriangle*            outFaces       [[ buffer(3) ]],
@@ -73,17 +73,17 @@ kernel void processMesh(
     float4 centroid = (wp0 + wp1 + wp2) / 3.0;
 //    
     // Project to camera space
-//    float2 pixel = projectWorldPointToPixel(centroid.xyz, Params.viewMatrix, Params.intrinsics, Params.imageSize);
-//    if (pixel.x < 0.0 || pixel.y < 0.0) {
-//        // Not visible
-//        // Debugging aid, count how many faces were culled
-//        if (pixel.x == -1000 && pixel.y == -1000) {
-//            atomic_fetch_add_explicit(&debugCounter[zBelowZero], 1u, memory_order_relaxed);
-//        } else if (pixel.x == -2000 && pixel.y == -2000) {
-//            atomic_fetch_add_explicit(&debugCounter[outsideImage], 1u, memory_order_relaxed);
-//        }
-//        return;
-//    }
+    float2 pixel = projectWorldPointToPixel(centroid.xyz, Params.viewMatrix, Params.intrinsics, Params.imageSize);
+    if (pixel.x < 0.0 || pixel.y < 0.0) {
+        // Not visible
+        // Debugging aid, count how many faces were culled
+        if (pixel.x == -1000 && pixel.y == -1000) {
+            atomic_fetch_add_explicit(&debugCounter[zBelowZero], 1u, memory_order_relaxed);
+        } else if (pixel.x == -2000 && pixel.y == -2000) {
+            atomic_fetch_add_explicit(&debugCounter[outsideImage], 1u, memory_order_relaxed);
+        }
+        return;
+    }
     
     // Get classification
     uchar cls;

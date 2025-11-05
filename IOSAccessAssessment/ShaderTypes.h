@@ -34,13 +34,13 @@ typedef struct MeshTriangle {
 } MeshTriangle;
 
 typedef struct FaceParams {
-    MTL_UINT  faceCount;
-    MTL_UINT totalCount;
-    MTL_UINT  indicesPerFace;   // 3
-    MTL_BOOL  hasClass;         // classificationBuffer bound?
-    MTL_FLOAT4X4 anchorTransform;
-    MTL_FLOAT4X4 cameraTransform;
-    MTL_FLOAT4X4 viewMatrix;
-    MTL_FLOAT3X3 intrinsics;
-    MTL_UINT2   imageSize;
+    MTL_UINT        faceCount;
+    MTL_UINT        totalCount;
+    MTL_UINT        indicesPerFace;   // 3
+    MTL_BOOL        hasClass;         // classificationBuffer bound?
+    MTL_FLOAT4X4    anchorTransform;
+    MTL_FLOAT4X4    cameraTransform;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    intrinsics;
+    MTL_UINT2       imageSize;
 } FaceParams;

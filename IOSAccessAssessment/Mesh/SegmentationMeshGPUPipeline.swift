@@ -202,6 +202,8 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             let paramsBuffer = try MeshBufferUtils.makeBuffer(
                 device: self.device, length: MemoryLayout<FaceParams>.stride, options: .storageModeShared
             )
+            let paramsPointer = paramsBuffer.contents()
+            paramsPointer.copyMemory(from: &params, byteCount: MemoryLayout<FaceParams>.stride)
             
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
                 throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
