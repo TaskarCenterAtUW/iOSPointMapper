@@ -46,12 +46,6 @@ struct FaceOut {
     var _pad: CUnsignedShort
 }
 
-struct MeshTriangle {
-    var a: simd_float3
-    var b: simd_float3
-    var c: simd_float3
-}
-
 struct SegmentationMeshGPUPipelineResults {
     let triangles: [MeshTriangle]
 }

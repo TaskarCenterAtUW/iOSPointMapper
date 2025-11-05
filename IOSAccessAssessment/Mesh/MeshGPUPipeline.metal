@@ -7,10 +7,7 @@
 
 #include <metal_stdlib>
 using namespace metal;
-
-struct Triangle {
-    float3 a, b, c;
-};
+#import "ShaderTypes.h"
 
 // Face output written by the kernel (one per face)
 struct FaceOut {
@@ -71,7 +68,7 @@ kernel void processMesh(
     device const float3* positions      [[ buffer(0) ]],
     device const uint*   indices        [[ buffer(1) ]],
     device const uchar*  classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
-    device Triangle*     outFaces       [[ buffer(3) ]],
+    device MeshTriangle*     outFaces       [[ buffer(3) ]],
     device atomic_uint*  outCount       [[ buffer(4) ]],
     constant FaceParams& Params         [[ buffer(5) ]],
     device atomic_uint*  debugCounter   [[ buffer(6) ]],
@@ -124,7 +121,7 @@ kernel void processMesh(
     }
     uint slot = atomic_fetch_add_explicit(outCount, 1u, memory_order_relaxed);
     // Write result
-    Triangle outFace;
+    MeshTriangle outFace;
     outFace.a = wp0.xyz;
     outFace.b = wp1.xyz;
     outFace.c = wp2.xyz;

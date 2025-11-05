@@ -486,7 +486,10 @@ extension ARCameraManager {
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
         let trianglesGPU = resultsGPU.triangles.map { triangle in
-            return (triangle.a, triangle.b, triangle.c)
+            let a = simd_float3(triangle.a.x, triangle.a.y, triangle.a.z)
+            let b = simd_float3(triangle.b.x, triangle.b.y, triangle.b.z)
+            let c = simd_float3(triangle.c.x, triangle.c.y, triangle.c.z)
+            return (a, b, c)
         }
         let modelEntityResource = ModelEntityResource(triangles: trianglesGPU, color: .blue, name: "Main")
         let classModelEntityResources: [Int: ModelEntityResource] = [
