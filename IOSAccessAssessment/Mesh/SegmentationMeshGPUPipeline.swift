@@ -12,6 +12,7 @@ import simd
 
 enum SegmentationMeshGPUPipelineError: Error, LocalizedError {
     case isProcessingTrue
+    case emptySegmentation
     case metalInitializationError
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
@@ -21,6 +22,8 @@ enum SegmentationMeshGPUPipelineError: Error, LocalizedError {
         switch self {
         case .isProcessingTrue:
             return "The Segmentation Mesh Pipeline is already processing a request."
+        case .emptySegmentation:
+            return "The Segmentation Image does not contain any valid segmentation data."
         case .metalInitializationError:
             return "Failed to initialize Metal resources for the Segmentation Mesh Pipeline."
         case .metalPipelineCreationError:
@@ -153,7 +156,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> SegmentationMeshGPUPipelineResults {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
-            throw SegmentationMeshPipelineError.emptySegmentation
+            throw SegmentationMeshGPUPipelineError.emptySegmentation
         }
         
         let totalFaceCount = meshAnchorSnapshot.reduce(0) { $0 + $1.value.faceCount }

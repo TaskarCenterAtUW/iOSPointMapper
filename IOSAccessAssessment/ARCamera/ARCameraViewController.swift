@@ -22,8 +22,11 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     )
     func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           meshGPUAnchors: [UUID: MeshGPUAnchor],
-                           for anchors: [ARAnchor]
+                           meshSnapshot: MeshSnapshot,
+                           for anchors: [ARAnchor],
+                           cameraTransform: simd_float4x4,
+                           cameraIntrinsics: simd_float3x3,
+                           segmentationLabelImage: CIImage,
     )
 }
 
@@ -307,8 +310,12 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           meshGPUAnchors: [UUID: MeshGPUAnchor],
-                           for anchors: [ARAnchor]) {
+                           meshSnapshot: MeshSnapshot,
+                           for anchors: [ARAnchor],
+                           cameraTransform: simd_float4x4,
+                           cameraIntrinsics: simd_float3x3,
+                           segmentationLabelImage: CIImage,
+    ) {
         // MARK: Hard-coding values temporarily; need to map anchors properly later
         let anchorIndex = 0
         let color = UIColor.blue
@@ -316,7 +323,12 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         if let existingMeshRecord = meshEntities[anchorIndex] {
             // Update existing mesh entity
             do {
-                try existingMeshRecord.replace(meshGPUAnchors: meshGPUAnchors)
+                try existingMeshRecord.replace(
+                    meshSnapshot: meshSnapshot,
+                    segmentationImage: segmentationLabelImage,
+                    cameraTransform: cameraTransform,
+                    cameraIntrinsics: cameraIntrinsics
+                )
             } catch {
                 print("Error updating mesh entity: \(error)")
             }
@@ -325,7 +337,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             do {
                 let meshRecord = try MeshGPURecord(
                     meshGPUContext,
-                    meshGPUAnchors: meshGPUAnchors,
+                    meshSnapshot: meshSnapshot,
+                    segmentationImage: segmentationLabelImage,
+                    cameraTransform: cameraTransform,
+                    cameraIntrinsics: cameraIntrinsics,
                     color: color, opacity: 0.7, name: name
                 )
                 meshEntities[anchorIndex] = meshRecord

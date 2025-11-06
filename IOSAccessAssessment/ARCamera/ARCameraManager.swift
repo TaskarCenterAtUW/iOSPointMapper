@@ -20,6 +20,7 @@ enum ARCameraManagerError: Error, LocalizedError {
     case segmentationImagePixelBufferUnavailable
     case metalDeviceUnavailable
     case meshSnapshotGeneratorUnavailable
+    case meshSnapshotProcessingFailed
     case anchorEntityNotCreated
     
     var errorDescription: String? {
@@ -44,6 +45,8 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Metal device unavailable."
         case .meshSnapshotGeneratorUnavailable:
             return "Mesh snapshot generator unavailable."
+        case .meshSnapshotProcessingFailed:
+            return "Mesh snapshot processing failed."
         case .anchorEntityNotCreated:
             return "Anchor Entity has not been created."
         }
@@ -110,19 +113,29 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    var meshGPUAnchors: [UUID: MeshGPUAnchor]
-    var lastUpdated: TimeInterval
+    var meshSnapshot: MeshSnapshot
     
     var meshAnchors: [ARMeshAnchor] = []
+    var segmentationLabelImage: CIImage
+    var cameraTransform: simd_float4x4
+    var cameraIntrinsics: simd_float3x3
+    
+    var lastUpdated: TimeInterval
     
     init(
-        meshGPUAnchors: [UUID: MeshGPUAnchor],
+        meshSnapshot: MeshSnapshot,
+        meshAnchors: [ARMeshAnchor] = [],
+        segmentationLabelImage: CIImage,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
         lastUpdated: TimeInterval,
-        meshAnchors: [ARMeshAnchor] = []
     ) {
-        self.meshGPUAnchors = meshGPUAnchors
-        self.lastUpdated = lastUpdated
+        self.meshSnapshot = meshSnapshot
         self.meshAnchors = meshAnchors
+        self.segmentationLabelImage = segmentationLabelImage
+        self.cameraTransform = cameraTransform
+        self.cameraIntrinsics = cameraIntrinsics
+        self.lastUpdated = lastUpdated
     }
 }
 
@@ -271,8 +284,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshGPUAnchors: cameraMeshResults.meshGPUAnchors,
-                        for: anchors
+                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        for: anchors,
+                        cameraTransform: cameraMeshResults.cameraTransform,
+                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
                     )
                 }
             } catch {
@@ -298,8 +314,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshGPUAnchors: cameraMeshResults.meshGPUAnchors,
-                        for: anchors
+                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        for: anchors,
+                        cameraTransform: cameraMeshResults.cameraTransform,
+                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
                     )
                 }
             } catch {
@@ -490,6 +509,9 @@ extension ARCameraManager {
         let clock = ContinuousClock()
         let start = clock.now
         try meshSnapshotGenerator.snapshotAnchors(anchors)
+        guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
+            throw ARCameraManagerError.meshSnapshotProcessingFailed
+        }
 //        let resultsGPU = try await segmentationMeshGPUPipeline.processRequest(
 //            with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
 //            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
@@ -512,7 +534,10 @@ extension ARCameraManager {
 //            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
 //        )
         return ARCameraMeshResults(
-            meshGPUAnchors: meshSnapshotGenerator.meshAnchorsGPU,
+            meshSnapshot: meshSnapshot,
+            segmentationLabelImage: segmentationLabelImage,
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics,
             lastUpdated: Date().timeIntervalSince1970
         )
     }

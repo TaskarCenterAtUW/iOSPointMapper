@@ -18,6 +18,14 @@ struct MeshGPUAnchor {
     var generation: Int = 0
 }
 
+struct MeshSnapshot {
+    let vertexStride: Int
+    let vertexOffset: Int
+    let indexStride: Int
+    let classificationStride: Int
+    let meshGPUAnchors: [UUID: MeshGPUAnchor]
+}
+
 enum MeshSnapshotError: Error, LocalizedError {
     case bufferTooSmall(expected: Int, actual: Int)
     case bufferCreationFailed
@@ -37,45 +45,57 @@ enum MeshSnapshotError: Error, LocalizedError {
  */
 final class MeshGPUSnapshotGenerator: NSObject {
     private let defaultBufferSize: Int = 1024
+    private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
+    private let vertexOffset: Int = 0
+    private let indexElemSize: Int = MemoryLayout<UInt32>.stride
+    private let classificationElemSize: Int = MemoryLayout<UInt8>.stride
     
     private let device: MTLDevice
-    var meshAnchorsGPU: [UUID: MeshGPUAnchor] = [:]
+    var currentSnapshot: MeshSnapshot?
     
     init(device: MTLDevice) {
         self.device = device
     }
     
     func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
-        return meshAnchorsGPU[anchorId]
+        return currentSnapshot?.meshGPUAnchors[anchorId]
     }
     
     func snapshotAnchors(_ anchors: [ARAnchor]) throws {
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        var meshGPUAnchors: [UUID: MeshGPUAnchor] = [:]
         for (_, meshAnchor) in meshAnchors.enumerated() {
-            try createSnapshot(meshAnchor: meshAnchor)
+            let meshGPUAnchor = try createSnapshot(meshAnchor: meshAnchor)
+            meshGPUAnchors[meshAnchor.identifier] = meshGPUAnchor
         }
+        currentSnapshot = MeshSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            meshGPUAnchors: meshGPUAnchors
+        )
     }
     
-    func removeAnchors(_ anchors: [ARAnchor]) {
-        for anchor in anchors {
-            guard let meshAnchor = anchor as? ARMeshAnchor else { continue }
-            meshAnchorsGPU.removeValue(forKey: meshAnchor.identifier)
-        }
-    }
+//    func removeAnchors(_ anchors: [ARAnchor]) {
+//        for anchor in anchors {
+//            guard let meshAnchor = anchor as? ARMeshAnchor else { continue }
+//            currentSnapshot.meshAnchorsGPU.removeValue(forKey: meshAnchor.identifier)
+//        }
+//    }
     
     /**
     Create or update the GPU snapshot for the given ARMeshAnchor
      
      TODO: Check possibility of blitting directly from MTLBuffer to MTLBuffer using a blit command encoder for better performance
      */
-    func createSnapshot(meshAnchor: ARMeshAnchor) throws {
+    func createSnapshot(meshAnchor: ARMeshAnchor) throws -> MeshGPUAnchor {
         let geometry = meshAnchor.geometry
         let vertices = geometry.vertices               // ARGeometrySource (format .float3)
         let faces = geometry.faces                  // ARGeometryElement
         let classifications = geometry.classification
         let anchorTransform = meshAnchor.transform
         
-        var meshGPUAnchor: MeshGPUAnchor = try meshAnchorsGPU[meshAnchor.identifier] ?? {
+        var meshGPUAnchor: MeshGPUAnchor = try currentSnapshot?.meshGPUAnchors[meshAnchor.identifier] ?? {
             let vertexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             let indexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             return MeshGPUAnchor(
@@ -138,6 +158,6 @@ final class MeshGPUSnapshotGenerator: NSObject {
         meshGPUAnchor.indexCount = faces.count * faces.indexCountPerPrimitive
         meshGPUAnchor.faceCount = faces.count
         meshGPUAnchor.generation += 1
-        meshAnchorsGPU[meshAnchor.identifier] = meshGPUAnchor
+        return meshGPUAnchor
     }
 }

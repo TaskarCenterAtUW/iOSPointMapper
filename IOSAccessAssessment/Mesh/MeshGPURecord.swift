@@ -7,6 +7,32 @@
 import ARKit
 import RealityKit
 
+enum MeshGPURecordError: Error, LocalizedError {
+    case isProcessingTrue
+    case emptySegmentation
+    case metalInitializationError
+    case metalPipelineCreationError
+    case meshPipelineBlitEncoderError
+    case unexpectedError
+    
+    var errorDescription: String? {
+        switch self {
+        case .isProcessingTrue:
+            return "The Segmentation Mesh Pipeline is already processing a request."
+        case .emptySegmentation:
+            return "The Segmentation Image does not contain any valid segmentation data."
+        case .metalInitializationError:
+            return "Failed to initialize Metal resources for the Segmentation Mesh Pipeline."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal pipeline state for the Segmentation Mesh Pipeline."
+        case .meshPipelineBlitEncoderError:
+            return "Failed to create Blit Command Encoder for the Segmentation Mesh Pipeline."
+        case .unexpectedError:
+            return "An unexpected error occurred in the Segmentation Mesh Pipeline."
+        }
+    }
+}
+
 @MainActor
 final class MeshGPURecord {
     let entity: ModelEntity
@@ -16,22 +42,36 @@ final class MeshGPURecord {
     let opacity: Float
     
     let context: MeshGPUContext
+    let pipelineState: MTLComputePipelineState
     
     init(
         _ context: MeshGPUContext,
-        meshGPUAnchors: [UUID: MeshGPUAnchor],
+        meshSnapshot: MeshSnapshot,
+        segmentationImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         color: UIColor, opacity: Float, name: String
     ) throws {
-        self.mesh = try MeshGPURecord.createMesh(meshGPUAnchors: meshGPUAnchors)
-        self.context = context
+        self.mesh = try MeshGPURecord.createMesh(
+            meshSnapshot: meshSnapshot,
+            segmentationImage: segmentationImage,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
         self.entity = try MeshGPURecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
         self.name = name
         self.color = color
         self.opacity = opacity
+        
+        self.context = context
+        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
+            throw SegmentationMeshGPUPipelineError.metalInitializationError
+        }
+        self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
     }
     
     func replace(
-        meshGPUAnchors: [UUID: MeshGPUAnchor]
+        meshSnapshot: MeshSnapshot,
+        segmentationImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
         let clock = ContinuousClock()
         let startTime = clock.now
@@ -40,38 +80,56 @@ final class MeshGPURecord {
     }
     
     static func createMesh(
-        meshGPUAnchors: [UUID: MeshGPUAnchor]
+        meshSnapshot: MeshSnapshot,
+        segmentationImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws -> LowLevelMesh {
-        var descriptor = createDescriptor()
-        let vertexCount = meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
-        let indexCount = meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
+        var descriptor = createDescriptor(meshSnapshot: meshSnapshot)
+        let vertexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
+        let indexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
         descriptor.vertexCapacity = Int(vertexCount) * 2
         descriptor.indexCapacity = Int(indexCount) * 2
         
         let mesh = try LowLevelMesh(descriptor: descriptor)
         
-        try update(mesh: mesh, meshGPUAnchors: meshGPUAnchors)
+        try update(
+            mesh: mesh, meshSnapshot: meshSnapshot,
+            segmentationImage: segmentationImage,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
         return mesh
     }
     
     static func update(
         mesh: LowLevelMesh,
-        meshGPUAnchors: [UUID: MeshGPUAnchor]
+        meshSnapshot: MeshSnapshot,
+        segmentationImage: CIImage,
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
+        guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
+            throw MeshGPURecordError.emptySegmentation
+        }
     }
     
-    static func createDescriptor() -> LowLevelMesh.Descriptor {
-        let vertex = MemoryLayout<MeshTriangle>.self
+    static func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
         var d = LowLevelMesh.Descriptor()
         d.vertexAttributes = [
-            .init(semantic: .position, format: .float3, offset: vertex.offset(of: \.a) ?? 0)
+            .init(semantic: .position, format: .float3, offset: meshSnapshot.vertexOffset)
         ]
         d.vertexLayouts = [
-            .init(bufferIndex: 0, bufferStride: vertex.stride)
+            .init(bufferIndex: 0, bufferStride: meshSnapshot.vertexStride)
         ]
         // MARK: Assuming uint32 for indices
         d.indexType = .uint32
         return d
+    }
+    
+    nonisolated static func vertexSize() -> Int {
+        return MemoryLayout<Float>.stride * 3
+    }
+    
+    nonisolated static func indexSize() -> Int {
+        return MemoryLayout<UInt32>.stride
     }
     
     static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
