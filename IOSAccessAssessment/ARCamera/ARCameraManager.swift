@@ -506,8 +506,6 @@ extension ARCameraManager {
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
         // Generate mesh snapshot
-        let clock = ContinuousClock()
-        let start = clock.now
         try meshSnapshotGenerator.snapshotAnchors(anchors)
         guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.meshSnapshotProcessingFailed
@@ -526,8 +524,6 @@ extension ARCameraManager {
 //        let classModelEntityResources: [Int: ModelEntityResource] = [
 //            0: modelEntityResource
 //        ]
-        let duration = clock.now - start
-        print("Mesh snapshot and segmentation processing took \(duration.formatted(.units(allowed: [.milliseconds, .seconds])))")
         
 //        let segmentationMeshResults: SegmentationMeshPipelineResults = try await segmentationMeshPipeline.processRequest(
 //            with: anchors, segmentationImage: segmentationLabelImage,

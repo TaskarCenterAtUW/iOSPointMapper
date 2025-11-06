@@ -137,9 +137,9 @@ kernel void processMeshGPU(
     device uint*                    outIndices     [[ buffer(4) ]],
     device atomic_uint*             outTriCount    [[ buffer(5) ]],
     constant FaceParams&            Params         [[ buffer(6) ]],
-    device atomic_uint*             debugCounter   [[ buffer(7) ]],
-    device atomic_uint*             aabbMinU       [[ buffer(8) ]],  // length 3
-    device atomic_uint*             aabbMaxU       [[ buffer(9) ]],  // length 3
+    device atomic_uint*             aabbMinU       [[ buffer(7) ]],  // length 3
+    device atomic_uint*             aabbMaxU       [[ buffer(8) ]],  // length 3
+    device atomic_uint*             debugCounter   [[ buffer(9) ]],
     uint                            faceId         [[ thread_position_in_grid ]]
 ) {
     if (faceId >= Params.faceCount) return;
@@ -169,6 +169,8 @@ kernel void processMeshGPU(
     float2 pixel = projectWorldPointToPixel(centroid, Params.viewMatrix, Params.intrinsics, Params.imageSize);
     if (pixel.x < 0.0 || pixel.y < 0.0) {
         // Not visible
+        // Increase debug counter for unknown
+        atomic_fetch_add_explicit(&debugCounter[unknown], 1u, memory_order_relaxed);
         return;
     }
     

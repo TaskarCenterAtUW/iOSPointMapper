@@ -115,7 +115,6 @@ final class MeshGPUSnapshotGenerator: NSObject {
             try MeshBufferUtils.copyStrided(count: vertices.count, srcPtr: vertexSrcPtr, srcStride: vertices.stride,
                             dst: meshGPUAnchor.vertexBuffer, elemSize: vertexElemSize)
         }
-        meshGPUAnchor.vertexCount = vertices.count
         
         // Assign index buffer
         // MARK: This code assumes the index type will always be only UInt32
@@ -155,6 +154,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
             meshGPUAnchor.classificationBuffer = nil
         }
         
+        meshGPUAnchor.vertexCount = vertices.count
         meshGPUAnchor.indexCount = faces.count * faces.indexCountPerPrimitive
         meshGPUAnchor.faceCount = faces.count
         meshGPUAnchor.generation += 1

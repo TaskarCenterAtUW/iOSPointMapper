@@ -51,21 +51,25 @@ final class MeshGPURecord {
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         color: UIColor, opacity: Float, name: String
     ) throws {
-        self.mesh = try self.createMesh(
-            meshSnapshot: meshSnapshot,
-            segmentationImage: segmentationImage,
-            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-        )
-        self.entity = try self.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
+        self.context = context
+        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMeshGPU") else {
+            throw SegmentationMeshGPUPipelineError.metalInitializationError
+        }
+        self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
+        
         self.name = name
         self.color = color
         self.opacity = opacity
         
-        self.context = context
-        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
-            throw SegmentationMeshGPUPipelineError.metalInitializationError
-        }
-        self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
+        let descriptor = MeshGPURecord.createDescriptor(meshSnapshot: meshSnapshot)
+        self.mesh = try LowLevelMesh(descriptor: descriptor)
+        self.entity = try MeshGPURecord.generateEntity(
+            mesh: self.mesh, color: color, opacity: opacity, name: name
+        )
+        try self.replace(
+            meshSnapshot: meshSnapshot,
+            segmentationImage: segmentationImage, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
     }
     
     func replace(
@@ -73,31 +77,15 @@ final class MeshGPURecord {
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
-        let clock = ContinuousClock()
-        let startTime = clock.now
-        let duration = clock.now - startTime
-        print("Mesh \(name) updated in \(duration.formatted(.units(allowed: [.milliseconds]))))")
-    }
-    
-    func createMesh(
-        meshSnapshot: MeshSnapshot,
-        segmentationImage: CIImage,
-        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
-    ) throws -> LowLevelMesh {
-        var descriptor = createDescriptor(meshSnapshot: meshSnapshot)
-        let vertexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
-        let indexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
-        descriptor.vertexCapacity = Int(vertexCount) * 2
-        descriptor.indexCapacity = Int(indexCount) * 2
-        
-        let mesh = try LowLevelMesh(descriptor: descriptor)
-        
-        try update(
+//        let clock = ContinuousClock()
+//        let startTime = clock.now
+        try self.update(
             meshSnapshot: meshSnapshot,
             segmentationImage: segmentationImage,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
-        return mesh
+//        let duration = clock.now - startTime
+//        print("Mesh \(name) updated in \(duration.formatted(.units(allowed: [.milliseconds]))))")
     }
     
     func update(
@@ -115,19 +103,16 @@ final class MeshGPURecord {
         let maxVerts       = maxTriangles * 3
         let maxIndices     = maxTriangles * 3
         
-        var outVertexBuf = try MeshBufferUtils.makeBuffer(
-            device: self.context.device, length: maxVerts * meshSnapshot.vertexStride, options: .storageModeShared
-        )
-        try MeshBufferUtils.ensureCapacity(
-            device: self.context.device, buf: &outVertexBuf, requiredBytes: maxVerts * meshSnapshot.vertexStride
-        )
-        
-        var outIndexBuf = try MeshBufferUtils.makeBuffer(
-            device: self.context.device, length: maxIndices * meshSnapshot.indexStride, options: .storageModeShared
-        )
-        try MeshBufferUtils.ensureCapacity(
-            device: self.context.device, buf: &outIndexBuf, requiredBytes: maxIndices * meshSnapshot.indexStride
-        )
+        // Potential replacement of mesh if capacity exceeded
+        var mesh = self.mesh
+        if (mesh.descriptor.vertexCapacity < maxVerts) ||
+            (mesh.descriptor.indexCapacity < maxIndices) {
+            print("MeshGPURecord '\(self.name)' capacity exceeded. Reallocating mesh.")
+            let newDescriptor = MeshGPURecord.createDescriptor(meshSnapshot: meshSnapshot)
+            mesh = try LowLevelMesh(descriptor: newDescriptor)
+            let resource = try MeshResource(from: mesh)
+            self.entity.model?.mesh = resource
+        }
         
         let outTriCount: MTLBuffer = try MeshBufferUtils.makeBuffer(
             device: self.context.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
@@ -172,6 +157,22 @@ final class MeshGPURecord {
         blit.endEncoding()
         let threadGroupSizeWidth = min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256)
         
+//        var outVertexBuf = try MeshBufferUtils.makeBuffer(
+//            device: self.context.device, length: maxVerts * meshSnapshot.vertexStride, options: .storageModeShared
+//        )
+//        try MeshBufferUtils.ensureCapacity(
+//            device: self.context.device, buf: &outVertexBuf, requiredBytes: maxVerts * meshSnapshot.vertexStride
+//        )
+//
+//        var outIndexBuf = try MeshBufferUtils.makeBuffer(
+//            device: self.context.device, length: maxIndices * meshSnapshot.indexStride, options: .storageModeShared
+//        )
+//        try MeshBufferUtils.ensureCapacity(
+//            device: self.context.device, buf: &outIndexBuf, requiredBytes: maxIndices * meshSnapshot.indexStride
+//        )
+        let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
+        let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
+        
         for (_, anchor) in meshSnapshot.meshGPUAnchors {
             guard anchor.faceCount > 0 else { continue }
             
@@ -198,6 +199,7 @@ final class MeshGPURecord {
             commandEncoder.setBytes(&params, length: MemoryLayout<FaceParams>.stride, index: 6)
             commandEncoder.setBuffer(aabbMinU, offset: 0, index: 7)
             commandEncoder.setBuffer(aabbMaxU, offset: 0, index: 8)
+            commandEncoder.setBuffer(debugCounter, offset: 0, index: 9)
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
@@ -207,26 +209,68 @@ final class MeshGPURecord {
             commandEncoder.endEncoding()
         }
         commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        let triCount = outTriCount.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
+        // Clamp to capacity (defensive)
+        let triangleCount = min(Int(triCount), maxTriangles)
+//        let vertexCount   = triangleCount * 3
+        let indexCount    = triangleCount * 3
+
+        let minU = aabbMinU.contents().bindMemory(to: UInt32.self, capacity: 3)
+        let maxU = aabbMaxU.contents().bindMemory(to: UInt32.self, capacity: 3)
+        let aabbMin = SIMD3<Float>(
+            orderedUIntToFloat(minU[0]),
+            orderedUIntToFloat(minU[1]),
+            orderedUIntToFloat(minU[2])
+        )
+        let aabbMax = SIMD3<Float>(
+            orderedUIntToFloat(maxU[0]),
+            orderedUIntToFloat(maxU[1]),
+            orderedUIntToFloat(maxU[2])
+        )
+        let bounds: BoundingBox = BoundingBox(min: aabbMin, max: aabbMax)
+        
+        let debugCountPointer = debugCounter.contents().bindMemory(to: UInt32.self, capacity: debugSlots)
+        var debugCountValue: [UInt32] = []
+        for i in 0..<debugSlots {
+            debugCountValue.append(debugCountPointer.advanced(by: i).pointee)
+        }
+
+        
+        mesh.parts.replaceAll([
+            LowLevelMesh.Part(
+                indexOffset: 0,
+                indexCount: indexCount,
+                topology: .triangle,
+                materialIndex: 0,
+                bounds: bounds
+            )
+        ])
+        self.mesh = mesh
     }
     
-    func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
-        var d = LowLevelMesh.Descriptor()
-        d.vertexAttributes = [
+    static func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
+        let vertexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
+        let indexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
+        var descriptor = LowLevelMesh.Descriptor()
+        descriptor.vertexAttributes = [
             .init(semantic: .position, format: .float3, offset: meshSnapshot.vertexOffset)
         ]
-        d.vertexLayouts = [
+        descriptor.vertexLayouts = [
             .init(bufferIndex: 0, bufferStride: meshSnapshot.vertexStride)
         ]
         // MARK: Assuming uint32 for indices
-        d.indexType = .uint32
-        return d
+        descriptor.indexType = .uint32
+        descriptor.vertexCapacity = vertexCount * 10
+        descriptor.indexCapacity = indexCount * 10
+        return descriptor
     }
     
-    func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
+    static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
         let resource = try MeshResource(from: mesh)
-
-        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
-
+        var material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
+        material.triangleFillMode = .fill
         let entity = ModelEntity(mesh: resource, materials: [material])
         entity.name = name
         return entity
