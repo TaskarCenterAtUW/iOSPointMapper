@@ -110,17 +110,17 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    var classModelEntityResources: [Int: ModelEntityResource]
+    var meshGPUAnchors: [UUID: MeshGPUAnchor]
     var lastUpdated: TimeInterval
     
     var meshAnchors: [ARMeshAnchor] = []
     
     init(
-        classModelEntityResources: [Int: ModelEntityResource],
+        meshGPUAnchors: [UUID: MeshGPUAnchor],
         lastUpdated: TimeInterval,
         meshAnchors: [ARMeshAnchor] = []
     ) {
-        self.classModelEntityResources = classModelEntityResources
+        self.meshGPUAnchors = meshGPUAnchors
         self.lastUpdated = lastUpdated
         self.meshAnchors = meshAnchors
     }
@@ -271,7 +271,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        meshGPUAnchors: cameraMeshResults.meshGPUAnchors,
                         for: anchors
                     )
                 }
@@ -298,7 +298,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        meshGPUAnchors: cameraMeshResults.meshGPUAnchors,
                         for: anchors
                     )
                 }
@@ -490,20 +490,20 @@ extension ARCameraManager {
         let clock = ContinuousClock()
         let start = clock.now
         try meshSnapshotGenerator.snapshotAnchors(anchors)
-        let resultsGPU = try await segmentationMeshGPUPipeline.processRequest(
-            with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
-            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-        )
-        let trianglesGPU = resultsGPU.triangles.map { triangle in
-            let a = simd_float3(triangle.a.x, triangle.a.y, triangle.a.z)
-            let b = simd_float3(triangle.b.x, triangle.b.y, triangle.b.z)
-            let c = simd_float3(triangle.c.x, triangle.c.y, triangle.c.z)
-            return (a, b, c)
-        }
-        let modelEntityResource = ModelEntityResource(triangles: trianglesGPU, color: .blue, name: "Main")
-        let classModelEntityResources: [Int: ModelEntityResource] = [
-            0: modelEntityResource
-        ]
+//        let resultsGPU = try await segmentationMeshGPUPipeline.processRequest(
+//            with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
+//            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+//        )
+//        let trianglesGPU = resultsGPU.triangles.map { triangle in
+//            let a = simd_float3(triangle.a.x, triangle.a.y, triangle.a.z)
+//            let b = simd_float3(triangle.b.x, triangle.b.y, triangle.b.z)
+//            let c = simd_float3(triangle.c.x, triangle.c.y, triangle.c.z)
+//            return (a, b, c)
+//        }
+//        let modelEntityResource = ModelEntityResource(triangles: trianglesGPU, color: .blue, name: "Main")
+//        let classModelEntityResources: [Int: ModelEntityResource] = [
+//            0: modelEntityResource
+//        ]
         let duration = clock.now - start
         print("Mesh snapshot and segmentation processing took \(duration.formatted(.units(allowed: [.milliseconds, .seconds])))")
         
@@ -512,7 +512,7 @@ extension ARCameraManager {
 //            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
 //        )
         return ARCameraMeshResults(
-            classModelEntityResources: classModelEntityResources,
+            meshGPUAnchors: meshSnapshotGenerator.meshAnchorsGPU,
             lastUpdated: Date().timeIntervalSince1970
         )
     }

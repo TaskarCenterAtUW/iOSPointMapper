@@ -93,7 +93,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
     }
     
     func processRequest(
-        with meshAnchorSnapshot: [UUID: MeshAnchorGPU], segmentationImage: CIImage,
+        with meshAnchorSnapshot: [UUID: MeshGPUAnchor], segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         highPriority: Bool = false
     ) async throws -> SegmentationMeshGPUPipelineResults {
@@ -123,7 +123,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
     }
     
     private func processMeshAnchorsWithTimeout(
-        with meshAnchorSnapshot: [UUID: MeshAnchorGPU], segmentationImage: CIImage,
+        with meshAnchorSnapshot: [UUID: MeshGPUAnchor], segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> SegmentationMeshGPUPipelineResults {
         return try await withThrowingTaskGroup(of: SegmentationMeshGPUPipelineResults.self) { group in
@@ -149,7 +149,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         Note: Assumes that the segmentationImage dimensions match the camera image dimensions.
      */
     private func processMeshAnchors(
-        with meshAnchorSnapshot: [UUID: MeshAnchorGPU], segmentationImage: CIImage,
+        with meshAnchorSnapshot: [UUID: MeshGPUAnchor], segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) async throws -> SegmentationMeshGPUPipelineResults {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
@@ -189,14 +189,14 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         blit.endEncoding()
         let threadGroupSizeWidth = min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256)
         
-        for (_, meshAnchorGPU) in meshAnchorSnapshot {
-            guard meshAnchorGPU.faceCount > 0 else { continue }
+        for (_, MeshGPUAnchor) in meshAnchorSnapshot {
+            guard MeshGPUAnchor.faceCount > 0 else { continue }
             
-            let hasClass: UInt32 = meshAnchorGPU.classificationBuffer != nil ? 1 : 0
+            let hasClass: UInt32 = MeshGPUAnchor.classificationBuffer != nil ? 1 : 0
             var params = FaceParams(
-                faceCount: UInt32(meshAnchorGPU.faceCount), totalCount: UInt32(totalFaceCount),
+                faceCount: UInt32(MeshGPUAnchor.faceCount), totalCount: UInt32(totalFaceCount),
                 indicesPerFace: 3, hasClass: hasClass,
-                anchorTransform: meshAnchorGPU.anchorTransform, cameraTransform: cameraTransform,
+                anchorTransform: MeshGPUAnchor.anchorTransform, cameraTransform: cameraTransform,
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
 //            let paramsBuffer = try MeshBufferUtils.makeBuffer(
@@ -209,9 +209,9 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
                 throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
             }
             commandEncoder.setComputePipelineState(self.pipelineState)
-            commandEncoder.setBuffer(meshAnchorGPU.vertexBuffer, offset: 0, index: 0)
-            commandEncoder.setBuffer(meshAnchorGPU.indexBuffer, offset: 0, index: 1)
-            commandEncoder.setBuffer(meshAnchorGPU.classificationBuffer ?? nil, offset: 0, index: 2)
+            commandEncoder.setBuffer(MeshGPUAnchor.vertexBuffer, offset: 0, index: 0)
+            commandEncoder.setBuffer(MeshGPUAnchor.indexBuffer, offset: 0, index: 1)
+            commandEncoder.setBuffer(MeshGPUAnchor.classificationBuffer ?? nil, offset: 0, index: 2)
             commandEncoder.setBuffer(triangleOutBuffer, offset: 0, index: 3)
             commandEncoder.setBuffer(triangleOutCount, offset: 0, index: 4)
 //            commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
@@ -220,7 +220,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
-                width: (meshAnchorGPU.faceCount + threadGroupSize.width - 1) / threadGroupSize.width, height: 1, depth: 1
+                width: (MeshGPUAnchor.faceCount + threadGroupSize.width - 1) / threadGroupSize.width, height: 1, depth: 1
             )
             commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
             commandEncoder.endEncoding()

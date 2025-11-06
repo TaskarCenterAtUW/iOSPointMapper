@@ -7,7 +7,7 @@
 import ARKit
 import RealityKit
 
-struct MeshAnchorGPU {
+struct MeshGPUAnchor {
     var vertexBuffer: MTLBuffer
     var indexBuffer: MTLBuffer
     var classificationBuffer: MTLBuffer? = nil
@@ -39,13 +39,13 @@ final class MeshGPUSnapshotGenerator: NSObject {
     private let defaultBufferSize: Int = 1024
     
     private let device: MTLDevice
-    var meshAnchorsGPU: [UUID: MeshAnchorGPU] = [:]
+    var meshAnchorsGPU: [UUID: MeshGPUAnchor] = [:]
     
     init(device: MTLDevice) {
         self.device = device
     }
     
-    func buffers(for anchorId: UUID) -> MeshAnchorGPU? {
+    func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
         return meshAnchorsGPU[anchorId]
     }
     
@@ -75,10 +75,10 @@ final class MeshGPUSnapshotGenerator: NSObject {
         let classifications = geometry.classification
         let anchorTransform = meshAnchor.transform
         
-        var meshAnchorGPU: MeshAnchorGPU = try meshAnchorsGPU[meshAnchor.identifier] ?? {
+        var meshGPUAnchor: MeshGPUAnchor = try meshAnchorsGPU[meshAnchor.identifier] ?? {
             let vertexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             let indexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
-            return MeshAnchorGPU(
+            return MeshGPUAnchor(
                 vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: nil, anchorTransform: anchorTransform
             )
         }()
@@ -86,58 +86,58 @@ final class MeshGPUSnapshotGenerator: NSObject {
         // Assign vertex buffer
         let vertexElemSize = MemoryLayout<Float>.stride * 3
         let vertexByteCount = vertices.count * vertexElemSize
-        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshAnchorGPU.vertexBuffer, requiredBytes: vertexByteCount)
+        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
         
         let vertexSrcPtr = vertices.buffer.contents().advanced(by: vertices.offset)
         if (vertices.stride == vertexElemSize) {
-            try MeshBufferUtils.copyContiguous(srcPtr: vertexSrcPtr, dst: meshAnchorGPU.vertexBuffer, byteCount: vertexByteCount)
+            try MeshBufferUtils.copyContiguous(srcPtr: vertexSrcPtr, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
         } else {
             try MeshBufferUtils.copyStrided(count: vertices.count, srcPtr: vertexSrcPtr, srcStride: vertices.stride,
-                            dst: meshAnchorGPU.vertexBuffer, elemSize: vertexElemSize)
+                            dst: meshGPUAnchor.vertexBuffer, elemSize: vertexElemSize)
         }
-        meshAnchorGPU.vertexCount = vertices.count
+        meshGPUAnchor.vertexCount = vertices.count
         
         // Assign index buffer
         // MARK: This code assumes the index type will always be only UInt32
         let indexTypeSize = MemoryLayout<UInt32>.stride
         let indexByteCount = faces.count * faces.bytesPerIndex * faces.indexCountPerPrimitive
-        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshAnchorGPU.indexBuffer, requiredBytes: indexByteCount)
+        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.indexBuffer, requiredBytes: indexByteCount)
         
         let indexSrcPtr = faces.buffer.contents()
         if (faces.bytesPerIndex == indexTypeSize) {
-            try MeshBufferUtils.copyContiguous(srcPtr: indexSrcPtr, dst: meshAnchorGPU.indexBuffer, byteCount: indexByteCount)
+            try MeshBufferUtils.copyContiguous(srcPtr: indexSrcPtr, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
         } else {
             try MeshBufferUtils.copyStrided(count: faces.count * faces.indexCountPerPrimitive, srcPtr: indexSrcPtr, srcStride: faces.bytesPerIndex,
-                            dst: meshAnchorGPU.indexBuffer, elemSize: indexTypeSize)
+                            dst: meshGPUAnchor.indexBuffer, elemSize: indexTypeSize)
         }
         
         // Assign classification buffer (if available)
         if let classifications = classifications {
             let classificationElemSize = MemoryLayout<UInt8>.stride
             let classificationByteCount = classifications.count * classificationElemSize
-            if meshAnchorGPU.classificationBuffer == nil {
+            if meshGPUAnchor.classificationBuffer == nil {
                 let newCapacity = MeshBufferUtils.nextCap(classificationByteCount)
-                meshAnchorGPU.classificationBuffer = try MeshBufferUtils.makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
+                meshGPUAnchor.classificationBuffer = try MeshBufferUtils.makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
             } else {
-                try MeshBufferUtils.ensureCapacity(device: device, buf: &meshAnchorGPU.classificationBuffer!, requiredBytes: classificationByteCount)
+                try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.classificationBuffer!, requiredBytes: classificationByteCount)
             }
             let classificationSrcPtr = classifications.buffer.contents().advanced(by: classifications.offset)
             if (classifications.stride == classificationElemSize) {
                 try MeshBufferUtils.copyContiguous(
-                    srcPtr: classificationSrcPtr, dst: meshAnchorGPU.classificationBuffer!, byteCount: classificationByteCount
+                    srcPtr: classificationSrcPtr, dst: meshGPUAnchor.classificationBuffer!, byteCount: classificationByteCount
                 )
             } else {
                 try MeshBufferUtils.copyStrided(
                     count: classifications.count, srcPtr: classificationSrcPtr, srcStride: classifications.stride,
-                    dst: meshAnchorGPU.classificationBuffer!, elemSize: classificationElemSize)
+                    dst: meshGPUAnchor.classificationBuffer!, elemSize: classificationElemSize)
             }
         } else {
-            meshAnchorGPU.classificationBuffer = nil
+            meshGPUAnchor.classificationBuffer = nil
         }
         
-        meshAnchorGPU.indexCount = faces.count * faces.indexCountPerPrimitive
-        meshAnchorGPU.faceCount = faces.count
-        meshAnchorGPU.generation += 1
-        meshAnchorsGPU[meshAnchor.identifier] = meshAnchorGPU
+        meshGPUAnchor.indexCount = faces.count * faces.indexCountPerPrimitive
+        meshGPUAnchor.faceCount = faces.count
+        meshGPUAnchor.generation += 1
+        meshAnchorsGPU[meshAnchor.identifier] = meshGPUAnchor
     }
 }

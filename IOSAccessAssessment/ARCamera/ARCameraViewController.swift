@@ -22,7 +22,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     )
     func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           modelEntityResources: [Int: ModelEntityResource],
+                           meshGPUAnchors: [UUID: MeshGPUAnchor],
                            for anchors: [ARAnchor]
     )
 }
@@ -307,29 +307,31 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           modelEntityResources: [Int : ModelEntityResource],
+                           meshGPUAnchors: [UUID: MeshGPUAnchor],
                            for anchors: [ARAnchor]) {
-        for (anchorIndex, modelEntityResource) in modelEntityResources {
-            if let existingMeshRecord = meshEntities[anchorIndex] {
-                // Update existing mesh entity
-                do {
-                    try existingMeshRecord.replace(modelEntityResource.triangles)
-                } catch {
-                    print("Error updating mesh entity: \(error)")
-                }
-            } else {
-                // Create new mesh entity
-                do {
-                    let meshRecord = try MeshGPURecord(
-                        meshGPUContext,
-                        modelEntityResource.triangles,
-                        color: modelEntityResource.color, opacity: 0.7, name: modelEntityResource.name
-                    )
-                    meshEntities[anchorIndex] = meshRecord
-                    anchorEntity.addChild(meshRecord.entity)
-                } catch {
-                    print("Error creating mesh entity: \(error)")
-                }
+        // MARK: Hard-coding values temporarily; need to map anchors properly later
+        let anchorIndex = 0
+        let color = UIColor.blue
+        let name = "PostProcessedMesh"
+        if let existingMeshRecord = meshEntities[anchorIndex] {
+            // Update existing mesh entity
+            do {
+                try existingMeshRecord.replace(meshGPUAnchors: meshGPUAnchors)
+            } catch {
+                print("Error updating mesh entity: \(error)")
+            }
+        } else {
+            // Create new mesh entity
+            do {
+                let meshRecord = try MeshGPURecord(
+                    meshGPUContext,
+                    meshGPUAnchors: meshGPUAnchors,
+                    color: color, opacity: 0.7, name: name
+                )
+                meshEntities[anchorIndex] = meshRecord
+                anchorEntity.addChild(meshRecord.entity)
+            } catch {
+                print("Error creating mesh entity: \(error)")
             }
         }
     }

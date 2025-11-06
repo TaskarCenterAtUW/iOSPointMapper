@@ -19,14 +19,10 @@ final class MeshGPURecord {
     
     init(
         _ context: MeshGPUContext,
-        vertexBuffer: MTLBuffer, vertexCount: UInt32,
-        indexBuffer: MTLBuffer, indexCount: UInt32,
+        meshGPUAnchors: [UUID: MeshGPUAnchor],
         color: UIColor, opacity: Float, name: String
     ) throws {
-        self.mesh = try MeshGPURecord.createMesh(
-            vertexBuffer: vertexBuffer, vertexCount: vertexCount,
-            indexBuffer: indexBuffer, indexCount: indexCount
-        )
+        self.mesh = try MeshGPURecord.createMesh(meshGPUAnchors: meshGPUAnchors)
         self.context = context
         self.entity = try MeshGPURecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
         self.name = name
@@ -35,8 +31,7 @@ final class MeshGPURecord {
     }
     
     func replace(
-        vertexBuffer: MTLBuffer, vertexCount: UInt32,
-        indexBuffer: MTLBuffer, indexCount: UInt32
+        meshGPUAnchors: [UUID: MeshGPUAnchor]
     ) throws {
         let clock = ContinuousClock()
         let startTime = clock.now
@@ -45,26 +40,23 @@ final class MeshGPURecord {
     }
     
     static func createMesh(
-        vertexBuffer: MTLBuffer, vertexCount: UInt32,
-        indexBuffer: MTLBuffer, indexCount: UInt32
+        meshGPUAnchors: [UUID: MeshGPUAnchor]
     ) throws -> LowLevelMesh {
         var descriptor = createDescriptor()
+        let vertexCount = meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
+        let indexCount = meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
         descriptor.vertexCapacity = Int(vertexCount) * 2
         descriptor.indexCapacity = Int(indexCount) * 2
         
         let mesh = try LowLevelMesh(descriptor: descriptor)
         
-        try update(
-            mesh: mesh, vertexBuffer: vertexBuffer, vertexCount: vertexCount,
-            indexBuffer: indexBuffer, indexCount: indexCount
-        )
+        try update(mesh: mesh, meshGPUAnchors: meshGPUAnchors)
         return mesh
     }
     
     static func update(
         mesh: LowLevelMesh,
-        vertexBuffer: MTLBuffer, vertexCount: UInt32,
-        indexBuffer: MTLBuffer, indexCount: UInt32
+        meshGPUAnchors: [UUID: MeshGPUAnchor]
     ) throws {
     }
     
