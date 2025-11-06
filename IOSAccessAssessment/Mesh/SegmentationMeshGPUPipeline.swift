@@ -192,14 +192,14 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
         blit.endEncoding()
         let threadGroupSizeWidth = min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256)
         
-        for (_, MeshGPUAnchor) in meshAnchorSnapshot {
-            guard MeshGPUAnchor.faceCount > 0 else { continue }
+        for (_, meshGPUAnchor) in meshAnchorSnapshot {
+            guard meshGPUAnchor.faceCount > 0 else { continue }
             
-            let hasClass: UInt32 = MeshGPUAnchor.classificationBuffer != nil ? 1 : 0
+            let hasClass: UInt32 = meshGPUAnchor.classificationBuffer != nil ? 1 : 0
             var params = FaceParams(
-                faceCount: UInt32(MeshGPUAnchor.faceCount), totalCount: UInt32(totalFaceCount),
+                faceCount: UInt32(meshGPUAnchor.faceCount), totalCount: UInt32(totalFaceCount),
                 indicesPerFace: 3, hasClass: hasClass,
-                anchorTransform: MeshGPUAnchor.anchorTransform, cameraTransform: cameraTransform,
+                anchorTransform: meshGPUAnchor.anchorTransform, cameraTransform: cameraTransform,
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
 //            let paramsBuffer = try MeshBufferUtils.makeBuffer(
@@ -212,9 +212,9 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
                 throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
             }
             commandEncoder.setComputePipelineState(self.pipelineState)
-            commandEncoder.setBuffer(MeshGPUAnchor.vertexBuffer, offset: 0, index: 0)
-            commandEncoder.setBuffer(MeshGPUAnchor.indexBuffer, offset: 0, index: 1)
-            commandEncoder.setBuffer(MeshGPUAnchor.classificationBuffer ?? nil, offset: 0, index: 2)
+            commandEncoder.setBuffer(meshGPUAnchor.vertexBuffer, offset: 0, index: 0)
+            commandEncoder.setBuffer(meshGPUAnchor.indexBuffer, offset: 0, index: 1)
+            commandEncoder.setBuffer(meshGPUAnchor.classificationBuffer ?? nil, offset: 0, index: 2)
             commandEncoder.setBuffer(triangleOutBuffer, offset: 0, index: 3)
             commandEncoder.setBuffer(triangleOutCount, offset: 0, index: 4)
 //            commandEncoder.setBuffer(paramsBuffer, offset: 0, index: 5)
@@ -223,7 +223,7 @@ final class SegmentationMeshGPUPipeline: ObservableObject {
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
-                width: (MeshGPUAnchor.faceCount + threadGroupSize.width - 1) / threadGroupSize.width, height: 1, depth: 1
+                width: (meshGPUAnchor.faceCount + threadGroupSize.width - 1) / threadGroupSize.width, height: 1, depth: 1
             )
             commandEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
             commandEncoder.endEncoding()
