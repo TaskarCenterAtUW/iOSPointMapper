@@ -63,6 +63,8 @@
 		A3DA4DAE2EB98D70005BB812 /* MeshGPUPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshGPUPipeline.metal */; };
 		A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
+		A3DA4DBC2EBCB881005BB812 /* MeshGPURecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBB2EBCB87E005BB812 /* MeshGPURecord.swift */; };
+		A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
@@ -198,6 +200,8 @@
 		A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3DA4DB52EBAE101005BB812 /* Stub.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Stub.m; sourceTree = "<group>"; };
+		A3DA4DBB2EBCB87E005BB812 /* MeshGPURecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPURecord.swift; sourceTree = "<group>"; };
+		A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUContext.swift; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
@@ -498,7 +502,9 @@
 			children = (
 				A3DA4DAF2EB99A55005BB812 /* Helpers */,
 				A3DA4DA92EB98A05005BB812 /* SegmentationMeshGPUPipeline.swift */,
+				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
 				A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */,
+				A3DA4DBB2EBCB87E005BB812 /* MeshGPURecord.swift */,
 				A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */,
 				A3DA4DAD2EB98D70005BB812 /* MeshGPUPipeline.metal */,
 			);
@@ -776,6 +782,7 @@
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */,
 				A3DA4DAA2EB98A0B005BB812 /* SegmentationMeshGPUPipeline.swift in Sources */,
+				A3DA4DBC2EBCB881005BB812 /* MeshGPURecord.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
@@ -785,6 +792,7 @@
 				A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
 				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
+				A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */,
 				A31A1E792EAC6B25008B30B7 /* SegmentationARLegacyPipeline.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,

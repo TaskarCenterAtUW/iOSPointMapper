@@ -2,24 +2,10 @@
 //  MeshGPURecord.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 11/5/25.
+//  Created by Himanshu on 11/6/25.
 //
 import ARKit
 import RealityKit
-
-extension LowLevelMesh.Descriptor {
-    static func packedPositionsOnly() -> LowLevelMesh.Descriptor {
-        var d = LowLevelMesh.Descriptor()
-        d.vertexAttributes = [
-            .init(semantic: .position, format: .float3, offset: 0) // xyz at byte 0
-        ]
-        d.vertexLayouts = [
-            .init(bufferIndex: 0, bufferStride: 12)                // packed_float3 stride
-        ]
-        d.indexType = .uint32
-        return d
-    }
-}
 
 @MainActor
 final class MeshGPURecord {
@@ -29,7 +15,10 @@ final class MeshGPURecord {
     let color: UIColor
     let opacity: Float
     
+    let context: MeshGPUContext
+    
     init(
+        _ context: MeshGPUContext,
         vertexBuffer: MTLBuffer, vertexCount: UInt32,
         indexBuffer: MTLBuffer, indexCount: UInt32,
         color: UIColor, opacity: Float, name: String
@@ -38,7 +27,8 @@ final class MeshGPURecord {
             vertexBuffer: vertexBuffer, vertexCount: vertexCount,
             indexBuffer: indexBuffer, indexCount: indexCount
         )
-        self.entity = try MeshRecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
+        self.context = context
+        self.entity = try MeshGPURecord.generateEntity(mesh: self.mesh, color: color, opacity: opacity, name: name)
         self.name = name
         self.color = color
         self.opacity = opacity
@@ -50,16 +40,6 @@ final class MeshGPURecord {
     ) throws {
         let clock = ContinuousClock()
         let startTime = clock.now
-        let updateResults = try MeshGPURecord.updateAndCheckReplaceMesh(
-            mesh: self.mesh,
-            vertexBuffer: vertexBuffer, vertexCount: vertexCount,
-            indexBuffer: indexBuffer, indexCount: indexCount
-        )
-        if updateResults.isReplaced {
-            self.mesh = updateResults.mesh
-            let resource = try MeshResource(from: mesh)
-            self.entity.model?.mesh = resource
-        }
         let duration = clock.now - startTime
         print("Mesh \(name) updated in \(duration.formatted(.units(allowed: [.milliseconds]))))")
     }
@@ -68,62 +48,38 @@ final class MeshGPURecord {
         vertexBuffer: MTLBuffer, vertexCount: UInt32,
         indexBuffer: MTLBuffer, indexCount: UInt32
     ) throws -> LowLevelMesh {
-        var descriptor = LowLevelMesh.Descriptor.packedPositionsOnly()
+        var descriptor = createDescriptor()
         descriptor.vertexCapacity = Int(vertexCount) * 2
         descriptor.indexCapacity = Int(indexCount) * 2
+        
         let mesh = try LowLevelMesh(descriptor: descriptor)
         
-        mesh.withUnsafeMutableBytes(bufferIndex: 0) { dst in
-            let src = UnsafeRawBufferPointer(start: vertexBuffer.contents(), count: Int(vertexCount) * 12)
-            dst.copyMemory(from: src)
-        }
-        mesh.withUnsafeMutableIndices { dst in
-            let src = UnsafeRawBufferPointer(start: indexBuffer.contents(), count: Int(indexCount) * 4)
-            dst.copyMemory(from: src)
-        }
-        let meshBounds: BoundingBox = BoundingBox(min: SIMD3<Float>(-5, -5, -5), max: SIMD3<Float>(5, 5, 5))
-        mesh.parts.replaceAll([
-            LowLevelMesh.Part(
-                indexCount: Int(indexCount),
-                topology: .triangle,
-                bounds: meshBounds
-            )
-        ])
+        try update(
+            mesh: mesh, vertexBuffer: vertexBuffer, vertexCount: vertexCount,
+            indexBuffer: indexBuffer, indexCount: indexCount
+        )
         return mesh
     }
     
-    static func updateAndCheckReplaceMesh(
+    static func update(
         mesh: LowLevelMesh,
         vertexBuffer: MTLBuffer, vertexCount: UInt32,
         indexBuffer: MTLBuffer, indexCount: UInt32
-    ) throws -> (mesh: LowLevelMesh, isReplaced: Bool) {
-        var mesh = mesh
-        var isReplaced = false
-        if (mesh.descriptor.vertexCapacity < Int(vertexCount)) || (mesh.descriptor.indexCapacity < Int(indexCount)) {
-            isReplaced = true
-            var descriptor = LowLevelMesh.Descriptor.packedPositionsOnly()
-            descriptor.vertexCapacity = Int(vertexCount) * 2
-            descriptor.indexCapacity = Int(indexCount) * 2
-            mesh = try LowLevelMesh(descriptor: descriptor)
-        }
-        
-        mesh.withUnsafeMutableBytes(bufferIndex: 0) { dst in
-            let src = UnsafeRawBufferPointer(start: vertexBuffer.contents(), count: Int(vertexCount) * 12)
-            dst.copyMemory(from: src)
-        }
-        mesh.withUnsafeMutableIndices { dst in
-            let src = UnsafeRawBufferPointer(start: indexBuffer.contents(), count: Int(indexCount) * 4)
-            dst.copyMemory(from: src)
-        }
-        let meshBounds: BoundingBox = BoundingBox(min: SIMD3<Float>(-5, -5, -5), max: SIMD3<Float>(5, 5, 5))
-        mesh.parts.replaceAll([
-            LowLevelMesh.Part(
-                indexCount: Int(indexCount),
-                topology: .triangle,
-                bounds: meshBounds
-            )
-        ])
-        return (mesh, isReplaced)
+    ) throws {
+    }
+    
+    static func createDescriptor() -> LowLevelMesh.Descriptor {
+        let vertex = MemoryLayout<MeshTriangle>.self
+        var d = LowLevelMesh.Descriptor()
+        d.vertexAttributes = [
+            .init(semantic: .position, format: .float3, offset: vertex.offset(of: \.a) ?? 0)
+        ]
+        d.vertexLayouts = [
+            .init(bufferIndex: 0, bufferStride: vertex.stride)
+        ]
+        // MARK: Assuming uint32 for indices
+        d.indexType = .uint32
+        return d
     }
     
     static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {

@@ -149,6 +149,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
     
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    // TODO: Try to Initialize the context once and share across the app
+    var meshGPUContext: MeshGPUContext? = nil
     var segmentationMeshGPUPipeline: SegmentationMeshGPUPipeline? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
@@ -190,6 +192,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             throw ARCameraManagerError.metalDeviceUnavailable
         }
         self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
+        self.meshGPUContext = try MeshGPUContext(device: device)
         self.segmentationMeshGPUPipeline = try SegmentationMeshGPUPipeline(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
     }
@@ -258,14 +261,17 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
             return
         }
-        // TODO: Throttle with frame rate if needed
+        guard let meshGPUContext = meshGPUContext else {
+            return
+        }
         Task {
             do {
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
-                        self, modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        self, meshGPUContext: meshGPUContext,
+                        modelEntityResources: cameraMeshResults.classModelEntityResources,
                         for: anchors
                     )
                 }
@@ -282,14 +288,17 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
             return
         }
-        // TODO: Throttle with frame rate if needed
+        guard let meshGPUContext = meshGPUContext else {
+            return
+        }
         Task {
             do {
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
-                        self, modelEntityResources: cameraMeshResults.classModelEntityResources,
+                        self, meshGPUContext: meshGPUContext,
+                        modelEntityResources: cameraMeshResults.classModelEntityResources,
                         for: anchors
                     )
                 }
@@ -460,9 +469,9 @@ extension ARCameraManager {
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
     private func processMeshAnchors(_ anchors: [ARAnchor]) async throws -> ARCameraMeshResults {
-        guard let segmentationMeshPipeline = segmentationMeshPipeline else {
-            throw ARCameraManagerError.segmentationMeshNotConfigured
-        }
+//        guard let segmentationMeshPipeline = segmentationMeshPipeline else {
+//            throw ARCameraManagerError.segmentationMeshNotConfigured
+//        }
         guard let meshSnapshotGenerator = meshSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }

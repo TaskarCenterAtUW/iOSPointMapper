@@ -21,6 +21,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                             for frame: ARFrame
     )
     func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
+                           meshGPUContext: MeshGPUContext,
                            modelEntityResources: [Int: ModelEntityResource],
                            for anchors: [ARAnchor]
     )
@@ -94,7 +95,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [Int: MeshRecord] = [:]
+    private var meshEntities: [Int: MeshGPURecord] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -305,21 +306,23 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
+                           meshGPUContext: MeshGPUContext,
                            modelEntityResources: [Int : ModelEntityResource],
                            for anchors: [ARAnchor]) {
         for (anchorIndex, modelEntityResource) in modelEntityResources {
             if let existingMeshRecord = meshEntities[anchorIndex] {
                 // Update existing mesh entity
                 do {
-                    try existingMeshRecord.replace(with: modelEntityResource.triangles)
+                    try existingMeshRecord.replace(modelEntityResource.triangles)
                 } catch {
                     print("Error updating mesh entity: \(error)")
                 }
             } else {
                 // Create new mesh entity
                 do {
-                    let meshRecord = try MeshRecord(
-                        with: modelEntityResource.triangles,
+                    let meshRecord = try MeshGPURecord(
+                        meshGPUContext,
+                        modelEntityResource.triangles,
                         color: modelEntityResource.color, opacity: 0.7, name: modelEntityResource.name
                     )
                     meshEntities[anchorIndex] = meshRecord
