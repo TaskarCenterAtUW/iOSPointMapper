@@ -421,6 +421,7 @@
 		A34B70CC2DDFE638007B191F /* ARCamera */ = {
 			isa = PBXGroup;
 			children = (
+				A3DA4DC12EBE87B6005BB812 /* Utils */,
 				A3FFAA762DE01631002B99BD /* Helpers */,
 				A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */,
 				A31A1E752EAC448D008B30B7 /* ARLegacyCameraManager.swift */,
@@ -484,7 +485,7 @@
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
-				A3DA4DAF2EB99A55005BB812 /* Helpers */,
+				A3DA4DAF2EB99A55005BB812 /* Utils */,
 				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
 				A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */,
 				A3DA4DBB2EBCB87E005BB812 /* MeshGPURecord.swift */,
@@ -493,12 +494,12 @@
 			path = Mesh;
 			sourceTree = "<group>";
 		};
-		A3DA4DAF2EB99A55005BB812 /* Helpers */ = {
+		A3DA4DAF2EB99A55005BB812 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
 				A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */,
 			);
-			path = Helpers;
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		A3DA4DBF2EBE867F005BB812 /* Utils */ = {
@@ -522,6 +523,14 @@
 				A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */,
 			);
 			path = Functions;
+			sourceTree = "<group>";
+		};
+		A3DA4DC12EBE87B6005BB812 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		A3E84ECD2DDAAECB0096A645 /* Helpers */ = {
@@ -556,7 +565,6 @@
 			isa = PBXGroup;
 			children = (
 				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
-				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -583,8 +591,8 @@
 		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
-				A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */,
 				A3E84ECD2DDAAECB0096A645 /* Helpers */,
+				A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -614,10 +622,10 @@
 		DAA7F8C62CA76514003666D8 /* Image */ = {
 			isa = PBXGroup;
 			children = (
-				A3DA4DC02EBE86C7005BB812 /* Functions */,
-				A3DA4DBF2EBE867F005BB812 /* Utils */,
-				A362AEC72DB59577002D7598 /* Helpers */,
 				A3BB5AF92DB21080008673ED /* Filters */,
+				A3DA4DC02EBE86C7005BB812 /* Functions */,
+				A362AEC72DB59577002D7598 /* Helpers */,
+				A3DA4DBF2EBE867F005BB812 /* Utils */,
 			);
 			path = Image;
 			sourceTree = "<group>";

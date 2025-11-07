@@ -59,8 +59,8 @@ final class MeshGPURecord {
         color: UIColor, opacity: Float, name: String
     ) throws {
         self.context = context
-        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMeshGPU") else {
-            throw SegmentationMeshGPUPipelineError.metalInitializationError
+        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
+            throw MeshGPURecordError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.context.device, nil, &metalCache) == kCVReturnSuccess else {
@@ -167,19 +167,6 @@ final class MeshGPURecord {
         blit.endEncoding()
         let threadGroupSizeWidth = min(self.pipelineState.maxTotalThreadsPerThreadgroup, 256)
         
-//        var outVertexBuf = try MeshBufferUtils.makeBuffer(
-//            device: self.context.device, length: maxVerts * meshSnapshot.vertexStride, options: .storageModeShared
-//        )
-//        try MeshBufferUtils.ensureCapacity(
-//            device: self.context.device, buf: &outVertexBuf, requiredBytes: maxVerts * meshSnapshot.vertexStride
-//        )
-//
-//        var outIndexBuf = try MeshBufferUtils.makeBuffer(
-//            device: self.context.device, length: maxIndices * meshSnapshot.indexStride, options: .storageModeShared
-//        )
-//        try MeshBufferUtils.ensureCapacity(
-//            device: self.context.device, buf: &outIndexBuf, requiredBytes: maxIndices * meshSnapshot.indexStride
-//        )
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
@@ -196,7 +183,7 @@ final class MeshGPURecord {
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-                throw SegmentationMeshGPUPipelineError.metalPipelineCreationError
+                throw MeshGPURecordError.metalPipelineCreationError
             }
             commandEncoder.setComputePipelineState(self.pipelineState)
             // Main inputs

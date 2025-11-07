@@ -164,7 +164,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
-    var segmentationMeshGPUPipeline: SegmentationMeshGPUPipeline? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -206,7 +205,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
-        self.segmentationMeshGPUPipeline = try SegmentationMeshGPUPipeline(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
     }
     
@@ -488,14 +486,8 @@ extension ARCameraManager {
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
     private func processMeshAnchors(_ anchors: [ARAnchor]) async throws -> ARCameraMeshResults {
-//        guard let segmentationMeshPipeline = segmentationMeshPipeline else {
-//            throw ARCameraManagerError.segmentationMeshNotConfigured
-//        }
         guard let meshSnapshotGenerator = meshSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
-        }
-        guard let segmentationMeshGPUPipeline = segmentationMeshGPUPipeline else {
-            throw ARCameraManagerError.segmentationMeshNotConfigured
         }
         guard let cameraImageResults = cameraImageResults else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
@@ -510,25 +502,6 @@ extension ARCameraManager {
         guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.meshSnapshotProcessingFailed
         }
-//        let resultsGPU = try await segmentationMeshGPUPipeline.processRequest(
-//            with: meshSnapshotGenerator.meshAnchorsGPU, segmentationImage: segmentationLabelImage,
-//            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-//        )
-//        let trianglesGPU = resultsGPU.triangles.map { triangle in
-//            let a = simd_float3(triangle.a.x, triangle.a.y, triangle.a.z)
-//            let b = simd_float3(triangle.b.x, triangle.b.y, triangle.b.z)
-//            let c = simd_float3(triangle.c.x, triangle.c.y, triangle.c.z)
-//            return (a, b, c)
-//        }
-//        let modelEntityResource = ModelEntityResource(triangles: trianglesGPU, color: .blue, name: "Main")
-//        let classModelEntityResources: [Int: ModelEntityResource] = [
-//            0: modelEntityResource
-//        ]
-        
-//        let segmentationMeshResults: SegmentationMeshPipelineResults = try await segmentationMeshPipeline.processRequest(
-//            with: anchors, segmentationImage: segmentationLabelImage,
-//            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-//        )
         return ARCameraMeshResults(
             meshSnapshot: meshSnapshot,
             segmentationLabelImage: segmentationLabelImage,

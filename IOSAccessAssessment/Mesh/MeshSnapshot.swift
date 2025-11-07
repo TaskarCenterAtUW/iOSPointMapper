@@ -86,7 +86,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
     /**
     Create or update the GPU snapshot for the given ARMeshAnchor
      
-     TODO: Check possibility of blitting directly from MTLBuffer to MTLBuffer using a blit command encoder for better performance
+     TODO: Check possibility of blitting directly to MTLBuffer using a blit command encoder for better performance
      */
     func createSnapshot(meshAnchor: ARMeshAnchor) throws -> MeshGPUAnchor {
         let geometry = meshAnchor.geometry
