@@ -10,6 +10,7 @@ import RealityKit
 enum MeshGPURecordError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
+    case segmentationTextureError
     case metalInitializationError
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
@@ -21,12 +22,14 @@ enum MeshGPURecordError: Error, LocalizedError {
             return "The Segmentation Mesh Pipeline is already processing a request."
         case .emptySegmentation:
             return "The Segmentation Image does not contain any valid segmentation data."
+        case .segmentationTextureError:
+            return "Failed to create Metal texture from the segmentation image."
         case .metalInitializationError:
-            return "Failed to initialize Metal resources for the Segmentation Mesh Pipeline."
+            return "Failed to initialize Metal resources for the Segmentation Mesh Creation."
         case .metalPipelineCreationError:
-            return "Failed to create Metal pipeline state for the Segmentation Mesh Pipeline."
+            return "Failed to create Metal pipeline state for the Segmentation Mesh Creation."
         case .meshPipelineBlitEncoderError:
-            return "Failed to create Blit Command Encoder for the Segmentation Mesh Pipeline."
+            return "Failed to create Blit Command Encoder for the Segmentation Mesh Creation."
         case .unexpectedError:
             return "An unexpected error occurred in the Segmentation Mesh Pipeline."
         }
@@ -43,6 +46,7 @@ final class MeshGPURecord {
     
     let context: MeshGPUContext
     let pipelineState: MTLComputePipelineState
+    var metalCache: CVMetalTextureCache?
     
     init(
         _ context: MeshGPUContext,
@@ -56,6 +60,9 @@ final class MeshGPURecord {
             throw SegmentationMeshGPUPipelineError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
+        guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.context.device, nil, &metalCache) == kCVReturnSuccess else {
+            throw MeshGPURecordError.metalInitializationError
+        }
         
         self.name = name
         self.color = color
@@ -173,6 +180,8 @@ final class MeshGPURecord {
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
+        let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+        
         for (_, anchor) in meshSnapshot.meshGPUAnchors {
             guard anchor.faceCount > 0 else { continue }
             
@@ -200,6 +209,8 @@ final class MeshGPURecord {
             commandEncoder.setBuffer(aabbMinU, offset: 0, index: 7)
             commandEncoder.setBuffer(aabbMaxU, offset: 0, index: 8)
             commandEncoder.setBuffer(debugCounter, offset: 0, index: 9)
+            
+            commandEncoder.setTexture(segmentationTexture, index: 0)
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
@@ -250,6 +261,47 @@ final class MeshGPURecord {
         self.mesh = mesh
     }
     
+    @inline(__always)
+    private func floatToOrderedUInt(_ f: Float) -> UInt32 {
+        let u = f.bitPattern
+        return (u & 0x8000_0000) != 0 ? ~u : (u | 0x8000_0000)
+    }
+
+    @inline(__always)
+    private func orderedUIntToFloat(_ u: UInt32) -> Float {
+        let raw = (u & 0x8000_0000) != 0 ? (u & ~0x8000_0000) : ~u
+        return Float(bitPattern: raw)
+    }
+    
+    @inline(__always)
+    private func getSegmentationMTLTexture(segmentationPixelBuffer: CVPixelBuffer) throws -> MTLTexture {
+        let width  = CVPixelBufferGetWidth(segmentationPixelBuffer)
+        let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
+        
+        let pixelFormat: MTLPixelFormat = .r8Unorm
+        
+        var segmentationTextureRef: CVMetalTexture?
+        guard let metalCache = self.metalCache else {
+            throw MeshGPURecordError.metalInitializationError
+        }
+        let status = CVMetalTextureCacheCreateTextureFromImage(
+            kCFAllocatorDefault,
+            metalCache,
+            segmentationPixelBuffer,
+            nil,
+            pixelFormat,
+            width,
+            height,
+            0,
+            &segmentationTextureRef
+        )
+        guard status == kCVReturnSuccess, let segmentationTexture = segmentationTextureRef,
+              let texture = CVMetalTextureGetTexture(segmentationTexture) else {
+            throw MeshGPURecordError.segmentationTextureError
+        }
+        return texture
+    }
+    
     static func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
         let vertexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
         let indexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
@@ -274,17 +326,5 @@ final class MeshGPURecord {
         let entity = ModelEntity(mesh: resource, materials: [material])
         entity.name = name
         return entity
-    }
-    
-    @inline(__always)
-    private func floatToOrderedUInt(_ f: Float) -> UInt32 {
-        let u = f.bitPattern
-        return (u & 0x8000_0000) != 0 ? ~u : (u | 0x8000_0000)
-    }
-
-    @inline(__always)
-    private func orderedUIntToFloat(_ u: UInt32) -> Float {
-        let raw = (u & 0x8000_0000) != 0 ? (u & ~0x8000_0000) : ~u
-        return Float(bitPattern: raw)
     }
 }

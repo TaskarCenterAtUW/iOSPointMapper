@@ -44,14 +44,14 @@ inline float2 projectWorldPointToPixel(
 }
 
 kernel void processMesh(
-    device const packed_float3*     positions      [[ buffer(0) ]],
-    device const uint*              indices        [[ buffer(1) ]],
-    device const uint8_t*           classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
-    device MeshTriangle*            outFaces       [[ buffer(3) ]],
-    device atomic_uint*             outCount       [[ buffer(4) ]],
-    constant FaceParams&            Params         [[ buffer(5) ]],
-    device atomic_uint*             debugCounter   [[ buffer(6) ]],
-    uint                            faceId         [[ thread_position_in_grid ]]
+    device const packed_float3*     positions               [[ buffer(0) ]],
+    device const uint*              indices                 [[ buffer(1) ]],
+    device const uint8_t*           classesOpt              [[ buffer(2) ]], // may be null if hasClass == false
+    device MeshTriangle*            outFaces                [[ buffer(3) ]],
+    device atomic_uint*             outCount                [[ buffer(4) ]],
+    constant FaceParams&            Params                  [[ buffer(5) ]],
+    device atomic_uint*             debugCounter            [[ buffer(6) ]],
+    uint                            faceId                  [[ thread_position_in_grid ]]
 ) {
     if (faceId >= Params.faceCount) return;
 
@@ -130,17 +130,18 @@ inline void atomic_max_float(device atomic_uint* dstU, float v) {
 }
 
 kernel void processMeshGPU(
-    device const packed_float3*     positions      [[ buffer(0) ]],
-    device const uint*              indices        [[ buffer(1) ]],
-    device const uint8_t*           classesOpt     [[ buffer(2) ]], // may be null if hasClass == false
-    device packed_float3*           outVertices    [[ buffer(3) ]],
-    device uint*                    outIndices     [[ buffer(4) ]],
-    device atomic_uint*             outTriCount    [[ buffer(5) ]],
-    constant FaceParams&            Params         [[ buffer(6) ]],
-    device atomic_uint*             aabbMinU       [[ buffer(7) ]],  // length 3
-    device atomic_uint*             aabbMaxU       [[ buffer(8) ]],  // length 3
-    device atomic_uint*             debugCounter   [[ buffer(9) ]],
-    uint                            faceId         [[ thread_position_in_grid ]]
+    device const packed_float3*         positions               [[ buffer(0) ]],
+    device const uint*                  indices                 [[ buffer(1) ]],
+    device const uint8_t*               classesOpt              [[ buffer(2) ]], // may be null if hasClass == false
+    device packed_float3*               outVertices             [[ buffer(3) ]],
+    device uint*                        outIndices              [[ buffer(4) ]],
+    device atomic_uint*                 outTriCount             [[ buffer(5) ]],
+    constant FaceParams&                Params                  [[ buffer(6) ]],
+    device atomic_uint*                 aabbMinU                [[ buffer(7) ]],  // length 3
+    device atomic_uint*                 aabbMaxU                [[ buffer(8) ]],  // length 3
+    device atomic_uint*                 debugCounter            [[ buffer(9) ]],
+    texture2d<float, access::sample>    segmentationTexture     [[ texture(0) ]],
+    uint                                faceId                  [[ thread_position_in_grid ]]
 ) {
     if (faceId >= Params.faceCount) return;
     if (Params.hasClass != 0u) {
@@ -171,6 +172,15 @@ kernel void processMeshGPU(
         // Not visible
         // Increase debug counter for unknown
         atomic_fetch_add_explicit(&debugCounter[unknown], 1u, memory_order_relaxed);
+        return;
+    }
+    
+    float2 texCoord = float2(pixel.x / float(Params.imageSize.x),
+                                pixel.y / float(Params.imageSize.y));
+    const sampler segSampler(coord::normalized, address::clamp_to_edge, filter::linear);
+    float segmentationValue = segmentationTexture.sample(segSampler, texCoord).r;
+    uint8_t index = min(uint(round(segmentationValue * 255.0)), 255u);
+    if (index != 1u) {
         return;
     }
     
