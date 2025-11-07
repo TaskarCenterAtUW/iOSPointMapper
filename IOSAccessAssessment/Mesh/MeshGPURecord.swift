@@ -11,6 +11,7 @@ enum MeshGPURecordError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case segmentationTextureError
+    case segmentationBufferFormatNotSupported
     case metalInitializationError
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
@@ -24,6 +25,8 @@ enum MeshGPURecordError: Error, LocalizedError {
             return "The Segmentation Image does not contain any valid segmentation data."
         case .segmentationTextureError:
             return "Failed to create Metal texture from the segmentation image."
+        case .segmentationBufferFormatNotSupported:
+            return "The pixel format of the segmentation image is not supported for Metal texture creation."
         case .metalInitializationError:
             return "Failed to initialize Metal resources for the Segmentation Mesh Creation."
         case .metalPipelineCreationError:
@@ -278,7 +281,9 @@ final class MeshGPURecord {
         let width  = CVPixelBufferGetWidth(segmentationPixelBuffer)
         let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
         
-        let pixelFormat: MTLPixelFormat = .r8Unorm
+        guard let pixelFormat: MTLPixelFormat = segmentationPixelBuffer.metalPixelFormat() else {
+            throw MeshGPURecordError.segmentationBufferFormatNotSupported
+        }
         
         var segmentationTextureRef: CVMetalTexture?
         guard let metalCache = self.metalCache else {
