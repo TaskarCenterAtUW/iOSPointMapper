@@ -44,11 +44,13 @@ enum MeshSnapshotError: Error, LocalizedError {
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
 final class MeshGPUSnapshotGenerator: NSObject {
+    // MARK: These constants can be made configurable later
     private let defaultBufferSize: Int = 1024
     private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
     private let vertexOffset: Int = 0
     private let indexElemSize: Int = MemoryLayout<UInt32>.stride
     private let classificationElemSize: Int = MemoryLayout<UInt8>.stride
+    private let anchorLifetimeThreshold: Int = 3 // Number of generations to keep missing anchors
     
     private let device: MTLDevice
     var currentSnapshot: MeshSnapshot?
@@ -63,11 +65,30 @@ final class MeshGPUSnapshotGenerator: NSObject {
     
     func snapshotAnchors(_ anchors: [ARAnchor]) throws {
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        let meshAnchorIds: Set<UUID> = Set(meshAnchors.map { $0.identifier })
         var meshGPUAnchors: [UUID: MeshGPUAnchor] = [:]
+        
+        // First, update missing anchors from previous snapshot
+        let missingAnchorIds: Set<UUID> = Set(
+            currentSnapshot?.meshGPUAnchors.keys.filter { !meshAnchorIds.contains($0) } ?? []
+        )
+        for missingId in missingAnchorIds {
+            guard var existingAnchor = currentSnapshot?.meshGPUAnchors[missingId] else {
+                continue
+            }
+            existingAnchor.generation += 1
+            guard existingAnchor.generation < anchorLifetimeThreshold else {
+                continue
+            }
+            meshGPUAnchors[missingId] = existingAnchor
+        }
+        
+        // Next, add/update current anchors
         for (_, meshAnchor) in meshAnchors.enumerated() {
             let meshGPUAnchor = try createSnapshot(meshAnchor: meshAnchor)
             meshGPUAnchors[meshAnchor.identifier] = meshGPUAnchor
         }
+        
         currentSnapshot = MeshSnapshot(
             vertexStride: vertexElemSize, vertexOffset: vertexOffset,
             indexStride: indexElemSize,
@@ -76,12 +97,19 @@ final class MeshGPUSnapshotGenerator: NSObject {
         )
     }
     
-//    func removeAnchors(_ anchors: [ARAnchor]) {
-//        for anchor in anchors {
-//            guard let meshAnchor = anchor as? ARMeshAnchor else { continue }
-//            currentSnapshot.meshAnchorsGPU.removeValue(forKey: meshAnchor.identifier)
-//        }
-//    }
+    func removeAnchors(_ anchors: [ARAnchor]) {
+        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        var meshGPUAnchors = currentSnapshot?.meshGPUAnchors ?? [:]
+        for (_, meshAnchor) in meshAnchors.enumerated() {
+            meshGPUAnchors.removeValue(forKey: meshAnchor.identifier)
+        }
+        currentSnapshot = MeshSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            meshGPUAnchors: meshGPUAnchors
+        )
+    }
     
     /**
     Create or update the GPU snapshot for the given ARMeshAnchor

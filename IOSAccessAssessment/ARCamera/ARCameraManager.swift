@@ -221,6 +221,14 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.interfaceOrientation = orientation
     }
     
+    func setFrameRate(_ frameRate: Int) {
+        self.frameRate = frameRate
+    }
+    
+    func setMeshFrameRate(_ meshFrameRate: Int) {
+        self.meshFrameRate = meshFrameRate
+    }
+    
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         guard isConfigured else {
             return
@@ -325,8 +333,34 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
     }
     
-    func setFrameRate(_ frameRate: Int) {
-        self.frameRate = frameRate
+    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+        guard isConfigured else {
+            return
+        }
+        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+            return
+        }
+        guard let meshGPUContext = meshGPUContext else {
+            return
+        }
+        Task {
+            do {
+                let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: true)
+                await MainActor.run {
+                    self.cameraMeshResults = cameraMeshResults
+                    self.outputConsumer?.cameraManagerMesh(
+                        self, meshGPUContext: meshGPUContext,
+                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        for: anchors,
+                        cameraTransform: cameraMeshResults.cameraTransform,
+                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
+                    )
+                }
+            } catch {
+                print("Error processing anchors: \(error.localizedDescription)")
+            }
+        }
     }
 }
 
@@ -485,7 +519,7 @@ extension ARCameraManager {
 
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
-    private func processMeshAnchors(_ anchors: [ARAnchor]) async throws -> ARCameraMeshResults {
+    private func processMeshAnchors(_ anchors: [ARAnchor], shouldRemove: Bool = false) async throws -> ARCameraMeshResults {
         guard let meshSnapshotGenerator = meshSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }
@@ -498,7 +532,11 @@ extension ARCameraManager {
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
         // Generate mesh snapshot
-        try meshSnapshotGenerator.snapshotAnchors(anchors)
+        if (shouldRemove) {
+            meshSnapshotGenerator.removeAnchors(anchors)
+        } else {
+            try meshSnapshotGenerator.snapshotAnchors(anchors)
+        }
         guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.meshSnapshotProcessingFailed
         }
