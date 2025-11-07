@@ -10,6 +10,17 @@ import ARKit
 import RealityKit
 import simd
 
+enum MeshGPUContextError: Error, LocalizedError {
+    case metalInitializationError
+    
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationError:
+            return NSLocalizedString("Failed to initialize Metal for Mesh GPU processing.", comment: "")
+        }
+    }
+}
+
 final class MeshGPUContext {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
@@ -18,7 +29,7 @@ final class MeshGPUContext {
     init(device: MTLDevice) throws {
         self.device = device
         guard let commandQueue = device.makeCommandQueue() else  {
-            throw SegmentationMeshGPUPipelineError.metalInitializationError
+            throw MeshGPUContextError.metalInitializationError
         }
         self.commandQueue = commandQueue
 //        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {

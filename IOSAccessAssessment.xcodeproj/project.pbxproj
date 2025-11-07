@@ -57,9 +57,7 @@
 		A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
-		A3DA4DA32EB82EA5005BB812 /* MeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */; };
 		A3DA4DA82EB94D84005BB812 /* MeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */; };
-		A3DA4DAA2EB98A0B005BB812 /* SegmentationMeshGPUPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA92EB98A05005BB812 /* SegmentationMeshGPUPipeline.swift */; };
 		A3DA4DAE2EB98D70005BB812 /* MeshGPUPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshGPUPipeline.metal */; };
 		A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
@@ -192,9 +190,7 @@
 		A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionView.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRecord.swift; sourceTree = "<group>"; };
 		A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshSnapshot.swift; sourceTree = "<group>"; };
-		A3DA4DA92EB98A05005BB812 /* SegmentationMeshGPUPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationMeshGPUPipeline.swift; sourceTree = "<group>"; };
 		A3DA4DAD2EB98D70005BB812 /* MeshGPUPipeline.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MeshGPUPipeline.metal; sourceTree = "<group>"; };
 		A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBufferUtils.swift; sourceTree = "<group>"; };
 		A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -297,7 +293,7 @@
 				A3FE166A2E18DD2A00DAE5BE /* Info.plist */,
 				A3E84ECE2DDAC7980096A645 /* Annotation */,
 				A39C9F392DD9B01200455E45 /* API */,
-				A305B05A2E1887AE00ECCF9B /* Dataset */,
+				A305B05A2E1887AE00ECCF9B /* LocalDataset */,
 				A3F38C4A2D38A2BF00900547 /* Depth */,
 				CAA947772CDE7001000C6918 /* Auth */,
 				DAA7F8C62CA76514003666D8 /* Image */,
@@ -307,7 +303,6 @@
 				DAA7F8BB2CA67A3C003666D8 /* Camera */,
 				A34B70CC2DDFE638007B191F /* ARCamera */,
 				55659C092BB785EA0094DF01 /* VisionModel */,
-				3222F91D2B622E090019A079 /* Assets.xcassets */,
 				55659C0E2BB786240094DF01 /* View */,
 				55659C0B2BB786050094DF01 /* Shared */,
 				3222F91F2B622E090019A079 /* Preview Content */,
@@ -315,6 +310,7 @@
 				A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */,
 				A3DA4DB52EBAE101005BB812 /* Stub.m */,
 				A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */,
+				3222F91D2B622E090019A079 /* Assets.xcassets */,
 			);
 			path = IOSAccessAssessment;
 			sourceTree = "<group>";
@@ -383,7 +379,7 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		A305B05A2E1887AE00ECCF9B /* Dataset */ = {
+		A305B05A2E1887AE00ECCF9B /* LocalDataset */ = {
 			isa = PBXGroup;
 			children = (
 				A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */,
@@ -395,7 +391,7 @@
 				A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */,
 				A3FE166B2E1C29C800DAE5BE /* OtherDetailsEncoder.swift */,
 			);
-			path = Dataset;
+			path = LocalDataset;
 			sourceTree = "<group>";
 		};
 		A305B0602E18988100ECCF9B /* Config */ = {
@@ -436,7 +432,8 @@
 		A362AEC72DB59577002D7598 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtils.swift */,
+				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
+				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
@@ -467,10 +464,6 @@
 			isa = PBXGroup;
 			children = (
 				A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */,
-				A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */,
-				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
-				A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */,
-				A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */,
 			);
 			path = Functions;
 			sourceTree = "<group>";
@@ -488,24 +481,13 @@
 			path = Filters;
 			sourceTree = "<group>";
 		};
-		A3BB5AFC2DB2EE1A008673ED /* Helpers */ = {
-			isa = PBXGroup;
-			children = (
-				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
-				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
-			);
-			path = Helpers;
-			sourceTree = "<group>";
-		};
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
 				A3DA4DAF2EB99A55005BB812 /* Helpers */,
-				A3DA4DA92EB98A05005BB812 /* SegmentationMeshGPUPipeline.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
 				A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */,
 				A3DA4DBB2EBCB87E005BB812 /* MeshGPURecord.swift */,
-				A3DA4DA22EB82EA3005BB812 /* MeshRecord.swift */,
 				A3DA4DAD2EB98D70005BB812 /* MeshGPUPipeline.metal */,
 			);
 			path = Mesh;
@@ -517,6 +499,29 @@
 				A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A3DA4DBF2EBE867F005BB812 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
+				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
+				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
+				A3DC22F22DD002010020CE84 /* CGImage+CVPixelBuffer.swift */,
+				A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtils.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		A3DA4DC02EBE86C7005BB812 /* Functions */ = {
+			isa = PBXGroup;
+			children = (
+				A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */,
+				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
+				A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */,
+				A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */,
+			);
+			path = Functions;
 			sourceTree = "<group>";
 		};
 		A3E84ECD2DDAAECB0096A645 /* Helpers */ = {
@@ -589,8 +594,6 @@
 			children = (
 				A305B0602E18988100ECCF9B /* Config */,
 				A3B2DDBB2DC99212003416FB /* Functions */,
-				A3BB5AFC2DB2EE1A008673ED /* Helpers */,
-				A3BB5AF92DB21080008673ED /* Filters */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 				A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */,
 				A329A1832EB1548700D86FC3 /* SegmentationMeshPipeline.swift */,
@@ -611,11 +614,10 @@
 		DAA7F8C62CA76514003666D8 /* Image */ = {
 			isa = PBXGroup;
 			children = (
+				A3DA4DC02EBE86C7005BB812 /* Functions */,
+				A3DA4DBF2EBE867F005BB812 /* Utils */,
 				A362AEC72DB59577002D7598 /* Helpers */,
-				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
-				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
-				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
-				A3DC22F22DD002010020CE84 /* CGImage+CVPixelBuffer.swift */,
+				A3BB5AF92DB21080008673ED /* Filters */,
 			);
 			path = Image;
 			sourceTree = "<group>";
@@ -781,7 +783,6 @@
 				A31A1E762EAC448D008B30B7 /* ARLegacyCameraManager.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */,
-				A3DA4DAA2EB98A0B005BB812 /* SegmentationMeshGPUPipeline.swift in Sources */,
 				A3DA4DBC2EBCB881005BB812 /* MeshGPURecord.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
@@ -820,7 +821,6 @@
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
-				A3DA4DA32EB82EA5005BB812 /* MeshRecord.swift in Sources */,
 				A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */,
 				A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */,
