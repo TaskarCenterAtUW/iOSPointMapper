@@ -141,9 +141,11 @@ struct ARCameraMeshResults {
 
 struct ARCameraCache {
     var cameraImageSize: CGSize?
+    var interfaceOrientation: UIInterfaceOrientation
     
-    init(cameraImageSize: CGSize? = nil) {
+    init(cameraImageSize: CGSize? = nil, interfaceOrientation: UIInterfaceOrientation = .portrait) {
         self.cameraImageSize = cameraImageSize
+        self.interfaceOrientation = interfaceOrientation
     }
 }
 
@@ -429,11 +431,14 @@ extension ARCameraManager {
         // Create segmentation frame
         var segmentationBoundingFrameImage: CIImage? = nil
         if (cameraCache.cameraImageSize == nil || cameraCache.cameraImageSize?.width != originalSize.width ||
-            cameraCache.cameraImageSize?.height != originalSize.height) {
+            cameraCache.cameraImageSize?.height != originalSize.height ||
+            cameraCache.interfaceOrientation != interfaceOrientation
+        ) {
             segmentationBoundingFrameImage = getSegmentationBoundingFrame(
                 imageSize: originalSize, frameSize: croppedSize, orientation: imageOrientation
             )
             cameraCache.cameraImageSize = originalSize
+            cameraCache.interfaceOrientation = interfaceOrientation
         }
         let additionalPayload = getAdditionalPayload(
             cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize

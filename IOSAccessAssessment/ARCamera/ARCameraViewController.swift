@@ -213,7 +213,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func getOrientation() -> UIInterfaceOrientation {
-        if let io = view.window?.windowScene?.effectiveGeometry.interfaceOrientation {
+        // TODO: While we are requested to replace usage with effectiveGeometry.interfaceOrientation,
+        //  it seems to cause issues with getting the correct orientation.
+        //  Need to investigate further.
+        if let io = view.window?.windowScene?.interfaceOrientation {
             return io
         }
         // Fallback for early lifecycle / no window
