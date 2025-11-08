@@ -84,10 +84,9 @@ final class SegmentationARPipeline: ObservableObject {
     }
     
     func configure() throws {
-        throw SegmentationARPipelineError.unexpectedError
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
             selectionClasses: self.selectionClasses)
-        self.contourRequestProcessor = ContourRequestProcessor(
+        self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
             selectionClassLabels: self.selectionClassLabels)

@@ -31,14 +31,15 @@ struct ContourRequestProcessor {
     var perimeterThreshold: Float = 0.01
     var selectionClassLabels: [UInt8] = []
     
-    let binaryMaskFilter = BinaryMaskFilter()
+    var binaryMaskFilter: BinaryMaskFilter
     
-    init(contourEpsilon: Float = 0.01,
-                perimeterThreshold: Float = 0.01,
-              selectionClassLabels: [UInt8] = []) {
+    init(
+        contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectionClassLabels: [UInt8] = []
+    ) throws {
         self.contourEpsilon = contourEpsilon
         self.perimeterThreshold = perimeterThreshold
         self.selectionClassLabels = selectionClassLabels
+        self.binaryMaskFilter = try BinaryMaskFilter()
     }
     
     mutating func setSelectionClassLabels(_ selectionClassLabels: [UInt8]) {
@@ -97,9 +98,7 @@ struct ContourRequestProcessor {
         DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
             do {
                 let classLabel = self.selectionClassLabels[index]
-                guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
-                    throw ContourRequestProcessorError.binaryMaskGenerationFailed
-                }
+                let mask = try self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel)
                 let detectedObjectsFromBinaryImage = try self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
                 
                 lock.lock()

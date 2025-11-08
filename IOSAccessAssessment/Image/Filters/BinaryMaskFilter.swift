@@ -11,6 +11,26 @@ import Metal
 import CoreImage
 import MetalKit
 
+enum BinaryMaskFilterError: Error, LocalizedError {
+    case metalInitializationFailed
+    case invalidInputImage
+    case textureCreationFailed
+    case outputImageCreationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationFailed:
+            return "Failed to initialize Metal resources."
+        case .invalidInputImage:
+            return "The input image is invalid."
+        case .textureCreationFailed:
+            return "Failed to create Metal textures."
+        case .outputImageCreationFailed:
+            return "Failed to create output CIImage from Metal texture."
+        }
+    }
+}
+
 struct BinaryMaskFilter {
     // Metal-related properties
     private let device: MTLDevice
@@ -20,10 +40,10 @@ struct BinaryMaskFilter {
     
     private let ciContext: CIContext
 
-    init() {
+    init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            fatalError("Error: Failed to initialize Metal resources")
+            throw BinaryMaskFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -33,7 +53,7 @@ struct BinaryMaskFilter {
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binaryMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            fatalError("Error: Failed to initialize Metal pipeline")
+            throw BinaryMaskFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
@@ -42,7 +62,7 @@ struct BinaryMaskFilter {
 //        fatalError("init(coder:) has not been implemented")
 //    }
 
-    func apply(to inputImage: CIImage, targetValue: UInt8) -> CIImage? {
+    func apply(to inputImage: CIImage, targetValue: UInt8) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
@@ -51,19 +71,16 @@ struct BinaryMaskFilter {
         let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            print("Error: inputImage does not have a valid CGImage")
-            return nil
+            throw BinaryMaskFilterError.invalidInputImage
         }
         
-        guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            return nil
-        }
+        let inputTexture = try self.textureLoader.newTexture(cgImage: cgImage, options: options)
 
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
               let commandBuffer = self.commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw BinaryMaskFilterError.textureCreationFailed
         }
         
         var targetValueLocal = targetValue
@@ -84,6 +101,9 @@ struct BinaryMaskFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])//?.oriented(.downMirrored)
+        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+            throw BinaryMaskFilterError.outputImageCreationFailed
+        }
+        return resultCIImage
     }
 }

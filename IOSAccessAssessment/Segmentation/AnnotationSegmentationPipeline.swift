@@ -75,10 +75,14 @@ class AnnotationSegmentationPipeline {
     let context = CIContext()
     
     init() {
-        self.contourRequestProcessor = ContourRequestProcessor(
-            contourEpsilon: self.contourEpsilon,
-            perimeterThreshold: self.perimeterThreshold,
-            selectionClassLabels: self.selectionClassLabels)
+        do {
+            self.contourRequestProcessor = try ContourRequestProcessor(
+                contourEpsilon: self.contourEpsilon,
+                perimeterThreshold: self.perimeterThreshold,
+                selectionClassLabels: self.selectionClassLabels)
+        } catch {
+            print("Error initializing ContourRequestProcessor in AnnotationSegmentationPipeline: \(error)")
+        }
         self.homographyTransformFilter = HomographyTransformFilter()
         self.unionOfMasksProcessor = UnionOfMasksProcessor()
         self.dimensionBasedMaskFilter = DimensionBasedMaskFilter()
@@ -199,7 +203,7 @@ class AnnotationSegmentationPipeline {
         }
         
         self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        var detectedObjects = self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
+        var detectedObjects = try self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
         if isWay && bounds != nil {
             let largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {
