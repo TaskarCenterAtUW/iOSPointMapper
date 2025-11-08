@@ -55,7 +55,6 @@ struct ARCameraView: View {
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
-    @EnvironmentObject var segmentationMeshPiepline: SegmentationMeshPipeline
     @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
     
@@ -80,13 +79,8 @@ struct ARCameraView: View {
             navigateToAnnotationView = false
             
             segmentationPipeline.setSelectionClasses(selection)
-            segmentationMeshPiepline.setSelectionClasses(selection)
-//                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
-                try manager.configure(
-                    selection: selection,
-                    segmentationPipeline: segmentationPipeline, segmentationMeshPipeline: segmentationMeshPiepline
-                )
+                try manager.configure(selection: selection, segmentationPipeline: segmentationPipeline)
             } catch {
                 managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }

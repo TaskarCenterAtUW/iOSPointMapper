@@ -29,7 +29,6 @@
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
 		A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
-		A329A1842EB1548B00D86FC3 /* SegmentationMeshPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329A1832EB1548700D86FC3 /* SegmentationMeshPipeline.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */; };
@@ -160,7 +159,6 @@
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
 		A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
-		A329A1832EB1548700D86FC3 /* SegmentationMeshPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationMeshPipeline.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionView.swift; sourceTree = "<group>"; };
@@ -596,7 +594,6 @@
 				A3B2DDBB2DC99212003416FB /* Functions */,
 				DAA7F8BF2CA68400003666D8 /* SegmentationViewController.swift */,
 				A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */,
-				A329A1832EB1548700D86FC3 /* SegmentationMeshPipeline.swift */,
 				A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */,
 			);
 			path = Segmentation;
@@ -795,7 +792,6 @@
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,
 				55659C142BB786700094DF01 /* AnnotationView.swift in Sources */,
-				A329A1842EB1548B00D86FC3 /* SegmentationMeshPipeline.swift in Sources */,
 				A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,

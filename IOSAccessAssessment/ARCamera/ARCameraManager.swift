@@ -157,14 +157,12 @@ struct ARCameraCache {
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var selection: [Int] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
-    var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
-    var isConfigured: Bool {
-        return (segmentationPipeline != nil) && (segmentationMeshPipeline != nil) && (meshSnapshotGenerator != nil)
-    }
-    
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
+    var isConfigured: Bool {
+        return (segmentationPipeline != nil) && (meshSnapshotGenerator != nil)
+    }
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -196,11 +194,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func configure(
-        selection: [Int], segmentationPipeline: SegmentationARPipeline, segmentationMeshPipeline: SegmentationMeshPipeline
+        selection: [Int], segmentationPipeline: SegmentationARPipeline
     ) throws {
         self.selection = selection
         self.segmentationPipeline = segmentationPipeline
-        self.segmentationMeshPipeline = segmentationMeshPipeline
         
         // TODO: Create the device once and share across the app
         let device = MTLCreateSystemDefaultDevice()
