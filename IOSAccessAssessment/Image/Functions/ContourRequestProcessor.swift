@@ -7,6 +7,20 @@
 import Vision
 import CoreImage
 
+enum ContourRequestProcessorError: Error, LocalizedError {
+    case contourProcessingFailed
+    case binaryMaskGenerationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .contourProcessingFailed:
+            return "Contour processing failed."
+        case .binaryMaskGenerationFailed:
+            return "Binary mask generation failed for contour detection."
+        }
+    }
+}
+
 /**
     ContourRequestProcessor is a struct that processes contour detection requests using Vision framework.
     It performs the contour detection concurrently for each class label in the segmentation image.
@@ -39,37 +53,35 @@ struct ContourRequestProcessor {
     /**
         Function to rasterize the detected objects on the image. Creates a unique request and handler since it is run on a separate thread
     */
-    func getObjectsFromBinaryImage(for binaryImage: CIImage, classLabel: UInt8,
-                                           orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
-        do {
-            let contourRequest = VNDetectContoursRequest()
-            self.configureContourRequest(request: contourRequest)
-            let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: orientation, options: [:])
-            try contourRequestHandler.perform([contourRequest])
-            guard let contourResults = contourRequest.results else {return nil}
-            
-            let contourResult = contourResults.first
-            
-            var detectedObjects = [DetectedObject]()
-            let contours = contourResult?.topLevelContours
-            for contour in (contours ?? []) {
-                let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
-                let contourDetails = self.getContourDetails(from: contourApproximation)
-                if contourDetails.perimeter < self.perimeterThreshold {continue}
-                
-                detectedObjects.append(DetectedObject(classLabel: classLabel,
-                                                centroid: contourDetails.centroid,
-                                                boundingBox: contourDetails.boundingBox,
-                                                normalizedPoints: contourApproximation.normalizedPoints,
-                                                area: contourDetails.area,
-                                                perimeter: contourDetails.perimeter,
-                                                isCurrent: true))
-            }
-            return detectedObjects
-        } catch {
-            print("Error processing contour detection request: \(error)")
-            return nil
+    func getObjectsFromBinaryImage(
+        for binaryImage: CIImage, classLabel: UInt8, orientation: CGImagePropertyOrientation = .up
+    ) throws -> [DetectedObject] {
+        let contourRequest = VNDetectContoursRequest()
+        self.configureContourRequest(request: contourRequest)
+        let contourRequestHandler = VNImageRequestHandler(ciImage: binaryImage, orientation: orientation, options: [:])
+        try contourRequestHandler.perform([contourRequest])
+        guard let contourResults = contourRequest.results else {
+            throw ContourRequestProcessorError.contourProcessingFailed
         }
+        
+        let contourResult = contourResults.first
+        
+        var detectedObjects = [DetectedObject]()
+        let contours = contourResult?.topLevelContours
+        for contour in (contours ?? []) {
+            let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
+            let contourDetails = self.getContourDetails(from: contourApproximation)
+            if contourDetails.perimeter < self.perimeterThreshold {continue}
+            
+            detectedObjects.append(DetectedObject(classLabel: classLabel,
+                                            centroid: contourDetails.centroid,
+                                            boundingBox: contourDetails.boundingBox,
+                                            normalizedPoints: contourApproximation.normalizedPoints,
+                                            area: contourDetails.area,
+                                            perimeter: contourDetails.perimeter,
+                                            isCurrent: true))
+        }
+        return detectedObjects
     }
     
     /**
@@ -77,25 +89,26 @@ struct ContourRequestProcessor {
             Processes each class in parallel to get the objects.
      */
     // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
-    func processRequest(from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up) -> [DetectedObject]? {
+    func processRequest(
+        from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up
+    ) throws -> [DetectedObject] {
         var detectedObjects: [DetectedObject] = []
         let lock = NSLock()
-//        let start = DispatchTime.now()
         DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
-            let classLabel = self.selectionClassLabels[index]
-            guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
-                print("Failed to generate mask for class label \(classLabel)")
-                return
+            do {
+                let classLabel = self.selectionClassLabels[index]
+                guard let mask = self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel) else {
+                    throw ContourRequestProcessorError.binaryMaskGenerationFailed
+                }
+                let detectedObjectsFromBinaryImage = try self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
+                
+                lock.lock()
+                detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage)
+                lock.unlock()
+            } catch {
+                print("Error processing contour for class label \(self.selectionClassLabels[index]): \(error.localizedDescription)")
             }
-            let detectedObjectsFromBinaryImage = self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
-            
-            lock.lock()
-            detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage ?? [])
-            lock.unlock()
         }
-//        let end = DispatchTime.now()
-//        let timeInterval = (end.uptimeNanoseconds - start.uptimeNanoseconds) / 1_000_000
-//        print("Contour detection time: \(timeInterval) ms")
         return detectedObjects
     }
 }
