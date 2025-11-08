@@ -62,6 +62,7 @@ struct ARCameraView: View {
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @State private var managerStatusViewModel = ManagerStatusViewModel()
+    @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @State private var navigateToAnnotationView = false
     
@@ -72,7 +73,7 @@ struct ARCameraView: View {
                 orientationStack {
                     HostedARCameraViewContainer(arCameraManager: manager)
                     Button {
-                        
+                        objectLocation.setLocationAndHeading()
                     } label: {
                         Image(systemName: ARCameraViewConstants.Images.cameraIcon)
                             .resizable()
@@ -96,6 +97,9 @@ struct ARCameraView: View {
         }
         .onDisappear {
         }
+        .onReceive(manager.$interfaceOrientation) { newOrientation in
+            interfaceOrientation = newOrientation
+        }
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 dismiss()
@@ -113,7 +117,7 @@ struct ARCameraView: View {
     
     @ViewBuilder
     private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        manager.interfaceOrientation.isLandscape ?
+        interfaceOrientation.isLandscape ?
         AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
     }

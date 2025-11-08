@@ -149,6 +149,11 @@ struct ARCameraCache {
     }
 }
 
+struct ARCameraFinalResults {
+    let cameraImageResults: ARCameraImageResults
+    let cameraMeshRecords: [Int: SegmentationMeshRecord]
+}
+
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -368,13 +373,49 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             }
         }
     }
+    
+    /**
+    Perform any final updates to the AR session configuration that will be required by the caller.
+     
+     Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
+     Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
+     */
+    @MainActor
+    func performFinalSessionUpdate() async throws -> ARCameraFinalResults {
+        guard self.isConfigured else {
+            throw ARCameraManagerError.sessionConfigurationFailed
+        }
+        
+        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
+              let depthImage = self.cameraImageResults?.depthImage,
+              let cameraTransform = self.cameraImageResults?.cameraTransform,
+              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
+        else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        var cameraImageResults = try await self.processCameraImage(
+            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            highPriority: true
+        )
+        cameraImageResults.depthImage = depthImage
+        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
+        
+        let cameraMeshRecords = outputConsumer?.getMeshRecords()
+        
+        return ARCameraFinalResults(
+            cameraImageResults: cameraImageResults,
+            cameraMeshRecords: cameraMeshRecords ?? [:]
+        )
+    }
 }
 
 // Functions to handle the image processing pipeline
 extension ARCameraManager {
     private func processCameraImage(
         image: CIImage, interfaceOrientation: UIInterfaceOrientation,
-        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
+        cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        highPriority: Bool = false
     ) async throws -> ARCameraImageResults {
         guard let cameraPixelBufferPool = cameraPixelBufferPool,
               let segmentationPixelBufferPool = segmentationPixelBufferPool else {
@@ -400,7 +441,9 @@ extension ARCameraManager {
         )
         let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBuffer)
         
-        let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(with: renderedCameraImage)
+        let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
+            with: renderedCameraImage, highPriority: highPriority
+        )
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)

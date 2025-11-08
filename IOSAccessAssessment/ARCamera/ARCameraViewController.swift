@@ -29,6 +29,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            segmentationLabelImage: CIImage,
                            segmentationClassIndices: [Int]
     )
+    func getMeshRecords() -> [Int: SegmentationMeshRecord]
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
@@ -283,7 +284,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         let videoFormat = config.videoFormat
         videoFormatImageResolution = videoFormat.imageResolution
         // Run the session
-        arView.session.run(config, options: [])
+        arView.session.run(config, options: [.removeExistingAnchors, .resetTracking, .resetSceneReconstruction])
         // Add Anchor Entity
         arView.scene.addAnchor(anchorEntity)
         // Set the image resolution in the camera manager
@@ -357,6 +358,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                 }
             }
         }
+    }
+    
+    func getMeshRecords() -> [Int: SegmentationMeshRecord] {
+        return meshEntities
     }
 }
 
