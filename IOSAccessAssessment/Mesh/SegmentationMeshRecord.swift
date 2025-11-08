@@ -1,5 +1,5 @@
 //
-//  SegmentedMeshRecord.swift
+//  SegmentationMeshRecord.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 11/6/25.
@@ -7,7 +7,7 @@
 import ARKit
 import RealityKit
 
-enum SegmentedMeshRecordError: Error, LocalizedError {
+enum SegmentationMeshRecordError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case segmentationTextureError
@@ -43,7 +43,7 @@ enum SegmentedMeshRecordError: Error, LocalizedError {
 }
 
 @MainActor
-final class SegmentedMeshRecord {
+final class SegmentationMeshRecord {
     let entity: ModelEntity
     var mesh: LowLevelMesh
     let name: String
@@ -62,31 +62,29 @@ final class SegmentedMeshRecord {
         meshSnapshot: MeshSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        segmentationClass: SegmentationClass,
-        color: UIColor, opacity: Float, name: String
+        segmentationClass: SegmentationClass
     ) throws {
         self.context = context
         guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
-            throw SegmentedMeshRecordError.metalInitializationError
+            throw SegmentationMeshRecordError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.context.device, nil, &metalCache) == kCVReturnSuccess else {
-            throw SegmentedMeshRecordError.metalInitializationError
+            throw SegmentationMeshRecordError.metalInitializationError
         }
         
-        self.name = name
-        self.color = color
-        self.opacity = opacity
-        
         self.segmentationClass = segmentationClass
+        self.name = "Mesh_\(segmentationClass.name)"
+        self.color = UIColor(ciColor: segmentationClass.color)
+        self.opacity = 0.7
         
-        self.segmentationMeshClassificationParams = try SegmentedMeshRecord.getSegmentationMeshClassificationParams(
+        self.segmentationMeshClassificationParams = try SegmentationMeshRecord.getSegmentationMeshClassificationParams(
             segmentationClass: segmentationClass
         )
         
-        let descriptor = SegmentedMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
+        let descriptor = SegmentationMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
         self.mesh = try LowLevelMesh(descriptor: descriptor)
-        self.entity = try SegmentedMeshRecord.generateEntity(
+        self.entity = try SegmentationMeshRecord.generateEntity(
             mesh: self.mesh, color: color, opacity: opacity, name: name
         )
         try self.replace(
@@ -113,7 +111,7 @@ final class SegmentedMeshRecord {
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
-            throw SegmentedMeshRecordError.emptySegmentation
+            throw SegmentationMeshRecordError.emptySegmentation
         }
         let meshGPUAnchors = meshSnapshot.meshGPUAnchors
         
@@ -127,8 +125,8 @@ final class SegmentedMeshRecord {
         // TODO: Optimize reallocation strategy to reduce overallocation
         if (mesh.descriptor.vertexCapacity < maxVerts) ||
             (mesh.descriptor.indexCapacity < maxIndices) {
-            print("SegmentedMeshRecord '\(self.name)' capacity exceeded. Reallocating mesh.")
-            let newDescriptor = SegmentedMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
+            print("SegmentationMeshRecord '\(self.name)' capacity exceeded. Reallocating mesh.")
+            let newDescriptor = SegmentationMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
             mesh = try LowLevelMesh(descriptor: newDescriptor)
             let resource = try MeshResource(from: mesh)
             self.entity.model?.mesh = resource
@@ -167,10 +165,10 @@ final class SegmentedMeshRecord {
                                       UInt32(CVPixelBufferGetHeight(segmentationPixelBuffer)))
         // Set up the Metal command buffer
         guard let commandBuffer = self.context.commandQueue.makeCommandBuffer() else {
-            throw SegmentedMeshRecordError.metalPipelineCreationError
+            throw SegmentationMeshRecordError.metalPipelineCreationError
         }
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
-            throw SegmentedMeshRecordError.meshPipelineBlitEncoderError
+            throw SegmentationMeshRecordError.meshPipelineBlitEncoderError
         }
         blit.fill(buffer: outTriCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
         blit.fill(buffer: debugCounter, range: 0..<debugBytes, value: 0)
@@ -194,7 +192,7 @@ final class SegmentedMeshRecord {
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-                throw SegmentedMeshRecordError.metalPipelineCreationError
+                throw SegmentationMeshRecordError.metalPipelineCreationError
             }
             commandEncoder.setComputePipelineState(self.pipelineState)
             // Main inputs
@@ -281,12 +279,12 @@ final class SegmentedMeshRecord {
         let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
         
         guard let pixelFormat: MTLPixelFormat = segmentationPixelBuffer.metalPixelFormat() else {
-            throw SegmentedMeshRecordError.segmentationBufferFormatNotSupported
+            throw SegmentationMeshRecordError.segmentationBufferFormatNotSupported
         }
         
         var segmentationTextureRef: CVMetalTexture?
         guard let metalCache = self.metalCache else {
-            throw SegmentedMeshRecordError.metalInitializationError
+            throw SegmentationMeshRecordError.metalInitializationError
         }
         let status = CVMetalTextureCacheCreateTextureFromImage(
             kCFAllocatorDefault,
@@ -301,7 +299,7 @@ final class SegmentedMeshRecord {
         )
         guard status == kCVReturnSuccess, let segmentationTexture = segmentationTextureRef,
               let texture = CVMetalTextureGetTexture(segmentationTexture) else {
-            throw SegmentedMeshRecordError.segmentationTextureError
+            throw SegmentationMeshRecordError.segmentationTextureError
         }
         return texture
     }
@@ -318,7 +316,7 @@ final class SegmentedMeshRecord {
         try segmentationMeshClassificationLookupTable.withUnsafeBufferPointer { ptr in
             try withUnsafeMutableBytes(of: &segmentationMeshClassificationParams) { bytes in
                 guard let srcPtr = ptr.baseAddress, let dst = bytes.baseAddress else {
-                    throw SegmentedMeshRecordError.segmentationClassificationParamsError
+                    throw SegmentationMeshRecordError.segmentationClassificationParamsError
                 }
                 let byteCount = segmentationMeshClassificationLookupTable.count * MemoryLayout<UInt32>.stride
                 dst.copyMemory(from: srcPtr, byteCount: byteCount)

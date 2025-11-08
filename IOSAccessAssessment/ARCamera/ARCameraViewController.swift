@@ -27,6 +27,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
+                           segmentationClassIndices: [Int]
     )
 }
 
@@ -98,7 +99,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [Int: SegmentedMeshRecord] = [:]
+    private var meshEntities: [Int: SegmentationMeshRecord] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -315,74 +316,44 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
+                           segmentationClassIndices: [Int]
     ) {
-        // MARK: Hard-coding values temporarily; need to map anchors properly later
-        let anchorIndex = 0
-        let color = UIColor.blue
-        let name = "PostProcessedMesh"
-        if let existingMeshRecord = meshEntities[anchorIndex] {
-            // Update existing mesh entity
-            do {
-                try existingMeshRecord.replace(
-                    meshSnapshot: meshSnapshot,
-                    segmentationImage: segmentationLabelImage,
-                    cameraTransform: cameraTransform,
-                    cameraIntrinsics: cameraIntrinsics
-                )
-            } catch {
-                print("Error updating mesh entity: \(error)")
+        for segmentationClassIndex in segmentationClassIndices {
+            guard (segmentationClassIndex < Constants.SelectedSegmentationConfig.classes.count) else {
+                print("Invalid segmentation class index: \(segmentationClassIndex)")
+                continue
             }
-        } else {
-            // Create new mesh entity
-            do {
-                let meshRecord = try SegmentedMeshRecord(
-                    meshGPUContext,
-                    meshSnapshot: meshSnapshot,
-                    segmentationImage: segmentationLabelImage,
-                    cameraTransform: cameraTransform,
-                    cameraIntrinsics: cameraIntrinsics,
-                    segmentationClass: Constants.SelectedSegmentationConfig.classes.first!,
-                    color: color, opacity: 0.7, name: name
-                )
-                meshEntities[anchorIndex] = meshRecord
-                anchorEntity.addChild(meshRecord.entity)
-            } catch {
-                print("Error creating mesh entity: \(error)")
+            let segmentationClass = Constants.SelectedSegmentationConfig.classes[segmentationClassIndex]
+            if let existingMeshRecord = meshEntities[segmentationClassIndex] {
+                // Update existing mesh entity
+                do {
+                    try existingMeshRecord.replace(
+                        meshSnapshot: meshSnapshot,
+                        segmentationImage: segmentationLabelImage,
+                        cameraTransform: cameraTransform,
+                        cameraIntrinsics: cameraIntrinsics
+                    )
+                } catch {
+                    print("Error updating mesh entity: \(error)")
+                }
+            } else {
+                // Create new mesh entity
+                do {
+                    let meshRecord = try SegmentationMeshRecord(
+                        meshGPUContext,
+                        meshSnapshot: meshSnapshot,
+                        segmentationImage: segmentationLabelImage,
+                        cameraTransform: cameraTransform,
+                        cameraIntrinsics: cameraIntrinsics,
+                        segmentationClass: segmentationClass
+                    )
+                    meshEntities[segmentationClassIndex] = meshRecord
+                    anchorEntity.addChild(meshRecord.entity)
+                } catch {
+                    print("Error creating mesh entity: \(error)")
+                }
             }
         }
-    }
-    
-    private func createMeshEntity(
-        triangles: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)],
-        color: UIColor = .green,
-        opacity: Float = 0.4,
-        name: String = "Mesh"
-    ) -> ModelEntity? {
-        if (triangles.isEmpty) {
-            return nil
-        }
-        
-        var positions: [SIMD3<Float>] = []
-        var indices: [UInt32] = []
-
-        for (i, triangle) in triangles.enumerated() {
-            let baseIndex = UInt32(i * 3)
-            positions.append(triangle.0)
-            positions.append(triangle.1)
-            positions.append(triangle.2)
-            indices.append(contentsOf: [baseIndex, baseIndex + 1, baseIndex + 2])
-        }
-
-        var meshDescriptors = MeshDescriptor(name: name)
-        meshDescriptors.positions = MeshBuffers.Positions(positions)
-        meshDescriptors.primitives = .triangles(indices)
-        guard let mesh = try? MeshResource.generate(from: [meshDescriptors]) else {
-            return nil
-        }
-
-        let material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
-        let entity = ModelEntity(mesh: mesh, materials: [material])
-        return entity
     }
 }
 

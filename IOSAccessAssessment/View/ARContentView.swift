@@ -51,7 +51,7 @@ class ManagerStatusViewModel: ObservableObject {
 }
 
 struct ARContentView: View {
-    var selection: [Int]
+    let selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
@@ -90,6 +90,7 @@ struct ARContentView: View {
 //                segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
             do {
                 try manager.configure(
+                    selection: selection,
                     segmentationPipeline: segmentationPipeline, segmentationMeshPipeline: segmentationMeshPiepline
                 )
             } catch {

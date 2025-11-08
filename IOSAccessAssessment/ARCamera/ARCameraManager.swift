@@ -155,11 +155,12 @@ struct ARCameraCache {
     - Accept configuration of the SegmentationARPipeline through a separate `configure()` method.
  */
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
+    var selection: [Int] = []
+    var segmentationPipeline: SegmentationARPipeline? = nil
+    var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
     var isConfigured: Bool {
         return (segmentationPipeline != nil) && (segmentationMeshPipeline != nil) && (meshSnapshotGenerator != nil)
     }
-    var segmentationPipeline: SegmentationARPipeline? = nil
-    var segmentationMeshPipeline: SegmentationMeshPipeline? = nil
     
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
@@ -194,7 +195,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         super.init()
     }
     
-    func configure(segmentationPipeline: SegmentationARPipeline, segmentationMeshPipeline: SegmentationMeshPipeline) throws {
+    func configure(
+        selection: [Int], segmentationPipeline: SegmentationARPipeline, segmentationMeshPipeline: SegmentationMeshPipeline
+    ) throws {
+        self.selection = selection
         self.segmentationPipeline = segmentationPipeline
         self.segmentationMeshPipeline = segmentationMeshPipeline
         
@@ -294,7 +298,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                        segmentationClassIndices: self.selection
                     )
                 }
             } catch {
@@ -324,7 +329,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                        segmentationClassIndices: self.selection
                     )
                 }
             } catch {
@@ -354,7 +360,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                        segmentationClassIndices: self.selection
                     )
                 }
             } catch {

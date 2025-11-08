@@ -61,7 +61,7 @@
 		A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */; };
 		A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
-		A3DA4DBC2EBCB881005BB812 /* SegmentedMeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBB2EBCB87E005BB812 /* SegmentedMeshRecord.swift */; };
+		A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */; };
 		A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
@@ -196,7 +196,7 @@
 		A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3DA4DB52EBAE101005BB812 /* Stub.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Stub.m; sourceTree = "<group>"; };
-		A3DA4DBB2EBCB87E005BB812 /* SegmentedMeshRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedMeshRecord.swift; sourceTree = "<group>"; };
+		A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationMeshRecord.swift; sourceTree = "<group>"; };
 		A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUContext.swift; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
@@ -488,7 +488,7 @@
 				A3DA4DAF2EB99A55005BB812 /* Utils */,
 				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
 				A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */,
-				A3DA4DBB2EBCB87E005BB812 /* SegmentedMeshRecord.swift */,
+				A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */,
 				A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */,
 			);
 			path = Mesh;
@@ -791,7 +791,7 @@
 				A31A1E762EAC448D008B30B7 /* ARLegacyCameraManager.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */,
-				A3DA4DBC2EBCB881005BB812 /* SegmentedMeshRecord.swift in Sources */,
+				A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,

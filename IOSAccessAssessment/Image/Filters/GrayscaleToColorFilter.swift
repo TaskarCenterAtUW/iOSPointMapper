@@ -51,7 +51,7 @@ struct GrayscaleToColorFilter {
         }
         
         // TODO: Instead of creating texture from CGImage, try to create from CVPixelBuffer directly
-        // As shown in SegmentedMeshRecord.swift
+        // As shown in SegmentationMeshRecord.swift
         guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
             return nil
         }

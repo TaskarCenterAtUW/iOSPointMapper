@@ -64,7 +64,7 @@ enum AnnotationViewConstants {
 }
 
 struct AnnotationView: View {
-    var selection: [Int]
+    let selection: [Int]
     var objectLocation: ObjectLocation
     
     @EnvironmentObject var sharedImageData: SharedImageData
