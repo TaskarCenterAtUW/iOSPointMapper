@@ -167,7 +167,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
     var imageResolution: CGSize = .zero
-    var interfaceOrientation: UIInterfaceOrientation = .portrait
+    @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
@@ -185,8 +185,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var segmentationPixelBufferPool: CVPixelBufferPool? = nil
     var segmentationColorSpace: CGColorSpace? = nil
     
-    @Published var cameraImageResults: ARCameraImageResults?
-    @Published var cameraMeshResults: ARCameraMeshResults?
+    var cameraImageResults: ARCameraImageResults?
+    var cameraMeshResults: ARCameraMeshResults?
     var cameraCache: ARCameraCache = ARCameraCache()
     
     override init() {

@@ -138,7 +138,7 @@ final class SegmentationARPipeline: ObservableObject {
             }
             group.addTask {
                 try await Task.sleep(for: .seconds(self.timeoutInSeconds))
-                throw SegmentationMeshPipelineError.unexpectedError
+                throw SegmentationARPipelineError.unexpectedError
             }
             let result = try await group.next()!
             group.cancelAll()

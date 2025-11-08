@@ -213,7 +213,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func getOrientation() -> UIInterfaceOrientation {
-        if let io = view.window?.windowScene?.interfaceOrientation {
+        if let io = view.window?.windowScene?.effectiveGeometry.interfaceOrientation {
             return io
         }
         // Fallback for early lifecycle / no window
