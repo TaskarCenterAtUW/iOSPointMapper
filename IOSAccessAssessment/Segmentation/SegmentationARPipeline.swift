@@ -80,7 +80,12 @@ final class SegmentationARPipeline: ObservableObject {
     private var contourRequestProcessor: ContourRequestProcessor?
     
     init() {
-        self.segmentationModelRequestProcessor = SegmentationModelRequestProcessor(
+        
+    }
+    
+    func configure() throws {
+        throw SegmentationARPipelineError.unexpectedError
+        self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
             selectionClasses: self.selectionClasses)
         self.contourRequestProcessor = ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
@@ -160,7 +165,7 @@ final class SegmentationARPipeline: ObservableObject {
      Since this function can be called within a Task, it checks for cancellation at various points to ensure that it can exit early if needed.
      */
     private func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
-        let segmentationResults = self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage) ?? nil
+        let segmentationResults = try self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage)
         guard let segmentationImage = segmentationResults?.segmentationImage else {
             throw SegmentationARPipelineError.invalidSegmentation
         }

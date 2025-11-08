@@ -14,6 +14,7 @@ enum SetupViewConstants {
         static let uploadChangesetTitle = "Upload Changeset"
         static let selectClassesText = "Select Classes to Identify"
         
+        // Alerts
         static let changesetOpeningErrorTitle = "Changeset failed to open. Please retry."
         static let changesetOpeningRetryText = "Retry"
         static let changesetOpeningRetryMessageText = "Failed to open changeset."
@@ -21,6 +22,9 @@ enum SetupViewConstants {
         static let changesetClosingErrorTitle = "Changeset failed to close. Please retry."
         static let changesetClosingRetryText = "Retry"
         static let changesetClosingRetryMessageText = "Failed to close changeset."
+        static let modelInitializationErrorTitle = "Machine Learning Model initialization failed. Please retry."
+        static let modelInitializationRetryText = "Retry"
+        static let modelInitializationRetryMessageText = "Failed to initialize the machine learning model."
         
         static let confirmationDialogTitle = "Are you sure you want to log out?"
         static let confirmationDialogConfirmText = "Log out"
@@ -126,28 +130,41 @@ struct SelectClassesInfoTip: Tip {
 
 class ChangeSetOpenViewModel: ObservableObject {
     @Published var isChangesetOpened: Bool = false
-    @Published var showOpeningRetryAlert: Bool = false
-    @Published var openRetryMessage: String = ""
+    @Published var showRetryAlert: Bool = false
+    @Published var retryMessage: String = ""
     
-    func update(isChangesetOpened: Bool, showOpeningRetryAlert: Bool, openRetryMessage: String) {
+    func update(isChangesetOpened: Bool, showRetryAlert: Bool, retryMessage: String) {
         objectWillChange.send()
         
         self.isChangesetOpened = isChangesetOpened
-        self.showOpeningRetryAlert = showOpeningRetryAlert
-        self.openRetryMessage = openRetryMessage
+        self.showRetryAlert = showRetryAlert
+        self.retryMessage = retryMessage
     }
 }
 
 class ChangeSetCloseViewModel: ObservableObject {
 //    @Published var isChangesetClosed = false
-    @Published var showClosingRetryAlert = false
-    @Published var closeRetryMessage = ""
+    @Published var showRetryAlert = false
+    @Published var retryMessage = ""
     
-    func update(showClosingRetryAlert: Bool, closeRetryMessage: String) {
+    func update(showRetryAlert: Bool, retryMessage: String) {
         objectWillChange.send()
         
-        self.showClosingRetryAlert = showClosingRetryAlert
-        self.closeRetryMessage = closeRetryMessage
+        self.showRetryAlert = showRetryAlert
+        self.retryMessage = retryMessage
+    }
+}
+
+class ModelInitializationViewModel: ObservableObject {
+    @Published var areModelsInitialized: Bool = false
+    @Published var showRetryAlert: Bool = false
+    @Published var retryMessage: String = ""
+    
+    func update(areModelsInitialized: Bool, showRetryAlert: Bool, retryMessage: String) {
+        objectWillChange.send()
+        
+        self.showRetryAlert = showRetryAlert
+        self.retryMessage = retryMessage
     }
 }
 
@@ -163,6 +180,7 @@ struct SetupView: View {
     
     @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
+    @StateObject private var modelInitializationViewModel = ModelInitializationViewModel()
     
     @StateObject private var sharedImageData: SharedImageData = SharedImageData()
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
@@ -288,28 +306,38 @@ struct SetupView: View {
 //                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
 //            }
             // Alert for changeset opening error
-            .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showOpeningRetryAlert) {
+            .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
-                    changesetOpenViewModel.update(isChangesetOpened: false, showOpeningRetryAlert: false, openRetryMessage: "")
+                    changesetOpenViewModel.update(isChangesetOpened: false, showRetryAlert: false, retryMessage: "")
                     
                     openChangeset()
                 }
             } message: {
-                Text(changesetOpenViewModel.openRetryMessage)
+                Text(changesetOpenViewModel.retryMessage)
             }
             // Alert for changeset closing error
-            .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $changeSetCloseViewModel.showClosingRetryAlert) {
+            .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $changeSetCloseViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetClosingRetryText) {
-                    changeSetCloseViewModel.update(showClosingRetryAlert: false, closeRetryMessage: "")
+                    changeSetCloseViewModel.update(showRetryAlert: false, retryMessage: "")
                     
                     closeChangeset()
                 }
             } message: {
-                Text(changeSetCloseViewModel.closeRetryMessage)
+                Text(changeSetCloseViewModel.retryMessage)
+            }
+            .alert(SetupViewConstants.Texts.modelInitializationErrorTitle, isPresented: $modelInitializationViewModel.showRetryAlert) {
+                Button(SetupViewConstants.Texts.modelInitializationRetryText) {
+                    modelInitializationViewModel.update(areModelsInitialized: false, showRetryAlert: false, retryMessage: "")
+                    
+                    initializeModels()
+                }
             }
             .onAppear {
                 if !changesetOpenViewModel.isChangesetOpened {
                     openChangeset()
+                }
+                if !modelInitializationViewModel.areModelsInitialized {
+                    initializeModels()
                 }
             }
             .sheet(isPresented: $showChangesetLearnMoreSheet) {
@@ -331,8 +359,8 @@ struct SetupView: View {
         guard let workspaceId = workspaceViewModel.workspaceId else {
             DispatchQueue.main.async {
                 changesetOpenViewModel.update(
-                    isChangesetOpened: false, showOpeningRetryAlert: true,
-                    openRetryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(SetupViewConstants.Texts.workspaceIdMissingMessageText)")
+                    isChangesetOpened: false, showRetryAlert: true,
+                    retryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(SetupViewConstants.Texts.workspaceIdMissingMessageText)")
             }
             return
         }
@@ -349,8 +377,8 @@ struct SetupView: View {
             case .failure(let error):
                 DispatchQueue.main.async {
                     changesetOpenViewModel.update(
-                        isChangesetOpened: false, showOpeningRetryAlert: true,
-                        openRetryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)")
+                        isChangesetOpened: false, showRetryAlert: true,
+                        retryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)")
                 }
             }
         }
@@ -370,9 +398,23 @@ struct SetupView: View {
             case .failure(let error):
                 DispatchQueue.main.async {
                     changeSetCloseViewModel.update(
-                        showClosingRetryAlert: true,
-                        closeRetryMessage: "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)")
+                        showRetryAlert: true,
+                        retryMessage: "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)")
                 }
+            }
+        }
+    }
+    
+    private func initializeModels() {
+        do {
+            try segmentationPipeline.configure()
+            modelInitializationViewModel.update(areModelsInitialized: true, showRetryAlert: false, retryMessage: "")
+        } catch {
+            // Sleep for a short duration to avoid rapid retry loops
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                modelInitializationViewModel.update(
+                    areModelsInitialized: false, showRetryAlert: true,
+                    retryMessage: "\(SetupViewConstants.Texts.modelInitializationRetryMessageText) \nError: \(error.localizedDescription)")
             }
         }
     }

@@ -8,6 +8,20 @@ import CoreML
 import Vision
 import CoreImage
 
+enum SegmentationModelError: Error, LocalizedError {
+    case modelLoadingError
+    case segmentationProcessingError
+    
+    var errorDescription: String? {
+        switch self {
+        case .modelLoadingError:
+            return "Failed to load the segmentation model."
+        case .segmentationProcessingError:
+            return "Error occurred while processing the segmentation request."
+        }
+    }
+}
+
 /**
     A struct to handle the segmentation model request processing.
     Processes the segmentation model request and returns the segmentation mask as well as the segmented indices.
@@ -17,14 +31,11 @@ struct SegmentationModelRequestProcessor {
     
     var selectionClasses: [Int] = []
     
-    init(selectionClasses: [Int]) {
+    init(selectionClasses: [Int]) throws {
         let modelURL = Constants.SelectedSegmentationConfig.modelURL
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
-        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration)) else {
-            fatalError("Cannot load CNN model")
-        }
-        self.visionModel = visionModel
+        self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
         self.selectionClasses = selectionClasses
     }
     
@@ -37,32 +48,30 @@ struct SegmentationModelRequestProcessor {
         request.imageCropAndScaleOption = .scaleFill
     }
     
-    func processSegmentationRequest(with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up)
-    -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
-        do {
-            let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
-            self.configureSegmentationRequest(request: segmentationRequest)
-            let segmentationRequestHandler = VNImageRequestHandler(
-                ciImage: cIImage,
-                orientation: orientation,
-                options: [:])
-            try segmentationRequestHandler.perform([segmentationRequest])
-            
-            guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
-            let segmentationBuffer = segmentationResult.first?.pixelBuffer
-            
-            let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
-            let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap
-            let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
-            let selectedIndicesSet = Set(selectedIndices)
-            let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
-            
-            let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
-            
-            return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
-        } catch {
-            print("Error processing segmentation request: \(error)")
+    func processSegmentationRequest(
+        with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up
+    ) throws -> (segmentationImage: CIImage, segmentedIndices: [Int]) {
+        let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
+        self.configureSegmentationRequest(request: segmentationRequest)
+        let segmentationRequestHandler = VNImageRequestHandler(
+            ciImage: cIImage,
+            orientation: orientation,
+            options: [:])
+        try segmentationRequestHandler.perform([segmentationRequest])
+        
+        guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {
+            throw SegmentationModelError.segmentationProcessingError
         }
-        return nil
+        let segmentationBuffer = segmentationResult.first?.pixelBuffer
+        
+        let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
+        let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap
+        let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
+        let selectedIndicesSet = Set(selectedIndices)
+        let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
+        
+        let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
+        
+        return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
     }
 }
