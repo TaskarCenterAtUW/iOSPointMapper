@@ -75,7 +75,7 @@ final class SegmentationARPipeline: ObservableObject {
     // For normalized points
     private var perimeterThreshold: Float = 0.01
     
-    private let grayscaleToColorMasker = GrayscaleToColorFilter()
+    private var grayscaleToColorMasker: GrayscaleToColorFilter?
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
     
@@ -90,6 +90,7 @@ final class SegmentationARPipeline: ObservableObject {
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
             selectionClassLabels: self.selectionClassLabels)
+        self.grayscaleToColorMasker = try GrayscaleToColorFilter()
     }
     
     func reset() {
@@ -179,7 +180,7 @@ final class SegmentationARPipeline: ObservableObject {
         
         try Task.checkCancellation()
         
-        guard let segmentationColorImage = self.grayscaleToColorMasker.apply(
+        guard let segmentationColorImage = try self.grayscaleToColorMasker?.apply(
             to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors) else {
             throw SegmentationARPipelineError.invalidSegmentation
         }

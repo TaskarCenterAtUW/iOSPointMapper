@@ -37,7 +37,8 @@ class AnnotationImageManager: ObservableObject {
     // Helpers
     private let annotationCIContext = CIContext()
     private let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
-    private let grayscaleToColorMasker = GrayscaleToColorFilter()
+    // MARK: Temporarily commented out to setup refactoring
+//    private let grayscaleToColorMasker = GrayscaleToColorFilter()
     
     func isImageInvalid() -> Bool {
         if (self.cameraUIImage == nil || self.segmentationUIImage == nil || self.objectsUIImage == nil) {
@@ -107,10 +108,10 @@ class AnnotationImageManager: ObservableObject {
             print("Error processing union of masks request: \(error)")
         }
 //        self.annotatedSegmentationLabelImage = inputLabelImage
-        let segmentationColorImage = self.grayscaleToColorMasker.apply(
-            to: inputLabelImage, grayscaleValues: [segmentationClass.grayscaleValue], colorValues: [segmentationClass.color])
+//        let segmentationColorImage = self.grayscaleToColorMasker.apply(
+//            to: inputLabelImage, grayscaleValues: [segmentationClass.grayscaleValue], colorValues: [segmentationClass.color])
         
-        let segmentationUIImage = UIImage(ciImage: segmentationColorImage!, scale: 1.0, orientation: .up)
+        let segmentationUIImage = UIImage(ciImage: segmentationLabelImage, scale: 1.0, orientation: .up)
         // Check if inputLabelImage is backed by a CVPixelBuffer
         if inputLabelImage.extent.width == 0 || inputLabelImage.extent.height == 0 {
             print("Warning: inputLabelImage has zero width or height.")
