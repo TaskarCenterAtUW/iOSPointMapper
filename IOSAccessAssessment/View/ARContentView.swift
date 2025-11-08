@@ -1,5 +1,5 @@
 //
-//  ARContentView.swift
+//  ARCaptureView.swift
 //  IOSAccessAssessment
 //
 //  Created by Kohei Matsushima on 2024/03/29.
@@ -12,7 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-enum ARContentViewConstants {
+enum ARCaptureViewConstants {
     enum Texts {
         static let contentViewTitle = "Capture"
         
@@ -50,7 +50,7 @@ class ManagerStatusViewModel: ObservableObject {
     }
 }
 
-struct ARContentView: View {
+struct ARCaptureView: View {
     let selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
@@ -72,16 +72,10 @@ struct ARContentView: View {
             if manager.isConfigured {
                 HostedARCameraViewContainer(arCameraManager: manager)
             } else {
-                ProgressView(ARContentViewConstants.Texts.cameraInProgressText)
+                ProgressView(ARCaptureViewConstants.Texts.cameraInProgressText)
             }
         }
-        .navigationDestination(isPresented: $navigateToAnnotationView) {
-            AnnotationView(
-                selection: selection,
-                objectLocation: objectLocation
-            )
-        }
-        .navigationBarTitle(ARContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
+        .navigationBarTitle(ARCaptureViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             navigateToAnnotationView = false
             
@@ -99,12 +93,18 @@ struct ARContentView: View {
         }
         .onDisappear {
         }
-        .alert(ARContentViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
-            Button(ARContentViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+        .alert(ARCaptureViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+            Button(ARCaptureViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 dismiss()
             }
         }, message: {
             Text(managerStatusViewModel.errorMessage)
         })
+//        .navigationDestination(isPresented: $navigateToAnnotationView) {
+//            AnnotationView(
+//                selection: selection,
+//                objectLocation: objectLocation
+//            )
+//        }
     }
 }

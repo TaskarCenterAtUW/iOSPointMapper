@@ -270,7 +270,7 @@ struct SetupView: View {
                 ,
                 trailing:
                     NavigationLink(
-                        destination: ARContentView(selection: Array(selection.sorted()))
+                        destination: ARCaptureView(selection: Array(selection.sorted()))
                     ) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)

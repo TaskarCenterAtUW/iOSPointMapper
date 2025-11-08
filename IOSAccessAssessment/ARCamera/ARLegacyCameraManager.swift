@@ -143,8 +143,9 @@ final class ARLegacyCameraManager: NSObject, ObservableObject, ARSessionDelegate
             self.cameraUIImage = UIImage(ciImage: cameraImage)
             if depthImage != nil { self.depthUIImage = UIImage(ciImage: depthImage!) }
             
-            self.segmentationPipeline?.processRequest(with: cameraImage, previousImage: previousImage,
-                                                      deviceOrientation: self.deviceOrientation,
+            self.segmentationPipeline?.processRequest(with: cameraImage,
+//                                                      previousImage: previousImage,
+//                                                      deviceOrientation: self.deviceOrientation,
                                                       additionalPayload: additionalPayload
             )
             
