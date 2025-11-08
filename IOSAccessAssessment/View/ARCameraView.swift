@@ -1,5 +1,5 @@
 //
-//  ARCaptureView.swift
+//  ARCameraView.swift
 //  IOSAccessAssessment
 //
 //  Created by Kohei Matsushima on 2024/03/29.
@@ -12,7 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-enum ARCaptureViewConstants {
+enum ARCameraViewConstants {
     enum Texts {
         static let contentViewTitle = "Capture"
         
@@ -50,7 +50,7 @@ class ManagerStatusViewModel: ObservableObject {
     }
 }
 
-struct ARCaptureView: View {
+struct ARCameraView: View {
     let selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
@@ -72,10 +72,10 @@ struct ARCaptureView: View {
             if manager.isConfigured {
                 HostedARCameraViewContainer(arCameraManager: manager)
             } else {
-                ProgressView(ARCaptureViewConstants.Texts.cameraInProgressText)
+                ProgressView(ARCameraViewConstants.Texts.cameraInProgressText)
             }
         }
-        .navigationBarTitle(ARCaptureViewConstants.Texts.contentViewTitle, displayMode: .inline)
+        .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             navigateToAnnotationView = false
             
@@ -93,8 +93,8 @@ struct ARCaptureView: View {
         }
         .onDisappear {
         }
-        .alert(ARCaptureViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
-            Button(ARCaptureViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+        .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+            Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 dismiss()
             }
         }, message: {
