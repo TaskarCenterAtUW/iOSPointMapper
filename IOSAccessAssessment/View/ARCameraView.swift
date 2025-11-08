@@ -69,7 +69,16 @@ struct ARCameraView: View {
         Group {
             // Show the camera view once manager is initialized, otherwise a loading indicator
             if manager.isConfigured {
-                HostedARCameraViewContainer(arCameraManager: manager)
+                orientationStack {
+                    HostedARCameraViewContainer(arCameraManager: manager)
+                    Button {
+                        
+                    } label: {
+                        Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                    }
+                }
             } else {
                 ProgressView(ARCameraViewConstants.Texts.cameraInProgressText)
             }
@@ -100,5 +109,12 @@ struct ARCameraView: View {
 //                objectLocation: objectLocation
 //            )
 //        }
+    }
+    
+    @ViewBuilder
+    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        manager.interfaceOrientation.isLandscape ?
+        AnyLayout(HStackLayout())(content) :
+        AnyLayout(VStackLayout())(content)
     }
 }
