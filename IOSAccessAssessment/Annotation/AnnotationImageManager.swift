@@ -75,7 +75,7 @@ class AnnotationImageManager: ObservableObject {
         do {
             let transformedLabelImages = try self.annotationSegmentationPipeline.processTransformationsRequest(
                 imageDataHistory: imageDataHistory)
-            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+            try self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
             return transformedLabelImages
         } catch {
             print("Error processing transformations request: \(error)")

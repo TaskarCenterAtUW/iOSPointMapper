@@ -82,10 +82,10 @@ class AnnotationSegmentationPipeline {
                 selectionClassLabels: self.selectionClassLabels)
             self.homographyTransformFilter = try HomographyTransformFilter()
             self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
+            self.unionOfMasksProcessor = try UnionOfMasksProcessor()
         } catch {
             print("Error initializing AnnotationSegmentationPipeline: \(error)")
         }
-        self.unionOfMasksProcessor = UnionOfMasksProcessor()
     }
     
     func reset() {
@@ -157,8 +157,8 @@ class AnnotationSegmentationPipeline {
         return transformedSegmentationLabelImages
     }
     
-    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) {
-        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
+    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) throws {
+        try self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
     func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
@@ -173,15 +173,10 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.unionOfMasksProcessorNil
         }
         
-        let unionImageResult = unionOfMasksProcessor.apply(targetValue: targetValue,
+        var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue,
                                                            unionOfMasksThreshold: unionOfMasksThreshold,
                                                            defaultFrameWeight: defaultFrameWeight,
                                                            lastFrameWeight: lastFrameWeight)
-        guard var unionImage = unionImageResult else {
-            self.isProcessing = false
-            throw AnnotationSegmentationPipelineError.invalidUnionImageResult
-        }
-        
         if bounds != nil {
 //            print("Applying dimension-based mask filter")
             unionImage = try self.dimensionBasedMaskFilter?.apply(

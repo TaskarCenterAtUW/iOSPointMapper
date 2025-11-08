@@ -9,6 +9,32 @@ import Metal
 import CoreImage
 import MetalKit
 
+enum UnionOfMasksProcessorError: Error, LocalizedError {
+    case metalInitializationFailed
+    case invalidInputImage
+    case textureCreationFailed
+    case arrayTextureNotSet
+    case outputImageCreationFailed
+    case invalidPixelFormat
+    
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationFailed:
+            return "Failed to initialize Metal resources."
+        case .invalidInputImage:
+            return "The input image is invalid."
+        case .textureCreationFailed:
+            return "Failed to create Metal textures."
+        case .arrayTextureNotSet:
+            return "The array texture has not been set."
+        case .outputImageCreationFailed:
+            return "Failed to create output CIImage from Metal texture."
+        case .invalidPixelFormat:
+            return "The specified pixel format is invalid or unsupported."
+        }
+    }
+}
+
 /**
  UnionOfMasksProcessor is a class that processes an array of CIImages to compute the union of masks using Metal.
  It performs a simple weighted union operation on the input images, where each image is treated as a mask. Only the last frame can be weighted differently from the rest.
@@ -28,10 +54,10 @@ class UnionOfMasksProcessor {
     var width: Int = 0
     var height: Int = 0
     
-    init() {
+    init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            fatalError("Error: Failed to initialize Metal resources")
+            throw UnionOfMasksProcessorError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -41,14 +67,14 @@ class UnionOfMasksProcessor {
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "unionOfMasksKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            fatalError("Error: Failed to initialize Metal pipeline")
+            throw UnionOfMasksProcessorError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
     
     // FIXME: Sometimes, the array texture is not set correctly.
     // This could be due to the way the AnnotationView's initialization is set up.
-    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) {
+    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) throws {
         let imageCount = images.count
         guard imageCount > 0 else {
             print("Error: No images provided")
@@ -71,19 +97,15 @@ class UnionOfMasksProcessor {
         descriptor.arrayLength = imageCount
         
         guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {
-            print("Error: Failed to create texture array")
-            return
+            throw UnionOfMasksProcessorError.textureCreationFailed
         }
         
-        let bpp = self.bytesPerPixel(for: format)
+        let bpp = try self.bytesPerPixel(for: format)
         let bytesPerRow = width * bpp
         let bytesPerImage = bytesPerRow * height
         
         for (i, image) in images.enumerated() {
-            guard let inputTexture = self.ciImageToTexture(image: image, descriptor: individualDescriptor, options: options) else {
-                print("Error: Failed to create texture from CIImage")
-                return
-            }
+            let inputTexture = try self.ciImageToTexture(image: image, descriptor: individualDescriptor, options: options)
             let region = MTLRegionMake2D(0, 0, width, height)
             
             var data = [UInt8](repeating: 0, count: bytesPerImage)
@@ -110,10 +132,9 @@ class UnionOfMasksProcessor {
     }
     
     func apply(targetValue: UInt8, unionOfMasksThreshold: Float = 1.0,
-               defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) -> CIImage? {
+               defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) throws -> CIImage {
         guard let inputImages = self.arrayTexture else {
-            print("Error: No input images provided")
-            return nil
+            throw UnionOfMasksProcessorError.arrayTextureNotSet
         }
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
@@ -126,7 +147,7 @@ class UnionOfMasksProcessor {
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
               let commandBuffer = self.commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw UnionOfMasksProcessorError.textureCreationFailed
         }
         
         var imageCountLocal = self.imageCount
@@ -154,29 +175,34 @@ class UnionOfMasksProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        let image = CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])
-        return image
+        guard let resultimage = CIImage(
+            mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]
+        ) else {
+            throw UnionOfMasksProcessorError.outputImageCreationFailed
+        }
+        return resultimage
     }
     
-    private func ciImageToTexture(image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]) -> MTLTexture? {
+    private func ciImageToTexture(
+        image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]
+    ) throws -> MTLTexture {
         guard let cgImage = self.ciContext.createCGImage(image, from: image.extent) else {
-            print("Error: inputImage does not have a valid CGImage")
-            return nil
+            throw UnionOfMasksProcessorError.invalidInputImage
         }
         guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            return nil
+            throw UnionOfMasksProcessorError.textureCreationFailed
         }
         return inputTexture
     }
     
-    private func bytesPerPixel(for format: MTLPixelFormat) -> Int {
+    private func bytesPerPixel(for format: MTLPixelFormat) throws -> Int {
         switch format {
         case .r8Unorm: return 1
         case .r32Float: return 4
         case .rgba8Unorm: return 4
         case .bgra8Unorm: return 4
         default:
-            fatalError("Unsupported pixel format: \(format.rawValue)")
+            throw UnionOfMasksProcessorError.invalidPixelFormat
         }
     }
 }
