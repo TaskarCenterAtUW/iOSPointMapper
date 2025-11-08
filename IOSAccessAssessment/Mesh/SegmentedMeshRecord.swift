@@ -1,5 +1,5 @@
 //
-//  MeshGPURecord.swift
+//  SegmentedMeshRecord.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 11/6/25.
@@ -7,11 +7,12 @@
 import ARKit
 import RealityKit
 
-enum MeshGPURecordError: Error, LocalizedError {
+enum SegmentedMeshRecordError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case segmentationTextureError
     case segmentationBufferFormatNotSupported
+    case segmentationClassificationParamsError
     case metalInitializationError
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
@@ -27,6 +28,8 @@ enum MeshGPURecordError: Error, LocalizedError {
             return "Failed to create Metal texture from the segmentation image."
         case .segmentationBufferFormatNotSupported:
             return "The pixel format of the segmentation image is not supported for Metal texture creation."
+        case .segmentationClassificationParamsError:
+            return "Failed to set up segmentation classification parameters for the Segmentation Mesh Creation."
         case .metalInitializationError:
             return "Failed to initialize Metal resources for the Segmentation Mesh Creation."
         case .metalPipelineCreationError:
@@ -40,12 +43,15 @@ enum MeshGPURecordError: Error, LocalizedError {
 }
 
 @MainActor
-final class MeshGPURecord {
+final class SegmentedMeshRecord {
     let entity: ModelEntity
     var mesh: LowLevelMesh
     let name: String
     let color: UIColor
     let opacity: Float
+    
+    let segmentationClass: SegmentationClass
+    let segmentationMeshClassificationParams: SegmentationMeshClassificationParams
     
     let context: MeshGPUContext
     let pipelineState: MTLComputePipelineState
@@ -56,24 +62,31 @@ final class MeshGPURecord {
         meshSnapshot: MeshSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        segmentationClass: SegmentationClass,
         color: UIColor, opacity: Float, name: String
     ) throws {
         self.context = context
         guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
-            throw MeshGPURecordError.metalInitializationError
+            throw SegmentedMeshRecordError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.context.device, nil, &metalCache) == kCVReturnSuccess else {
-            throw MeshGPURecordError.metalInitializationError
+            throw SegmentedMeshRecordError.metalInitializationError
         }
         
         self.name = name
         self.color = color
         self.opacity = opacity
         
-        let descriptor = MeshGPURecord.createDescriptor(meshSnapshot: meshSnapshot)
+        self.segmentationClass = segmentationClass
+        
+        self.segmentationMeshClassificationParams = try SegmentedMeshRecord.getSegmentationMeshClassificationParams(
+            segmentationClass: segmentationClass
+        )
+        
+        let descriptor = SegmentedMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
         self.mesh = try LowLevelMesh(descriptor: descriptor)
-        self.entity = try MeshGPURecord.generateEntity(
+        self.entity = try SegmentedMeshRecord.generateEntity(
             mesh: self.mesh, color: color, opacity: opacity, name: name
         )
         try self.replace(
@@ -87,15 +100,11 @@ final class MeshGPURecord {
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
-//        let clock = ContinuousClock()
-//        let startTime = clock.now
         try self.update(
             meshSnapshot: meshSnapshot,
             segmentationImage: segmentationImage,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
-//        let duration = clock.now - startTime
-//        print("Mesh \(name) updated in \(duration.formatted(.units(allowed: [.milliseconds]))))")
     }
     
     func update(
@@ -104,7 +113,7 @@ final class MeshGPURecord {
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
-            throw MeshGPURecordError.emptySegmentation
+            throw SegmentedMeshRecordError.emptySegmentation
         }
         let meshGPUAnchors = meshSnapshot.meshGPUAnchors
         
@@ -115,10 +124,11 @@ final class MeshGPURecord {
         
         // Potential replacement of mesh if capacity exceeded
         var mesh = self.mesh
+        // TODO: Optimize reallocation strategy to reduce overallocation
         if (mesh.descriptor.vertexCapacity < maxVerts) ||
             (mesh.descriptor.indexCapacity < maxIndices) {
-            print("MeshGPURecord '\(self.name)' capacity exceeded. Reallocating mesh.")
-            let newDescriptor = MeshGPURecord.createDescriptor(meshSnapshot: meshSnapshot)
+            print("SegmentedMeshRecord '\(self.name)' capacity exceeded. Reallocating mesh.")
+            let newDescriptor = SegmentedMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
             mesh = try LowLevelMesh(descriptor: newDescriptor)
             let resource = try MeshResource(from: mesh)
             self.entity.model?.mesh = resource
@@ -157,10 +167,10 @@ final class MeshGPURecord {
                                       UInt32(CVPixelBufferGetHeight(segmentationPixelBuffer)))
         // Set up the Metal command buffer
         guard let commandBuffer = self.context.commandQueue.makeCommandBuffer() else {
-            throw MeshGPURecordError.metalPipelineCreationError
+            throw SegmentedMeshRecordError.metalPipelineCreationError
         }
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
-            throw MeshGPURecordError.meshPipelineBlitEncoderError
+            throw SegmentedMeshRecordError.meshPipelineBlitEncoderError
         }
         blit.fill(buffer: outTriCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
         blit.fill(buffer: debugCounter, range: 0..<debugBytes, value: 0)
@@ -171,36 +181,38 @@ final class MeshGPURecord {
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
         let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+        var segmentationMeshClassificationParams = self.segmentationMeshClassificationParams
         
         for (_, anchor) in meshSnapshot.meshGPUAnchors {
             guard anchor.faceCount > 0 else { continue }
             
             let hasClass: UInt32 = anchor.classificationBuffer != nil ? 1 : 0
-            var params = FaceParams(
+            var params = MeshParams(
                 faceCount: UInt32(anchor.faceCount), totalCount: UInt32(totalFaceCount),
                 indicesPerFace: 3, hasClass: hasClass,
                 anchorTransform: anchor.anchorTransform, cameraTransform: cameraTransform,
                 viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
             )
             guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-                throw MeshGPURecordError.metalPipelineCreationError
+                throw SegmentedMeshRecordError.metalPipelineCreationError
             }
             commandEncoder.setComputePipelineState(self.pipelineState)
             // Main inputs
             commandEncoder.setBuffer(anchor.vertexBuffer, offset: 0, index: 0)
             commandEncoder.setBuffer(anchor.indexBuffer, offset: 0, index: 1)
             commandEncoder.setBuffer(anchor.classificationBuffer ?? nil, offset: 0, index: 2)
-            // Main outputs
-            commandEncoder.setBuffer(outVertexBuf, offset: 0, index: 3)
-            commandEncoder.setBuffer(outIndexBuf,  offset: 0, index: 4)
-            commandEncoder.setBuffer(outTriCount,  offset: 0, index: 5)
-            
-            commandEncoder.setBytes(&params, length: MemoryLayout<FaceParams>.stride, index: 6)
-            commandEncoder.setBuffer(aabbMinU, offset: 0, index: 7)
-            commandEncoder.setBuffer(aabbMaxU, offset: 0, index: 8)
-            commandEncoder.setBuffer(debugCounter, offset: 0, index: 9)
-            
+            commandEncoder.setBytes(&params, length: MemoryLayout<MeshParams>.stride, index: 3)
+            commandEncoder.setBytes(&segmentationMeshClassificationParams,
+                                    length: MemoryLayout<SegmentationMeshClassificationParams>.stride, index: 4)
             commandEncoder.setTexture(segmentationTexture, index: 0)
+            // Main outputs
+            commandEncoder.setBuffer(outVertexBuf, offset: 0, index: 5)
+            commandEncoder.setBuffer(outIndexBuf,  offset: 0, index: 6)
+            commandEncoder.setBuffer(outTriCount,  offset: 0, index: 7)
+            
+            commandEncoder.setBuffer(aabbMinU, offset: 0, index: 8)
+            commandEncoder.setBuffer(aabbMaxU, offset: 0, index: 9)
+            commandEncoder.setBuffer(debugCounter, offset: 0, index: 10)
             
             let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
             let threadGroups = MTLSize(
@@ -269,12 +281,12 @@ final class MeshGPURecord {
         let height = CVPixelBufferGetHeight(segmentationPixelBuffer)
         
         guard let pixelFormat: MTLPixelFormat = segmentationPixelBuffer.metalPixelFormat() else {
-            throw MeshGPURecordError.segmentationBufferFormatNotSupported
+            throw SegmentedMeshRecordError.segmentationBufferFormatNotSupported
         }
         
         var segmentationTextureRef: CVMetalTexture?
         guard let metalCache = self.metalCache else {
-            throw MeshGPURecordError.metalInitializationError
+            throw SegmentedMeshRecordError.metalInitializationError
         }
         let status = CVMetalTextureCacheCreateTextureFromImage(
             kCFAllocatorDefault,
@@ -289,9 +301,49 @@ final class MeshGPURecord {
         )
         guard status == kCVReturnSuccess, let segmentationTexture = segmentationTextureRef,
               let texture = CVMetalTextureGetTexture(segmentationTexture) else {
-            throw MeshGPURecordError.segmentationTextureError
+            throw SegmentedMeshRecordError.segmentationTextureError
         }
         return texture
+    }
+    
+    static func getSegmentationMeshClassificationParams(
+        segmentationClass: SegmentationClass
+    ) throws -> SegmentationMeshClassificationParams {
+        let segmentationMeshClassificationLookupTable = getSegmentationMeshClassificationLookupTable(
+            segmentationClass: segmentationClass
+        )
+        let segmentationClassLabelValue: UInt8 = segmentationClass.labelValue
+        var segmentationMeshClassificationParams = SegmentationMeshClassificationParams()
+        segmentationMeshClassificationParams.labelValue = segmentationClassLabelValue
+        try segmentationMeshClassificationLookupTable.withUnsafeBufferPointer { ptr in
+            try withUnsafeMutableBytes(of: &segmentationMeshClassificationParams) { bytes in
+                guard let srcPtr = ptr.baseAddress, let dst = bytes.baseAddress else {
+                    throw SegmentedMeshRecordError.segmentationClassificationParamsError
+                }
+                let byteCount = segmentationMeshClassificationLookupTable.count * MemoryLayout<UInt32>.stride
+                dst.copyMemory(from: srcPtr, byteCount: byteCount)
+            }
+        }
+        return segmentationMeshClassificationParams
+    }
+    
+    /**
+     Return an array of booleans for metal, indicating which segmentation classes are to be considered.
+     If the segmentationClass.meshClassification is empty, all classes are considered valid.
+     */
+    static func getSegmentationMeshClassificationLookupTable(segmentationClass: SegmentationClass) -> [UInt32] {
+        // MARK: Assuming a maximum of 256 classes
+        var lookupTable = [UInt32](repeating: 0, count: 256)
+        let segmentationMeshClassification: [ARMeshClassification] = segmentationClass.meshClassification ?? []
+        if segmentationMeshClassification.isEmpty {
+            lookupTable = [UInt32](repeating: 1, count: 256)
+        } else {
+            for cls in segmentationMeshClassification {
+                let index = Int(cls.rawValue)
+                lookupTable[index] = 1
+            }
+        }
+        return lookupTable
     }
     
     static func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
@@ -306,6 +358,7 @@ final class MeshGPURecord {
         ]
         // MARK: Assuming uint32 for indices
         descriptor.indexType = .uint32
+        // Adding extra capacity to reduce reallocations
         descriptor.vertexCapacity = vertexCount * 10
         descriptor.indexCapacity = indexCount * 10
         return descriptor

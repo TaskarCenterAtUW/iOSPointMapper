@@ -98,7 +98,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [Int: MeshGPURecord] = [:]
+    private var meshEntities: [Int: SegmentedMeshRecord] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -335,12 +335,13 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         } else {
             // Create new mesh entity
             do {
-                let meshRecord = try MeshGPURecord(
+                let meshRecord = try SegmentedMeshRecord(
                     meshGPUContext,
                     meshSnapshot: meshSnapshot,
                     segmentationImage: segmentationLabelImage,
                     cameraTransform: cameraTransform,
                     cameraIntrinsics: cameraIntrinsics,
+                    segmentationClass: Constants.SelectedSegmentationConfig.classes.first!,
                     color: color, opacity: 0.7, name: name
                 )
                 meshEntities[anchorIndex] = meshRecord

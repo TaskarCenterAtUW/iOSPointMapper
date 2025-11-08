@@ -11,6 +11,7 @@
 #ifdef __METAL_VERSION__
     #include <metal_stdlib>
     using namespace metal;
+    typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint               MTL_UINT;      // 32-bit
     typedef uint               MTL_BOOL;      // use 0/1
     typedef float4x4           MTL_FLOAT4X4;
@@ -20,6 +21,7 @@
     #include <simd/simd.h>
     #include <Metal/MTLTypes.h>
     typedef struct { float x; float y; float z; } packed_float3;
+    typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint32_t           MTL_UINT;
     typedef uint32_t           MTL_BOOL;      // 0/1
     typedef simd_float4x4      MTL_FLOAT4X4;
@@ -33,7 +35,7 @@ typedef struct MeshTriangle {
     packed_float3 c;
 } MeshTriangle;
 
-typedef struct FaceParams {
+typedef struct MeshParams {
     MTL_UINT        faceCount;
     MTL_UINT        totalCount;
     MTL_UINT        indicesPerFace;   // 3
@@ -43,4 +45,10 @@ typedef struct FaceParams {
     MTL_FLOAT4X4    viewMatrix;
     MTL_FLOAT3X3    intrinsics;
     MTL_UINT2       imageSize;
-} FaceParams;
+} MeshParams;
+
+typedef struct SegmentationMeshClassificationParams {
+    MTL_UINT       classificationLookupTable[256];
+    MTL_UINT8      labelValue;
+    MTL_UINT8      padding[3];
+} SegmentationMeshClassificationParams;

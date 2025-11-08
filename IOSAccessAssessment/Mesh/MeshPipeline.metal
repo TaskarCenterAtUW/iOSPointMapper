@@ -74,20 +74,22 @@ kernel void processMesh(
     device const packed_float3*         positions               [[ buffer(0) ]],
     device const uint*                  indices                 [[ buffer(1) ]],
     device const uint8_t*               classesOpt              [[ buffer(2) ]], // may be null if hasClass == false
-    device packed_float3*               outVertices             [[ buffer(3) ]],
-    device uint*                        outIndices              [[ buffer(4) ]],
-    device atomic_uint*                 outTriCount             [[ buffer(5) ]],
-    constant FaceParams&                Params                  [[ buffer(6) ]],
-    device atomic_uint*                 aabbMinU                [[ buffer(7) ]],  // length 3
-    device atomic_uint*                 aabbMaxU                [[ buffer(8) ]],  // length 3
-    device atomic_uint*                 debugCounter            [[ buffer(9) ]],
+    constant MeshParams&                Params                  [[ buffer(3) ]],
+    constant SegmentationMeshClassificationParams&              SegParams       [[ buffer(4) ]],
     texture2d<float, access::sample>    segmentationTexture     [[ texture(0) ]],
+    device packed_float3*               outVertices             [[ buffer(5) ]],
+    device uint*                        outIndices              [[ buffer(6) ]],
+    device atomic_uint*                 outTriCount             [[ buffer(7) ]],
+    device atomic_uint*                 aabbMinU                [[ buffer(8) ]],  // length 3
+    device atomic_uint*                 aabbMaxU                [[ buffer(9) ]],  // length 3
+    device atomic_uint*                 debugCounter            [[ buffer(10) ]],
     uint                                faceId                  [[ thread_position_in_grid ]]
 ) {
     if (faceId >= Params.faceCount) return;
     if (Params.hasClass != 0u) {
         uchar cls = classesOpt[faceId];
-        if (cls != 2) return; // keep only class==2
+        uint8_t isValidClass = SegParams.classificationLookupTable[cls];
+        if (isValidClass == 0u) return; // not a desired class
     }
 
     const uint base = faceId * Params.indicesPerFace;
@@ -121,7 +123,8 @@ kernel void processMesh(
     const sampler segSampler(coord::normalized, address::clamp_to_edge, filter::linear);
     float segmentationValue = segmentationTexture.sample(segSampler, texCoord).r;
     uint8_t index = min(uint(round(segmentationValue * 255.0)), 255u);
-    if (index != 1u) {
+    uint8_t desiredIndex = SegParams.labelValue;
+    if (index != desiredIndex) {
         return;
     }
     
