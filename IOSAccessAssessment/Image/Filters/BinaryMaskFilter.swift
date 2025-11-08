@@ -57,10 +57,6 @@ struct BinaryMaskFilter {
         }
         self.pipeline = pipeline
     }
-    
-//    required init?(coder: NSCoder) {
-//        fatalError("init(coder:) has not been implemented")
-//    }
 
     func apply(to inputImage: CIImage, targetValue: UInt8) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants

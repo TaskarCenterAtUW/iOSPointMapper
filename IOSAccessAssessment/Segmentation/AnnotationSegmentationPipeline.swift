@@ -80,11 +80,11 @@ class AnnotationSegmentationPipeline {
                 contourEpsilon: self.contourEpsilon,
                 perimeterThreshold: self.perimeterThreshold,
                 selectionClassLabels: self.selectionClassLabels)
+            self.homographyTransformFilter = try HomographyTransformFilter()
             self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
         } catch {
             print("Error initializing AnnotationSegmentationPipeline: \(error)")
         }
-        self.homographyTransformFilter = HomographyTransformFilter()
         self.unionOfMasksProcessor = UnionOfMasksProcessor()
     }
     
@@ -125,6 +125,8 @@ class AnnotationSegmentationPipeline {
         /**
          Iterate through the image data history in reverse.
          Process each image by applying the homography transforms of the successive images.
+         
+         TODO: Need to check if the error handling is appropriate here.
          */
         // Identity matrix for the first image
         var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
@@ -136,17 +138,19 @@ class AnnotationSegmentationPipeline {
                 ) * transformMatrixToNextFrame
                 continue
             }
-            // Apply the homography transform to the current image
-            let transformedImage = homographyTransformFilter.apply(
-                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
             transformMatrixToNextFrame = (
                 currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
             ) * transformMatrixToNextFrame
-            if let transformedSegmentationLabelImage = transformedImage {
-                transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
-            } else {
-                print("Failed to apply homography transform to the image.")
+            // Apply the homography transform to the current image
+            var transformedImage: CIImage
+            do {
+                transformedImage = try homographyTransformFilter.apply(
+                    to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
+            } catch {
+                print("Error applying homography transform: \(error)")
+                continue
             }
+            transformedSegmentationLabelImages.append(transformedImage)
         }
         
         self.isProcessing = false
