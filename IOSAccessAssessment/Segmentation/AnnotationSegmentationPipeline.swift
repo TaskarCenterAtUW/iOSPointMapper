@@ -80,12 +80,12 @@ class AnnotationSegmentationPipeline {
                 contourEpsilon: self.contourEpsilon,
                 perimeterThreshold: self.perimeterThreshold,
                 selectionClassLabels: self.selectionClassLabels)
+            self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
         } catch {
-            print("Error initializing ContourRequestProcessor in AnnotationSegmentationPipeline: \(error)")
+            print("Error initializing AnnotationSegmentationPipeline: \(error)")
         }
         self.homographyTransformFilter = HomographyTransformFilter()
         self.unionOfMasksProcessor = UnionOfMasksProcessor()
-        self.dimensionBasedMaskFilter = DimensionBasedMaskFilter()
     }
     
     func reset() {
@@ -180,7 +180,7 @@ class AnnotationSegmentationPipeline {
         
         if bounds != nil {
 //            print("Applying dimension-based mask filter")
-            unionImage = self.dimensionBasedMaskFilter?.apply(
+            unionImage = try self.dimensionBasedMaskFilter?.apply(
                 to: unionImage, bounds: bounds!) ?? unionImage
         }
         

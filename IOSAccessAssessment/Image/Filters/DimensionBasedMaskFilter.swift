@@ -11,6 +11,27 @@ import Metal
 import CoreImage
 import MetalKit
 
+enum DimensionBasedMaskFilterError: Error, LocalizedError {
+    case metalInitializationFailed
+    case invalidInputImage
+    case textureCreationFailed
+    case outputImageCreationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationFailed:
+            return "Failed to initialize Metal resources."
+        case .invalidInputImage:
+            return "The input image is invalid."
+        case .textureCreationFailed:
+            return "Failed to create Metal textures."
+        case .outputImageCreationFailed:
+            return "Failed to create output CIImage from Metal texture."
+        }
+    }
+}
+
+
 /**
     A struct that applies a binary mask to an image using Metal.
     The mask is applied based on a target value and specified bounds.
@@ -24,10 +45,10 @@ struct DimensionBasedMaskFilter {
     
     private let ciContext: CIContext
 
-    init() {
+    init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            fatalError("Error: Failed to initialize Metal resources")
+            throw DimensionBasedMaskFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -37,7 +58,7 @@ struct DimensionBasedMaskFilter {
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "dimensionBasedMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            fatalError("Error: Failed to initialize Metal pipeline")
+            throw DimensionBasedMaskFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
@@ -46,7 +67,7 @@ struct DimensionBasedMaskFilter {
 //        fatalError("init(coder:) has not been implemented")
 //    }
 
-    func apply(to inputImage: CIImage, bounds: DimensionBasedMaskBounds) -> CIImage? {
+    func apply(to inputImage: CIImage, bounds: DimensionBasedMaskBounds) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
@@ -55,19 +76,18 @@ struct DimensionBasedMaskFilter {
         let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            print("Error: inputImage does not have a valid CGImage")
-            return nil
+            throw DimensionBasedMaskFilterError.invalidInputImage
         }
         
         guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            return nil
+            throw DimensionBasedMaskFilterError.textureCreationFailed
         }
 
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
               let commandBuffer = self.commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw DimensionBasedMaskFilterError.textureCreationFailed
         }
         
         var minXLocal = bounds.minX
@@ -94,6 +114,11 @@ struct DimensionBasedMaskFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()])//?.oriented(.downMirrored)
+        guard let resultCIImage = CIImage(
+            mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]
+        ) else {
+            throw DimensionBasedMaskFilterError.outputImageCreationFailed
+        }
+        return resultCIImage
     }
 }
