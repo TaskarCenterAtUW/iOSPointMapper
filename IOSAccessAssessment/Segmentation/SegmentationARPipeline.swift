@@ -181,7 +181,8 @@ final class SegmentationARPipeline: ObservableObject {
         try Task.checkCancellation()
         
         guard let segmentationColorImage = try self.grayscaleToColorMasker?.apply(
-            to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors) else {
+            to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors
+        ) else {
             throw SegmentationARPipelineError.invalidSegmentation
         }
 //        let segmentationResultUIImage = UIImage(

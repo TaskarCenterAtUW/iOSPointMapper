@@ -93,7 +93,7 @@ class UnionOfMasksProcessor {
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: width, height: height, mipmapped: false)
         descriptor.textureType = .type2DArray
-        descriptor.usage = [.shaderRead]
+        descriptor.usage = [.shaderRead] // TODO: Check if shaderWrite is needed
         descriptor.arrayLength = imageCount
         
         guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {

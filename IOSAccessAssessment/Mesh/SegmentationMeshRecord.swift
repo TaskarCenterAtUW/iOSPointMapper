@@ -55,7 +55,6 @@ final class SegmentationMeshRecord {
     
     let context: MeshGPUContext
     let pipelineState: MTLComputePipelineState
-    var metalCache: CVMetalTextureCache?
     
     init(
         _ context: MeshGPUContext,
@@ -69,9 +68,6 @@ final class SegmentationMeshRecord {
             throw SegmentationMeshRecordError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
-        guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.context.device, nil, &metalCache) == kCVReturnSuccess else {
-            throw SegmentationMeshRecordError.metalInitializationError
-        }
         
         self.segmentationClass = segmentationClass
         self.name = "Mesh_\(segmentationClass.name)"
@@ -110,6 +106,8 @@ final class SegmentationMeshRecord {
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
+        // TODO: The assumption that segmentationImage.pixelBuffer is available may not always hold true.
+        // Need to implement a more robust way to create MTLTexture from CIImage that does not depend on pixelBuffer.
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
             throw SegmentationMeshRecordError.emptySegmentation
         }
@@ -161,8 +159,7 @@ final class SegmentationMeshRecord {
         
         // Set up additional parameters
         let viewMatrix = simd_inverse(cameraTransform)
-        let imageSize = simd_uint2(UInt32(CVPixelBufferGetWidth(segmentationPixelBuffer)),
-                                      UInt32(CVPixelBufferGetHeight(segmentationPixelBuffer)))
+        let imageSize = simd_uint2(UInt32(segmentationImage.extent.width), UInt32(segmentationImage.extent.height))
         // Set up the Metal command buffer
         guard let commandBuffer = self.context.commandQueue.makeCommandBuffer() else {
             throw SegmentationMeshRecordError.metalPipelineCreationError
@@ -179,6 +176,7 @@ final class SegmentationMeshRecord {
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
         let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+        
         var segmentationMeshClassificationParams = self.segmentationMeshClassificationParams
         
         for (_, anchor) in meshSnapshot.meshGPUAnchors {
@@ -283,12 +281,9 @@ final class SegmentationMeshRecord {
         }
         
         var segmentationTextureRef: CVMetalTexture?
-        guard let metalCache = self.metalCache else {
-            throw SegmentationMeshRecordError.metalInitializationError
-        }
         let status = CVMetalTextureCacheCreateTextureFromImage(
             kCFAllocatorDefault,
-            metalCache,
+            self.context.textureCache,
             segmentationPixelBuffer,
             nil,
             pixelFormat,
@@ -302,6 +297,31 @@ final class SegmentationMeshRecord {
             throw SegmentationMeshRecordError.segmentationTextureError
         }
         return texture
+    }
+    
+    // MARK: Placeholder function for future reference
+    // This is safer way to create MTLTexture from CIImage, which does not assume pixelBuffer availability
+    // This can be used once the CIImage usage pipeline is fixed.
+    // Right now, there are issues with how color spaces are handled while creating CIImage in the pipeline.
+    private func getSegmentationMTLTexture(segmentationImage: CIImage, commandBuffer: MTLCommandBuffer) throws -> MTLTexture {
+        // Create Segmentation texture from Segmentation CIImage
+        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .r8Unorm,
+            width: Int(segmentationImage.extent.width), height: Int(segmentationImage.extent.height),
+            mipmapped: false
+        )
+        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
+        guard let segmentationTexture = self.context.device.makeTexture(descriptor: mtlDescriptor) else {
+            throw SegmentationMeshRecordError.segmentationTextureError
+        }
+        self.context.ciContextNoColorSpace.render(
+            segmentationImage,
+            to: segmentationTexture,
+            commandBuffer: commandBuffer,
+            bounds: segmentationImage.extent,
+            colorSpace: CGColorSpaceCreateDeviceRGB() // Dummy color space
+        )
+        return segmentationTexture
     }
     
     static func getSegmentationMeshClassificationParams(
