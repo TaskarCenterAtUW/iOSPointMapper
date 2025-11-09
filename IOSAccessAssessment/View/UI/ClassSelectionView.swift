@@ -55,7 +55,7 @@ struct ClassSelectionView: View {
                             Spacer()
                             if selectedClass == index {
                                 Image(systemName: AnnotationViewConstants.Images.checkIcon)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.blue)
                             }
                         }
                     }

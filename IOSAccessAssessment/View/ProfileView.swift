@@ -57,7 +57,7 @@ struct ProfileView: View {
                     self.dismiss()
                 }) {
                     Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .bold()
                         .padding()
                 }
@@ -76,7 +76,7 @@ struct ProfileView: View {
             }) {
                 HStack {
                     Text(ProfileViewConstants.Texts.logoutButtonText)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .bold()
                     Image(systemName: SetupViewConstants.Images.logoutIcon)
                         .resizable()
@@ -84,7 +84,7 @@ struct ProfileView: View {
                             width: SetupViewConstants.Constraints.logoutIconSize,
                             height: SetupViewConstants.Constraints.logoutIconSize
                         )
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .bold()
                 }
                 .padding()

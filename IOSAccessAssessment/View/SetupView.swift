@@ -217,7 +217,7 @@ struct SetupView: View {
                         Image(systemName: SetupViewConstants.Images.uploadIcon)
                             .resizable()
                             .frame(width: 20, height: 20)
-//                            .foregroundColor(.white)
+//                            .foregroundStyle(.white)
                     }
                     .buttonStyle(.bordered)
                     .disabled(!sharedImageData.isUploadReady)
@@ -234,7 +234,7 @@ struct SetupView: View {
                 HStack {
                     Text(SetupViewConstants.Texts.selectClassesText)
                         .font(.headline)
-    //                    .foregroundColor(.gray)
+    //                    .foregroundStyle(.gray)
                     Button(action: {
                         showSelectClassesLearnMoreSheet = true
                     }) {
@@ -261,7 +261,7 @@ struct SetupView: View {
                             }
                         }) {
                             Text(Constants.SelectedAccessibilityFeatureConfig.classNames[index])
-                                .foregroundColor(
+                                .foregroundStyle(
                                     self.selectedClassIndices.contains(index)
                                     ? SetupViewConstants.Colors.selectedClass
                                     : SetupViewConstants.Colors.unselectedClass
@@ -430,7 +430,7 @@ struct ChangesetLearnMoreSheetView: View {
 //                .resizable()
 //                .scaledToFit()
 //                .frame(width: 160)
-//                .foregroundColor(.accentColor)
+//                .foregroundStyle(.accentColor)
             Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetTitle)
                 .font(.title)
             Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetMessage)
@@ -453,7 +453,7 @@ struct SelectClassesLearnMoreSheetView: View {
             //                .resizable()
             //                .scaledToFit()
             //                .frame(width: 160)
-            //                .foregroundColor(.accentColor)
+            //                .foregroundStyle(.accentColor)
             Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetTitle)
                 .font(.title)
             Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetMessage)

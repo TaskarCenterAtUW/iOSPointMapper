@@ -180,7 +180,7 @@ struct AnnotationView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding()
                                         .background(selectedOption == option ? Color.blue : Color.gray)
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(.white)
                                         .cornerRadius(10)
                                 }
                             }
@@ -592,7 +592,7 @@ struct SelectObjectLearnMoreSheetView: View {
             //                .resizable()
             //                .scaledToFit()
             //                .frame(width: 160)
-            //                .foregroundColor(.accentColor)
+            //                .foregroundStyle(.accentColor)
             Text(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetTitle)
                 .font(.title)
             Text(.init(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetMessage))

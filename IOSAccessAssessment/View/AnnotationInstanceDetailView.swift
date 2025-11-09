@@ -122,7 +122,7 @@ struct AnnotationInstanceDetailView: View {
             Form {
                 Section(header: Text("Object ID")) {
                     Text(selectedObjectId.uuidString)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Section(header: Text("Width")) {

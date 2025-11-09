@@ -144,7 +144,7 @@ struct WorkspaceSelectionView: View {
                     }
                 } else {
                     Text(WorkspaceSelectionViewConstants.Texts.noWorkspacesAvailable)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.gray)
                         .italic()
                         .padding(.top, 5)
                 }
@@ -207,7 +207,7 @@ struct WorkspaceListView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
             }
@@ -225,7 +225,7 @@ struct WorkspaceSelectionLearnMoreSheetView: View {
 //                .resizable()
 //                .scaledToFit()
 //                .frame(width: 160)
-//                .foregroundColor(.accentColor)
+//                .foregroundStyle(.accentColor)
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetTitle)
                 .font(.title)
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetMessage)

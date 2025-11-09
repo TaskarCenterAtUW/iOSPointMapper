@@ -38,12 +38,12 @@ struct LoginView: View {
             }
             label: {
                 Text("TDEI: \(APIEnvironment.default.rawValue)")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.blue)
             }
             
             if let errorMessage = errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -58,7 +58,7 @@ struct LoginView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .cornerRadius(10)
                 }
                 .disabled(username.isEmpty || password.isEmpty)
