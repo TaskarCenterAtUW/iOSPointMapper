@@ -25,6 +25,7 @@
 		A305B06A2E189D8500ECCF9B /* CocoCustom35ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */; };
 		A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B06B2E18A85D00ECCF9B /* DepthEncoder.swift */; };
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
+		A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A308014F2EC0926500B1BA3A /* ContourUtils.swift */; };
 		A30D057E2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D057D2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
 		A30D05862E2E19E400316FB5 /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */; };
@@ -155,6 +156,7 @@
 		A305B0692E189D8500ECCF9B /* CocoCustom35ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom35ClassConfig.swift; sourceTree = "<group>"; };
 		A305B06B2E18A85D00ECCF9B /* DepthEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthEncoder.swift; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
+		A308014F2EC0926500B1BA3A /* ContourUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourUtils.swift; sourceTree = "<group>"; };
 		A30D057D2E2B106200316FB5 /* MapillaryCustom11ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapillaryCustom11ClassConfig.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
 		A30D05852E2E19E400316FB5 /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
@@ -399,6 +401,27 @@
 			path = Config;
 			sourceTree = "<group>";
 		};
+		A308014C2EC091DC00B1BA3A /* Homography */ = {
+			isa = PBXGroup;
+			children = (
+				A3DC22EC2DCF10050020CE84 /* Homography.metal */,
+				A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */,
+				A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */,
+			);
+			path = Homography;
+			sourceTree = "<group>";
+		};
+		A308014D2EC091E400B1BA3A /* Contour */ = {
+			isa = PBXGroup;
+			children = (
+				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
+				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
+				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
+				A308014F2EC0926500B1BA3A /* ContourUtils.swift */,
+			);
+			path = Contour;
+			sourceTree = "<group>";
+		};
 		A31A1E772EAC49E3008B30B7 /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -423,8 +446,6 @@
 		A362AEC72DB59577002D7598 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
-				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
@@ -459,17 +480,15 @@
 			path = Functions;
 			sourceTree = "<group>";
 		};
-		A3BB5AF92DB21080008673ED /* Filters */ = {
+		A3BB5AF92DB21080008673ED /* ImageProcessing */ = {
 			isa = PBXGroup;
 			children = (
 				A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */,
 				A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */,
 				A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */,
 				DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorFilter.swift */,
-				A3DC22EC2DCF10050020CE84 /* Homography.metal */,
-				A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */,
 			);
-			path = Filters;
+			path = ImageProcessing;
 			sourceTree = "<group>";
 		};
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
@@ -504,15 +523,13 @@
 			path = Utils;
 			sourceTree = "<group>";
 		};
-		A3DA4DC02EBE86C7005BB812 /* Functions */ = {
+		A3DA4DC02EBE86C7005BB812 /* UnionOfMasks */ = {
 			isa = PBXGroup;
 			children = (
-				A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */,
-				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
 				A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */,
 				A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */,
 			);
-			path = Functions;
+			path = UnionOfMasks;
 			sourceTree = "<group>";
 		};
 		A3DA4DC12EBE87B6005BB812 /* Utils */ = {
@@ -610,8 +627,10 @@
 		DAA7F8C62CA76514003666D8 /* Image */ = {
 			isa = PBXGroup;
 			children = (
-				A3BB5AF92DB21080008673ED /* Filters */,
-				A3DA4DC02EBE86C7005BB812 /* Functions */,
+				A308014D2EC091E400B1BA3A /* Contour */,
+				A308014C2EC091DC00B1BA3A /* Homography */,
+				A3BB5AF92DB21080008673ED /* ImageProcessing */,
+				A3DA4DC02EBE86C7005BB812 /* UnionOfMasks */,
 				A362AEC72DB59577002D7598 /* Helpers */,
 				A3DA4DBF2EBE867F005BB812 /* Utils */,
 			);
@@ -814,6 +833,7 @@
 				A3C22FD12CF1644400533BF7 /* SharedImageData.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
 				A3E84ED02DDAC7A50096A645 /* AnnotationImageManager.swift in Sources */,
+				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
 				A305B0622E18993000ECCF9B /* VOCClassConfig.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
