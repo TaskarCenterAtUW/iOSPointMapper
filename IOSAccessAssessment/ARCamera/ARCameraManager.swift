@@ -157,7 +157,7 @@ struct ARCameraFinalResults {
     - Accept configuration of the SegmentationARPipeline through a separate `configure()` method.
  */
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
-    var selection: [Int] = []
+    var selectedClassIndices: [Int] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
@@ -196,9 +196,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func configure(
-        selection: [Int], segmentationPipeline: SegmentationARPipeline
+        selectedClassIndices: [Int], segmentationPipeline: SegmentationARPipeline
     ) throws {
-        self.selection = selection
+        self.selectedClassIndices = selectedClassIndices
         self.segmentationPipeline = segmentationPipeline
         
         // TODO: Create the device once and share across the app
@@ -298,7 +298,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selectedClassIndices
                     )
                 }
             } catch {
@@ -329,7 +329,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selectedClassIndices
                     )
                 }
             } catch {
@@ -360,7 +360,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selectedClassIndices
                     )
                 }
             } catch {

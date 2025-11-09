@@ -64,7 +64,7 @@ enum AnnotationViewConstants {
 }
 
 struct AnnotationView: View {
-    let selection: [Int]
+    let selectedClassIndices: [Int]
     var objectLocation: ObjectLocation
     
     @EnvironmentObject var sharedImageData: SharedImageData
@@ -192,7 +192,7 @@ struct AnnotationView: View {
                     Button(action: {
                         confirmAnnotation()
                     }) {
-                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        Text(index == selectedClassIndices.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                     }
                     .padding()
                 }
@@ -412,8 +412,8 @@ struct AnnotationView: View {
     
     // MARK: Width Field Demo: Temporary function to calculate width of a way-type object
     func calculateWidth(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -447,8 +447,8 @@ struct AnnotationView: View {
     
     // MARK: Slope Field Demo: Temporary function to calculate slope with depth
     func calculateSlope(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -483,8 +483,8 @@ struct AnnotationView: View {
     
     // MARK: Cross-Slope Field Demo: Temporary function to calculate cross-slope with depth
     func calculateCrossSlope(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -517,8 +517,8 @@ struct AnnotationView: View {
     }
     
     func calculateBreakage(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         

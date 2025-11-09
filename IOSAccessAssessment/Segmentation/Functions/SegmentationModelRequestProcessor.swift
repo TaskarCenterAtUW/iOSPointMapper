@@ -29,18 +29,18 @@ enum SegmentationModelError: Error, LocalizedError {
 struct SegmentationModelRequestProcessor {
     var visionModel: VNCoreMLModel
     
-    var selectionClasses: [Int] = []
+    var selectedClassIndices: [Int] = []
     
-    init(selectionClasses: [Int]) throws {
+    init(selectedClassIndices: [Int]) throws {
         let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
         self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
-        self.selectionClasses = selectionClasses
+        self.selectedClassIndices = selectedClassIndices
     }
     
-    mutating func setSelectionClasses(_ classes: [Int]) {
-        self.selectionClasses = classes
+    mutating func setSelectedClassIndices(_ classIndices: [Int]) {
+        self.selectedClassIndices = classIndices
     }
     
     private func configureSegmentationRequest(request: VNCoreMLRequest) {
@@ -70,7 +70,7 @@ struct SegmentationModelRequestProcessor {
         let grayscaleValuesToIndex = Constants.SelectedAccessibilityFeatureConfig.labelToIndexMap
         let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
         let selectedIndicesSet = Set(selectedIndices)
-        let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
+        let segmentedIndices = self.selectedClassIndices.filter{ selectedIndicesSet.contains($0) }
         
         let segmentationImage = CIImage(
             cvPixelBuffer: segmentationBuffer

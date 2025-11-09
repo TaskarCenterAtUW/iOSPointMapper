@@ -64,10 +64,10 @@ final class SegmentationARPipeline: ObservableObject {
     private var currentTask: Task<SegmentationARPipelineResults, Error>?
     private var timeoutInSeconds: Double = 1.0
     
-    private var selectionClasses: [Int] = []
-    private var selectionClassLabels: [UInt8] = []
-    private var selectionClassGrayscaleValues: [Float] = []
-    private var selectionClassColors: [CIColor] = []
+    private var selectedClassIndices: [Int] = []
+    private var selectedClassLabels: [UInt8] = []
+    private var selectedClassGrayscaleValues: [Float] = []
+    private var selectedClassColors: [CIColor] = []
     
     // TODO: Check what would be the appropriate value for this
     private var contourEpsilon: Float = 0.01
@@ -85,27 +85,27 @@ final class SegmentationARPipeline: ObservableObject {
     
     func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
-            selectionClasses: self.selectionClasses)
+            selectedClassIndices: self.selectedClassIndices)
         self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
-            selectionClassLabels: self.selectionClassLabels)
+            selectedClassLabels: self.selectedClassLabels)
         self.grayscaleToColorMasker = try GrayscaleToColorFilter()
     }
     
     func reset() {
         self.isProcessing = false
-        self.setSelectionClasses([])
+        self.setSelectedClasses([])
     }
     
-    func setSelectionClasses(_ selectionClasses: [Int]) {
-        self.selectionClasses = selectionClasses
-        self.selectionClassLabels = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.labels[$0] }
-        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.grayscaleValues[$0] }
-        self.selectionClassColors = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.colors[$0] }
+    func setSelectedClasses(_ selectedClassIndices: [Int]) {
+        self.selectedClassIndices = selectedClassIndices
+        self.selectedClassLabels = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.labels[$0] }
+        self.selectedClassGrayscaleValues = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.grayscaleValues[$0] }
+        self.selectedClassColors = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.colors[$0] }
         
-        self.segmentationModelRequestProcessor?.setSelectionClasses(self.selectionClasses)
-        self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
+        self.segmentationModelRequestProcessor?.setSelectedClassIndices(self.selectedClassIndices)
+        self.contourRequestProcessor?.setSelectedClassLabels(self.selectedClassLabels)
     }
     
     /**
@@ -181,7 +181,7 @@ final class SegmentationARPipeline: ObservableObject {
         try Task.checkCancellation()
         
         guard let segmentationColorImage = try self.grayscaleToColorMasker?.apply(
-            to: segmentationImage, grayscaleValues: self.selectionClassGrayscaleValues, colorValues: self.selectionClassColors
+            to: segmentationImage, grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
         ) else {
             throw SegmentationARPipelineError.invalidSegmentation
         }

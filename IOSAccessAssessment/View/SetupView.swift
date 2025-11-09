@@ -169,9 +169,9 @@ class ModelInitializationViewModel: ObservableObject {
 }
 
 struct SetupView: View {
-    @State private var selection = Set<Int>()
+    @State private var selectedClassIndices = Set<Int>()
     private var isSelectionEmpty: Bool {
-        return (self.selection.count == 0)
+        return (self.selectedClassIndices.count == 0)
     }
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
@@ -254,15 +254,15 @@ struct SetupView: View {
                 List {
                     ForEach(0..<Constants.SelectedAccessibilityFeatureConfig.classNames.count, id: \.self) { index in
                         Button(action: {
-                            if self.selection.contains(index) {
-                                self.selection.remove(index)
+                            if self.selectedClassIndices.contains(index) {
+                                self.selectedClassIndices.remove(index)
                             } else {
-                                self.selection.insert(index)
+                                self.selectedClassIndices.insert(index)
                             }
                         }) {
                             Text(Constants.SelectedAccessibilityFeatureConfig.classNames[index])
                                 .foregroundColor(
-                                    self.selection.contains(index)
+                                    self.selectedClassIndices.contains(index)
                                     ? SetupViewConstants.Colors.selectedClass
                                     : SetupViewConstants.Colors.unselectedClass
                                 )
@@ -287,7 +287,7 @@ struct SetupView: View {
                 ,
                 trailing:
                     NavigationLink(
-                        destination: ARCameraView(selection: Array(selection.sorted()))
+                        destination: ARCameraView(selectedClassIndices: Array(selectedClassIndices.sorted()))
                     ) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)

@@ -13,7 +13,7 @@ class SegmentationViewController: UIViewController {
     
     var segmentationImage: UIImage?
     
-    var selection:[Int] = []
+    var selectedClassIndices:[Int] = []
     var classes: [String] = []
     
     init(segmentationImage: UIImage?) {

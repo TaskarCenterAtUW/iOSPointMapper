@@ -11,15 +11,15 @@ extension AnnotationView {
     @ViewBuilder
     func classSelectionView() -> some View {
         if let selectedClassIndex = selectedClassIndex {
-            let filteredClasses = selection.map { Constants.SelectedAccessibilityFeatureConfig.classNames[$0] }
+            let filteredClasses = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.classNames[$0] }
             
             // mapping between filtered and non-filtered
-            let selectedFilteredIndex = selection.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
+            let selectedFilteredIndex = selectedClassIndices.firstIndex(of: sharedImageData.segmentedIndices[selectedClassIndex]) ?? 0
             
             let selectedClassBinding: Binding<Array<Int>.Index> = Binding(
                 get: { selectedFilteredIndex },
                 set: { newValue in
-                    let originalIndex = selection[newValue]
+                    let originalIndex = selectedClassIndices[newValue]
                     // Update the segmentedIndices inside sharedImageData
                     sharedImageData.segmentedIndices[selectedClassIndex] = originalIndex
                 }

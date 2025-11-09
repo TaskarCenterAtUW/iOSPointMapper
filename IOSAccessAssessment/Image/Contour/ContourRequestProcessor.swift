@@ -29,21 +29,21 @@ struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01
     // For normalized points
     var perimeterThreshold: Float = 0.01
-    var selectionClassLabels: [UInt8] = []
+    var selectedClassLabels: [UInt8] = []
     
     var binaryMaskFilter: BinaryMaskFilter
     
     init(
-        contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectionClassLabels: [UInt8] = []
+        contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectedClassLabels: [UInt8] = []
     ) throws {
         self.contourEpsilon = contourEpsilon
         self.perimeterThreshold = perimeterThreshold
-        self.selectionClassLabels = selectionClassLabels
+        self.selectedClassLabels = selectedClassLabels
         self.binaryMaskFilter = try BinaryMaskFilter()
     }
     
-    mutating func setSelectionClassLabels(_ selectionClassLabels: [UInt8]) {
-        self.selectionClassLabels = selectionClassLabels
+    mutating func setSelectedClassLabels(_ selectedClassLabels: [UInt8]) {
+        self.selectedClassLabels = selectedClassLabels
     }
     
     private func configureContourRequest(request: VNDetectContoursRequest) {
@@ -95,9 +95,9 @@ struct ContourRequestProcessor {
     ) throws -> [DetectedObject] {
         var detectedObjects: [DetectedObject] = []
         let lock = NSLock()
-        DispatchQueue.concurrentPerform(iterations: self.selectionClassLabels.count) { index in
+        DispatchQueue.concurrentPerform(iterations: self.selectedClassLabels.count) { index in
             do {
-                let classLabel = self.selectionClassLabels[index]
+                let classLabel = self.selectedClassLabels[index]
                 let mask = try self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel)
                 let detectedObjectsFromBinaryImage = try self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
                 
@@ -105,7 +105,7 @@ struct ContourRequestProcessor {
                 detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage)
                 lock.unlock()
             } catch {
-                print("Error processing contour for class label \(self.selectionClassLabels[index]): \(error.localizedDescription)")
+                print("Error processing contour for class label \(self.selectedClassLabels[index]): \(error.localizedDescription)")
             }
         }
         return detectedObjects
