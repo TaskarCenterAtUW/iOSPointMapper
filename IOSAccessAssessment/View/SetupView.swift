@@ -252,7 +252,7 @@ struct SetupView: View {
                 }
                 
                 List {
-                    ForEach(0..<Constants.SelectedSegmentationConfig.classNames.count, id: \.self) { index in
+                    ForEach(0..<Constants.SelectedAccessibilityFeatureConfig.classNames.count, id: \.self) { index in
                         Button(action: {
                             if self.selection.contains(index) {
                                 self.selection.remove(index)
@@ -260,7 +260,7 @@ struct SetupView: View {
                                 self.selection.insert(index)
                             }
                         }) {
-                            Text(Constants.SelectedSegmentationConfig.classNames[index])
+                            Text(Constants.SelectedAccessibilityFeatureConfig.classNames[index])
                                 .foregroundColor(
                                     self.selection.contains(index)
                                     ? SetupViewConstants.Colors.selectedClass

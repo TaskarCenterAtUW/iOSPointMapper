@@ -154,11 +154,11 @@ struct CVPixelBufferUtils {
 
     /**
      This function extracts unique grayscale values from a pixel buffer,
-     gets the indices of these values from Constants.SelectedSegmentationConfig.grayscaleValues,
+     gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
         and returns both the unique values and their corresponding indices.
      
      TODO: The function does more than just extracting unique grayscale values.
-     It also returns the indices of these values from Constants.SelectedSegmentationConfig.grayscaleValues.
+     It also returns the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues.
      This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
      */
     static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {

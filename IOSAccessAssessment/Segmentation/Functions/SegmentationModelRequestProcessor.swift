@@ -32,7 +32,7 @@ struct SegmentationModelRequestProcessor {
     var selectionClasses: [Int] = []
     
     init(selectionClasses: [Int]) throws {
-        let modelURL = Constants.SelectedSegmentationConfig.modelURL
+        let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
         self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
@@ -67,7 +67,7 @@ struct SegmentationModelRequestProcessor {
         }
         
         let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer)
-        let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap
+        let grayscaleValuesToIndex = Constants.SelectedAccessibilityFeatureConfig.labelToIndexMap
         let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
         let selectedIndicesSet = Set(selectedIndices)
         let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }

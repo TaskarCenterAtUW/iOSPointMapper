@@ -323,11 +323,11 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            segmentationClassIndices: [Int]
     ) {
         for segmentationClassIndex in segmentationClassIndices {
-            guard (segmentationClassIndex < Constants.SelectedSegmentationConfig.classes.count) else {
+            guard (segmentationClassIndex < Constants.SelectedAccessibilityFeatureConfig.classes.count) else {
                 print("Invalid segmentation class index: \(segmentationClassIndex)")
                 continue
             }
-            let segmentationClass = Constants.SelectedSegmentationConfig.classes[segmentationClassIndex]
+            let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[segmentationClassIndex]
             if let existingMeshRecord = meshEntities[segmentationClassIndex] {
                 // Update existing mesh entity
                 do {

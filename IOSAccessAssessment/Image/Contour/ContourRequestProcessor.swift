@@ -129,7 +129,7 @@ extension ContourRequestProcessor {
      but it returns the trapezoid with the smaller line.
      We may have to come up with a better heuristic to determine the right shape for getting the way bounds.
      */
-    func getTrapezoid(from points: [SIMD2<Float>], x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
+    func getContourTrapezoid(from points: [SIMD2<Float>], x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
 //        let points = contour.normalizedPoints
         guard !points.isEmpty else { return nil }
         

@@ -100,9 +100,9 @@ final class SegmentationARPipeline: ObservableObject {
     
     func setSelectionClasses(_ selectionClasses: [Int]) {
         self.selectionClasses = selectionClasses
-        self.selectionClassLabels = selectionClasses.map { Constants.SelectedSegmentationConfig.labels[$0] }
-        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedSegmentationConfig.grayscaleValues[$0] }
-        self.selectionClassColors = selectionClasses.map { Constants.SelectedSegmentationConfig.colors[$0] }
+        self.selectionClassLabels = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.labels[$0] }
+        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.grayscaleValues[$0] }
+        self.selectionClassColors = selectionClasses.map { Constants.SelectedAccessibilityFeatureConfig.colors[$0] }
         
         self.segmentationModelRequestProcessor?.setSelectionClasses(self.selectionClasses)
         self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)

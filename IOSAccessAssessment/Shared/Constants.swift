@@ -12,7 +12,7 @@ import SwiftUI
  */
 struct Constants {
     // Supported Classes
-    static let SelectedSegmentationConfig: SegmentationClassConfig = SegmentationConfig.mapillaryCustom11Config
+    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
     
     struct DepthConstants {
         static let inputSize: CGSize = CGSize(width: 518, height: 392)

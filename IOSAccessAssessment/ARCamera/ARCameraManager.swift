@@ -82,17 +82,13 @@ struct ARCameraImageResults {
     var segmentationColorImage: CIImage? = nil
     var segmentationBoundingFrameImage: CIImage? = nil
     
-    // TODO: Have some kind of type-safe payload for additional data to make it easier to use
-    var additionalPayload: [String: Any] = [:] // This can be used to pass additional data if needed
-    
     init(
         cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
         segmentationLabelImage: CIImage, segmentedIndices: [Int],
         detectedObjectMap: [UUID: DetectedObject],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
-        segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil,
-        additionalPayload: [String: Any] = [:]
+        segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil
     ) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
@@ -108,7 +104,6 @@ struct ARCameraImageResults {
         
         self.segmentationColorImage = segmentationColorImage
         self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
-        self.additionalPayload = additionalPayload
     }
 }
 
@@ -213,7 +208,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
         self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
-        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedSegmentationConfig.inputSize)
+        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
@@ -483,9 +478,6 @@ extension ARCameraManager {
             cameraCache.cameraImageSize = originalSize
             cameraCache.interfaceOrientation = interfaceOrientation
         }
-        let additionalPayload = getAdditionalPayload(
-            cameraTransform: cameraTransform, intrinsics: cameraIntrinsics, originalCameraImageSize: originalSize
-        )
         
         let cameraImageResults = ARCameraImageResults(
             cameraImage: image,
@@ -497,8 +489,7 @@ extension ARCameraManager {
             interfaceOrientation: interfaceOrientation,
             originalImageSize: originalSize,
             segmentationColorImage: segmentationColorImage,
-            segmentationBoundingFrameImage: segmentationBoundingFrameImage,
-            additionalPayload: additionalPayload
+            segmentationBoundingFrameImage: segmentationBoundingFrameImage
         )
         return cameraImageResults
     }
@@ -512,6 +503,9 @@ extension ARCameraManager {
         return withinFrameRate
     }
     
+    /**
+    Align detected objects back to the original image coordinate system.
+     */
     private func alignDetectedObjects(
         _ detectedObjectMap: [UUID: DetectedObject],
         orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize
@@ -539,9 +533,6 @@ extension ARCameraManager {
         return alignedObjectMap
     }
     
-    /**
-     TODO: Cache the bounding frame image for performance improvement, and only update if frame size or orientation changes.
-     */
     private func getSegmentationBoundingFrame(
         imageSize: CGSize, frameSize: CGSize, orientation: CGImagePropertyOrientation
     ) -> CIImage? {
@@ -556,16 +547,6 @@ extension ARCameraManager {
         }
         segmentationFrameImage = CIImage(cgImage: segmentationFrameOrientedCGImage)
         return segmentationFrameImage
-    }
-    
-    private func getAdditionalPayload(
-        cameraTransform: simd_float4x4, intrinsics: simd_float3x3, originalCameraImageSize: CGSize
-    ) -> [String: Any] {
-        var additionalPayload: [String: Any] = [:]
-        additionalPayload[ARCameraManagerConstants.Payload.cameraTransform] = cameraTransform
-        additionalPayload[ARCameraManagerConstants.Payload.cameraIntrinsics] = intrinsics
-        additionalPayload[ARCameraManagerConstants.Payload.originalImageSize] = originalCameraImageSize
-        return additionalPayload
     }
 }
 

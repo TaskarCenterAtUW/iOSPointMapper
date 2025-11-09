@@ -417,7 +417,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
@@ -475,7 +475,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
@@ -534,7 +534,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
