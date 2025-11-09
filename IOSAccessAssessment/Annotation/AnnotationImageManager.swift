@@ -100,9 +100,7 @@ class AnnotationImageManager: ObservableObject {
             inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
                 targetValue: accessibilityFeatureClass.labelValue,
                 bounds: accessibilityFeatureClass.bounds,
-                unionOfMasksThreshold: accessibilityFeatureClass.unionOfMasksThreshold,
-                defaultFrameWeight: accessibilityFeatureClass.defaultFrameUnionWeight,
-                lastFrameWeight: accessibilityFeatureClass.lastFrameUnionWeight
+                unionOfMasksPolicy: accessibilityFeatureClass.unionOfMasksPolicy
             )
         } catch {
             print("Error processing union of masks request: \(error)")

@@ -162,8 +162,7 @@ class AnnotationSegmentationPipeline {
     }
     
     func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
-                                    unionOfMasksThreshold: Float = 1.0,
-                                    defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) throws -> CIImage {
+                                    unionOfMasksPolicy: UnionOfMasksPolicy = .default) throws -> CIImage {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -173,10 +172,7 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.unionOfMasksProcessorNil
         }
         
-        var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue,
-                                                           unionOfMasksThreshold: unionOfMasksThreshold,
-                                                           defaultFrameWeight: defaultFrameWeight,
-                                                           lastFrameWeight: lastFrameWeight)
+        var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if bounds != nil {
 //            print("Applying dimension-based mask filter")
             unionImage = try self.dimensionBasedMaskFilter?.apply(

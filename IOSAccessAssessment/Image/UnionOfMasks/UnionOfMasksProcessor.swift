@@ -131,11 +131,11 @@ class UnionOfMasksProcessor {
         self.format = format
     }
     
-    func apply(targetValue: UInt8, unionOfMasksThreshold: Float = 1.0,
-               defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) throws -> CIImage {
+    func apply(targetValue: UInt8, unionOfMasksPolicy: UnionOfMasksPolicy = UnionOfMasksPolicy.default) throws -> CIImage {
         guard let inputImages = self.arrayTexture else {
             throw UnionOfMasksProcessorError.arrayTextureNotSet
         }
+        
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
                                                                   mipmapped: false)
@@ -152,9 +152,9 @@ class UnionOfMasksProcessor {
         
         var imageCountLocal = self.imageCount
         var targetValueLocal = targetValue
-        var unionOfMasksThresholdLocal = unionOfMasksThreshold
-        var defaultFrameWeightLocal = defaultFrameWeight
-        var lastFrameWeightLocal = lastFrameWeight
+        var unionOfMasksThresholdLocal = unionOfMasksPolicy.threshold
+        var defaultFrameWeightLocal = unionOfMasksPolicy.defaultFrameWeight
+        var lastFrameWeightLocal = unionOfMasksPolicy.lastFrameWeight
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputImages, index: 0)
