@@ -8,13 +8,6 @@
 import CoreImage
 import ARKit
 
-struct DimensionBasedMaskBounds {
-    var minX: Float
-    var maxX: Float
-    var minY: Float
-    var maxY: Float
-}
-
 struct AccessibilityFeatureClass {
     let name: String // Name of the accessibility feature class
     

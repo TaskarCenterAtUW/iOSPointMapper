@@ -28,11 +28,15 @@ extension AccessibilityFeatureConfig {
             AccessibilityFeatureClass(name: "Road", grayscaleValue: 7.0 / 255.0, labelValue: 7,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
                               isWay: true,
-                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
+                              bounds: DimensionBasedMaskBounds(
+                                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
+                              )),
             AccessibilityFeatureClass(name: "Sidewalk", grayscaleValue: 8.0 / 255.0, labelValue: 8,
                               color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
                               isWay: true,
-                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
+                              bounds: DimensionBasedMaskBounds(
+                                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
+                              )),
             AccessibilityFeatureClass(name: "Parking", grayscaleValue: 9.0 / 255.0, labelValue: 9,
                               color: CIColor(red: 0.980, green: 0.667, blue: 0.627)),
             AccessibilityFeatureClass(name: "Rail track", grayscaleValue: 10.0 / 255.0, labelValue: 10,

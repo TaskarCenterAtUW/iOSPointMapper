@@ -44,8 +44,9 @@ extension AccessibilityFeatureConfig {
             AccessibilityFeatureClass(name: "Person", grayscaleValue: 180.0 / 255.0, labelValue: 180,
                               color: CIColor(red: 0.750, green: 0.500, blue: 0.500),
                               isWay: true, // Temporarily set to true for testing
-                              bounds: DimensionBasedMaskBounds(minX: 0.001, maxX: 0.999, minY: 0.1, maxY: 0.5)
-                             ),
+                              bounds: DimensionBasedMaskBounds(
+                              minX: 0.001, maxX: 0.999, minY: 0.1, maxY: 0.5
+                            )),
             AccessibilityFeatureClass(name: "PottedPlant", grayscaleValue: 192.0 / 255.0, labelValue: 192,
                               color: CIColor(red: 0.000, green: 0.250, blue: 0.000)),
             AccessibilityFeatureClass(name: "Sheep", grayscaleValue: 204.0 / 255.0, labelValue: 204,

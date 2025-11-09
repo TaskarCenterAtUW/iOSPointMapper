@@ -14,11 +14,15 @@ extension AccessibilityFeatureConfig {
             AccessibilityFeatureClass(name: "Road", grayscaleValue: 27.0 / 255.0, labelValue: 27,
                               color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
                               isWay: true,
-                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
+                              bounds: DimensionBasedMaskBounds(
+                                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
+                              )),
             AccessibilityFeatureClass(name: "Sidewalk", grayscaleValue: 22.0 / 255.0, labelValue: 22,
                               color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
                               isWay: true,
-                              bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5)),
+                              bounds: DimensionBasedMaskBounds(
+                                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
+                              )),
             AccessibilityFeatureClass(name: "Building", grayscaleValue: 16.0 / 255.0, labelValue: 16,
                               color: CIColor(red: 0.275, green: 0.275, blue: 0.275)),
             AccessibilityFeatureClass(name: "Wall", grayscaleValue: 33 / 255.0, labelValue: 33,
