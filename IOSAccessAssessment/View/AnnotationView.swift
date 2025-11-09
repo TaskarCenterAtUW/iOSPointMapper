@@ -290,12 +290,12 @@ struct AnnotationView: View {
             print("Index out of bounds in refreshView")
             return
         }
-        let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         self.annotationImageManager.update(
             cameraImage: sharedImageData.cameraImage!,
             segmentationLabelImage: sharedImageData.segmentationLabelImage!,
             imageHistory: sharedImageData.getImageDataHistory(),
-            segmentationClass: segmentationClass)
+            accessibilityFeatureClass: accessibilityFeatureClass)
     }
     
     func refreshOptions() {
@@ -368,17 +368,19 @@ struct AnnotationView: View {
 //        let currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
 //        self.currentDepthValues = currentDepthValueString
         
-        let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
-        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        uploadAnnotatedChanges(
+            annotatedDetectedObjects: annotatedDetectedObjects, accessibilityFeatureClass: accessibilityFeatureClass
+        )
         
         nextSegment()
     }
     
     func confirmAnnotationWithoutDepth() {
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
-        let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-        uploadNodeWithoutDepth(location: location, segmentationClass: segmentationClass)
+        uploadNodeWithoutDepth(location: location, accessibilityFeatureClass: accessibilityFeatureClass)
         nextSegment()
     }
     
@@ -520,14 +522,14 @@ struct AnnotationView: View {
             return
         }
         
-        let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         var breakageStatus: Bool = false
         if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
            let selectedObjectObject = selectedObject.object,
            let width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth {
             breakageStatus = self.getBreakageStatus(
                 width: width,
-                wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+                wayWidth: self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.last)
             selectedObjectObject.calculatedBreakage = breakageStatus
         }
         // Update the breakage status in the annotationImageManager

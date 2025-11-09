@@ -12,7 +12,7 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
     case emptySegmentation
     case segmentationTextureError
     case segmentationBufferFormatNotSupported
-    case segmentationClassificationParamsError
+    case accessibilityFeatureClassificationParamsError
     case metalInitializationError
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
@@ -28,8 +28,8 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
             return "Failed to create Metal texture from the segmentation image."
         case .segmentationBufferFormatNotSupported:
             return "The pixel format of the segmentation image is not supported for Metal texture creation."
-        case .segmentationClassificationParamsError:
-            return "Failed to set up segmentation classification parameters for the Segmentation Mesh Creation."
+        case .accessibilityFeatureClassificationParamsError:
+            return "Failed to set up accessibility feature classification parameters for the Segmentation Mesh Creation."
         case .metalInitializationError:
             return "Failed to initialize Metal resources for the Segmentation Mesh Creation."
         case .metalPipelineCreationError:
@@ -50,8 +50,8 @@ final class SegmentationMeshRecord {
     let color: UIColor
     let opacity: Float
     
-    let segmentationClass: SegmentationClass
-    let segmentationMeshClassificationParams: SegmentationMeshClassificationParams
+    let accessibilityFeatureClass: AccessibilityFeatureClass
+    let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
     
     let context: MeshGPUContext
     let pipelineState: MTLComputePipelineState
@@ -61,7 +61,7 @@ final class SegmentationMeshRecord {
         meshSnapshot: MeshSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        segmentationClass: SegmentationClass
+        accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws {
         self.context = context
         guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
@@ -69,13 +69,13 @@ final class SegmentationMeshRecord {
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
         
-        self.segmentationClass = segmentationClass
-        self.name = "Mesh_\(segmentationClass.name)"
-        self.color = UIColor(ciColor: segmentationClass.color)
+        self.accessibilityFeatureClass = accessibilityFeatureClass
+        self.name = "Mesh_\(accessibilityFeatureClass.name)"
+        self.color = UIColor(ciColor: accessibilityFeatureClass.color)
         self.opacity = 0.7
         
-        self.segmentationMeshClassificationParams = try SegmentationMeshRecord.getSegmentationMeshClassificationParams(
-            segmentationClass: segmentationClass
+        self.accessibilityFeatureMeshClassificationParams = try SegmentationMeshRecord.getAccessibilityFeatureMeshClassificationParams(
+            accessibilityFeatureClass: accessibilityFeatureClass
         )
         
         let descriptor = SegmentationMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
@@ -177,7 +177,7 @@ final class SegmentationMeshRecord {
         
         let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
         
-        var segmentationMeshClassificationParams = self.segmentationMeshClassificationParams
+        var accessibilityFeatureMeshClassificationParams = self.accessibilityFeatureMeshClassificationParams
         
         for (_, anchor) in meshSnapshot.meshGPUAnchors {
             guard anchor.faceCount > 0 else { continue }
@@ -198,8 +198,8 @@ final class SegmentationMeshRecord {
             commandEncoder.setBuffer(anchor.indexBuffer, offset: 0, index: 1)
             commandEncoder.setBuffer(anchor.classificationBuffer ?? nil, offset: 0, index: 2)
             commandEncoder.setBytes(&params, length: MemoryLayout<MeshParams>.stride, index: 3)
-            commandEncoder.setBytes(&segmentationMeshClassificationParams,
-                                    length: MemoryLayout<SegmentationMeshClassificationParams>.stride, index: 4)
+            commandEncoder.setBytes(&accessibilityFeatureMeshClassificationParams,
+                                    length: MemoryLayout<AccessibilityFeatureMeshClassificationParams>.stride, index: 4)
             commandEncoder.setTexture(segmentationTexture, index: 0)
             // Main outputs
             commandEncoder.setBuffer(outVertexBuf, offset: 0, index: 5)
@@ -324,39 +324,41 @@ final class SegmentationMeshRecord {
         return segmentationTexture
     }
     
-    static func getSegmentationMeshClassificationParams(
-        segmentationClass: SegmentationClass
-    ) throws -> SegmentationMeshClassificationParams {
-        let segmentationMeshClassificationLookupTable = getSegmentationMeshClassificationLookupTable(
-            segmentationClass: segmentationClass
+    static func getAccessibilityFeatureMeshClassificationParams(
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> AccessibilityFeatureMeshClassificationParams {
+        let accessibilityFeatureMeshClassificationLookupTable = getAccessibilityFeatureMeshClassificationLookupTable(
+            accessibilityFeatureClass: accessibilityFeatureClass
         )
-        let segmentationClassLabelValue: UInt8 = segmentationClass.labelValue
-        var segmentationMeshClassificationParams = SegmentationMeshClassificationParams()
-        segmentationMeshClassificationParams.labelValue = segmentationClassLabelValue
-        try segmentationMeshClassificationLookupTable.withUnsafeBufferPointer { ptr in
-            try withUnsafeMutableBytes(of: &segmentationMeshClassificationParams) { bytes in
+        let accessibilityFeatureClassLabelValue: UInt8 = accessibilityFeatureClass.labelValue
+        var accessibilityMeshClassificationParams = AccessibilityFeatureMeshClassificationParams()
+        accessibilityMeshClassificationParams.labelValue = accessibilityFeatureClassLabelValue
+        try accessibilityFeatureMeshClassificationLookupTable.withUnsafeBufferPointer { ptr in
+            try withUnsafeMutableBytes(of: &accessibilityMeshClassificationParams) { bytes in
                 guard let srcPtr = ptr.baseAddress, let dst = bytes.baseAddress else {
-                    throw SegmentationMeshRecordError.segmentationClassificationParamsError
+                    throw SegmentationMeshRecordError.accessibilityFeatureClassificationParamsError
                 }
-                let byteCount = segmentationMeshClassificationLookupTable.count * MemoryLayout<UInt32>.stride
+                let byteCount = accessibilityFeatureMeshClassificationLookupTable.count * MemoryLayout<UInt32>.stride
                 dst.copyMemory(from: srcPtr, byteCount: byteCount)
             }
         }
-        return segmentationMeshClassificationParams
+        return accessibilityMeshClassificationParams
     }
     
     /**
-     Return an array of booleans for metal, indicating which segmentation classes are to be considered.
-     If the segmentationClass.meshClassification is empty, all classes are considered valid.
+     Return an array of booleans for metal, indicating which accessibility feature classes are to be considered.
+     If the accessibilityFeatureClass.meshClassification is empty, all classes are considered valid.
      */
-    static func getSegmentationMeshClassificationLookupTable(segmentationClass: SegmentationClass) -> [UInt32] {
+    static func getAccessibilityFeatureMeshClassificationLookupTable(
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) -> [UInt32] {
         // MARK: Assuming a maximum of 256 classes
         var lookupTable = [UInt32](repeating: 0, count: 256)
-        let segmentationMeshClassification: [ARMeshClassification] = segmentationClass.meshClassification ?? []
-        if segmentationMeshClassification.isEmpty {
+        let accessibilityFeatureMeshClassification: [ARMeshClassification] = accessibilityFeatureClass.meshClassification ?? []
+        if accessibilityFeatureMeshClassification.isEmpty {
             lookupTable = [UInt32](repeating: 1, count: 256)
         } else {
-            for cls in segmentationMeshClassification {
+            for cls in accessibilityFeatureMeshClassification {
                 let index = Int(cls.rawValue)
                 lookupTable[index] = 1
             }

@@ -47,7 +47,7 @@ typedef struct MeshParams {
     MTL_UINT2       imageSize;
 } MeshParams;
 
-typedef struct SegmentationMeshClassificationParams {
+typedef struct AccessibilityFeatureMeshClassificationParams {
     MTL_UINT       classificationLookupTable[256];
     MTL_UINT8      labelValue;
     MTL_UINT8      padding[3];

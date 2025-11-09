@@ -298,7 +298,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        segmentationClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selection
                     )
                 }
             } catch {
@@ -329,7 +329,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        segmentationClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selection
                     )
                 }
             } catch {
@@ -360,7 +360,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        segmentationClassIndices: self.selection
+                        accessibilityFeatureClassIndices: self.selection
                     )
                 }
             } catch {
@@ -420,7 +420,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.segmentationNotConfigured
         }
         let originalSize: CGSize = image.extent.size
-        let croppedSize = SegmentationConfig.mapillaryCustom11Config.inputSize
+        let croppedSize = AccessibilityFeatureConfig.mapillaryCustom11Config.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

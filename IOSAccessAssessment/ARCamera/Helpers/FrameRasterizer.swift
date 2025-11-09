@@ -9,7 +9,7 @@ import CoreImage
 import UIKit
 
 /**
- A custom Image that displays a bounding box around the region of segmentation
+ A custom Image that displays a bounding box around the region of processing
  */
 struct FrameRasterizer {
     /**

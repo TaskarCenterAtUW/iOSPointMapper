@@ -27,7 +27,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
-                           segmentationClassIndices: [Int]
+                           accessibilityFeatureClassIndices: [Int]
     )
     func getMeshRecords() -> [Int: SegmentationMeshRecord]
 }
@@ -320,15 +320,15 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
-                           segmentationClassIndices: [Int]
+                           accessibilityFeatureClassIndices: [Int]
     ) {
-        for segmentationClassIndex in segmentationClassIndices {
-            guard (segmentationClassIndex < Constants.SelectedAccessibilityFeatureConfig.classes.count) else {
-                print("Invalid segmentation class index: \(segmentationClassIndex)")
+        for accessibilityFeatureClassIndex in accessibilityFeatureClassIndices {
+            guard (accessibilityFeatureClassIndex < Constants.SelectedAccessibilityFeatureConfig.classes.count) else {
+                print("Invalid segmentation class index: \(accessibilityFeatureClassIndex)")
                 continue
             }
-            let segmentationClass = Constants.SelectedAccessibilityFeatureConfig.classes[segmentationClassIndex]
-            if let existingMeshRecord = meshEntities[segmentationClassIndex] {
+            let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[accessibilityFeatureClassIndex]
+            if let existingMeshRecord = meshEntities[accessibilityFeatureClassIndex] {
                 // Update existing mesh entity
                 do {
                     try existingMeshRecord.replace(
@@ -349,9 +349,9 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                         segmentationImage: segmentationLabelImage,
                         cameraTransform: cameraTransform,
                         cameraIntrinsics: cameraIntrinsics,
-                        segmentationClass: segmentationClass
+                        accessibilityFeatureClass: accessibilityFeatureClass
                     )
-                    meshEntities[segmentationClassIndex] = meshRecord
+                    meshEntities[accessibilityFeatureClassIndex] = meshRecord
                     anchorEntity.addChild(meshRecord.entity)
                 } catch {
                     print("Error creating mesh entity: \(error)")

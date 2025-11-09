@@ -48,17 +48,17 @@ class AnnotationImageManager: ObservableObject {
     }
     
     func update(cameraImage: CIImage, segmentationLabelImage: CIImage, imageHistory: [ImageData],
-                segmentationClass: SegmentationClass) {
+                accessibilityFeatureClass: AccessibilityFeatureClass) {
         // TODO: Handle the case of transformedLabelImages being nil
         let transformedLabelImages = transformImageHistoryForUnionOfMasks(imageDataHistory: imageHistory)
         
         let cameraUIImageOutput = getCameraUIImage(cameraImage: cameraImage)
         let segmentationUIImageOutput = getSegmentationUIImage(
-            segmentationLabelImage: segmentationLabelImage, segmentationClass: segmentationClass)
+            segmentationLabelImage: segmentationLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
         
         let objectsInputLabelImage = segmentationUIImageOutput.ciImage
         let objectsUIImageOutput = getObjectsUIImage(
-            inputLabelImage: objectsInputLabelImage, segmentationClass: segmentationClass)
+            inputLabelImage: objectsInputLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
         
         // Start updating the state
         objectWillChange.send()
@@ -93,16 +93,16 @@ class AnnotationImageManager: ObservableObject {
     
     // Perform the union of masks on the label image history for the given segmentation class.
     // Save the resultant image to the segmentedLabelImage property.
-    private func getSegmentationUIImage(segmentationLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getSegmentationUIImage(segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
     -> AnnotationSegmentationUIImageOutput {
         var inputLabelImage = segmentationLabelImage
         do {
             inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-                targetValue: segmentationClass.labelValue,
-                bounds: segmentationClass.bounds,
-                unionOfMasksThreshold: segmentationClass.unionOfMasksThreshold,
-                defaultFrameWeight: segmentationClass.defaultFrameUnionWeight,
-                lastFrameWeight: segmentationClass.lastFrameUnionWeight
+                targetValue: accessibilityFeatureClass.labelValue,
+                bounds: accessibilityFeatureClass.bounds,
+                unionOfMasksThreshold: accessibilityFeatureClass.unionOfMasksThreshold,
+                defaultFrameWeight: accessibilityFeatureClass.defaultFrameUnionWeight,
+                lastFrameWeight: accessibilityFeatureClass.lastFrameUnionWeight
             )
         } catch {
             print("Error processing union of masks request: \(error)")
@@ -121,7 +121,7 @@ class AnnotationImageManager: ObservableObject {
                 uiImage: segmentationUIImage)
     }
     
-    private func getObjectsUIImage(inputLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getObjectsUIImage(inputLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
     -> AnnotationObjectsUIImageOutput {
         var inputDetectedObjects: [DetectedObject] = []
         
@@ -129,20 +129,20 @@ class AnnotationImageManager: ObservableObject {
         do {
             inputDetectedObjects = try self.annotationSegmentationPipeline.processContourRequest(
                 from: inputLabelImage,
-                targetValue: segmentationClass.labelValue,
-                isWay: segmentationClass.isWay,
-                bounds: segmentationClass.bounds
+                targetValue: accessibilityFeatureClass.labelValue,
+                isWay: accessibilityFeatureClass.isWay,
+                bounds: accessibilityFeatureClass.bounds
             )
         } catch {
             print("Error processing contour request: \(error)")
         }
         var annotatedDetectedObjects = inputDetectedObjects.enumerated().map({ objectIndex, object in
             AnnotatedDetectedObject(object: object, classLabel: object.classLabel, depthValue: 0.0, isAll: false,
-                                    label: segmentationClass.name + ": " + String(objectIndex))
+                                    label: accessibilityFeatureClass.name + ": " + String(objectIndex))
         })
         // Add the "all" object to the beginning of the list
         annotatedDetectedObjects.insert(
-            AnnotatedDetectedObject(object: nil, classLabel: segmentationClass.labelValue,
+            AnnotatedDetectedObject(object: nil, classLabel: accessibilityFeatureClass.labelValue,
                                     depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
             at: 0
         )
