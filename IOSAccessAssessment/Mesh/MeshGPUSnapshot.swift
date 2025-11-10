@@ -132,6 +132,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         }()
         
         // Assign vertex buffer
+        // MARK: This code assumes the vertex format will always be only Float3
         let vertexElemSize = MemoryLayout<Float>.stride * 3
         let vertexByteCount = vertices.count * vertexElemSize
         try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
@@ -160,6 +161,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         
         // Assign classification buffer (if available)
         if let classifications = classifications {
+            // MARK: This code assumes the classification type will always be only UInt8
             let classificationElemSize = MemoryLayout<UInt8>.stride
             let classificationByteCount = classifications.count * classificationElemSize
             if meshGPUAnchor.classificationBuffer == nil {

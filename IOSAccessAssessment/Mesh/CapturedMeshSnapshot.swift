@@ -11,31 +11,82 @@ struct CapturedMeshAnchorSnapshot: Sendable {
     let vertexData: Data
     let indexData: Data
     
-    let anchorTransform: simd_float4x4
-    let vertexCount: Int
-    let indexCount: Int
+    // TODO: Add counts later
+//    let vertexCount: Int
+//    let indexCount: Int
 }
 
 struct CapturedMeshSnapshot: Sendable {
+    let anchors: [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot]
+    
     let vertexStride: Int
     let vertexOffset: Int
     let indexStride: Int
     let classificationStride: Int
-    let anchors: [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot]
+}
+
+enum CapturedMeshSnapshotError: Error, LocalizedError {
+    case invalidVertexData
+    case invalidIndexData
     
-    init(
+    var errorDescription: String? {
+        switch self {
+        case .invalidVertexData:
+            return "The vertex data in the segmentation mesh record invalid."
+        case .invalidIndexData:
+            return "The index data in the segmentation mesh record invalid."
+        }
+    }
+}
+
+@MainActor
+final class CapturedMeshSnapshotGenerator {
+    func snapshotSegmentationRecords(
+        from: [AccessibilityFeatureClass: SegmentationMeshRecord],
         vertexStride: Int,
         vertexOffset: Int,
         indexStride: Int,
-        classificationStride: Int,
-        meshGPUAnchors: [AccessibilityFeatureClass: SegmentationMeshRecord]
-    ) {
-        self.vertexStride = vertexStride
-        self.vertexOffset = vertexOffset
-        self.indexStride = indexStride
-        self.classificationStride = classificationStride
+        classificationStride: Int
+    ) -> [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot] {
+        return [:]
+    }
+    
+    func createSnapshot(
+        segmentationRecord: SegmentationMeshRecord
+    ) throws -> CapturedMeshAnchorSnapshot {
+        let lowLevelMesh = segmentationRecord.mesh
+        guard let vertexData = getVertexData(from: lowLevelMesh) else {
+            throw CapturedMeshSnapshotError.invalidVertexData
+        }
+        guard let indexData = getIndexData(from: lowLevelMesh) else {
+            throw CapturedMeshSnapshotError.invalidIndexData
+        }
         
-        // TODO: Convert SegmentationMeshRecord to CapturedMeshAnchorSnapshot
-        self.anchors = [:]
+        return CapturedMeshAnchorSnapshot(
+            vertexData: vertexData,
+            indexData: indexData
+        )
+    }
+    
+    private func getVertexData(from mesh: LowLevelMesh) -> Data? {
+        var vertexData: Data?
+        mesh.withUnsafeBytes(bufferIndex: 0) { ptr in
+            guard let baseAddress = ptr.baseAddress else {
+                return
+            }
+            vertexData = Data(bytes: baseAddress, count: ptr.count)
+        }
+        return vertexData
+    }
+    
+    private func getIndexData(from mesh: LowLevelMesh) -> Data? {
+        var indexData: Data?
+        mesh.withUnsafeIndices { ptr in
+            guard let baseAddress = ptr.baseAddress else {
+                return
+            }
+            indexData = Data(bytes: baseAddress, count: ptr.count)
+        }
+        return indexData
     }
 }
