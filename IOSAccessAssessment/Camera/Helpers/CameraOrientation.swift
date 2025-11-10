@@ -57,9 +57,84 @@ class CameraOrientation {
         }
     }
     
+    static func getCGImageOrientationForInterface(currentInterfaceOrientation: UIInterfaceOrientation) -> CGImagePropertyOrientation {
+        switch currentInterfaceOrientation {
+            case .portrait:
+                return .right                // Camera is rotated 90° CW to be upright
+            case .portraitUpsideDown:
+                return .left                 // Camera is rotated 90° CCW
+            case .landscapeLeft:
+                return .down                   // (Home button on the right) Camera is not rotated.
+            case .landscapeRight:
+                return .up                 // (Home button on the left) Camera is rotated 180°.
+            default:
+                return .right               // Fallback to portrait
+        }
+    }
+    
     // Since people tend to hold devices in portrait mode by default when using the camera,
     // we can assume that the camera is in portrait mode when the device orientation is unknown.
     static func isLandscapeOrientation(currentDeviceOrientation: UIDeviceOrientation) -> Bool {
         return currentDeviceOrientation == .landscapeLeft || currentDeviceOrientation == .landscapeRight
+    }
+}
+
+extension CGImagePropertyOrientation {
+    func inverted() -> CGImagePropertyOrientation {
+        switch self {
+        case .up: return .up
+        case .down: return .down
+        case .left: return .right
+        case .right: return .left
+        case .upMirrored: return .upMirrored
+        case .downMirrored: return .downMirrored
+        case .leftMirrored: return .rightMirrored
+        case .rightMirrored: return .leftMirrored
+        @unknown default: return .up
+        }
+    }
+    
+    func getNormalizedToUpTransform() -> CGAffineTransform {
+        var t = CGAffineTransform.identity
+
+        // First handle the 90/180° rotations (use unit size = 1)
+        switch self {
+        case .down, .downMirrored:
+            // rotate 180° around origin, then move back into [0,1]^2
+            t = t.translatedBy(x: 1, y: 1)
+            t = t.rotated(by: .pi)
+
+        case .left, .leftMirrored:
+            // rotate +90° (CCW), then shift into [0,1]^2
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.rotated(by: .pi / 2)
+
+        case .right, .rightMirrored:
+            // rotate -90° (CW), then shift into [0,1]^2
+            t = t.translatedBy(x: 0, y: 1)
+            t = t.rotated(by: -.pi / 2)
+
+        case .up, .upMirrored:
+            break
+        }
+
+        // Then handle the mirror variants (horizontal flip)
+        switch self {
+        case .upMirrored, .downMirrored:
+            // flip horizontally
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.scaledBy(x: -1, y: 1)
+
+        case .leftMirrored, .rightMirrored:
+            // after 90° rotation, width/height swap;
+            // still a horizontal flip in the rotated space
+            t = t.translatedBy(x: 1, y: 0)
+            t = t.scaledBy(x: -1, y: 1)
+
+        case .up, .down, .left, .right:
+            break
+        }
+
+        return t
     }
 }

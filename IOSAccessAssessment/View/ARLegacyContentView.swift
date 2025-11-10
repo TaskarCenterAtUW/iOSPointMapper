@@ -1,5 +1,5 @@
 //
-//  ARContentView.swift
+//  ARLegacyContentView.swift
 //  IOSAccessAssessment
 //
 //  Created by Kohei Matsushima on 2024/03/29.
@@ -12,7 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 
-enum ARContentViewConstants {
+enum ARLegacyContentViewConstants {
     enum Texts {
         static let contentViewTitle = "Capture"
         
@@ -41,7 +41,7 @@ enum ARContentViewConstants {
     }
 }
 
-struct ARContentView: View {
+struct ARLegacyContentView: View {
     var selection: [Int]
     
     @EnvironmentObject var sharedImageData: SharedImageData
@@ -50,10 +50,10 @@ struct ARContentView: View {
     
     @StateObject var objectLocation = ObjectLocation()
     
-    @State private var manager: ARCameraManager?
+    @State private var manager: ARLegacyCameraManager?
     @State private var navigateToAnnotationView = false
     
-    var isCameraStoppedPayload = [ARContentViewConstants.Payload.isCameraStopped: true]
+    var isCameraStoppedPayload = [ARLegacyContentViewConstants.Payload.isCameraStopped: true]
     
     // For deciding the layout
     private var isLandscape: Bool {
@@ -74,13 +74,13 @@ struct ARContentView: View {
                         objectLocation.setLocationAndHeading()
                         manager?.stopStream()
                         var additionalPayload: [String: Any] = isCameraStoppedPayload
-                        additionalPayload[ARContentViewConstants.Payload.originalImageSize] = sharedImageData.originalImageSize
+                        additionalPayload[ARLegacyContentViewConstants.Payload.originalImageSize] = sharedImageData.originalImageSize
                         let deviceOrientation = sharedImageData.deviceOrientation ?? manager?.deviceOrientation ?? .portrait
                         segmentationPipeline.processFinalRequest(with: sharedImageData.cameraImage!, previousImage: nil,
                                                                  deviceOrientation: deviceOrientation,
                                                                  additionalPayload: additionalPayload)
                     } label: {
-                        Image(systemName: ARContentViewConstants.Images.cameraIcon)
+                        Image(systemName: ARLegacyContentViewConstants.Images.cameraIcon)
                             .resizable()
                             .frame(width: 60, height: 60)
 //                            .foregroundColor(.white)
@@ -90,7 +90,7 @@ struct ARContentView: View {
             else {
                 VStack {
                     SpinnerView()
-                    Text(ARContentViewConstants.Texts.cameraInProgressText)
+                    Text(ARLegacyContentViewConstants.Texts.cameraInProgressText)
                         .padding(.top, 20)
                 }
             }
@@ -101,14 +101,14 @@ struct ARContentView: View {
                 objectLocation: objectLocation
             )
         }
-        .navigationBarTitle(ARContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
+        .navigationBarTitle(ARLegacyContentViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             navigateToAnnotationView = false
             
             if (manager == nil) {
                 segmentationPipeline.setSelectionClasses(selection)
                 segmentationPipeline.setCompletionHandler(segmentationPipelineCompletionHandler)
-                manager = ARCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
+                manager = ARLegacyCameraManager(sharedImageData: sharedImageData, segmentationPipeline: segmentationPipeline)
             } else {
                 manager?.resumeStream()
             }
@@ -136,9 +136,9 @@ struct ARContentView: View {
             self.sharedImageData.transformMatrixToPreviousFrame = output.transformMatrixFromPreviousFrame?.inverse
             
             self.sharedImageData.deviceOrientation = output.deviceOrientation
-            self.sharedImageData.originalImageSize = output.additionalPayload[ARContentViewConstants.Payload.originalImageSize] as? CGSize
+            self.sharedImageData.originalImageSize = output.additionalPayload[ARLegacyContentViewConstants.Payload.originalImageSize] as? CGSize
             
-            if let isStopped = output.additionalPayload[ARContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
+            if let isStopped = output.additionalPayload[ARLegacyContentViewConstants.Payload.isCameraStopped] as? Bool, isStopped {
                 // Perform depth estimation only if LiDAR is not available
                 if (!sharedImageData.isLidarAvailable) {
                     print("Performing depth estimation because LiDAR is not available.")
@@ -148,9 +148,9 @@ struct ARContentView: View {
                 self.sharedImageData.currentCaptureId = UUID()
                 self.navigateToAnnotationView = true
             } else {
-                let cameraTransform = output.additionalPayload[ARContentViewConstants.Payload.cameraTransform] as? simd_float4x4 ?? self.sharedImageData.cameraTransform
+                let cameraTransform = output.additionalPayload[ARLegacyContentViewConstants.Payload.cameraTransform] as? simd_float4x4 ?? self.sharedImageData.cameraTransform
                 self.sharedImageData.cameraTransform = cameraTransform
-                let cameraIntrinsics = output.additionalPayload[ARContentViewConstants.Payload.cameraIntrinsics] as? simd_float3x3 ?? self.sharedImageData.cameraIntrinsics
+                let cameraIntrinsics = output.additionalPayload[ARLegacyContentViewConstants.Payload.cameraIntrinsics] as? simd_float3x3 ?? self.sharedImageData.cameraIntrinsics
                 self.sharedImageData.cameraIntrinsics = cameraIntrinsics
                 
                 // Saving history

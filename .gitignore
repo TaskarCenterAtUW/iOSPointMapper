@@ -1,4 +1,5 @@
 # .gitignore
+.github/
 
 ## MAC Files
 .DS_Store
@@ -19,3 +20,6 @@ Frameworks/*
 *.mlmodel
 
 *.mlperf
+
+## Traces
+traces/

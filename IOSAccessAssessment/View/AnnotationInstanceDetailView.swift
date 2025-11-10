@@ -9,7 +9,7 @@ import SwiftUI
 extension AnnotationView {
     @ViewBuilder
     func openAnnotationInstanceDetailView() -> some View {
-        let isWay = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]].isWay
+        let isWay = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]].isWay
         let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == annotationImageManager.selectedObjectId })
         let disabledStatus = (!isWay || (selectedObject?.isAll ?? false))
         
@@ -122,7 +122,7 @@ struct AnnotationInstanceDetailView: View {
             Form {
                 Section(header: Text("Object ID")) {
                     Text(selectedObjectId.uuidString)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Section(header: Text("Width")) {

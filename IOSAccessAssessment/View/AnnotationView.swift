@@ -64,7 +64,7 @@ enum AnnotationViewConstants {
 }
 
 struct AnnotationView: View {
-    var selection: [Int]
+    let selectedClassIndices: [Int]
     var objectLocation: ObjectLocation
     
     @EnvironmentObject var sharedImageData: SharedImageData
@@ -126,7 +126,7 @@ struct AnnotationView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.SelectedSegmentationConfig.classNames[sharedImageData.segmentedIndices[index]])")
+                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText): \(Constants.SelectedAccessibilityFeatureConfig.classNames[sharedImageData.segmentedIndices[index]])")
                         Spacer()
                     }
                     
@@ -180,7 +180,7 @@ struct AnnotationView: View {
                                         .frame(maxWidth: .infinity)
                                         .padding()
                                         .background(selectedOption == option ? Color.blue : Color.gray)
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(.white)
                                         .cornerRadius(10)
                                 }
                             }
@@ -192,7 +192,7 @@ struct AnnotationView: View {
                     Button(action: {
                         confirmAnnotation()
                     }) {
-                        Text(index == selection.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        Text(index == selectedClassIndices.count - 1 ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                     }
                     .padding()
                 }
@@ -290,12 +290,12 @@ struct AnnotationView: View {
             print("Index out of bounds in refreshView")
             return
         }
-        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         self.annotationImageManager.update(
             cameraImage: sharedImageData.cameraImage!,
             segmentationLabelImage: sharedImageData.segmentationLabelImage!,
             imageHistory: sharedImageData.getImageDataHistory(),
-            segmentationClass: segmentationClass)
+            accessibilityFeatureClass: accessibilityFeatureClass)
     }
     
     func refreshOptions() {
@@ -349,12 +349,12 @@ struct AnnotationView: View {
                 depthValue = depthMapProcessor.getDepth(
                     segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                     depthImage: depthImage,
-                    classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[index]])
+                    classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[index]])
             } else {
                 depthValue = depthMapProcessor.getDepthInRadius(
                     segmentationLabelImage: segmentationLabelImage, object: detectedObject,
                     depthRadius: 5, depthImage: depthImage,
-                    classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[index]])
+                    classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[index]])
             }
 //            var annotatedDetectedObject = annotatedDetectedObject
             annotatedDetectedObject.depthValue = depthValue
@@ -368,17 +368,19 @@ struct AnnotationView: View {
 //        let currentDepthValueString = currentDepthValues.map { String(format: "%.2f", $0) }.joined(separator: ", ")
 //        self.currentDepthValues = currentDepthValueString
         
-        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
-        uploadAnnotatedChanges(annotatedDetectedObjects: annotatedDetectedObjects, segmentationClass: segmentationClass)
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        uploadAnnotatedChanges(
+            annotatedDetectedObjects: annotatedDetectedObjects, accessibilityFeatureClass: accessibilityFeatureClass
+        )
         
         nextSegment()
     }
     
     func confirmAnnotationWithoutDepth() {
         let location = objectLocation.getCalcLocation(depthValue: 0.0)
-        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         // Since the depth calculation failed, we are not going to save this node in sharedImageData for future use.
-        uploadNodeWithoutDepth(location: location, segmentationClass: segmentationClass)
+        uploadNodeWithoutDepth(location: location, accessibilityFeatureClass: accessibilityFeatureClass)
         nextSegment()
     }
     
@@ -410,8 +412,8 @@ struct AnnotationView: View {
     
     // MARK: Width Field Demo: Temporary function to calculate width of a way-type object
     func calculateWidth(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -445,8 +447,8 @@ struct AnnotationView: View {
     
     // MARK: Slope Field Demo: Temporary function to calculate slope with depth
     func calculateSlope(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -481,8 +483,8 @@ struct AnnotationView: View {
     
     // MARK: Cross-Slope Field Demo: Temporary function to calculate cross-slope with depth
     func calculateCrossSlope(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
@@ -515,19 +517,19 @@ struct AnnotationView: View {
     }
     
     func calculateBreakage(selectedObjectId: UUID) {
-        let selectionClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
-        if !(selectionClass.isWay) {
+        let selectedClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
+        if !(selectedClass.isWay) {
             return
         }
         
-        let segmentationClass = Constants.SelectedSegmentationConfig.classes[sharedImageData.segmentedIndices[index]]
+        let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]]
         var breakageStatus: Bool = false
         if let selectedObject = annotationImageManager.annotatedDetectedObjects?.first(where: { $0.id == selectedObjectId }),
            let selectedObjectObject = selectedObject.object,
            let width = selectedObjectObject.finalWidth ?? selectedObjectObject.calculatedWidth {
             breakageStatus = self.getBreakageStatus(
                 width: width,
-                wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+                wayWidth: self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.last)
             selectedObjectObject.calculatedBreakage = breakageStatus
         }
         // Update the breakage status in the annotationImageManager
@@ -590,7 +592,7 @@ struct SelectObjectLearnMoreSheetView: View {
             //                .resizable()
             //                .scaledToFit()
             //                .frame(width: 160)
-            //                .foregroundColor(.accentColor)
+            //                .foregroundStyle(.accentColor)
             Text(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetTitle)
                 .font(.title)
             Text(.init(AnnotationViewConstants.Texts.selectObjectInfoLearnMoreSheetMessage))

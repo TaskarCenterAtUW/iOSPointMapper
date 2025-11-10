@@ -34,7 +34,9 @@ class AnnotatedDetectedObject {
 
 // Extension for uploading the annotated changes to the server
 extension AnnotationView {
-    func uploadAnnotatedChanges(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
+    func uploadAnnotatedChanges(
+        annotatedDetectedObjects: [AnnotatedDetectedObject], accessibilityFeatureClass: AccessibilityFeatureClass
+    ) {
         // TODO: It would be more efficient to do the following filtering before the uploadAnnotatedChanges function is called.
         // Before the post-processing is done, such as the depth being calculated for each object.
         let allObjects = annotatedDetectedObjects.filter { $0.isAll }
@@ -58,20 +60,21 @@ extension AnnotationView {
         }
         
         // We assume that every object is of the same class.
-        let isWay = segmentationClass.isWay
+        let isWay = accessibilityFeatureClass.isWay
         if isWay {
             // We upload all the nodes along with the way.
-            uploadWay(annotatedDetectedObject: uploadObjects[0], segmentationClass: segmentationClass)
+            uploadWay(annotatedDetectedObject: uploadObjects[0], accessibilityFeatureClass: accessibilityFeatureClass)
         } else {
             // We upload all the nodes.
-            uploadNodes(annotatedDetectedObjects: uploadObjects, segmentationClass: segmentationClass)
+            uploadNodes(annotatedDetectedObjects: uploadObjects, accessibilityFeatureClass: accessibilityFeatureClass)
         }
     }
     
-    func uploadWay(annotatedDetectedObject: AnnotatedDetectedObject, segmentationClass: SegmentationClass) {
+    func uploadWay(annotatedDetectedObject: AnnotatedDetectedObject, accessibilityFeatureClass: AccessibilityFeatureClass) {
         var tempId = -1
         var nodeData = getNodeDataFromAnnotatedObject(
-            annotatedDetectedObject: annotatedDetectedObject, id: tempId, isWay: true, segmentationClass: segmentationClass)
+            annotatedDetectedObject: annotatedDetectedObject, id: tempId, isWay: true,
+            accessibilityFeatureClass: accessibilityFeatureClass)
         tempId -= 1
         
         var wayDataOperations: [ChangesetDiffOperation] = []
@@ -79,8 +82,8 @@ extension AnnotationView {
             wayDataOperations.append(ChangesetDiffOperation.create(nodeData))
         }
         
-        var wayData = self.sharedImageData.wayGeometries[segmentationClass.labelValue]?.last
-        var wayWidth = self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last
+        var wayData = self.sharedImageData.wayGeometries[accessibilityFeatureClass.labelValue]?.last
+        var wayWidth = self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
         if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
 //            var wayData = wayData!
@@ -90,9 +93,9 @@ extension AnnotationView {
             }
             wayDataOperations.append(ChangesetDiffOperation.modify(wayData!))
             wayWidth?.widths.append(annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0)
-            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.removeLast()
+            self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.removeLast()
         } else {
-            let className = segmentationClass.name
+            let className = accessibilityFeatureClass.name
             var wayTags: [String: String] = [APIConstants.TagKeys.classKey: className]
             wayTags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
             
@@ -104,11 +107,11 @@ extension AnnotationView {
             wayDataOperations.append(ChangesetDiffOperation.create(wayData!))
             
             // Create wayWidth and add to wayWidthHistory
-            wayWidth = WayWidth(id: String(tempId), classLabel: segmentationClass.labelValue,
+            wayWidth = WayWidth(id: String(tempId), classLabel: accessibilityFeatureClass.labelValue,
                 widths: [annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0])
         }
         if let wayWidth = wayWidth {
-            self.sharedImageData.wayWidthHistory[segmentationClass.labelValue, default: []].append(wayWidth)
+            self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue, default: []].append(wayWidth)
         }
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
@@ -136,7 +139,7 @@ extension AnnotationView {
                         nodeData?.id = newId
                         nodeData?.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData!,
-                                                           classLabel: segmentationClass.labelValue)
+                                                           classLabel: accessibilityFeatureClass.labelValue)
                     }
                     
                     // Update the way data with the new id and version
@@ -157,9 +160,9 @@ extension AnnotationView {
                            let oldNodeIdIndex = wayData?.nodeRefs.firstIndex(of: oldNodeId) {
                             wayData?.nodeRefs[oldNodeIdIndex] = nodeData.id
                         }
-                        sharedImageData.wayGeometries[segmentationClass.labelValue]?.removeLast()
+                        sharedImageData.wayGeometries[accessibilityFeatureClass.labelValue]?.removeLast()
                         sharedImageData.appendWayGeometry(wayData: wayData!,
-                                                          classLabel: segmentationClass.labelValue)
+                                                          classLabel: accessibilityFeatureClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -168,11 +171,11 @@ extension AnnotationView {
         }
     }
     
-    func uploadNodes(annotatedDetectedObjects: [AnnotatedDetectedObject], segmentationClass: SegmentationClass) {
+    func uploadNodes(annotatedDetectedObjects: [AnnotatedDetectedObject], accessibilityFeatureClass: AccessibilityFeatureClass) {
         var tempId = -1
         let nodeDataObjects: [NodeData?] = annotatedDetectedObjects.map { object in
             let nodeData = getNodeDataFromAnnotatedObject(
-                annotatedDetectedObject: object, id: tempId, isWay: false, segmentationClass: segmentationClass)
+                annotatedDetectedObject: object, id: tempId, isWay: false, accessibilityFeatureClass: accessibilityFeatureClass)
             tempId -= 1
             return nodeData
         }
@@ -208,7 +211,7 @@ extension AnnotationView {
                         nodeData.id = newId
                         nodeData.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData,
-                                                           classLabel: segmentationClass.labelValue)
+                                                           classLabel: accessibilityFeatureClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -217,13 +220,14 @@ extension AnnotationView {
         }
     }
     
-    func uploadNodeWithoutDepth(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?,
-                                segmentationClass: SegmentationClass) {
+    func uploadNodeWithoutDepth(
+        location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, accessibilityFeatureClass: AccessibilityFeatureClass
+    ) {
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return }
         
-        var tags: [String: String] = [APIConstants.TagKeys.classKey: segmentationClass.name]
+        var tags: [String: String] = [APIConstants.TagKeys.classKey: accessibilityFeatureClass.name]
         tags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
         // nodeLatitude and nodeLongitude work because they are the same as the capture location.
         tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
@@ -255,7 +259,7 @@ extension AnnotationView {
                         nodeData.id = newId
                         nodeData.version = newVersion
                         sharedImageData.appendNodeGeometry(nodeData: nodeData,
-                                                           classLabel: segmentationClass.labelValue)
+                                                           classLabel: accessibilityFeatureClass.labelValue)
                     }
                 }
             case .failure(let error):
@@ -271,7 +275,7 @@ extension AnnotationView {
      */
     func getNodeDataFromAnnotatedObject(
         annotatedDetectedObject: AnnotatedDetectedObject,
-        id: Int, isWay: Bool = false, segmentationClass: SegmentationClass
+        id: Int, isWay: Bool = false, accessibilityFeatureClass: AccessibilityFeatureClass
     ) -> NodeData? {
         let centroid = annotatedDetectedObject.object?.centroid
         let pointWithDepth: SIMD3<Float> = SIMD3<Float>(
@@ -293,7 +297,7 @@ extension AnnotationView {
               let nodeLongitude = location?.longitude
         else { return nil }
         
-        let className = segmentationClass.name
+        let className = accessibilityFeatureClass.name
         var tags: [String: String] = [APIConstants.TagKeys.classKey: className]
         tags[APIConstants.TagKeys.depthKey] = String(format: "%.4f", annotatedDetectedObject.depthValue)
         tags[APIConstants.TagKeys.captureIdKey] = self.sharedImageData.currentCaptureId?.uuidString ?? ""
@@ -330,7 +334,7 @@ extension AnnotationView {
             } else {
                 breakageStatus = self.getBreakageStatus(
                     width: width,
-                    wayWidth: self.sharedImageData.wayWidthHistory[segmentationClass.labelValue]?.last)
+                    wayWidth: self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.last)
             }
             tags[APIConstants.TagKeys.breakageKey] = String(breakageStatus)
             
@@ -417,7 +421,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
@@ -475,7 +479,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }
@@ -534,7 +538,7 @@ extension AnnotationView {
             depthValues = self.depthMapProcessor?.getDepthValuesInRadius(
                 segmentationLabelImage: segmentationLabelImage,
                 at: wayCGPoints, depthRadius: 3, depthImage: depthImage,
-                classLabel: Constants.SelectedSegmentationConfig.labels[sharedImageData.segmentedIndices[self.index]])
+                classLabel: Constants.SelectedAccessibilityFeatureConfig.labels[sharedImageData.segmentedIndices[self.index]])
         } else {
             depthValues = self.depthMapProcessor?.getValues(at: wayCGPoints)
         }

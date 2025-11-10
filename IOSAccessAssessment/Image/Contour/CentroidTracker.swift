@@ -238,8 +238,8 @@ extension CentroidTracker {
     }
     
     private func normalizeHomographyMatrix(_ matrix: simd_float3x3) -> simd_float3x3 {
-        let width = Float(Constants.SelectedSegmentationConfig.inputSize.width)
-        let height = Float(Constants.SelectedSegmentationConfig.inputSize.height)
+        let width = Float(Constants.SelectedAccessibilityFeatureConfig.inputSize.width)
+        let height = Float(Constants.SelectedAccessibilityFeatureConfig.inputSize.height)
         
         // S: scales normalized → pixel coordinates
         let S = simd_float3x3(rows: [

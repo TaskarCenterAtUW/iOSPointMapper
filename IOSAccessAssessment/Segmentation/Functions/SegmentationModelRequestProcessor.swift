@@ -8,6 +8,20 @@ import CoreML
 import Vision
 import CoreImage
 
+enum SegmentationModelError: Error, LocalizedError {
+    case modelLoadingError
+    case segmentationProcessingError
+    
+    var errorDescription: String? {
+        switch self {
+        case .modelLoadingError:
+            return "Failed to load the segmentation model."
+        case .segmentationProcessingError:
+            return "Error occurred while processing the segmentation request."
+        }
+    }
+}
+
 /**
     A struct to handle the segmentation model request processing.
     Processes the segmentation model request and returns the segmentation mask as well as the segmented indices.
@@ -15,21 +29,18 @@ import CoreImage
 struct SegmentationModelRequestProcessor {
     var visionModel: VNCoreMLModel
     
-    var selectionClasses: [Int] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
     
-    init(selectionClasses: [Int]) {
-        let modelURL = Constants.SelectedSegmentationConfig.modelURL
+    init(selectedClasses: [AccessibilityFeatureClass]) throws {
+        let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
-        guard let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration)) else {
-            fatalError("Cannot load CNN model")
-        }
-        self.visionModel = visionModel
-        self.selectionClasses = selectionClasses
+        self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
+        self.selectedClasses = selectedClasses
     }
     
-    mutating func setSelectionClasses(_ classes: [Int]) {
-        self.selectionClasses = classes
+    mutating func setSelectedClasses(_ classes: [AccessibilityFeatureClass]) {
+        self.selectedClasses = classes
     }
     
     private func configureSegmentationRequest(request: VNCoreMLRequest) {
@@ -37,34 +48,35 @@ struct SegmentationModelRequestProcessor {
         request.imageCropAndScaleOption = .scaleFill
     }
     
-    // MARK: Currently we are relying on the synchronous nature of the request handler
-    // Need to check if this is always guaranteed.
-    func processSegmentationRequest(with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up)
-    -> (segmentationImage: CIImage, segmentedIndices: [Int])? {
-        do {
-            let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
-            self.configureSegmentationRequest(request: segmentationRequest)
-            let segmentationRequestHandler = VNImageRequestHandler(
-                ciImage: cIImage,
-                orientation: orientation,
-                options: [:])
-            try segmentationRequestHandler.perform([segmentationRequest])
-            
-            guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {return nil}
-            let segmentationBuffer = segmentationResult.first?.pixelBuffer
-            
-            let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer!)
-            let grayscaleValuesToIndex = Constants.SelectedSegmentationConfig.labelToIndexMap
-            let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
-            let selectedIndicesSet = Set(selectedIndices)
-            let segmentedIndices = self.selectionClasses.filter{ selectedIndicesSet.contains($0) }
-            
-            let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer!)
-            
-            return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
-        } catch {
-            print("Error processing segmentation request: \(error)")
+    func processSegmentationRequest(
+        with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up
+    ) throws -> (segmentationImage: CIImage, segmentedClasses: [AccessibilityFeatureClass]) {
+        let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
+        self.configureSegmentationRequest(request: segmentationRequest)
+        let segmentationRequestHandler = VNImageRequestHandler(
+            ciImage: cIImage,
+            orientation: orientation,
+            options: [:])
+        try segmentationRequestHandler.perform([segmentationRequest])
+        
+        guard let segmentationResult = segmentationRequest.results as? [VNPixelBufferObservation] else {
+            throw SegmentationModelError.segmentationProcessingError
         }
-        return nil
+        guard let segmentationBuffer = segmentationResult.first?.pixelBuffer else {
+            throw SegmentationModelError.segmentationProcessingError
+        }
+        
+        let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer)
+        
+        let grayscaleValuesToClassMap = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap
+        var segmentedClasses = uniqueGrayScaleValues.compactMap { grayscaleValuesToClassMap[$0] }
+        let segmentedClassSet = Set(segmentedClasses)
+        segmentedClasses = self.selectedClasses.filter{ segmentedClassSet.contains($0) }
+        
+        let segmentationImage = CIImage(
+            cvPixelBuffer: segmentationBuffer
+        )
+        
+        return (segmentationImage: segmentationImage, segmentedClasses: segmentedClasses)
     }
 }

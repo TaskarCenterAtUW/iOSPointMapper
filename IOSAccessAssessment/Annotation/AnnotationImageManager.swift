@@ -37,7 +37,8 @@ class AnnotationImageManager: ObservableObject {
     // Helpers
     private let annotationCIContext = CIContext()
     private let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
-    private let grayscaleToColorMasker = GrayscaleToColorCIFilter()
+    // MARK: Temporarily commented out to setup refactoring
+//    private let grayscaleToColorMasker = GrayscaleToColorFilter()
     
     func isImageInvalid() -> Bool {
         if (self.cameraUIImage == nil || self.segmentationUIImage == nil || self.objectsUIImage == nil) {
@@ -47,17 +48,17 @@ class AnnotationImageManager: ObservableObject {
     }
     
     func update(cameraImage: CIImage, segmentationLabelImage: CIImage, imageHistory: [ImageData],
-                segmentationClass: SegmentationClass) {
+                accessibilityFeatureClass: AccessibilityFeatureClass) {
         // TODO: Handle the case of transformedLabelImages being nil
         let transformedLabelImages = transformImageHistoryForUnionOfMasks(imageDataHistory: imageHistory)
         
         let cameraUIImageOutput = getCameraUIImage(cameraImage: cameraImage)
         let segmentationUIImageOutput = getSegmentationUIImage(
-            segmentationLabelImage: segmentationLabelImage, segmentationClass: segmentationClass)
+            segmentationLabelImage: segmentationLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
         
         let objectsInputLabelImage = segmentationUIImageOutput.ciImage
         let objectsUIImageOutput = getObjectsUIImage(
-            inputLabelImage: objectsInputLabelImage, segmentationClass: segmentationClass)
+            inputLabelImage: objectsInputLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
         
         // Start updating the state
         objectWillChange.send()
@@ -74,7 +75,7 @@ class AnnotationImageManager: ObservableObject {
         do {
             let transformedLabelImages = try self.annotationSegmentationPipeline.processTransformationsRequest(
                 imageDataHistory: imageDataHistory)
-            self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
+            try self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
             return transformedLabelImages
         } catch {
             print("Error processing transformations request: \(error)")
@@ -92,26 +93,23 @@ class AnnotationImageManager: ObservableObject {
     
     // Perform the union of masks on the label image history for the given segmentation class.
     // Save the resultant image to the segmentedLabelImage property.
-    private func getSegmentationUIImage(segmentationLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getSegmentationUIImage(segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
     -> AnnotationSegmentationUIImageOutput {
         var inputLabelImage = segmentationLabelImage
         do {
             inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-                targetValue: segmentationClass.labelValue,
-                bounds: segmentationClass.bounds,
-                unionOfMasksThreshold: segmentationClass.unionOfMasksThreshold,
-                defaultFrameWeight: segmentationClass.defaultFrameUnionWeight,
-                lastFrameWeight: segmentationClass.lastFrameUnionWeight
+                targetValue: accessibilityFeatureClass.labelValue,
+                bounds: accessibilityFeatureClass.bounds,
+                unionOfMasksPolicy: accessibilityFeatureClass.unionOfMasksPolicy
             )
         } catch {
             print("Error processing union of masks request: \(error)")
         }
 //        self.annotatedSegmentationLabelImage = inputLabelImage
-        self.grayscaleToColorMasker.inputImage = inputLabelImage
-        self.grayscaleToColorMasker.grayscaleValues = [segmentationClass.grayscaleValue]
-        self.grayscaleToColorMasker.colorValues = [segmentationClass.color]
+//        let segmentationColorImage = self.grayscaleToColorMasker.apply(
+//            to: inputLabelImage, grayscaleValues: [segmentationClass.grayscaleValue], colorValues: [segmentationClass.color])
         
-        let segmentationUIImage = UIImage(ciImage: self.grayscaleToColorMasker.outputImage!, scale: 1.0, orientation: .up)
+        let segmentationUIImage = UIImage(ciImage: segmentationLabelImage, scale: 1.0, orientation: .up)
         // Check if inputLabelImage is backed by a CVPixelBuffer
         if inputLabelImage.extent.width == 0 || inputLabelImage.extent.height == 0 {
             print("Warning: inputLabelImage has zero width or height.")
@@ -121,7 +119,7 @@ class AnnotationImageManager: ObservableObject {
                 uiImage: segmentationUIImage)
     }
     
-    private func getObjectsUIImage(inputLabelImage: CIImage, segmentationClass: SegmentationClass)
+    private func getObjectsUIImage(inputLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
     -> AnnotationObjectsUIImageOutput {
         var inputDetectedObjects: [DetectedObject] = []
         
@@ -129,20 +127,20 @@ class AnnotationImageManager: ObservableObject {
         do {
             inputDetectedObjects = try self.annotationSegmentationPipeline.processContourRequest(
                 from: inputLabelImage,
-                targetValue: segmentationClass.labelValue,
-                isWay: segmentationClass.isWay,
-                bounds: segmentationClass.bounds
+                targetValue: accessibilityFeatureClass.labelValue,
+                isWay: accessibilityFeatureClass.isWay,
+                bounds: accessibilityFeatureClass.bounds
             )
         } catch {
             print("Error processing contour request: \(error)")
         }
         var annotatedDetectedObjects = inputDetectedObjects.enumerated().map({ objectIndex, object in
             AnnotatedDetectedObject(object: object, classLabel: object.classLabel, depthValue: 0.0, isAll: false,
-                                    label: segmentationClass.name + ": " + String(objectIndex))
+                                    label: accessibilityFeatureClass.name + ": " + String(objectIndex))
         })
         // Add the "all" object to the beginning of the list
         annotatedDetectedObjects.insert(
-            AnnotatedDetectedObject(object: nil, classLabel: segmentationClass.labelValue,
+            AnnotatedDetectedObject(object: nil, classLabel: accessibilityFeatureClass.labelValue,
                                     depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
             at: 0
         )
@@ -151,7 +149,7 @@ class AnnotationImageManager: ObservableObject {
         let objectsUIImage = UIImage(
             cgImage: ContourObjectRasterizer.rasterizeContourObjects(
                 objects: inputDetectedObjects,
-                size: Constants.SelectedSegmentationConfig.inputSize,
+                size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
                 polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
                 boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
                 wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
@@ -183,7 +181,7 @@ class AnnotationImageManager: ObservableObject {
             }
         }
         newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: baseImage, objects: oldObjects, size: Constants.SelectedSegmentationConfig.inputSize,
+            baseImage: baseImage, objects: oldObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
@@ -199,7 +197,7 @@ class AnnotationImageManager: ObservableObject {
         }
         newImage = newImage ?? baseImage
         newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: newImage!, objects: newObjects, size: Constants.SelectedSegmentationConfig.inputSize,
+            baseImage: newImage!, objects: newObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),

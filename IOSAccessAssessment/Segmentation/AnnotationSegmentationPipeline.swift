@@ -57,10 +57,11 @@ class AnnotationSegmentationPipeline {
     // This will be useful only when we are using the pipeline in asynchronous mode.
     var isProcessing = false
     
-    var selectionClasses: [Int] = []
-    var selectionClassLabels: [UInt8] = []
-    var selectionClassGrayscaleValues: [Float] = []
-    var selectionClassColors: [CIColor] = []
+    var selectedClassIndices: [Int] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
+    var selectedClassLabels: [UInt8] = []
+    var selectedClassGrayscaleValues: [Float] = []
+    var selectedClassColors: [CIColor] = []
     
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
@@ -68,34 +69,39 @@ class AnnotationSegmentationPipeline {
     // For normalized points
     var perimeterThreshold: Float = 0.2
     
-    var contourRequestProcessor: ContourRequestProcessor?
+    var contourRequestProcessor: ContourRequestLegacyProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
     var unionOfMasksProcessor: UnionOfMasksProcessor?
     var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
     let context = CIContext()
     
     init() {
-        self.contourRequestProcessor = ContourRequestProcessor(
-            contourEpsilon: self.contourEpsilon,
-            perimeterThreshold: self.perimeterThreshold,
-            selectionClassLabels: self.selectionClassLabels)
-        self.homographyTransformFilter = HomographyTransformFilter()
-        self.unionOfMasksProcessor = UnionOfMasksProcessor()
-        self.dimensionBasedMaskFilter = DimensionBasedMaskFilter()
+        do {
+            self.contourRequestProcessor = try ContourRequestLegacyProcessor(
+                contourEpsilon: self.contourEpsilon,
+                perimeterThreshold: self.perimeterThreshold,
+                selectedClasses: self.selectedClasses)
+            self.homographyTransformFilter = try HomographyTransformFilter()
+            self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
+            self.unionOfMasksProcessor = try UnionOfMasksProcessor()
+        } catch {
+            print("Error initializing AnnotationSegmentationPipeline: \(error)")
+        }
     }
     
     func reset() {
         self.isProcessing = false
-        self.setSelectionClasses([])
+        self.setSelectedClassIndices([])
     }
     
-    func setSelectionClasses(_ selectionClasses: [Int]) {
-        self.selectionClasses = selectionClasses
-        self.selectionClassLabels = selectionClasses.map { Constants.SelectedSegmentationConfig.labels[$0] }
-        self.selectionClassGrayscaleValues = selectionClasses.map { Constants.SelectedSegmentationConfig.grayscaleValues[$0] }
-        self.selectionClassColors = selectionClasses.map { Constants.SelectedSegmentationConfig.colors[$0] }
+    func setSelectedClassIndices(_ selectedClassIndices: [Int]) {
+        self.selectedClassIndices = selectedClassIndices
+        self.selectedClasses = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.classes[$0] }
+        self.selectedClassLabels = selectedClasses.map { $0.labelValue }
+        self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
+        self.selectedClassColors = selectedClasses.map { $0.color }
         
-        self.contourRequestProcessor?.setSelectionClassLabels(self.selectionClassLabels)
+        self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
     func processTransformationsRequest(imageDataHistory: [ImageData]) throws -> [CIImage] {
@@ -121,6 +127,8 @@ class AnnotationSegmentationPipeline {
         /**
          Iterate through the image data history in reverse.
          Process each image by applying the homography transforms of the successive images.
+         
+         TODO: Need to check if the error handling is appropriate here.
          */
         // Identity matrix for the first image
         var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
@@ -132,30 +140,31 @@ class AnnotationSegmentationPipeline {
                 ) * transformMatrixToNextFrame
                 continue
             }
-            // Apply the homography transform to the current image
-            let transformedImage = homographyTransformFilter.apply(
-                to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
             transformMatrixToNextFrame = (
                 currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
             ) * transformMatrixToNextFrame
-            if let transformedSegmentationLabelImage = transformedImage {
-                transformedSegmentationLabelImages.append(transformedSegmentationLabelImage)
-            } else {
-                print("Failed to apply homography transform to the image.")
+            // Apply the homography transform to the current image
+            var transformedImage: CIImage
+            do {
+                transformedImage = try homographyTransformFilter.apply(
+                    to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
+            } catch {
+                print("Error applying homography transform: \(error)")
+                continue
             }
+            transformedSegmentationLabelImages.append(transformedImage)
         }
         
         self.isProcessing = false
         return transformedSegmentationLabelImages
     }
     
-    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) {
-        self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
+    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) throws {
+        try self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
     func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
-                                    unionOfMasksThreshold: Float = 1.0,
-                                    defaultFrameWeight: Float = 1.0, lastFrameWeight: Float = 1.0) throws -> CIImage {
+                                    unionOfMasksPolicy: UnionOfMasksPolicy = .default) throws -> CIImage {
         if self.isProcessing {
             throw AnnotationSegmentationPipelineError.isProcessingTrue
         }
@@ -165,18 +174,10 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.unionOfMasksProcessorNil
         }
         
-        let unionImageResult = unionOfMasksProcessor.apply(targetValue: targetValue,
-                                                           unionOfMasksThreshold: unionOfMasksThreshold,
-                                                           defaultFrameWeight: defaultFrameWeight,
-                                                           lastFrameWeight: lastFrameWeight)
-        guard var unionImage = unionImageResult else {
-            self.isProcessing = false
-            throw AnnotationSegmentationPipelineError.invalidUnionImageResult
-        }
-        
+        var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if bounds != nil {
 //            print("Applying dimension-based mask filter")
-            unionImage = self.dimensionBasedMaskFilter?.apply(
+            unionImage = try self.dimensionBasedMaskFilter?.apply(
                 to: unionImage, bounds: bounds!) ?? unionImage
         }
         
@@ -198,8 +199,10 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.contourRequestProcessorNil
         }
         
-        self.contourRequestProcessor?.setSelectionClassLabels([targetValue])
-        var detectedObjects = self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
+        let targetClass = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap[targetValue]
+        let targetClasses = targetClass != nil ? [targetClass!] : []
+        self.contourRequestProcessor?.setSelectedClasses(targetClasses)
+        var detectedObjects = try self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
         if isWay && bounds != nil {
             let largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
             if largestObject != nil {

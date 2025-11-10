@@ -103,7 +103,7 @@ struct CVPixelBufferUtils {
         let width = Int(targetSize.width)
         let height = Int(targetSize.height)
         
-        var pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
+        let pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
         
         guard let blankPixelBuffer = pixelBuffer else { return nil }
         
@@ -154,11 +154,11 @@ struct CVPixelBufferUtils {
 
     /**
      This function extracts unique grayscale values from a pixel buffer,
-     gets the indices of these values from Constants.SelectedSegmentationConfig.grayscaleValues,
+     gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
         and returns both the unique values and their corresponding indices.
      
      TODO: The function does more than just extracting unique grayscale values.
-     It also returns the indices of these values from Constants.SelectedSegmentationConfig.grayscaleValues.
+     It also returns the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues.
      This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
      */
     static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
@@ -237,8 +237,10 @@ extension CVPixelBuffer {
         case kCVPixelFormatType_OneComponent8:                 return "kCVPixelFormatType_OneComponent8"
         case kCVPixelFormatType_TwoComponent8:                 return "kCVPixelFormatType_TwoComponent8"
         case kCVPixelFormatType_30RGBLEPackedWideGamut:        return "kCVPixelFormatType_30RGBLEPackedWideGamut"
+        case kCVPixelFormatType_OneComponent16:                return "kCVPixelFormatType_OneComponent16"
         case kCVPixelFormatType_OneComponent16Half:            return "kCVPixelFormatType_OneComponent16Half"
         case kCVPixelFormatType_OneComponent32Float:           return "kCVPixelFormatType_OneComponent32Float"
+        case kCVPixelFormatType_TwoComponent16:                return "kCVPixelFormatType_TwoComponent16"
         case kCVPixelFormatType_TwoComponent16Half:            return "kCVPixelFormatType_TwoComponent16Half"
         case kCVPixelFormatType_TwoComponent32Float:           return "kCVPixelFormatType_TwoComponent32Float"
         case kCVPixelFormatType_64RGBAHalf:                    return "kCVPixelFormatType_64RGBAHalf"
@@ -248,6 +250,42 @@ extension CVPixelBuffer {
         case kCVPixelFormatType_14Bayer_BGGR:                  return "kCVPixelFormatType_14Bayer_BGGR"
         case kCVPixelFormatType_14Bayer_GBRG:                  return "kCVPixelFormatType_14Bayer_GBRG"
         default: return "UNKNOWN"
+        }
+    }
+    
+    /**
+        Returns the corresponding (recommended) Metal pixel format for the pixel buffer's format type.
+     */
+    func metalPixelFormat(plane: Int = 0) -> MTLPixelFormat? {
+        let p = CVPixelBufferGetPixelFormatType(self)
+        switch p {
+        case kCVPixelFormatType_OneComponent8, kCVPixelFormatType_TwoComponent8:
+            return .r8Unorm
+        case kCVPixelFormatType_OneComponent16, kCVPixelFormatType_TwoComponent16:
+            return .r16Unorm
+        case kCVPixelFormatType_OneComponent16Half, kCVPixelFormatType_TwoComponent16Half:
+            return .r16Float
+        case kCVPixelFormatType_OneComponent32Float, kCVPixelFormatType_TwoComponent32Float:
+            return .r32Float
+        case kCVPixelFormatType_16Gray:
+            return .r16Unorm
+        case kCVPixelFormatType_32BGRA:
+            return .bgra8Unorm
+        case kCVPixelFormatType_32RGBA:
+            return .rgba8Unorm
+        case kCVPixelFormatType_64RGBAHalf:
+            return .rgba16Float
+        case kCVPixelFormatType_128RGBAFloat:
+            return .rgba32Float
+        case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+            return plane == 0 ? .r8Unorm : .rg8Unorm
+        case kCVPixelFormatType_420YpCbCr8Planar, kCVPixelFormatType_420YpCbCr8PlanarFullRange:
+            return .r8Unorm
+        case kCVPixelFormatType_16LE565:
+            return .b5g6r5Unorm
+        default:
+            // The rest either require conversion or are not mappable directly
+            return nil
         }
     }
 }

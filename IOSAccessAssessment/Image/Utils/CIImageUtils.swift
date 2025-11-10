@@ -60,7 +60,12 @@ struct CIImageUtils {
         
         return buffer
     }
-    
+}
+
+/**
+ Legacy functions for resizing and cropping CIImage.
+ */
+extension CIImageUtils {
     /**
      This function resizes a CIImage to match the specified size by:
         - First, resizing the image to match the smaller dimension while maintaining the aspect ratio.

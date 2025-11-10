@@ -69,6 +69,7 @@ class ImageData {
     var transformMatrixToPreviousFrame: simd_float3x3?
     
     var deviceOrientation: UIDeviceOrientation? // Orientation of the device at the time of capture
+    var interfaceOrientation: UIInterfaceOrientation? // Orientation of the interface at the time of capture
     var originalImageSize: CGSize? // Size of the original image at the time of capture
     
     init(cameraImage: CIImage? = nil, depthImage: CIImage? = nil,
@@ -76,7 +77,8 @@ class ImageData {
          detectedObjectMap: [UUID: DetectedObject]? = nil,
          cameraTransform: simd_float4x4 = matrix_identity_float4x4, cameraIntrinsics: simd_float3x3 = matrix_identity_float3x3,
          transformMatrixToNextFrame: simd_float3x3? = nil, transformMatrixToPreviousFrame: simd_float3x3? = nil,
-         deviceOrientation: UIDeviceOrientation? = nil, originalImageSize: CGSize? = nil) {
+         deviceOrientation: UIDeviceOrientation? = nil, interfaceOrientation: UIInterfaceOrientation? = nil,
+         originalImageSize: CGSize? = nil) {
         self.cameraImage = cameraImage
         self.depthImage = depthImage
         self.segmentationLabelImage = segmentationLabelImage
@@ -87,6 +89,7 @@ class ImageData {
         self.transformMatrixToNextFrame = transformMatrixToNextFrame
         self.transformMatrixToPreviousFrame = transformMatrixToPreviousFrame
         self.deviceOrientation = deviceOrientation
+        self.interfaceOrientation = interfaceOrientation
         self.originalImageSize = originalImageSize
     }
 }
@@ -248,7 +251,7 @@ class SharedImageData: ObservableObject {
     // Check if we should add functionality to support multiple wayData of the same class in one changeset
     func appendNodeToWayGeometry(nodeData: NodeData, classLabel: UInt8) {
         // If the class is of type way, only then can we append to the wayGeometries
-        let isWay = Constants.SelectedSegmentationConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        let isWay = Constants.SelectedAccessibilityFeatureConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
         guard isWay else {
             print("Class \(classLabel) is not a way class")
             return
@@ -265,7 +268,7 @@ class SharedImageData: ObservableObject {
     }
     
     func appendWidthToWayWidth(width: Float, classLabel: UInt8) {
-        let isWay = Constants.SelectedSegmentationConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
+        let isWay = Constants.SelectedAccessibilityFeatureConfig.classes.filter { $0.labelValue == classLabel }.first?.isWay ?? false
         guard isWay else {
             print("Class \(classLabel) is not a way class")
             return

@@ -1,5 +1,5 @@
 //
-//  GrayscaleToColorCIFilter.swift
+//  GrayscaleToColorFilter.swift
 //  IOSAccessAssessment
 //
 //  Created by TCAT on 9/27/24.
@@ -10,11 +10,27 @@ import Metal
 import CoreImage
 import MetalKit
 
-class GrayscaleToColorCIFilter: CIFilter {
-    var inputImage: CIImage?
-    var grayscaleValues: [Float] = []
-    var colorValues: [CIColor] = []
+enum GrayscaleToColorFilterError: Error, LocalizedError {
+    case metalInitializationFailed
+    case invalidInputImage
+    case textureCreationFailed
+    case outputImageCreationFailed
     
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationFailed:
+            return "Failed to initialize Metal resources."
+        case .invalidInputImage:
+            return "The input image is invalid."
+        case .textureCreationFailed:
+            return "Failed to create Metal textures."
+        case .outputImageCreationFailed:
+            return "Failed to create output CIImage from Metal texture."
+        }
+    }
+}
+
+struct GrayscaleToColorFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -23,10 +39,10 @@ class GrayscaleToColorCIFilter: CIFilter {
     
     private let ciContext: CIContext
 
-    override init() {
+    init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            fatalError("Error: Failed to initialize Metal resources")
+            throw GrayscaleToColorFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -36,22 +52,12 @@ class GrayscaleToColorCIFilter: CIFilter {
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernelLUT"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            fatalError("Error: Failed to initialize Metal pipeline")
+            throw GrayscaleToColorFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
-        super.init()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 
-    override var outputImage: CIImage? {
-        guard let inputImage = inputImage else { return nil }
-        return applyFilter(to: inputImage)
-    }
-
-    private func applyFilter(to inputImage: CIImage) -> CIImage? {
+    func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
@@ -60,19 +66,20 @@ class GrayscaleToColorCIFilter: CIFilter {
         let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            print("Error: inputImage does not have a valid CGImage")
-            return nil
+            throw GrayscaleToColorFilterError.invalidInputImage
         }
         
+        // TODO: Instead of creating texture from CGImage, try to create from CVPixelBuffer directly
+        // As shown in SegmentationMeshRecord.swift
         guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            return nil
+            throw GrayscaleToColorFilterError.textureCreationFailed
         }
 
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
               let commandBuffer = self.commandQueue.makeCommandBuffer(),
               let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            return nil
+            throw GrayscaleToColorFilterError.textureCreationFailed
         }
         
         var grayscaleToColorLUT: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0, 0, 0), count: 256)
@@ -98,6 +105,9 @@ class GrayscaleToColorCIFilter: CIFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        return CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()])//?.oriented(.downMirrored)
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+            throw GrayscaleToColorFilterError.outputImageCreationFailed
+        }
+        return resultImage
     }
 }
