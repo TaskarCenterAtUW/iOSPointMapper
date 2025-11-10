@@ -8,25 +8,39 @@
 import CoreImage
 import ARKit
 
-struct AccessibilityFeatureClass {
-    let name: String // Name of the accessibility feature class
+struct AccessibilityFeatureClass: Identifiable, Hashable {
+    let id: String
+    
+    let name: String
     
     // Segmentation-related constants
-    let grayscaleValue: Float // Grayscale value output for the accessibility feature class, by the relevant segmentation model
-    let labelValue: UInt8 // Pre-defined label of the accessibility feature class
-    let color: CIColor // Color to be assigned for visualization of the segmentation class during post-processing
-    
-    let isWay: Bool // Flag to indicate if the class is a road or path
-    let bounds: DimensionBasedMaskBounds? // Optional bounds for the segmentation class
-    let unionOfMasksPolicy: UnionOfMasksPolicy
+    // Grayscale value output for the accessibility feature class, by the relevant segmentation model
+    let grayscaleValue: Float
+    // Pre-defined label of the accessibility feature class
+    let labelValue: UInt8
+    // Color to be assigned for visualization of the segmentation class during post-processing
+    let color: CIColor
     
     // Constants related to mesh
-    let meshClassification: [ARMeshClassification]? // Optional mesh classification for the segmentation class
+    let meshClassification: Set<ARMeshClassification> // Optional mesh classification for the segmentation class
     
-    init(name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
+    // Post-Processing related constants
+    // Flag to indicate if the class is a road or path
+    let isWay: Bool
+    // Optional bounds for the segmentation class
+    // Is kept optional to prevent unnecessary dimension based masking.
+    let bounds: DimensionBasedMaskBounds?
+    // Properties for union of masks
+    let unionOfMasksPolicy: UnionOfMasksPolicy
+    
+    let attributes: Set<AccessibilityFeatureAttribute>
+    
+    init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
-         meshClassification: [ARMeshClassification]? = nil
+         meshClassification: Set<ARMeshClassification> = [],
+         attributes: Set<AccessibilityFeatureAttribute> = []
     ) {
+        self.id = id
         self.name = name
         self.grayscaleValue = grayscaleValue
         self.labelValue = labelValue
@@ -35,6 +49,7 @@ struct AccessibilityFeatureClass {
         self.bounds = bounds
         self.unionOfMasksPolicy = unionOfMasksPolicy
         self.meshClassification = meshClassification
+        self.attributes = attributes
     }
 }
 

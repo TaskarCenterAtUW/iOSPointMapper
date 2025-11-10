@@ -354,7 +354,7 @@ final class SegmentationMeshRecord {
     ) -> [UInt32] {
         // MARK: Assuming a maximum of 256 classes
         var lookupTable = [UInt32](repeating: 0, count: 256)
-        let accessibilityFeatureMeshClassification: [ARMeshClassification] = accessibilityFeatureClass.meshClassification ?? []
+        let accessibilityFeatureMeshClassification: Set<ARMeshClassification> = accessibilityFeatureClass.meshClassification
         if accessibilityFeatureMeshClassification.isEmpty {
             lookupTable = [UInt32](repeating: 1, count: 256)
         } else {

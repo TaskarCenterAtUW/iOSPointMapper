@@ -5,14 +5,14 @@
 //  Created by Himanshu on 11/9/25.
 //
 
-struct DimensionBasedMaskBounds: Sendable, Codable, Equatable {
-    var minX: Float
-    var maxX: Float
-    var minY: Float
-    var maxY: Float
+struct DimensionBasedMaskBounds: Sendable, Codable, Equatable, Hashable {
+    let minX: Float
+    let maxX: Float
+    let minY: Float
+    let maxY: Float
 }
 
-struct UnionOfMasksPolicy: Sendable, Codable, Equatable {
+struct UnionOfMasksPolicy: Sendable, Codable, Equatable, Hashable {
     let threshold: Float // Minimum number of frames that need to have a class label for it to be considered valid
     let defaultFrameWeight: Float // Weight for the default frame when calculating the union of masks
     let lastFrameWeight: Float // Weight for the last frame when calculating the union of masks
