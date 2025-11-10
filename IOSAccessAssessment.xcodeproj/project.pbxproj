@@ -35,6 +35,7 @@
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
+		A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */; };
 		A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */; };
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
@@ -44,7 +45,7 @@
 		A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3A2DD9B03000455E45 /* OSMElement.swift */; };
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
-		A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */; };
+		A3B2DDBD2DC99256003416FB /* ContourRequestLegacyProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */; };
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
 		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */; };
@@ -169,6 +170,7 @@
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
+		A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
 		A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionView.swift; sourceTree = "<group>"; };
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
@@ -178,7 +180,7 @@
 		A39C9F3A2DD9B03000455E45 /* OSMElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMElement.swift; sourceTree = "<group>"; };
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
-		A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
+		A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestLegacyProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskFilter.swift; sourceTree = "<group>"; };
@@ -409,7 +411,8 @@
 			children = (
 				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
-				A3B2DDBC2DC99253003416FB /* ContourRequestProcessor.swift */,
+				A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */,
+				A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */,
 				A308014F2EC0926500B1BA3A /* ContourUtils.swift */,
 			);
 			path = Contour;
@@ -814,7 +817,7 @@
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
 				A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */,
 				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
-				A3B2DDBD2DC99256003416FB /* ContourRequestProcessor.swift in Sources */,
+				A3B2DDBD2DC99256003416FB /* ContourRequestLegacyProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */,
 				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */,
@@ -882,6 +885,7 @@
 				A3DA4DA82EB94D84005BB812 /* MeshSnapshot.swift in Sources */,
 				A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
+				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedAccessibilityFeature.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,

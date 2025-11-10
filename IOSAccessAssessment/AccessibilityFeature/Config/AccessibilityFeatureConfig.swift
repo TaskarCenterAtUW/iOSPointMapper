@@ -33,12 +33,12 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
     // Properties for union of masks
     let unionOfMasksPolicy: UnionOfMasksPolicy
     
-    let calculatedAttributes: Set<AccessibilityFeatureCalculatedAttribute>
+    let calculatedAttributes: Set<AccessibilityFeatureAttribute>
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [],
-         calculatedAttributes: Set<AccessibilityFeatureCalculatedAttribute> = []
+         calculatedAttributes: Set<AccessibilityFeatureAttribute> = []
     ) {
         self.id = id
         self.name = name

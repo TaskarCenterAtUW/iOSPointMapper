@@ -69,7 +69,7 @@ class AnnotationSegmentationPipeline {
     // For normalized points
     var perimeterThreshold: Float = 0.2
     
-    var contourRequestProcessor: ContourRequestProcessor?
+    var contourRequestProcessor: ContourRequestLegacyProcessor?
     var homographyTransformFilter: HomographyTransformFilter?
     var unionOfMasksProcessor: UnionOfMasksProcessor?
     var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
@@ -77,7 +77,7 @@ class AnnotationSegmentationPipeline {
     
     init() {
         do {
-            self.contourRequestProcessor = try ContourRequestProcessor(
+            self.contourRequestProcessor = try ContourRequestLegacyProcessor(
                 contourEpsilon: self.contourEpsilon,
                 perimeterThreshold: self.perimeterThreshold,
                 selectedClasses: self.selectedClasses)

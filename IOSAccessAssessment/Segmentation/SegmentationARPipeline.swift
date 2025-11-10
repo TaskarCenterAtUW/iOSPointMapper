@@ -42,11 +42,11 @@ struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
-    var detectedObjectMap: [UUID: DetectedObject]
+    var detectedObjectMap: [UUID: DetectedAccessibilityFeature]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-         detectedObjectMap: [UUID: DetectedObject]) {
+         detectedObjectMap: [UUID: DetectedAccessibilityFeature]) {
         self.segmentationImage = segmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
@@ -174,9 +174,13 @@ final class SegmentationARPipeline: ObservableObject {
         
         // MARK: Ignoring the contour detection and object tracking for now
         // Get the objects from the segmentation image
-        let detectedObjects: [DetectedObject] = try self.contourRequestProcessor?.processRequest(from: segmentationImage) ?? []
+        let detectedObjects: [DetectedAccessibilityFeature] = try self.contourRequestProcessor?.processRequest(
+            from: segmentationImage
+        ) ?? []
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
-        let detectedObjectMap: [UUID: DetectedObject] = Dictionary(uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) })
+        let detectedObjectMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
+            uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) }
+        )
         
         try Task.checkCancellation()
         

@@ -73,7 +73,7 @@ struct ARCameraImageResults {
     
     let segmentationLabelImage: CIImage
     let segmentedClasses: [AccessibilityFeatureClass]
-    let detectedObjectMap: [UUID: DetectedObject]
+    let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
     let cameraTransform: simd_float4x4
     let cameraIntrinsics: simd_float3x3
     let interfaceOrientation: UIInterfaceOrientation
@@ -85,7 +85,7 @@ struct ARCameraImageResults {
     init(
         cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
         segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-        detectedObjectMap: [UUID: DetectedObject],
+        detectedObjectMap: [UUID: DetectedAccessibilityFeature],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil
@@ -507,27 +507,35 @@ extension ARCameraManager {
     Align detected objects back to the original image coordinate system.
      */
     private func alignDetectedObjects(
-        _ detectedObjectMap: [UUID: DetectedObject],
+        _ detectedObjectMap: [UUID: DetectedAccessibilityFeature],
         orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize
-    ) -> [UUID: DetectedObject] {
+    ) -> [UUID: DetectedAccessibilityFeature] {
         let orientationTransform = orientation.getNormalizedToUpTransform().inverted()
         // To revert the center-cropping effect to map back to original image size
         let revertTransform = CenterCropTransformUtils.revertCenterCropAspectFitNormalizedTransform(
             imageSize: imageSize, from: originalSize)
         let alignTransform = orientationTransform.concatenating(revertTransform)
         
-        let alignedObjectMap: [UUID: DetectedObject] = detectedObjectMap.mapValues { object in
-            let alignedObject = object
-            alignedObject.centroid = object.centroid.applying(alignTransform)
-            alignedObject.boundingBox = object.boundingBox.applying(alignTransform)
-            alignedObject.normalizedPoints = object.normalizedPoints.map { point_simd in
+        let alignedObjectMap: [UUID: DetectedAccessibilityFeature] = detectedObjectMap.mapValues { object in
+            let centroid = object.contourDetails.centroid.applying(alignTransform)
+            let boundingBox = object.contourDetails.boundingBox.applying(alignTransform)
+            let normalizedPoints = object.contourDetails.normalizedPoints.map { point_simd in
                 return CGPoint(x: CGFloat(point_simd.x), y: CGFloat(point_simd.y))
             }.map { point in
                 return point.applying(alignTransform)
             }.map { point in
                 return SIMD2<Float>(x: Float(point.x), y: Float(point.y))
             }
-            return alignedObject
+            return DetectedAccessibilityFeature(
+                accessibilityFeatureClass: object.accessibilityFeatureClass,
+                contourDetails: ContourDetails(
+                    centroid: centroid,
+                    boundingBox: boundingBox,
+                    normalizedPoints: normalizedPoints,
+                    area: object.contourDetails.area,
+                    perimeter: object.contourDetails.perimeter
+                )
+            )
         }
         
         return alignedObjectMap
