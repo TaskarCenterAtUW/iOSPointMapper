@@ -29,18 +29,18 @@ enum SegmentationModelError: Error, LocalizedError {
 struct SegmentationModelRequestProcessor {
     var visionModel: VNCoreMLModel
     
-    var selectedClassIndices: [Int] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
     
-    init(selectedClassIndices: [Int]) throws {
+    init(selectedClasses: [AccessibilityFeatureClass]) throws {
         let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
         self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
-        self.selectedClassIndices = selectedClassIndices
+        self.selectedClasses = selectedClasses
     }
     
-    mutating func setSelectedClassIndices(_ classIndices: [Int]) {
-        self.selectedClassIndices = classIndices
+    mutating func setSelectedClasses(_ classes: [AccessibilityFeatureClass]) {
+        self.selectedClasses = classes
     }
     
     private func configureSegmentationRequest(request: VNCoreMLRequest) {
@@ -50,7 +50,7 @@ struct SegmentationModelRequestProcessor {
     
     func processSegmentationRequest(
         with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up
-    ) throws -> (segmentationImage: CIImage, segmentedIndices: [Int]) {
+    ) throws -> (segmentationImage: CIImage, segmentedClasses: [AccessibilityFeatureClass]) {
         let segmentationRequest = VNCoreMLRequest(model: self.visionModel)
         self.configureSegmentationRequest(request: segmentationRequest)
         let segmentationRequestHandler = VNImageRequestHandler(
@@ -67,15 +67,16 @@ struct SegmentationModelRequestProcessor {
         }
         
         let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer)
-        let grayscaleValuesToIndex = Constants.SelectedAccessibilityFeatureConfig.labelToIndexMap
-        let selectedIndices = uniqueGrayScaleValues.compactMap { grayscaleValuesToIndex[$0] }
-        let selectedIndicesSet = Set(selectedIndices)
-        let segmentedIndices = self.selectedClassIndices.filter{ selectedIndicesSet.contains($0) }
+        
+        let grayscaleValuesToClassMap = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap
+        var segmentedClasses = uniqueGrayScaleValues.compactMap { grayscaleValuesToClassMap[$0] }
+        let segmentedClassSet = Set(segmentedClasses)
+        segmentedClasses = self.selectedClasses.filter{ segmentedClassSet.contains($0) }
         
         let segmentationImage = CIImage(
             cvPixelBuffer: segmentationBuffer
         )
         
-        return (segmentationImage: segmentationImage, segmentedIndices: segmentedIndices)
+        return (segmentationImage: segmentationImage, segmentedClasses: segmentedClasses)
     }
 }

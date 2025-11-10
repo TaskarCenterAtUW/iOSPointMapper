@@ -169,9 +169,9 @@ class ModelInitializationViewModel: ObservableObject {
 }
 
 struct SetupView: View {
-    @State private var selectedClassIndices = Set<Int>()
+    @State private var selectedClasses = Set<AccessibilityFeatureClass>()
     private var isSelectionEmpty: Bool {
-        return (self.selectedClassIndices.count == 0)
+        return (self.selectedClasses.count == 0)
     }
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
@@ -252,17 +252,17 @@ struct SetupView: View {
                 }
                 
                 List {
-                    ForEach(0..<Constants.SelectedAccessibilityFeatureConfig.classNames.count, id: \.self) { index in
+                    ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
                         Button(action: {
-                            if self.selectedClassIndices.contains(index) {
-                                self.selectedClassIndices.remove(index)
+                            if self.selectedClasses.contains(accessibilityFeatureClass) {
+                                self.selectedClasses.remove(accessibilityFeatureClass)
                             } else {
-                                self.selectedClassIndices.insert(index)
+                                self.selectedClasses.insert(accessibilityFeatureClass)
                             }
                         }) {
-                            Text(Constants.SelectedAccessibilityFeatureConfig.classNames[index])
+                            Text(accessibilityFeatureClass.name)
                                 .foregroundStyle(
-                                    self.selectedClassIndices.contains(index)
+                                    self.selectedClasses.contains(accessibilityFeatureClass)
                                     ? SetupViewConstants.Colors.selectedClass
                                     : SetupViewConstants.Colors.unselectedClass
                                 )
@@ -287,7 +287,9 @@ struct SetupView: View {
                 ,
                 trailing:
                     NavigationLink(
-                        destination: ARCameraView(selectedClassIndices: Array(selectedClassIndices.sorted()))
+                        destination: ARCameraView(
+                            selectedClasses: Array(self.selectedClasses).sorted()
+                        )
                     ) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)

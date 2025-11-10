@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AccessibilityFeatureAttribute: String, CaseIterable, Codable, Sendable {
+enum AccessibilityFeatureCalculatedAttribute: String, CaseIterable, Codable, Sendable {
     case width
     case runningSlope
     case crossSlope

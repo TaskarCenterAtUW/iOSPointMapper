@@ -57,7 +57,8 @@ class AnnotationSegmentationPipeline {
     // This will be useful only when we are using the pipeline in asynchronous mode.
     var isProcessing = false
     
-    var selectedClasses: [Int] = []
+    var selectedClassIndices: [Int] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
     var selectedClassLabels: [UInt8] = []
     var selectedClassGrayscaleValues: [Float] = []
     var selectedClassColors: [CIColor] = []
@@ -79,7 +80,7 @@ class AnnotationSegmentationPipeline {
             self.contourRequestProcessor = try ContourRequestProcessor(
                 contourEpsilon: self.contourEpsilon,
                 perimeterThreshold: self.perimeterThreshold,
-                selectedClassLabels: self.selectedClassLabels)
+                selectedClasses: self.selectedClasses)
             self.homographyTransformFilter = try HomographyTransformFilter()
             self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
             self.unionOfMasksProcessor = try UnionOfMasksProcessor()
@@ -90,16 +91,17 @@ class AnnotationSegmentationPipeline {
     
     func reset() {
         self.isProcessing = false
-        self.setSelectedClasses([])
+        self.setSelectedClassIndices([])
     }
     
-    func setSelectedClasses(_ selectedClasses: [Int]) {
-        self.selectedClasses = selectedClasses
-        self.selectedClassLabels = selectedClasses.map { Constants.SelectedAccessibilityFeatureConfig.labels[$0] }
-        self.selectedClassGrayscaleValues = selectedClasses.map { Constants.SelectedAccessibilityFeatureConfig.grayscaleValues[$0] }
-        self.selectedClassColors = selectedClasses.map { Constants.SelectedAccessibilityFeatureConfig.colors[$0] }
+    func setSelectedClassIndices(_ selectedClassIndices: [Int]) {
+        self.selectedClassIndices = selectedClassIndices
+        self.selectedClasses = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.classes[$0] }
+        self.selectedClassLabels = selectedClasses.map { $0.labelValue }
+        self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
+        self.selectedClassColors = selectedClasses.map { $0.color }
         
-        self.contourRequestProcessor?.setSelectedClassLabels(self.selectedClassLabels)
+        self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
     func processTransformationsRequest(imageDataHistory: [ImageData]) throws -> [CIImage] {
@@ -197,7 +199,9 @@ class AnnotationSegmentationPipeline {
             throw AnnotationSegmentationPipelineError.contourRequestProcessorNil
         }
         
-        self.contourRequestProcessor?.setSelectedClassLabels([targetValue])
+        let targetClass = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap[targetValue]
+        let targetClasses = targetClass != nil ? [targetClass!] : []
+        self.contourRequestProcessor?.setSelectedClasses(targetClasses)
         var detectedObjects = try self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
         if isWay && bounds != nil {
             let largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first

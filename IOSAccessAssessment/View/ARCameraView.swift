@@ -51,7 +51,7 @@ class ManagerStatusViewModel: ObservableObject {
 }
 
 struct ARCameraView: View {
-    let selectedClassIndices: [Int]
+    let selectedClasses: [AccessibilityFeatureClass]
     
     @EnvironmentObject var sharedImageData: SharedImageData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
@@ -88,9 +88,9 @@ struct ARCameraView: View {
         .onAppear {
             navigateToAnnotationView = false
             
-            segmentationPipeline.setSelectedClasses(selectedClassIndices)
+            segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
-                try manager.configure(selectedClassIndices: selectedClassIndices, segmentationPipeline: segmentationPipeline)
+                try manager.configure(selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline)
             } catch {
                 managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }

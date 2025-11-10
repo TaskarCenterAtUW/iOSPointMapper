@@ -41,15 +41,15 @@ enum SegmentationARPipelineError: Error, LocalizedError {
 struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
     var segmentationColorImage: CIImage
-    var segmentedIndices: [Int]
+    var segmentedClasses: [AccessibilityFeatureClass]
     var detectedObjectMap: [UUID: DetectedObject]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
-    init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedIndices: [Int],
+    init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
          detectedObjectMap: [UUID: DetectedObject]) {
         self.segmentationImage = segmentationImage
         self.segmentationColorImage = segmentationColorImage
-        self.segmentedIndices = segmentedIndices
+        self.segmentedClasses = segmentedClasses
         self.detectedObjectMap = detectedObjectMap
     }
 }
@@ -64,7 +64,7 @@ final class SegmentationARPipeline: ObservableObject {
     private var currentTask: Task<SegmentationARPipelineResults, Error>?
     private var timeoutInSeconds: Double = 1.0
     
-    private var selectedClassIndices: [Int] = []
+    private var selectedClasses: [AccessibilityFeatureClass] = []
     private var selectedClassLabels: [UInt8] = []
     private var selectedClassGrayscaleValues: [Float] = []
     private var selectedClassColors: [CIColor] = []
@@ -85,11 +85,11 @@ final class SegmentationARPipeline: ObservableObject {
     
     func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
-            selectedClassIndices: self.selectedClassIndices)
+            selectedClasses: self.selectedClasses)
         self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
-            selectedClassLabels: self.selectedClassLabels)
+            selectedClasses: self.selectedClasses)
         self.grayscaleToColorMasker = try GrayscaleToColorFilter()
     }
     
@@ -98,14 +98,14 @@ final class SegmentationARPipeline: ObservableObject {
         self.setSelectedClasses([])
     }
     
-    func setSelectedClasses(_ selectedClassIndices: [Int]) {
-        self.selectedClassIndices = selectedClassIndices
-        self.selectedClassLabels = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.labels[$0] }
-        self.selectedClassGrayscaleValues = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.grayscaleValues[$0] }
-        self.selectedClassColors = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.colors[$0] }
+    func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+        self.selectedClasses = selectedClasses
+        self.selectedClassLabels = selectedClasses.map { $0.labelValue }
+        self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
+        self.selectedClassColors = selectedClasses.map { $0.color }
         
-        self.segmentationModelRequestProcessor?.setSelectedClassIndices(self.selectedClassIndices)
-        self.contourRequestProcessor?.setSelectedClassLabels(self.selectedClassLabels)
+        self.segmentationModelRequestProcessor?.setSelectedClasses(self.selectedClasses)
+        self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
     /**
@@ -192,7 +192,7 @@ final class SegmentationARPipeline: ObservableObject {
         return SegmentationARPipelineResults(
             segmentationImage: segmentationImage,
             segmentationColorImage: segmentationColorImage,
-            segmentedIndices: segmentationResults?.segmentedIndices ?? [],
+            segmentedClasses: segmentationResults?.segmentedClasses ?? [],
             detectedObjectMap: detectedObjectMap
         )
     }

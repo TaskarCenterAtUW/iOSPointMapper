@@ -8,7 +8,7 @@
 import CoreImage
 import ARKit
 
-struct AccessibilityFeatureClass: Identifiable, Hashable {
+struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
     let id: String
     
     let name: String
@@ -33,12 +33,12 @@ struct AccessibilityFeatureClass: Identifiable, Hashable {
     // Properties for union of masks
     let unionOfMasksPolicy: UnionOfMasksPolicy
     
-    let attributes: Set<AccessibilityFeatureAttribute>
+    let calculatedAttributes: Set<AccessibilityFeatureCalculatedAttribute>
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [],
-         attributes: Set<AccessibilityFeatureAttribute> = []
+         calculatedAttributes: Set<AccessibilityFeatureCalculatedAttribute> = []
     ) {
         self.id = id
         self.name = name
@@ -49,7 +49,11 @@ struct AccessibilityFeatureClass: Identifiable, Hashable {
         self.bounds = bounds
         self.unionOfMasksPolicy = unionOfMasksPolicy
         self.meshClassification = meshClassification
-        self.attributes = attributes
+        self.calculatedAttributes = calculatedAttributes
+    }
+    
+    static func < (lhs: AccessibilityFeatureClass, rhs: AccessibilityFeatureClass) -> Bool {
+        return lhs.labelValue < rhs.labelValue
     }
 }
 
@@ -68,6 +72,14 @@ struct AccessibilityFeatureClassConfig {
     
     var labels: [UInt8] {
         return classes.map { $0.labelValue }
+    }
+    
+    var labelToClassMap: [UInt8: AccessibilityFeatureClass] {
+        var map: [UInt8: AccessibilityFeatureClass] = [:]
+        for cls in classes {
+            map[cls.labelValue] = cls
+        }
+        return map
     }
     
     var labelToIndexMap: [UInt8: Int] {

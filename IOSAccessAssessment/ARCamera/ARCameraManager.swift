@@ -72,7 +72,7 @@ struct ARCameraImageResults {
     var confidenceImage: CIImage? = nil
     
     let segmentationLabelImage: CIImage
-    let segmentedIndices: [Int]
+    let segmentedClasses: [AccessibilityFeatureClass]
     let detectedObjectMap: [UUID: DetectedObject]
     let cameraTransform: simd_float4x4
     let cameraIntrinsics: simd_float3x3
@@ -84,7 +84,7 @@ struct ARCameraImageResults {
     
     init(
         cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
-        segmentationLabelImage: CIImage, segmentedIndices: [Int],
+        segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
         detectedObjectMap: [UUID: DetectedObject],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
@@ -95,7 +95,7 @@ struct ARCameraImageResults {
         self.confidenceImage = confidenceImage
         
         self.segmentationLabelImage = segmentationLabelImage
-        self.segmentedIndices = segmentedIndices
+        self.segmentedClasses = segmentedClasses
         self.detectedObjectMap = detectedObjectMap
         self.cameraTransform = cameraTransform
         self.cameraIntrinsics = cameraIntrinsics
@@ -146,7 +146,7 @@ struct ARCameraCache {
 
 struct ARCameraFinalResults {
     let cameraImageResults: ARCameraImageResults
-    let cameraMeshRecords: [Int: SegmentationMeshRecord]
+    let cameraMeshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord]
 }
 
 /**
@@ -157,7 +157,7 @@ struct ARCameraFinalResults {
     - Accept configuration of the SegmentationARPipeline through a separate `configure()` method.
  */
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
-    var selectedClassIndices: [Int] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
     var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
@@ -196,9 +196,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func configure(
-        selectedClassIndices: [Int], segmentationPipeline: SegmentationARPipeline
+        selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline
     ) throws {
-        self.selectedClassIndices = selectedClassIndices
+        self.selectedClasses = selectedClasses
         self.segmentationPipeline = segmentationPipeline
         
         // TODO: Create the device once and share across the app
@@ -298,7 +298,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selectedClassIndices
+                        accessibilityFeatureClasses: self.selectedClasses
                     )
                 }
             } catch {
@@ -329,7 +329,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selectedClassIndices
+                        accessibilityFeatureClasses: self.selectedClasses
                     )
                 }
             } catch {
@@ -360,7 +360,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClassIndices: self.selectedClassIndices
+                        accessibilityFeatureClasses: self.selectedClasses
                     )
                 }
             } catch {
@@ -482,7 +482,7 @@ extension ARCameraManager {
         let cameraImageResults = ARCameraImageResults(
             cameraImage: image,
             segmentationLabelImage: segmentationImage,
-            segmentedIndices: segmentationResults.segmentedIndices,
+            segmentedClasses: segmentationResults.segmentedClasses,
             detectedObjectMap: detectedObjectMap,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,

@@ -25,7 +25,7 @@ extension AccessibilityFeatureConfig {
                     minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
                 ),
                 meshClassification: [.floor],
-                attributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity]
+                calculatedAttributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity]
             ),
             AccessibilityFeatureClass(
                 id: "building", name: "Building", grayscaleValue: 2.0 / 255.0, labelValue: 2,

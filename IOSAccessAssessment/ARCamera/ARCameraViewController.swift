@@ -27,9 +27,9 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
-                           accessibilityFeatureClassIndices: [Int]
+                           accessibilityFeatureClasses: [AccessibilityFeatureClass]
     )
-    func getMeshRecords() -> [Int: SegmentationMeshRecord]
+    func getMeshRecords() -> [AccessibilityFeatureClass: SegmentationMeshRecord]
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
@@ -100,7 +100,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [Int: SegmentationMeshRecord] = [:]
+    private var meshEntities: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -320,15 +320,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
-                           accessibilityFeatureClassIndices: [Int]
+                           accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
-        for accessibilityFeatureClassIndex in accessibilityFeatureClassIndices {
-            guard (accessibilityFeatureClassIndex < Constants.SelectedAccessibilityFeatureConfig.classes.count) else {
-                print("Invalid segmentation class index: \(accessibilityFeatureClassIndex)")
+        for accessibilityFeatureClass in accessibilityFeatureClasses {
+            guard Constants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
+                print("Invalid segmentation class: \(accessibilityFeatureClass)")
                 continue
             }
-            let accessibilityFeatureClass = Constants.SelectedAccessibilityFeatureConfig.classes[accessibilityFeatureClassIndex]
-            if let existingMeshRecord = meshEntities[accessibilityFeatureClassIndex] {
+            if let existingMeshRecord = meshEntities[accessibilityFeatureClass] {
                 // Update existing mesh entity
                 do {
                     try existingMeshRecord.replace(
@@ -351,7 +350,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                         cameraIntrinsics: cameraIntrinsics,
                         accessibilityFeatureClass: accessibilityFeatureClass
                     )
-                    meshEntities[accessibilityFeatureClassIndex] = meshRecord
+                    meshEntities[accessibilityFeatureClass] = meshRecord
                     anchorEntity.addChild(meshRecord.entity)
                 } catch {
                     print("Error creating mesh entity: \(error)")
@@ -360,7 +359,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func getMeshRecords() -> [Int: SegmentationMeshRecord] {
+    func getMeshRecords() -> [AccessibilityFeatureClass: SegmentationMeshRecord] {
         return meshEntities
     }
 }

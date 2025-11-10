@@ -29,21 +29,22 @@ struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01
     // For normalized points
     var perimeterThreshold: Float = 0.01
-    var selectedClassLabels: [UInt8] = []
+    var selectedClasses: [AccessibilityFeatureClass] = []
+//    var selectedClassLabels: [UInt8] = []
     
     var binaryMaskFilter: BinaryMaskFilter
     
     init(
-        contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectedClassLabels: [UInt8] = []
+        contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectedClasses: [AccessibilityFeatureClass] = []
     ) throws {
         self.contourEpsilon = contourEpsilon
         self.perimeterThreshold = perimeterThreshold
-        self.selectedClassLabels = selectedClassLabels
+        self.selectedClasses = selectedClasses
         self.binaryMaskFilter = try BinaryMaskFilter()
     }
     
-    mutating func setSelectedClassLabels(_ selectedClassLabels: [UInt8]) {
-        self.selectedClassLabels = selectedClassLabels
+    mutating func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+        self.selectedClasses = selectedClasses
     }
     
     private func configureContourRequest(request: VNDetectContoursRequest) {
@@ -95,9 +96,10 @@ struct ContourRequestProcessor {
     ) throws -> [DetectedObject] {
         var detectedObjects: [DetectedObject] = []
         let lock = NSLock()
-        DispatchQueue.concurrentPerform(iterations: self.selectedClassLabels.count) { index in
+        DispatchQueue.concurrentPerform(iterations: self.selectedClasses.count) { index in
             do {
-                let classLabel = self.selectedClassLabels[index]
+//                let classLabel = self.selectedClassLabels[index]
+                let classLabel = self.selectedClasses[index].labelValue
                 let mask = try self.binaryMaskFilter.apply(to: segmentationImage, targetValue: classLabel)
                 let detectedObjectsFromBinaryImage = try self.getObjectsFromBinaryImage(for: mask, classLabel: classLabel, orientation: orientation)
                 
@@ -105,7 +107,7 @@ struct ContourRequestProcessor {
                 detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage)
                 lock.unlock()
             } catch {
-                print("Error processing contour for class label \(self.selectedClassLabels[index]): \(error.localizedDescription)")
+                print("Error processing contour for class \(self.selectedClasses[index].name): \(error.localizedDescription)")
             }
         }
         return detectedObjects
