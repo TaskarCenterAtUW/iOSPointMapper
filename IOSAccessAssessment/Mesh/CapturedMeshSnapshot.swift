@@ -11,9 +11,8 @@ struct CapturedMeshAnchorSnapshot: Sendable {
     let vertexData: Data
     let indexData: Data
     
-    // TODO: Add counts later
-//    let vertexCount: Int
-//    let indexCount: Int
+    let vertexCount: Int
+    let indexCount: Int
 }
 
 struct CapturedMeshSnapshot: Sendable {
@@ -64,7 +63,9 @@ final class CapturedMeshSnapshotGenerator {
         
         return CapturedMeshAnchorSnapshot(
             vertexData: vertexData,
-            indexData: indexData
+            indexData: indexData,
+            vertexCount: segmentationRecord.vertexCount,
+            indexCount: segmentationRecord.indexCount
         )
     }
     

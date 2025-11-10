@@ -45,10 +45,13 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
 @MainActor
 final class SegmentationMeshRecord {
     let entity: ModelEntity
-    var mesh: LowLevelMesh
     let name: String
     let color: UIColor
     let opacity: Float
+    
+    var mesh: LowLevelMesh
+    var vertexCount: Int
+    var indexCount: Int
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
@@ -80,6 +83,8 @@ final class SegmentationMeshRecord {
         
         let descriptor = SegmentationMeshRecord.createDescriptor(meshGPUSnapshot: meshGPUSnapshot)
         self.mesh = try LowLevelMesh(descriptor: descriptor)
+        self.vertexCount = 0
+        self.indexCount = 0
         self.entity = try SegmentationMeshRecord.generateEntity(
             mesh: self.mesh, color: color, opacity: opacity, name: name
         )
@@ -223,7 +228,7 @@ final class SegmentationMeshRecord {
         let triCount = outTriCount.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         // Clamp to capacity (defensive)
         let triangleCount = min(Int(triCount), maxTriangles)
-//        let vertexCount   = triangleCount * 3
+        let vertexCount   = triangleCount * 3
         let indexCount    = triangleCount * 3
 
         let minU = aabbMinU.contents().bindMemory(to: UInt32.self, capacity: 3)
@@ -257,6 +262,8 @@ final class SegmentationMeshRecord {
             )
         ])
         self.mesh = mesh
+        self.vertexCount = vertexCount
+        self.indexCount = indexCount
     }
     
     @inline(__always)
