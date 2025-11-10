@@ -108,7 +108,7 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    var meshSnapshot: MeshSnapshot
+    var meshGPUSnapshot: MeshGPUSnapshot
     
     var meshAnchors: [ARMeshAnchor] = []
     var segmentationLabelImage: CIImage
@@ -118,14 +118,14 @@ struct ARCameraMeshResults {
     var lastUpdated: TimeInterval
     
     init(
-        meshSnapshot: MeshSnapshot,
+        meshGPUSnapshot: MeshGPUSnapshot,
         meshAnchors: [ARMeshAnchor] = [],
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
         lastUpdated: TimeInterval,
     ) {
-        self.meshSnapshot = meshSnapshot
+        self.meshGPUSnapshot = meshGPUSnapshot
         self.meshAnchors = meshAnchors
         self.segmentationLabelImage = segmentationLabelImage
         self.cameraTransform = cameraTransform
@@ -159,11 +159,11 @@ struct ARCameraFinalResults {
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
-    var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
     var isConfigured: Bool {
-        return (segmentationPipeline != nil) && (meshSnapshotGenerator != nil)
+        return (segmentationPipeline != nil) && (meshGPUSnapshotGenerator != nil)
     }
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
@@ -206,7 +206,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard let device = device else {
             throw ARCameraManagerError.metalDeviceUnavailable
         }
-        self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
+        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
     }
@@ -293,7 +293,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -324,7 +324,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -355,7 +355,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraManagerMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -561,7 +561,7 @@ extension ARCameraManager {
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
     private func processMeshAnchors(_ anchors: [ARAnchor], shouldRemove: Bool = false) async throws -> ARCameraMeshResults {
-        guard let meshSnapshotGenerator = meshSnapshotGenerator else {
+        guard let meshGPUSnapshotGenerator = meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }
         guard let cameraImageResults = cameraImageResults else {
@@ -574,15 +574,15 @@ extension ARCameraManager {
         
         // Generate mesh snapshot
         if (shouldRemove) {
-            meshSnapshotGenerator.removeAnchors(anchors)
+            meshGPUSnapshotGenerator.removeAnchors(anchors)
         } else {
-            try meshSnapshotGenerator.snapshotAnchors(anchors)
+            try meshGPUSnapshotGenerator.snapshotAnchors(anchors)
         }
-        guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.meshSnapshotProcessingFailed
         }
         return ARCameraMeshResults(
-            meshSnapshot: meshSnapshot,
+            meshGPUSnapshot: meshGPUSnapshot,
             segmentationLabelImage: segmentationLabelImage,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,

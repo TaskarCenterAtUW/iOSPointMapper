@@ -22,7 +22,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     )
     func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           meshSnapshot: MeshSnapshot,
+                           meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor],
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
@@ -315,7 +315,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
-                           meshSnapshot: MeshSnapshot,
+                           meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor],
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
@@ -331,7 +331,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                 // Update existing mesh entity
                 do {
                     try existingMeshRecord.replace(
-                        meshSnapshot: meshSnapshot,
+                        meshGPUSnapshot: meshGPUSnapshot,
                         segmentationImage: segmentationLabelImage,
                         cameraTransform: cameraTransform,
                         cameraIntrinsics: cameraIntrinsics
@@ -344,7 +344,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                 do {
                     let meshRecord = try SegmentationMeshRecord(
                         meshGPUContext,
-                        meshSnapshot: meshSnapshot,
+                        meshGPUSnapshot: meshGPUSnapshot,
                         segmentationImage: segmentationLabelImage,
                         cameraTransform: cameraTransform,
                         cameraIntrinsics: cameraIntrinsics,

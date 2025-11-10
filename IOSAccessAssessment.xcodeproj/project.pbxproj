@@ -41,6 +41,7 @@
 		A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */; };
 		A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C32EC1AF5500F43AFD /* CaptureData.swift */; };
 		A35547C82EC1B0DB00F43AFD /* MapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* MapData.swift */; };
+		A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */; };
 		A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */; };
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
@@ -63,7 +64,7 @@
 		A3D0283B2E02101F00EB7CB9 /* ClassSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
-		A3DA4DA82EB94D84005BB812 /* MeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */; };
+		A3DA4DA82EB94D84005BB812 /* MeshGPUSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */; };
 		A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */; };
 		A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
@@ -181,6 +182,7 @@
 		A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
 		A35547C32EC1AF5500F43AFD /* CaptureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureData.swift; sourceTree = "<group>"; };
 		A35547C72EC1B0D900F43AFD /* MapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapData.swift; sourceTree = "<group>"; };
+		A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshSnapshot.swift; sourceTree = "<group>"; };
 		A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionView.swift; sourceTree = "<group>"; };
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
@@ -202,7 +204,7 @@
 		A3D0283A2E02101C00EB7CB9 /* ClassSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionView.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshSnapshot.swift; sourceTree = "<group>"; };
+		A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUSnapshot.swift; sourceTree = "<group>"; };
 		A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MeshPipeline.metal; sourceTree = "<group>"; };
 		A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBufferUtils.swift; sourceTree = "<group>"; };
 		A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
@@ -556,7 +558,8 @@
 			children = (
 				A3DA4DAF2EB99A55005BB812 /* Utils */,
 				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
-				A3DA4DA72EB94D81005BB812 /* MeshSnapshot.swift */,
+				A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */,
+				A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */,
 				A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */,
 				A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */,
 			);
@@ -910,7 +913,7 @@
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourObjectRasterizer.swift in Sources */,
 				A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */,
-				A3DA4DA82EB94D84005BB812 /* MeshSnapshot.swift in Sources */,
+				A3DA4DA82EB94D84005BB812 /* MeshGPUSnapshot.swift in Sources */,
 				A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
@@ -926,6 +929,7 @@
 				55C2F2842C00078D00B633D7 /* ObjectLocation.swift in Sources */,
 				A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */,
 				A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */,
+				A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
