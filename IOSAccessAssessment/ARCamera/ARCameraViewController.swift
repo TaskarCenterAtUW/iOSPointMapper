@@ -109,7 +109,6 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
-    private let processQueue = DispatchQueue(label: "ar.host.process.queue")
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)

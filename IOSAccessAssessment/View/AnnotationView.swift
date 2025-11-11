@@ -70,6 +70,47 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
+        VStack {
+            Text(AnnotationViewConstants.Texts.annotationViewTitle)
+                .font(.title)
+                .padding()
+            
+            orientationStack {
+                HostedAnnotationCameraViewController()
+                
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText)")
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        Spacer()
+                        /// Class Instance Picker
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 30)
+                    
+                    ProgressBar(value: 0)
+                    
+                    HStack {
+                        Spacer()
+                        /// Annotation Options
+                        Spacer()
+                    }
+                    .padding()
+                    
+                    Button(action: {
+                        // Finish annotation action
+                    }) {
+                        Text(AnnotationViewConstants.Texts.finishText)
+                            .padding()
+                    }
+                }
+            }
+        }
     }
     
     @ViewBuilder

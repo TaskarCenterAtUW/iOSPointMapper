@@ -43,6 +43,7 @@
 		A35547C82EC1B0DB00F43AFD /* MapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* MapData.swift */; };
 		A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */; };
 		A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CB2EC3018C00F43AFD /* AnnotationView.swift */; };
+		A35547CE2EC3048700F43AFD /* AnnotationCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CD2EC3048200F43AFD /* AnnotationCameraViewController.swift */; };
 		A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */; };
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
@@ -184,6 +185,7 @@
 		A35547C72EC1B0D900F43AFD /* MapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapData.swift; sourceTree = "<group>"; };
 		A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshSnapshot.swift; sourceTree = "<group>"; };
 		A35547CB2EC3018C00F43AFD /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
+		A35547CD2EC3048200F43AFD /* AnnotationCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationCameraViewController.swift; sourceTree = "<group>"; };
 		A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionView.swift; sourceTree = "<group>"; };
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
@@ -616,6 +618,7 @@
 		A3E84ECE2DDAC7980096A645 /* Annotation */ = {
 			isa = PBXGroup;
 			children = (
+				A35547CD2EC3048200F43AFD /* AnnotationCameraViewController.swift */,
 				A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */,
 				A3E84ED12DDAD4130096A645 /* AnnotationLegacyAPITransmissionController.swift */,
 				A3E84ECF2DDAC7A10096A645 /* AnnotationLegacyImageManager.swift */,
@@ -878,6 +881,7 @@
 				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
 				A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
+				A35547CE2EC3048700F43AFD /* AnnotationCameraViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,
