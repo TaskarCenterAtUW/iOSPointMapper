@@ -30,10 +30,8 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func saveCaptureData(_ data: CaptureData) {
+    func saveCaptureData(_ data: CaptureData) async {
         self.currentCaptureDataRecord = data
-        Task {
-            await self.captureDataQueue.appendBack(data)
-        }
+        await self.captureDataQueue.appendBack(data)
     }
 }

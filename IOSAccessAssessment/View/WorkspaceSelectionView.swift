@@ -38,6 +38,7 @@ enum WorkspaceSelectionViewConstants {
     
     enum Constraints {
         static let refreshIconSize: CGFloat = 20
+        static let profileIconSize: CGFloat = 20
     }
     
     enum Identifiers {
@@ -157,8 +158,8 @@ struct WorkspaceSelectionView: View {
                         Image(systemName: SetupViewConstants.Images.profileIcon)
                             .resizable()
                             .frame(
-                                width: SetupViewConstants.Constraints.logoutIconSize,
-                                height: SetupViewConstants.Constraints.logoutIconSize
+                                width: SetupViewConstants.Constraints.profileIconSize,
+                                height: SetupViewConstants.Constraints.profileIconSize
                             )
                             .bold()
                     })

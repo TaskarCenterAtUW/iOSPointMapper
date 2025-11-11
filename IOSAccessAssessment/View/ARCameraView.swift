@@ -61,10 +61,11 @@ struct ARCameraView: View {
     @StateObject var objectLocation = ObjectLocation()
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
-    @State private var managerStatusViewModel = ManagerStatusViewModel()
+    @State private var managerConfigureStatusViewModel = ManagerStatusViewModel()
+    @State private var managerCaptureStatusViewModel = ManagerStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
-    @State private var navigateToAnnotationView = false
+    @State private var showAnnotationView = false
     
     var body: some View {
         Group {
@@ -86,13 +87,13 @@ struct ARCameraView: View {
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
-            navigateToAnnotationView = false
+            showAnnotationView = false
             
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
                 try manager.configure(selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline)
             } catch {
-                managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
         .onDisappear {
@@ -100,19 +101,24 @@ struct ARCameraView: View {
         .onReceive(manager.$interfaceOrientation) { newOrientation in
             interfaceOrientation = newOrientation
         }
-        .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+        .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                managerConfigureStatusViewModel.update(isFailed: false, errorMessage: "")
                 dismiss()
             }
         }, message: {
-            Text(managerStatusViewModel.errorMessage)
+            Text(managerConfigureStatusViewModel.errorMessage)
         })
-//        .navigationDestination(isPresented: $navigateToAnnotationView) {
-//            AnnotationView(
-//                selectedClassIndices: selectedClassIndices,
-//                objectLocation: objectLocation
-//            )
-//        }
+        .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
+            Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                managerCaptureStatusViewModel.update(isFailed: false, errorMessage: "")
+            }
+        }, message: {
+            Text(managerConfigureStatusViewModel.errorMessage)
+        })
+        .fullScreenCover(isPresented: $showAnnotationView) {
+            AnnotationView(selectedClasses: selectedClasses)
+        }
     }
     
     @ViewBuilder
@@ -127,9 +133,10 @@ struct ARCameraView: View {
             do {
                 objectLocation.setLocationAndHeading()
                 let captureData = try await manager.performFinalSessionUpdate()
-                sharedAppData.saveCaptureData(captureData)
+                await sharedAppData.saveCaptureData(captureData)
+                showAnnotationView = true
             } catch {
-                managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                managerCaptureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
     }

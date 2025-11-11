@@ -60,6 +60,7 @@ enum AnnotationViewConstants {
         static let checkIcon = "checkmark"
         static let ellipsisIcon = "ellipsis"
         static let infoIcon = "info.circle"
+        static let closeIcon = "xmark"
     }
 }
 
@@ -71,9 +72,26 @@ struct AnnotationView: View {
     
     var body: some View {
         VStack {
-            Text(AnnotationViewConstants.Texts.annotationViewTitle)
-                .font(.title)
-                .padding()
+            HStack {
+                Spacer()
+                Text(AnnotationViewConstants.Texts.annotationViewTitle)
+                    .font(.title)
+                    .padding()
+                Spacer()
+            }
+            .overlay(
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: AnnotationViewConstants.Images.closeIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                    }
+                    .padding()
+                }
+            )
             
             orientationStack {
                 HostedAnnotationCameraViewController()
