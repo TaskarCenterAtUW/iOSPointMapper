@@ -377,85 +377,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             }
         }
     }
-    
-    /**
-    Perform any final updates to the AR session configuration that will be required by the caller.
-     
-     Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
-     Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
-     */
-    @MainActor
-    func performFinalSessionUpdate() async throws -> CaptureData {
-        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
-              let cameraMeshResults = self.cameraMeshResults
-        else {
-            throw ARCameraManagerError.finalSessionNotConfigured
-        }
-        
-        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
-              let depthImage = self.cameraImageResults?.depthImage,
-              let cameraTransform = self.cameraImageResults?.cameraTransform,
-              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
-        else {
-            throw ARCameraManagerError.cameraImageResultsUnavailable
-        }
-        var cameraImageResults = try await self.processCameraImage(
-            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
-            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
-            highPriority: true
-        )
-        cameraImageResults.depthImage = depthImage
-        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
-        
-        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails()
-        else {
-            throw ARCameraManagerError.finalSessionMeshUnavailable
-        }
-        let cameraMeshRecords = cameraMeshRecordDetails.records
-        
-        var vertexStride, vertexOffset, indexStride, classificationStride: Int
-        if let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails {
-            vertexStride = cameraMeshOtherDetails.vertexStride
-            vertexOffset = cameraMeshOtherDetails.vertexOffset
-            indexStride = cameraMeshOtherDetails.indexStride
-            classificationStride = cameraMeshOtherDetails.classificationStride
-        } else {
-            // If other details are not provided, use from the last processed mesh results
-            // WARNING: This risks mismatch if the outputConsumer changed the mesh processing parameters in between
-            // But the assumption is that if the outputConsumer is not providing the details, it is not changing them either
-            vertexStride = cameraMeshResults.meshGPUSnapshot.vertexStride
-            vertexOffset = cameraMeshResults.meshGPUSnapshot.vertexOffset
-            indexStride = cameraMeshResults.meshGPUSnapshot.indexStride
-            classificationStride = cameraMeshResults.meshGPUSnapshot.classificationStride
-        }
-        
-        let cameraMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
-            from: cameraMeshRecords,
-            vertexStride: vertexStride,
-            vertexOffset: vertexOffset,
-            indexStride: indexStride,
-            classificationStride: classificationStride
-        )
-        let captureDataResults = CaptureDataResults(
-            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
-            segmentedClasses: cameraImageResults.segmentedClasses,
-            detectedObjectMap: cameraImageResults.detectedObjectMap,
-            segmentedMesh: cameraMeshSnapshot
-        )
-        
-        let capturedData = CaptureData(
-            id: UUID(),
-            interfaceOrientation: self.interfaceOrientation,
-            timestamp: Date().timeIntervalSince1970,
-            cameraImage: cameraImageResults.cameraImage,
-            depthImage: cameraImageResults.depthImage,
-            confidenceImage: cameraImageResults.confidenceImage,
-            cameraTransform: cameraImageResults.cameraTransform,
-            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
-            captureDataResults: captureDataResults,
-        )
-        return capturedData
-    }
 }
 
 // Functions to handle the image processing pipeline
@@ -733,5 +654,87 @@ extension ARCameraManager {
         ciContext.render(image, to: pixelBuffer, bounds: image.extent, colorSpace: colorSpace)
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         return ciImage
+    }
+}
+
+// Functions to perform final session update
+extension ARCameraManager {
+    /**
+    Perform any final updates to the AR session configuration that will be required by the caller.
+     
+     Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
+     Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
+     */
+    @MainActor
+    func performFinalSessionUpdate() async throws -> CaptureData {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let cameraMeshResults = self.cameraMeshResults
+        else {
+            throw ARCameraManagerError.finalSessionNotConfigured
+        }
+        
+        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
+              let depthImage = self.cameraImageResults?.depthImage,
+              let cameraTransform = self.cameraImageResults?.cameraTransform,
+              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
+        else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        var cameraImageResults = try await self.processCameraImage(
+            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            highPriority: true
+        )
+        cameraImageResults.depthImage = depthImage
+        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
+        
+        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails()
+        else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
+        let cameraMeshRecords = cameraMeshRecordDetails.records
+        
+        var vertexStride, vertexOffset, indexStride, classificationStride: Int
+        if let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails {
+            vertexStride = cameraMeshOtherDetails.vertexStride
+            vertexOffset = cameraMeshOtherDetails.vertexOffset
+            indexStride = cameraMeshOtherDetails.indexStride
+            classificationStride = cameraMeshOtherDetails.classificationStride
+        } else {
+            // If other details are not provided, use from the last processed mesh results
+            // WARNING: This risks mismatch if the outputConsumer changed the mesh processing parameters in between
+            // But the assumption is that if the outputConsumer is not providing the details, it is not changing them either
+            vertexStride = cameraMeshResults.meshGPUSnapshot.vertexStride
+            vertexOffset = cameraMeshResults.meshGPUSnapshot.vertexOffset
+            indexStride = cameraMeshResults.meshGPUSnapshot.indexStride
+            classificationStride = cameraMeshResults.meshGPUSnapshot.classificationStride
+        }
+        
+        let cameraMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+            from: cameraMeshRecords,
+            vertexStride: vertexStride,
+            vertexOffset: vertexOffset,
+            indexStride: indexStride,
+            classificationStride: classificationStride
+        )
+        let captureDataResults = CaptureDataResults(
+            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentedClasses: cameraImageResults.segmentedClasses,
+            detectedObjectMap: cameraImageResults.detectedObjectMap,
+            segmentedMesh: cameraMeshSnapshot
+        )
+        
+        let capturedData = CaptureData(
+            id: UUID(),
+            interfaceOrientation: self.interfaceOrientation,
+            timestamp: Date().timeIntervalSince1970,
+            cameraImage: cameraImageResults.cameraImage,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            captureDataResults: captureDataResults,
+        )
+        return capturedData
     }
 }

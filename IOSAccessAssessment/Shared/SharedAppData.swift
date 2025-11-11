@@ -9,7 +9,8 @@ import SwiftUI
 import DequeModule
 import simd
 
-class SharedAppData: ObservableObject {
+@MainActor
+final class SharedAppData: ObservableObject {
     @Published var isUploadReady: Bool = false
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var currentDatasetEncoder: DatasetEncoder?
@@ -29,7 +30,7 @@ class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func appendCaptureData(_ data: CaptureData) {
+    func saveCaptureData(_ data: CaptureData) {
         self.currentCaptureDataRecord = data
         Task {
             await self.captureDataQueue.appendBack(data)

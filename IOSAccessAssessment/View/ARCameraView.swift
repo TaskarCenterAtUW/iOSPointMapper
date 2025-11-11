@@ -53,7 +53,7 @@ class ManagerStatusViewModel: ObservableObject {
 struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
-    @EnvironmentObject var sharedImageData: SharedImageData
+    @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
@@ -73,7 +73,7 @@ struct ARCameraView: View {
                 orientationStack {
                     HostedARCameraViewContainer(arCameraManager: manager)
                     Button {
-                        objectLocation.setLocationAndHeading()
+                        capture()
                     } label: {
                         Image(systemName: ARCameraViewConstants.Images.cameraIcon)
                             .resizable()
@@ -120,5 +120,17 @@ struct ARCameraView: View {
         interfaceOrientation.isLandscape ?
         AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
+    }
+    
+    private func capture() {
+        Task {
+            do {
+                objectLocation.setLocationAndHeading()
+                let captureData = try await manager.performFinalSessionUpdate()
+                sharedAppData.saveCaptureData(captureData)
+            } catch {
+                managerStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+            }
+        }
     }
 }
