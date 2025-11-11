@@ -28,4 +28,11 @@ class SharedAppData: ObservableObject {
         self.currentDatasetEncoder = nil
         self.currentCaptureDataRecord = nil
     }
+    
+    func appendCaptureData(_ data: CaptureData) {
+        self.currentCaptureDataRecord = data
+        Task {
+            await self.captureDataQueue.appendBack(data)
+        }
+    }
 }

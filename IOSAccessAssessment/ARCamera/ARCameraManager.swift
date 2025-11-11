@@ -22,6 +22,8 @@ enum ARCameraManagerError: Error, LocalizedError {
     case meshSnapshotGeneratorUnavailable
     case meshSnapshotProcessingFailed
     case anchorEntityNotCreated
+    case finalSessionNotConfigured
+    case finalSessionMeshUnavailable
     
     var errorDescription: String? {
         switch self {
@@ -49,6 +51,10 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Mesh snapshot processing failed."
         case .anchorEntityNotCreated:
             return "Anchor Entity has not been created."
+        case .finalSessionNotConfigured:
+            return "Final session update not configured."
+        case .finalSessionMeshUnavailable:
+            return "Final session mesh data unavailable."
         }
     }
 }
@@ -144,11 +150,6 @@ struct ARCameraCache {
     }
 }
 
-struct ARCameraFinalResults {
-    let cameraImageResults: ARCameraImageResults
-    let cameraMeshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord]
-}
-
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -160,6 +161,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
     var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+    
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
     var isConfigured: Bool {
@@ -209,6 +212,12 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+        
+        Task {
+            await MainActor.run {
+                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
+            }
+        }
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
@@ -376,9 +385,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
      Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
      */
     @MainActor
-    func performFinalSessionUpdate() async throws -> ARCameraFinalResults {
-        guard self.isConfigured else {
-            throw ARCameraManagerError.sessionConfigurationFailed
+    func performFinalSessionUpdate() async throws -> CaptureData {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let cameraMeshResults = self.cameraMeshResults
+        else {
+            throw ARCameraManagerError.finalSessionNotConfigured
         }
         
         guard let pixelBuffer = self.cameraImageResults?.cameraImage,
@@ -396,12 +407,54 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         cameraImageResults.depthImage = depthImage
         cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
         
-        let cameraMeshRecords = outputConsumer?.getMeshRecords()
+        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails()
+        else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
+        let cameraMeshRecords = cameraMeshRecordDetails.records
         
-        return ARCameraFinalResults(
-            cameraImageResults: cameraImageResults,
-            cameraMeshRecords: cameraMeshRecords ?? [:]
+        var vertexStride, vertexOffset, indexStride, classificationStride: Int
+        if let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails {
+            vertexStride = cameraMeshOtherDetails.vertexStride
+            vertexOffset = cameraMeshOtherDetails.vertexOffset
+            indexStride = cameraMeshOtherDetails.indexStride
+            classificationStride = cameraMeshOtherDetails.classificationStride
+        } else {
+            // If other details are not provided, use from the last processed mesh results
+            // WARNING: This risks mismatch if the outputConsumer changed the mesh processing parameters in between
+            // But the assumption is that if the outputConsumer is not providing the details, it is not changing them either
+            vertexStride = cameraMeshResults.meshGPUSnapshot.vertexStride
+            vertexOffset = cameraMeshResults.meshGPUSnapshot.vertexOffset
+            indexStride = cameraMeshResults.meshGPUSnapshot.indexStride
+            classificationStride = cameraMeshResults.meshGPUSnapshot.classificationStride
+        }
+        
+        let cameraMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+            from: cameraMeshRecords,
+            vertexStride: vertexStride,
+            vertexOffset: vertexOffset,
+            indexStride: indexStride,
+            classificationStride: classificationStride
         )
+        let captureDataResults = CaptureDataResults(
+            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentedClasses: cameraImageResults.segmentedClasses,
+            detectedObjectMap: cameraImageResults.detectedObjectMap,
+            segmentedMesh: cameraMeshSnapshot
+        )
+        
+        let capturedData = CaptureData(
+            id: UUID(),
+            interfaceOrientation: self.interfaceOrientation,
+            timestamp: Date().timeIntervalSince1970,
+            cameraImage: cameraImageResults.cameraImage,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            captureDataResults: captureDataResults,
+        )
+        return capturedData
     }
 }
 

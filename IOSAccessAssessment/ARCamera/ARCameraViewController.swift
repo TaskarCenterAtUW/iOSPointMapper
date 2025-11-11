@@ -29,7 +29,10 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            segmentationLabelImage: CIImage,
                            accessibilityFeatureClasses: [AccessibilityFeatureClass]
     )
-    func getMeshRecords() -> [AccessibilityFeatureClass: SegmentationMeshRecord]
+    func getMeshRecordDetails() -> (
+        records: [AccessibilityFeatureClass: SegmentationMeshRecord],
+        otherDetails: MeshOtherDetails?
+    )
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
@@ -41,6 +44,16 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
     func setVideoFormatImageResolution(_ imageResolution: CGSize)
     @MainActor
     func setOrientation(_ orientation: UIInterfaceOrientation)
+}
+
+/**
+ A small struct to save other important attributes of the mesh to maintain sync.
+ */
+struct MeshOtherDetails {
+    let vertexStride: Int
+    let vertexOffset: Int
+    let indexStride: Int
+    let classificationStride: Int
 }
 
 /**
@@ -100,7 +113,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     // Mesh-related properties
     private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshEntities: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
+    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
+    private var meshOtherDetails: MeshOtherDetails? = nil
     
     init(arCameraManager: ARCameraManager) {
         self.arCameraManager = arCameraManager
@@ -327,7 +341,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                 print("Invalid segmentation class: \(accessibilityFeatureClass)")
                 continue
             }
-            if let existingMeshRecord = meshEntities[accessibilityFeatureClass] {
+            if let existingMeshRecord = meshRecords[accessibilityFeatureClass] {
                 // Update existing mesh entity
                 do {
                     try existingMeshRecord.replace(
@@ -350,17 +364,26 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                         cameraIntrinsics: cameraIntrinsics,
                         accessibilityFeatureClass: accessibilityFeatureClass
                     )
-                    meshEntities[accessibilityFeatureClass] = meshRecord
+                    meshRecords[accessibilityFeatureClass] = meshRecord
                     anchorEntity.addChild(meshRecord.entity)
                 } catch {
                     print("Error creating mesh entity: \(error)")
                 }
             }
         }
+        self.meshOtherDetails = MeshOtherDetails (
+            vertexStride: meshGPUSnapshot.vertexStride,
+            vertexOffset: meshGPUSnapshot.vertexOffset,
+            indexStride: meshGPUSnapshot.indexStride,
+            classificationStride: meshGPUSnapshot.classificationStride
+        )
     }
     
-    func getMeshRecords() -> [AccessibilityFeatureClass: SegmentationMeshRecord] {
-        return meshEntities
+    func getMeshRecordDetails() -> (
+        records: [AccessibilityFeatureClass: SegmentationMeshRecord],
+        otherDetails: MeshOtherDetails?
+    ) {
+        return (meshRecords, meshOtherDetails)
     }
 }
 

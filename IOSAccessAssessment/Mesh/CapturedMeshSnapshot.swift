@@ -46,8 +46,23 @@ final class CapturedMeshSnapshotGenerator {
         vertexOffset: Int,
         indexStride: Int,
         classificationStride: Int
-    ) -> [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot] {
-        return [:]
+    ) -> CapturedMeshSnapshot {
+        var anchorSnapshots: [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot] = [:]
+        for (featureClass, segmentationRecord) in from {
+            do {
+                let anchorSnapshot = try createSnapshot(segmentationRecord: segmentationRecord)
+                anchorSnapshots[featureClass] = anchorSnapshot
+            } catch {
+                print("Error creating snapshot for feature class \(featureClass): \(error.localizedDescription)")
+            }
+        }
+        return CapturedMeshSnapshot(
+            anchors: anchorSnapshots,
+            vertexStride: vertexStride,
+            vertexOffset: vertexOffset,
+            indexStride: indexStride,
+            classificationStride: classificationStride
+        )
     }
     
     func createSnapshot(

@@ -13,8 +13,7 @@ struct CaptureDataResults: Sendable {
     let segmentationLabelImage: CIImage
     let segmentedClasses: [AccessibilityFeatureClass]
     let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
-    // TODO: A sendable version of segmented mesh records
-    // Keep it optional because mesh data does not need to be captured every time
+    let segmentedMesh: CapturedMeshSnapshot
 }
 
 struct CaptureData: Sendable, Identifiable {
@@ -24,7 +23,9 @@ struct CaptureData: Sendable, Identifiable {
     let timestamp: TimeInterval
     
     let cameraImage: CIImage
-    let depthImage: CIImage
+    // MARK: Depth Image should not be optional regardless of LIDAR availability
+    // Once the depth model is set up, mark this as non-optional
+    let depthImage: CIImage?
     let confidenceImage: CIImage?
     
     let cameraTransform: simd_float4x4

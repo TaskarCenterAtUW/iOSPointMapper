@@ -26,20 +26,6 @@ struct MeshGPUSnapshot {
     let anchors: [UUID: MeshGPUAnchor]
 }
 
-enum MeshGPUSnapshotError: Error, LocalizedError {
-    case bufferTooSmall(expected: Int, actual: Int)
-    case bufferCreationFailed
-    
-    var errorDescription: String? {
-        switch self {
-        case .bufferTooSmall(let expected, let actual):
-            return "Buffer too small. Expected at least \(expected) bytes, but got \(actual) bytes."
-        case .bufferCreationFailed:
-            return "Failed to create MTLBuffer."
-        }
-    }
-}
-
 /**
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
