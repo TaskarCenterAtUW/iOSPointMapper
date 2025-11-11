@@ -18,7 +18,7 @@ typealias AnnotationObjectsUIImageOutput = (annotatedDetectedObjects: [Annotated
  The AnnotationImageManager class is responsible for managing the images used in the annotation process.
  It handles updates to the camera image, segmentation label image, and detected objects image.
  */
-class AnnotationImageManager: ObservableObject {
+class AnnotationLegacyImageManager: ObservableObject {
     @Published var cameraUIImage: UIImage? = nil
     @Published var segmentationUIImage: UIImage? = nil
     @Published var objectsUIImage: UIImage? = nil
@@ -141,7 +141,7 @@ class AnnotationImageManager: ObservableObject {
         // Add the "all" object to the beginning of the list
         annotatedDetectedObjects.insert(
             AnnotatedDetectedObject(object: nil, classLabel: accessibilityFeatureClass.labelValue,
-                                    depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
+                                    depthValue: 0.0, isAll: true, label: AnnotationLegacyViewConstants.Texts.selectAllLabelText),
             at: 0
         )
 //        self.annotatedDetectedObjects = annotatedDetectedObjects

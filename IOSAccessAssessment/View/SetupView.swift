@@ -234,7 +234,6 @@ struct SetupView: View {
                 HStack {
                     Text(SetupViewConstants.Texts.selectClassesText)
                         .font(.headline)
-    //                    .foregroundStyle(.gray)
                     Button(action: {
                         showSelectClassesLearnMoreSheet = true
                     }) {
@@ -297,16 +296,6 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
-            // Alert for logout confirmation
-//            .alert(
-//                SetupViewConstants.Texts.confirmationDialogTitle,
-//                isPresented: $showLogoutConfirmation
-//            ) {
-//                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
-//                    userState.logout()
-//                }
-//                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
-//            }
             // Alert for changeset opening error
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
@@ -354,7 +343,6 @@ struct SetupView: View {
         .environmentObject(self.sharedAppData)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
-//        .environment(\.colorScheme, .dark)
     }
     
     private func openChangeset() {

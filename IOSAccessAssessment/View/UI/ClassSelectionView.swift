@@ -7,7 +7,7 @@
 import SwiftUI
 
 // Extension for loading the ClassSelectionView as sheet
-extension AnnotationView {
+extension AnnotationLegacyView {
     @ViewBuilder
     func classSelectionView() -> some View {
         if let selectedClassIndex = selectedClassIndex {
@@ -41,7 +41,7 @@ struct ClassSelectionView: View {
 
     var body: some View {
         VStack {
-            Text(AnnotationViewConstants.Texts.selectCorrectAnnotationText)
+            Text(AnnotationLegacyViewConstants.Texts.selectCorrectAnnotationText)
                 .font(.headline)
                 .padding()
 
@@ -54,7 +54,7 @@ struct ClassSelectionView: View {
                             Text(classes[index])
                             Spacer()
                             if selectedClass == index {
-                                Image(systemName: AnnotationViewConstants.Images.checkIcon)
+                                Image(systemName: AnnotationLegacyViewConstants.Images.checkIcon)
                                     .foregroundStyle(.blue)
                             }
                         }
@@ -65,7 +65,7 @@ struct ClassSelectionView: View {
             Button(action: {
                 self.presentationMode.wrappedValue.dismiss()
             }) {
-                Text(AnnotationViewConstants.Texts.doneText)
+                Text(AnnotationLegacyViewConstants.Texts.doneText)
                     .padding()
             }
         }
