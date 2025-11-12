@@ -320,6 +320,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     func pauseSession() {
         arView.session.delegate = nil
         arView.session.pause()
+        self.anchorEntity.removeFromParent()
+        self.anchorEntity = AnchorEntity(world: .zero)
+        self.meshRecords.removeAll()
+        self.meshOtherDetails = nil
     }
     
     func cameraManagerImage(_ manager: any ARSessionCameraProcessingDelegate,

@@ -192,6 +192,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     @Published var isConfigured: Bool = false
     
+    // Latest processed results
     var cameraImageResults: ARCameraImageResults?
     var cameraMeshResults: ARCameraMeshResults?
     var cameraCache: ARCameraCache = ARCameraCache()
@@ -270,12 +271,10 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                  )
                  await MainActor.run {
-                     self.cameraImageResults = {
-                        var results = cameraImageResults
-                        results.depthImage = depthImage
-                        results.confidenceImage = confidenceImage
-                        return results
-                     }()
+                     var results = cameraImageResults
+                     results.depthImage = depthImage
+                     results.confidenceImage = confidenceImage
+                     self.cameraImageResults = results
                      self.outputConsumer?.cameraManagerImage(
                          self, segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
@@ -746,6 +745,9 @@ extension ARCameraManager {
     @MainActor
     func pause() throws {
         self.outputConsumer?.pauseSession()
+        self.cameraImageResults = nil
+        self.cameraMeshResults = nil
+        self.cameraCache = ARCameraCache()
     }
         
     @MainActor

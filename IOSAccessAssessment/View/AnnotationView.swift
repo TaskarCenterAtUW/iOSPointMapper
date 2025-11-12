@@ -17,43 +17,7 @@ enum AnnotationViewConstants {
         static let finishText = "Finish"
         static let nextText = "Next"
         
-        static let selectObjectText = "Select an object"
-        static let selectAllLabelText = "Select All"
-        
-        static let confirmAnnotationFailedTitle = "Cannot confirm annotation"
-        static let depthOrSegmentationUnavailableText = "Depth or segmentation related information is not available." +
-        "\nDo you want to upload all the objects as a single point with the current location?"
-        static let confirmAnnotationFailedConfirmText = "Yes"
-        static let confirmAnnotationFailedCancelText = "No"
-        
-        static let uploadFailedTitle = "Upload Failed"
-        static let uploadFailedMessage = "Failed to upload the annotated data. Please try again."
-        
-        // Upload status messages
-        static let discardingAllObjectsMessage = "Discarding all objects"
-        static let noObjectsToUploadMessage = "No objects to upload"
-        static let workspaceIdNilMessage = "Workspace ID is nil"
-        static let apiFailedMessage = "API failed"
-        
-        static let selectCorrectAnnotationText = "Select correct annotation"
-        static let doneText = "Done"
-        
-        // SelectObjectInfoTip
-        static let selectObjectInfoTipTitle = "Select an Object"
-        static let selectObjectInfoTipMessage = "Please select the object that you want to annotate individually"
-        static let selectObjectInfoTipLearnMoreButtonTitle = "Learn More"
-        
-        // SelectObjectInfoLearnMoreSheetView
-        static let selectObjectInfoLearnMoreSheetTitle = "Annotating an Object"
-        static let selectObjectInfoLearnMoreSheetMessage = """
-        For each class/type of object, the app can identify multiple instances within the same image. 
-        
-        **Select All**: Default option; you can annotate all instances of a particular class/type together.
-        
-        **Individual**: You can select a particular object from the dropdown menu if you wish to provide specific annotations for individual instances.
-        
-        **Ellipsis [...]**: For each object, you can also view its details by tapping the ellipsis button next to the dropdown menu.
-        """
+        static let invalidPageText = "Invalid Content. Please Close."
     }
     
     enum Images {
@@ -61,6 +25,7 @@ enum AnnotationViewConstants {
         static let ellipsisIcon = "ellipsis"
         static let infoIcon = "info.circle"
         static let closeIcon = "xmark"
+        static let errorIcon = "exclamationmark.triangle"
     }
 }
 
@@ -95,39 +60,50 @@ struct AnnotationView: View {
                 }
             )
             
-            orientationStack {
-                HostedAnnotationCameraViewController()
-                
+            if (isCurrentIndexValid()) {
+                orientationStack {
+                    HostedAnnotationCameraViewController()
+                    
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText)")
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Spacer()
+                            /// Class Instance Picker
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 30)
+                        
+                        ProgressBar(value: 0)
+                        
+                        HStack {
+                            Spacer()
+                            /// Annotation Options
+                            Spacer()
+                        }
+                        .padding()
+                        
+                        Button(action: {
+                            // Finish annotation action
+                        }) {
+                            Text(AnnotationViewConstants.Texts.finishText)
+                                .padding()
+                        }
+                    }
+                }
+            } else {
                 VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText)")
-                        Spacer()
+                    Label {
+                        Text(AnnotationViewConstants.Texts.invalidPageText)
+                    } icon: {
+                        Image(systemName: AnnotationViewConstants.Images.errorIcon)
                     }
-                    
-                    HStack {
-                        Spacer()
-                        /// Class Instance Picker
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 30)
-                    
-                    ProgressBar(value: 0)
-                    
-                    HStack {
-                        Spacer()
-                        /// Annotation Options
-                        Spacer()
-                    }
-                    .padding()
-                    
-                    Button(action: {
-                        // Finish annotation action
-                    }) {
-                        Text(AnnotationViewConstants.Texts.finishText)
-                            .padding()
-                    }
+                    Spacer()
                 }
             }
         }
@@ -138,5 +114,14 @@ struct AnnotationView: View {
 //        interfaceOrientation.isLandscape ?
 //        AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
+    }
+    
+    private func isCurrentIndexValid() -> Bool {
+        return false
+        let segmentedClasses = sharedAppData.currentCaptureDataRecord?.captureDataResults.segmentedClasses ?? []
+        guard index >= 0 && index < segmentedClasses.count else {
+            return false
+        }
+        return true
     }
 }
