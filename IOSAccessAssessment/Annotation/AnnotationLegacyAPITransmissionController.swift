@@ -18,7 +18,7 @@ class AnnotatedDetectedObject {
     var isAll: Bool = false
     var label: String?
     
-    var selectedOption: AnnotationOption = .individualOption(.agree)
+    var selectedOption: AnnotationOptionParent = .individualOption(.agree)
     
     init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
          label: String? = AnnotationLegacyViewConstants.Texts.selectAllLabelText) {

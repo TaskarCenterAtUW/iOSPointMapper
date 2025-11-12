@@ -13,7 +13,7 @@ enum AnnotationViewConstants {
     enum Texts {
         static let annotationViewTitle = "Annotation"
         
-        static let selectedClassPrefixText = "Selected class: "
+        static let currentClassPrefixText = "Selected class: "
         static let finishText = "Finish"
         static let nextText = "Next"
         
@@ -35,7 +35,12 @@ struct AnnotationView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
-    @State var index = 0
+    @State var currentClassIndex = 0
+    @State var currentClass: AccessibilityFeatureClass? = nil
+    @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
+    @State var classAnnotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
+    @State var selectedInstanceAnnotationOption: AnnotationOption = AnnotationOption.default
+    @State var selectedClassAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
     
     var body: some View {
         VStack {
@@ -61,40 +66,9 @@ struct AnnotationView: View {
             )
             
             if (isCurrentIndexValid()) {
-                orientationStack {
-                    HostedAnnotationCameraViewController()
-                    
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("\(AnnotationViewConstants.Texts.selectedClassPrefixText)")
-                            Spacer()
-                        }
-                        
-                        HStack {
-                            Spacer()
-                            /// Class Instance Picker
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 30)
-                        
-                        ProgressBar(value: 0)
-                        
-                        HStack {
-                            Spacer()
-                            /// Annotation Options
-                            Spacer()
-                        }
-                        .padding()
-                        
-                        Button(action: {
-                            // Finish annotation action
-                        }) {
-                            Text(AnnotationViewConstants.Texts.finishText)
-                                .padding()
-                        }
-                    }
+                mainContent()
+                .onAppear() {
+                    setCurrentClass()
                 }
             } else {
                 VStack {
@@ -116,12 +90,86 @@ struct AnnotationView: View {
         AnyLayout(VStackLayout())(content)
     }
     
+    private func annotationOptionsView() -> some View {
+        VStack(spacing: 10) {
+            ForEach(classAnnotationOptions, id: \.self) { option in
+                Button(action: {
+                }) {
+                    Text(option.rawValue)
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(selectedClassAnnotationOption == option ? Color.blue : Color.gray)
+                        .foregroundStyle(.white)
+                        .cornerRadius(10)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func mainContent() -> some View {
+        if let currentClass = currentClass {
+            orientationStack {
+                HostedAnnotationCameraViewController()
+                
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
+                        Spacer()
+                    }
+                    
+                    HStack {
+                        Spacer()
+                        /// Class Instance Picker
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 30)
+                    
+                    ProgressBar(value: 0)
+                    
+                    HStack {
+                        Spacer()
+                        annotationOptionsView()
+                        Spacer()
+                    }
+                    .padding()
+                    
+                    Button(action: {
+                        /// Finish annotation action
+                    }) {
+                        Text(AnnotationViewConstants.Texts.finishText)
+                            .padding()
+                    }
+                }
+            }
+        } else {
+            VStack {
+                Label {
+                    Text(AnnotationViewConstants.Texts.invalidPageText)
+                } icon: {
+                    Image(systemName: AnnotationViewConstants.Images.errorIcon)
+                }
+                Spacer()
+            }
+        }
+    }
+    
     private func isCurrentIndexValid() -> Bool {
-        return false
         let segmentedClasses = sharedAppData.currentCaptureDataRecord?.captureDataResults.segmentedClasses ?? []
-        guard index >= 0 && index < segmentedClasses.count else {
+        guard currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count else {
             return false
         }
         return true
+    }
+    
+    private func setCurrentClass() {
+        guard isCurrentIndexValid() else {
+            return
+        }
+        let segmentedClasses = sharedAppData.currentCaptureDataRecord?.captureDataResults.segmentedClasses ?? []
+        currentClass = segmentedClasses[currentClassIndex]
     }
 }
