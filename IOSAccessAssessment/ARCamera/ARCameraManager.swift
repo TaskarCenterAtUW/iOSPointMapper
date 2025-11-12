@@ -24,6 +24,7 @@ enum ARCameraManagerError: Error, LocalizedError {
     case anchorEntityNotCreated
     case finalSessionNotConfigured
     case finalSessionMeshUnavailable
+    case finalSessionMeshNotProcessed
     
     var errorDescription: String? {
         switch self {
@@ -55,6 +56,8 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Final session update not configured."
         case .finalSessionMeshUnavailable:
             return "Final session mesh data unavailable."
+        case .finalSessionMeshNotProcessed:
+            return "Final session mesh data not processed."
         }
     }
 }
@@ -216,14 +219,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         Task {
             await MainActor.run {
                 self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
-            }
-        }
-    }
-    
-    func reconfigure() throws {
-        Task {
-            await MainActor.run {
-                self.outputConsumer?.resumeSession()
             }
         }
     }
@@ -672,17 +667,16 @@ extension ARCameraManager {
      Also pauses the session to avoid further updates.
      
      Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
-     Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
+     TODO: Perform the mesh snapshot processing as well.
      */
     @MainActor
     func performFinalSessionUpdate() async throws -> CaptureData {
-        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
-              let cameraMeshResults = self.cameraMeshResults
-        else {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator else {
             throw ARCameraManagerError.finalSessionNotConfigured
         }
-        // Pause the session to avoid further updates while capturing final data
-        self.outputConsumer?.pauseSession()
+        guard let cameraMeshResults = self.cameraMeshResults else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
         
         guard let pixelBuffer = self.cameraImageResults?.cameraImage,
               let depthImage = self.cameraImageResults?.depthImage,
@@ -701,7 +695,7 @@ extension ARCameraManager {
         
         guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails()
         else {
-            throw ARCameraManagerError.finalSessionMeshUnavailable
+            throw ARCameraManagerError.finalSessionMeshNotProcessed
         }
         let cameraMeshRecords = cameraMeshRecordDetails.records
         
@@ -747,5 +741,15 @@ extension ARCameraManager {
             captureDataResults: captureDataResults,
         )
         return capturedData
+    }
+    
+    @MainActor
+    func pause() throws {
+        self.outputConsumer?.pauseSession()
+    }
+        
+    @MainActor
+    func resume() throws {
+        self.outputConsumer?.resumeSession()
     }
 }

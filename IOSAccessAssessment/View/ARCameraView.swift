@@ -18,7 +18,13 @@ enum ARCameraViewConstants {
         
         static let cameraInProgressText = "Camera settings in progress"
         
-        // Manager Status Alert
+        /// Camera Hint Texts
+        static let cameraHintPlaceholderText = "..."
+        static let cameraHintMeshNotProcessedText = "Mesh Not Processed"
+        static let cameraHintNoSegmentationText = "No Features Detected"
+        static let cameraHintUnknownErrorText = "Unknown Error"
+        
+        /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
     }
@@ -35,6 +41,17 @@ enum ARCameraViewConstants {
     
     enum Constraints {
         static let logoutIconSize: CGFloat = 20
+    }
+}
+
+enum ARCameraViewError: Error, LocalizedError {
+    case captureNoSegmentationAccessibilityFeatures
+    
+    var errorDescription: String? {
+        switch self {
+        case .captureNoSegmentationAccessibilityFeatures:
+            return "No accessibility features were captured. Please try again."
+        }
     }
 }
 
@@ -62,8 +79,8 @@ struct ARCameraView: View {
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @State private var managerConfigureStatusViewModel = ManagerStatusViewModel()
-    @State private var managerCaptureStatusViewModel = ManagerStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
+    @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
     @State private var showAnnotationView = false
     
@@ -73,12 +90,23 @@ struct ARCameraView: View {
             if manager.isConfigured {
                 orientationStack {
                     HostedARCameraViewContainer(arCameraManager: manager)
-                    Button {
-                        capture()
-                    } label: {
-                        Image(systemName: ARCameraViewConstants.Images.cameraIcon)
-                            .resizable()
-                            .frame(width: 60, height: 60)
+                    VStack {
+                        /// Text for hinting user with status
+                        Text(cameraHintText)
+                            .padding()
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                            .frame(maxWidth: 300)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        
+                        Button {
+                            capture()
+                        } label: {
+                            Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                .resizable()
+                                .frame(width: 60, height: 60)
+                        }
+                        .padding(.bottom, 20)
                     }
                 }
             } else {
@@ -108,13 +136,6 @@ struct ARCameraView: View {
         }, message: {
             Text(managerConfigureStatusViewModel.errorMessage)
         })
-        .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
-            Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
-                managerCaptureStatusViewModel.update(isFailed: false, errorMessage: "")
-            }
-        }, message: {
-            Text(managerConfigureStatusViewModel.errorMessage)
-        })
         .fullScreenCover(isPresented: $showAnnotationView) {
             AnnotationView(selectedClasses: selectedClasses)
         }
@@ -122,7 +143,7 @@ struct ARCameraView: View {
             // If the AnnotationView is dismissed, reconfigure the manager for a new session
             if (oldValue == true && newValue == false) {
                 do {
-                    try manager.reconfigure()
+                    try manager.resume()
                 } catch {
                     managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
                 }
@@ -142,11 +163,28 @@ struct ARCameraView: View {
             do {
                 objectLocation.setLocationAndHeading()
                 let captureData = try await manager.performFinalSessionUpdate()
+                if captureData.captureDataResults.segmentedClasses.isEmpty {
+                    throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
+                }
+                try manager.pause()
                 await sharedAppData.saveCaptureData(captureData)
                 showAnnotationView = true
+            } catch ARCameraManagerError.finalSessionMeshUnavailable {
+                setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+            } catch _ as ARCameraViewError {
+                setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch {
-                managerCaptureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                setHintText(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
             }
+        }
+    }
+    
+    /// Set text for 2 seconds, and then fall back to placeholder
+    private func setHintText(_ text: String) {
+        cameraHintText = text
+        Task {
+            try await Task.sleep(for: .seconds(2))
+            cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
         }
     }
 }

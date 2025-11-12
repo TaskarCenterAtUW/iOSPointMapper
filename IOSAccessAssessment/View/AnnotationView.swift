@@ -70,6 +70,8 @@ struct AnnotationView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
+    @State var index = 0
+    
     var body: some View {
         VStack {
             HStack {
