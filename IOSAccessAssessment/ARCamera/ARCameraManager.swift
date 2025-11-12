@@ -165,9 +165,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
-    var isConfigured: Bool {
-        return (segmentationPipeline != nil) && (meshGPUSnapshotGenerator != nil)
-    }
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -189,6 +186,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
     var segmentationPixelBufferPool: CVPixelBufferPool? = nil
     var segmentationColorSpace: CGColorSpace? = nil
+    
+    @Published var isConfigured: Bool = false
     
     var cameraImageResults: ARCameraImageResults?
     var cameraMeshResults: ARCameraMeshResults?
@@ -212,10 +211,19 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+        self.isConfigured = true
         
         Task {
             await MainActor.run {
                 self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
+            }
+        }
+    }
+    
+    func reconfigure() throws {
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.resumeSession()
             }
         }
     }
@@ -661,6 +669,7 @@ extension ARCameraManager {
 extension ARCameraManager {
     /**
     Perform any final updates to the AR session configuration that will be required by the caller.
+     Also pauses the session to avoid further updates.
      
      Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
      Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
@@ -672,6 +681,8 @@ extension ARCameraManager {
         else {
             throw ARCameraManagerError.finalSessionNotConfigured
         }
+        // Pause the session to avoid further updates while capturing final data
+        self.outputConsumer?.pauseSession()
         
         guard let pixelBuffer = self.cameraImageResults?.cameraImage,
               let depthImage = self.cameraImageResults?.depthImage,

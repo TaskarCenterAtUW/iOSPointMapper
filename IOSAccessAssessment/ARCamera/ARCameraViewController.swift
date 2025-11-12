@@ -33,6 +33,8 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
         records: [AccessibilityFeatureClass: SegmentationMeshRecord],
         otherDetails: MeshOtherDetails?
     )
+    func resumeSession()
+    func pauseSession()
 }
 
 protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
@@ -305,8 +307,15 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     /**
+    Resumes the AR session and sets its delegate.
+     */
+    func resumeSession() {
+        arView.session.delegate = arCameraManager
+        runSessionIfNeeded()
+    }
+    
+    /**
     Pauses the AR session and removes its delegate.
-     NOTE: Only call this method when you are sure you want to stop the AR session permanently. We have to figure out a way to pause and resume sessions properly.
      */
     func pauseSession() {
         arView.session.delegate = nil

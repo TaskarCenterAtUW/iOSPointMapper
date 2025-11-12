@@ -88,7 +88,6 @@ struct ARCameraView: View {
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             showAnnotationView = false
-            
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
                 try manager.configure(selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline)
@@ -118,6 +117,16 @@ struct ARCameraView: View {
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
             AnnotationView(selectedClasses: selectedClasses)
+        }
+        .onChange(of: showAnnotationView, initial: false) { oldValue, newValue in
+            // If the AnnotationView is dismissed, reconfigure the manager for a new session
+            if (oldValue == true && newValue == false) {
+                do {
+                    try manager.reconfigure()
+                } catch {
+                    managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                }
+            }
         }
     }
     
