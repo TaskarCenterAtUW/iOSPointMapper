@@ -23,7 +23,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
-                           for anchors: [ARAnchor],
+                           for anchors: [ARAnchor]?,
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
@@ -51,11 +51,13 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
 /**
  A small struct to save other important attributes of the mesh to maintain sync.
  */
-struct MeshOtherDetails {
+struct MeshOtherDetails: Sendable {
     let vertexStride: Int
     let vertexOffset: Int
     let indexStride: Int
     let classificationStride: Int
+    
+    let totalVertexCount: Int
 }
 
 /**
@@ -342,12 +344,13 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
-                           for anchors: [ARAnchor],
+                           for anchors: [ARAnchor]?,
                            cameraTransform: simd_float4x4,
                            cameraIntrinsics: simd_float3x3,
                            segmentationLabelImage: CIImage,
                            accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
+        var totalVertexCount = 0
         for accessibilityFeatureClass in accessibilityFeatureClasses {
             guard Constants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
                 print("Invalid segmentation class: \(accessibilityFeatureClass)")
@@ -362,6 +365,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                         cameraTransform: cameraTransform,
                         cameraIntrinsics: cameraIntrinsics
                     )
+                    totalVertexCount += existingMeshRecord.vertexCount
                 } catch {
                     print("Error updating mesh entity: \(error)")
                 }
@@ -378,6 +382,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                     )
                     meshRecords[accessibilityFeatureClass] = meshRecord
                     anchorEntity.addChild(meshRecord.entity)
+                    totalVertexCount += meshRecord.vertexCount
                 } catch {
                     print("Error creating mesh entity: \(error)")
                 }
@@ -387,7 +392,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             vertexStride: meshGPUSnapshot.vertexStride,
             vertexOffset: meshGPUSnapshot.vertexOffset,
             indexStride: meshGPUSnapshot.indexStride,
-            classificationStride: meshGPUSnapshot.classificationStride
+            classificationStride: meshGPUSnapshot.classificationStride,
+            totalVertexCount: totalVertexCount
         )
     }
     

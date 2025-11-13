@@ -25,6 +25,8 @@ enum ARCameraManagerError: Error, LocalizedError {
     case finalSessionNotConfigured
     case finalSessionMeshUnavailable
     case finalSessionMeshNotProcessed
+    case finalSessionNoSegmentationClass
+    case finalSessionNoSegmentationMesh
     
     var errorDescription: String? {
         switch self {
@@ -58,6 +60,10 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Final session mesh data unavailable."
         case .finalSessionMeshNotProcessed:
             return "Final session mesh data not processed."
+        case .finalSessionNoSegmentationClass:
+            return "No segmentation class available in final session."
+        case .finalSessionNoSegmentationMesh:
+            return "No segmentation mesh available in final session."
         }
     }
 }
@@ -677,20 +683,24 @@ extension ARCameraManager {
 extension ARCameraManager {
     /**
     Perform any final updates to the AR session configuration that will be required by the caller.
-     Also pauses the session to avoid further updates.
+     Throws an error if the final session update cannot be performed.
+     Throws an error if the final session update returns no segmented classes or segmented mesh.
      
      Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
      TODO: Perform the mesh snapshot processing as well.
      */
     @MainActor
-    func performFinalSessionUpdate() async throws -> CaptureData {
-        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator else {
+    func performFinalSessionUpdateIfPossible() async throws -> CaptureData {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let meshGPUContext = self.meshGPUContext,
+              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.finalSessionNotConfigured
         }
-        guard let cameraMeshResults = self.cameraMeshResults else {
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.finalSessionMeshUnavailable
         }
         
+        /// Process the latest camera image with high priority
         guard let pixelBuffer = self.cameraImageResults?.cameraImage,
               let depthImage = self.cameraImageResults?.depthImage,
               let cameraTransform = self.cameraImageResults?.cameraTransform,
@@ -703,37 +713,43 @@ extension ARCameraManager {
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
             highPriority: true
         )
+        guard cameraImageResults.segmentedClasses.count > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationClass
+        }
         cameraImageResults.depthImage = depthImage
         cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
         
-        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails()
-        else {
+        /// Process the latest mesh anchors
+        let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        outputConsumer?.cameraManagerMesh(
+            self, meshGPUContext: meshGPUContext,
+            meshGPUSnapshot: meshGPUSnapshot,
+            for: nil,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            segmentationLabelImage: backedSegmentationLabelImage,
+            accessibilityFeatureClasses: self.selectedClasses
+        )
+        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
             throw ARCameraManagerError.finalSessionMeshNotProcessed
+        }
+        guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
+              cameraMeshOtherDetails.totalVertexCount > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
         }
         let cameraMeshRecords = cameraMeshRecordDetails.records
         
-        var vertexStride, vertexOffset, indexStride, classificationStride: Int
-        if let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails {
-            vertexStride = cameraMeshOtherDetails.vertexStride
-            vertexOffset = cameraMeshOtherDetails.vertexOffset
-            indexStride = cameraMeshOtherDetails.indexStride
-            classificationStride = cameraMeshOtherDetails.classificationStride
-        } else {
-            // If other details are not provided, use from the last processed mesh results
-            // WARNING: This risks mismatch if the outputConsumer changed the mesh processing parameters in between
-            // But the assumption is that if the outputConsumer is not providing the details, it is not changing them either
-            vertexStride = cameraMeshResults.meshGPUSnapshot.vertexStride
-            vertexOffset = cameraMeshResults.meshGPUSnapshot.vertexOffset
-            indexStride = cameraMeshResults.meshGPUSnapshot.indexStride
-            classificationStride = cameraMeshResults.meshGPUSnapshot.classificationStride
-        }
-        
-        let cameraMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+        let cameraMeshSnapshot: CapturedMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
             from: cameraMeshRecords,
-            vertexStride: vertexStride,
-            vertexOffset: vertexOffset,
-            indexStride: indexStride,
-            classificationStride: classificationStride
+            vertexStride: cameraMeshOtherDetails.vertexStride,
+            vertexOffset: cameraMeshOtherDetails.vertexOffset,
+            indexStride: cameraMeshOtherDetails.indexStride,
+            classificationStride: cameraMeshOtherDetails.classificationStride,
+            totalVertexCount: cameraMeshOtherDetails.totalVertexCount
         )
         let captureDataResults = CaptureDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,

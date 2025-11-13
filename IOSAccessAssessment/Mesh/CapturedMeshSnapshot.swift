@@ -22,6 +22,8 @@ struct CapturedMeshSnapshot: Sendable {
     let vertexOffset: Int
     let indexStride: Int
     let classificationStride: Int
+    
+    let totalVertexCount: Int
 }
 
 enum CapturedMeshSnapshotError: Error, LocalizedError {
@@ -45,7 +47,8 @@ final class CapturedMeshSnapshotGenerator {
         vertexStride: Int,
         vertexOffset: Int,
         indexStride: Int,
-        classificationStride: Int
+        classificationStride: Int,
+        totalVertexCount: Int
     ) -> CapturedMeshSnapshot {
         var anchorSnapshots: [AccessibilityFeatureClass: CapturedMeshAnchorSnapshot] = [:]
         for (featureClass, segmentationRecord) in from {
@@ -61,7 +64,8 @@ final class CapturedMeshSnapshotGenerator {
             vertexStride: vertexStride,
             vertexOffset: vertexOffset,
             indexStride: indexStride,
-            classificationStride: classificationStride
+            classificationStride: classificationStride,
+            totalVertexCount: totalVertexCount
         )
     }
     

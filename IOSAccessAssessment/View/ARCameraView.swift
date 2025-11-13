@@ -162,15 +162,21 @@ struct ARCameraView: View {
         Task {
             do {
                 objectLocation.setLocationAndHeading()
-                let captureData = try await manager.performFinalSessionUpdate()
-                if captureData.captureDataResults.segmentedClasses.isEmpty {
+                let captureData = try await manager.performFinalSessionUpdateIfPossible()
+                if (captureData.captureDataResults.segmentedClasses.isEmpty) ||
+                    (captureData.captureDataResults.segmentedMesh.totalVertexCount == 0) {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
+                print("Captured segmentation classes: \(captureData.captureDataResults.segmentedClasses.map { $0.name })")
+                print("Captured segmentation mesh vertex count: \(captureData.captureDataResults.segmentedMesh.totalVertexCount)")
                 try manager.pause()
                 await sharedAppData.saveCaptureData(captureData)
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+            } catch ARCameraManagerError.finalSessionNoSegmentationClass,
+                    ARCameraManagerError.finalSessionNoSegmentationMesh {
+                setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch _ as ARCameraViewError {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch {
