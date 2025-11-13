@@ -77,7 +77,6 @@
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
 		A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */; };
-		A3DC22F32DD002020020CE84 /* CGImage+CVPixelBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F22DD002010020CE84 /* CGImage+CVPixelBuffer.swift */; };
 		A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */; };
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
@@ -221,7 +220,6 @@
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
 		A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationSegmentationPipeline.swift; sourceTree = "<group>"; };
-		A3DC22F22DD002010020CE84 /* CGImage+CVPixelBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGImage+CVPixelBuffer.swift"; sourceTree = "<group>"; };
 		A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UnionOfMasks.metal; sourceTree = "<group>"; };
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
@@ -585,7 +583,6 @@
 				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
 				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
-				A3DC22F22DD002010020CE84 /* CGImage+CVPixelBuffer.swift */,
 				A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtils.swift */,
 			);
 			path = Utils;
@@ -899,7 +896,6 @@
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */,
-				A3DC22F32DD002020020CE84 /* CGImage+CVPixelBuffer.swift in Sources */,
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
 				A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */,
 				A30801682EC0AE7700B1BA3A /* AccessibilityFeatureComponents.swift in Sources */,

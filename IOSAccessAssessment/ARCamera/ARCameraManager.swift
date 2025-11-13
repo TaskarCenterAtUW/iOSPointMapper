@@ -184,11 +184,14 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var meshFrameRate: Int = 15
     var lastMeshFrameTime: TimeInterval = 0
     
+    // Contexts depending on type of color space processing required
+    let colorContext = CIContext(options: nil)
+    let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
     // Properties for processing camera and depth frames
-    var ciContext = CIContext(options: nil)
     // Pixel buffer pools for rendering camera frames to fixed size as segmentation model input (pre-defined size)
     var cameraPixelBufferPool: CVPixelBufferPool? = nil
-    var cameraColorSpace: CGColorSpace? = nil
+    var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
 //    var depthPixelBufferPool: CVPixelBufferPool? = nil
 //    var depthColorSpace: CGColorSpace? = nil
     // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
@@ -413,7 +416,8 @@ extension ARCameraManager {
             inputImage,
             size: croppedSize,
             pixelBufferPool: cameraPixelBufferPool,
-            colorSpace: cameraColorSpace
+            colorSpace: cameraColorSpace,
+            context: colorContext
         )
         let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBuffer)
         
@@ -427,7 +431,8 @@ extension ARCameraManager {
         segmentationImage = try backCIImageToPixelBuffer(
             segmentationImage,
             pixelBufferPool: segmentationPixelBufferPool,
-            colorSpace: segmentationColorSpace
+            colorSpace: segmentationColorSpace,
+            context: rawContext
         )
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
@@ -436,7 +441,9 @@ extension ARCameraManager {
             segmentationColorCIImage, from: originalSize
         )
         segmentationColorCIImage = segmentationColorCIImage.oriented(imageOrientation)
-        let segmentationColorCGImage = ciContext.createCGImage(segmentationColorCIImage, from: segmentationColorCIImage.extent)
+        let segmentationColorCGImage = colorContext.createCGImage(
+            segmentationColorCIImage, from: segmentationColorCIImage.extent
+        )
         var segmentationColorImage: CIImage? = nil
         if let segmentationColorCGImage = segmentationColorCGImage {
             segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
@@ -531,7 +538,7 @@ extension ARCameraManager {
         }
         var segmentationFrameImage = CIImage(cgImage: segmentationFrameCGImage)
         segmentationFrameImage = segmentationFrameImage.oriented(orientation)
-        guard let segmentationFrameOrientedCGImage = ciContext.createCGImage(
+        guard let segmentationFrameOrientedCGImage = colorContext.createCGImage(
             segmentationFrameImage, from: segmentationFrameImage.extent) else {
             return nil
         }
@@ -606,12 +613,12 @@ extension ARCameraManager {
         guard cameraStatus == kCVReturnSuccess else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
-        cameraColorSpace = CGColorSpaceCreateDeviceRGB()
     }
     
     private func renderCIImageToPixelBuffer(
         _ image: CIImage, size: CGSize,
-        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil
+        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil,
+        context: CIContext
     ) throws -> CVPixelBuffer {
         var pixelBufferOut: CVPixelBuffer?
         let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
@@ -619,7 +626,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.cameraImageRenderingFailed
         }
         
-        ciContext.render(image, to: pixelBuffer, bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
+        context.render(image, to: pixelBuffer, bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
         return pixelBuffer
     }
     
@@ -646,12 +653,12 @@ extension ARCameraManager {
         guard segmentationStatus == kCVReturnSuccess else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
-        segmentationColorSpace = CGColorSpaceCreateDeviceGray()
     }
     
     private func backCIImageToPixelBuffer(
         _ image: CIImage,
-        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil
+        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil,
+        context: CIContext
     ) throws -> CIImage {
         var pixelBufferOut: CVPixelBuffer?
         let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
@@ -659,7 +666,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.cameraImageRenderingFailed
         }
         // Render the CIImage to the pixel buffer
-        ciContext.render(image, to: pixelBuffer, bounds: image.extent, colorSpace: colorSpace)
+        context.render(image, to: pixelBuffer, bounds: image.extent, colorSpace: colorSpace)
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         return ciImage
     }
