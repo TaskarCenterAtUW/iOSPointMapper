@@ -87,6 +87,7 @@ struct ARCameraImageResults {
     let cameraIntrinsics: simd_float3x3
     let interfaceOrientation: UIInterfaceOrientation
     let originalImageSize: CGSize
+    let segmentationCroppedSize: CGSize
     
     var segmentationColorImage: CIImage? = nil
     var segmentationBoundingFrameImage: CIImage? = nil
@@ -96,7 +97,8 @@ struct ARCameraImageResults {
         segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
         detectedObjectMap: [UUID: DetectedAccessibilityFeature],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
+        interfaceOrientation: UIInterfaceOrientation,
+        originalImageSize: CGSize, segmentationCroppedSize: CGSize,
         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil
     ) {
         self.cameraImage = cameraImage
@@ -108,8 +110,11 @@ struct ARCameraImageResults {
         self.detectedObjectMap = detectedObjectMap
         self.cameraTransform = cameraTransform
         self.cameraIntrinsics = cameraIntrinsics
+        
         self.interfaceOrientation = interfaceOrientation
+        
         self.originalImageSize = originalImageSize
+        self.segmentationCroppedSize = segmentationCroppedSize
         
         self.segmentationColorImage = segmentationColorImage
         self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
@@ -464,6 +469,7 @@ extension ARCameraManager {
             cameraIntrinsics: cameraIntrinsics,
             interfaceOrientation: interfaceOrientation,
             originalImageSize: originalSize,
+            segmentationCroppedSize: croppedSize,
             segmentationColorImage: segmentationColorImage,
             segmentationBoundingFrameImage: segmentationBoundingFrameImage
         )
@@ -723,6 +729,7 @@ extension ARCameraManager {
         )
         let captureDataResults = CaptureDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentationCroppedSize: cameraImageResults.segmentationCroppedSize,
             segmentedClasses: cameraImageResults.segmentedClasses,
             detectedObjectMap: cameraImageResults.detectedObjectMap,
             segmentedMesh: cameraMeshSnapshot
@@ -730,13 +737,14 @@ extension ARCameraManager {
         
         let capturedData = CaptureData(
             id: UUID(),
-            interfaceOrientation: self.interfaceOrientation,
             timestamp: Date().timeIntervalSince1970,
             cameraImage: cameraImageResults.cameraImage,
             depthImage: cameraImageResults.depthImage,
             confidenceImage: cameraImageResults.confidenceImage,
             cameraTransform: cameraImageResults.cameraTransform,
             cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            interfaceOrientation: self.interfaceOrientation,
+            originalSize: cameraImageResults.originalImageSize,
             captureDataResults: captureDataResults,
         )
         return capturedData

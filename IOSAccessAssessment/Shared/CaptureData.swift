@@ -11,6 +11,7 @@ import simd
 
 struct CaptureDataResults: Sendable {
     let segmentationLabelImage: CIImage
+    let segmentationCroppedSize: CGSize
     let segmentedClasses: [AccessibilityFeatureClass]
     let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
     let segmentedMesh: CapturedMeshSnapshot
@@ -19,7 +20,6 @@ struct CaptureDataResults: Sendable {
 struct CaptureData: Sendable, Identifiable {
     let id: UUID
     
-    let interfaceOrientation: UIInterfaceOrientation
     let timestamp: TimeInterval
     
     let cameraImage: CIImage
@@ -30,6 +30,9 @@ struct CaptureData: Sendable, Identifiable {
     
     let cameraTransform: simd_float4x4
     let cameraIntrinsics: simd_float3x3
+    
+    let interfaceOrientation: UIInterfaceOrientation
+    let originalSize: CGSize
     
     let captureDataResults: CaptureDataResults
 }

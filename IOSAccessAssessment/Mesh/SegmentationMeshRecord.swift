@@ -116,6 +116,11 @@ final class SegmentationMeshRecord {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
             throw SegmentationMeshRecordError.emptySegmentation
         }
+        CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
+        defer {
+            CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly)
+        }
+        
         let meshGPUAnchors = meshGPUSnapshot.anchors
         
         let totalFaceCount = meshGPUAnchors.reduce(0) { $0 + $1.value.faceCount }

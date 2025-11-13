@@ -47,7 +47,7 @@ struct AnnotationView: View {
             HStack {
                 Spacer()
                 Text(AnnotationViewConstants.Texts.annotationViewTitle)
-                    .font(.title)
+                    .font(.headline)
                     .padding()
                 Spacer()
             }
