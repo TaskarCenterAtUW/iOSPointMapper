@@ -38,6 +38,7 @@ struct GrayscaleToColorFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
+    private let outputColorSpace = CGColorSpaceCreateDeviceRGB()
 
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -48,7 +49,7 @@ struct GrayscaleToColorFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernelLUT"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -105,7 +106,7 @@ struct GrayscaleToColorFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace]) else {
             throw GrayscaleToColorFilterError.outputImageCreationFailed
         }
         return resultImage

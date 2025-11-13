@@ -30,23 +30,25 @@ extension CIImage {
     }
 }
 
-struct CIImageUtils {
-    static func toPixelBuffer(_ ciImage: CIImage, pixelFormat: OSType = kCVPixelFormatType_32BGRA) -> CVPixelBuffer? {
-        let width = Int(ciImage.extent.width)
-        let height = Int(ciImage.extent.height)
+extension CIImage {
+    func toPixelBuffer(
+        context: CIContext, pixelFormatType: OSType = kCVPixelFormatType_32BGRA, colorSpace: CGColorSpace? = nil
+    ) -> CVPixelBuffer? {
+        let width = Int(self.extent.width)
+        let height = Int(self.extent.height)
         
         var pixelBuffer: CVPixelBuffer?
         let attrs: [CFString: Any] = [
             kCVPixelBufferCGImageCompatibilityKey: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey: true,
-            kCVPixelBufferMetalCompatibilityKey: true
+            kCVPixelBufferMetalCompatibilityKey: true,
+            kCVPixelBufferIOSurfacePropertiesKey: [:]
         ]
-        
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
             width,
             height,
-            pixelFormat,
+            pixelFormatType,
             attrs as CFDictionary,
             &pixelBuffer
         )
@@ -54,18 +56,25 @@ struct CIImageUtils {
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
             return nil
         }
-        
-        let context = CIContext()
-        context.render(ciImage, to: buffer)
-        
+        context.render(self, to: buffer, bounds: self.extent, colorSpace: colorSpace)
         return buffer
+    }
+    
+    func toPixelBuffer(context: CIContext, pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil) -> CVPixelBuffer? {
+        var pixelBufferOut: CVPixelBuffer?
+        let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
+        guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
+            return nil
+        }
+        context.render(self, to: pixelBuffer, bounds: self.extent, colorSpace: colorSpace)
+        return pixelBuffer
     }
 }
 
 /**
  Legacy functions for resizing and cropping CIImage.
  */
-extension CIImageUtils {
+struct CIImageUtils {
     /**
      This function resizes a CIImage to match the specified size by:
         - First, resizing the image to match the smaller dimension while maintaining the aspect ratio.
