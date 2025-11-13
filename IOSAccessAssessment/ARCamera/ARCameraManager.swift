@@ -24,7 +24,6 @@ enum ARCameraManagerError: Error, LocalizedError {
     case anchorEntityNotCreated
     case finalSessionNotConfigured
     case finalSessionMeshUnavailable
-    case finalSessionMeshNotProcessed
     case finalSessionNoSegmentationClass
     case finalSessionNoSegmentationMesh
     
@@ -58,8 +57,6 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Final session update not configured."
         case .finalSessionMeshUnavailable:
             return "Final session mesh data unavailable."
-        case .finalSessionMeshNotProcessed:
-            return "Final session mesh data not processed."
         case .finalSessionNoSegmentationClass:
             return "No segmentation class available in final session."
         case .finalSessionNoSegmentationMesh:
@@ -735,7 +732,7 @@ extension ARCameraManager {
             accessibilityFeatureClasses: self.selectedClasses
         )
         guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
-            throw ARCameraManagerError.finalSessionMeshNotProcessed
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
         }
         guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
               cameraMeshOtherDetails.totalVertexCount > 0 else {
@@ -779,6 +776,7 @@ extension ARCameraManager {
         self.outputConsumer?.pauseSession()
         self.cameraImageResults = nil
         self.cameraMeshResults = nil
+        self.meshGPUSnapshotGenerator?.reset()
         self.cameraCache = ARCameraCache()
     }
         

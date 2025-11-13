@@ -45,6 +45,10 @@ final class MeshGPUSnapshotGenerator: NSObject {
         self.device = device
     }
     
+    func reset() {
+        currentSnapshot = nil
+    }
+    
     func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
         return currentSnapshot?.anchors[anchorId]
     }
