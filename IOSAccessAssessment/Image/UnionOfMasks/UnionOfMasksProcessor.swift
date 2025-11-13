@@ -72,6 +72,13 @@ class UnionOfMasksProcessor {
         self.pipeline = pipeline
     }
     
+    /**
+        Sets the array texture from an array of CIImages.
+     
+        - Parameters:
+            - images: An array of CIImage objects to be combined into an array texture.
+            - format: The pixel format for the texture. Default is .rgba8Unorm.
+     */
     // FIXME: Sometimes, the array texture is not set correctly.
     // This could be due to the way the AnnotationView's initialization is set up.
     func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) throws {

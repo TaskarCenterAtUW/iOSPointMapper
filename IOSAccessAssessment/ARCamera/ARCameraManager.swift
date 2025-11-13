@@ -416,13 +416,13 @@ extension ARCameraManager {
         let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = image.oriented(imageOrientation)
-        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
-        let renderedCameraImage = try self.backCIImageWithPixelBuffer(
+        var inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        inputImage = try self.backCIImageWithPixelBuffer(
             inputImage, context: colorContext, pixelBufferPool: cameraCroppedPixelBufferPool, colorSpace: cameraColorSpace
         )
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
-            with: renderedCameraImage, highPriority: highPriority
+            with: inputImage, highPriority: highPriority
         )
         
         var segmentationImage = segmentationResults.segmentationImage
@@ -553,6 +553,11 @@ extension ARCameraManager {
         }
         
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        
         let cameraTransform = cameraImageResults.cameraTransform
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
@@ -567,7 +572,7 @@ extension ARCameraManager {
         }
         return ARCameraMeshResults(
             meshGPUSnapshot: meshGPUSnapshot,
-            segmentationLabelImage: segmentationLabelImage,
+            segmentationLabelImage: backedSegmentationLabelImage,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
             lastUpdated: Date().timeIntervalSince1970
@@ -635,6 +640,10 @@ extension ARCameraManager {
         }
     }
     
+    /**
+    Back a CIImage with a pixel buffer of specified pixel format type and color space.
+     Also serves as a way to efficiently clone a CIImage.
+     */
     private func backCIImageWithPixelBuffer(
         _ ciImage: CIImage, context: CIContext,
         pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
@@ -643,10 +652,14 @@ extension ARCameraManager {
         guard let imagePixelBuffer = pixelBuffer else {
             throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
         }
-        let ciImage = CIImage(cvPixelBuffer: imagePixelBuffer)
-        return ciImage
+        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        return backedImage
     }
     
+    /**
+    Back a CIImage with a pixel buffer from the provided pixel buffer pool and color space.
+     Also serves as a way to efficiently clone a CIImage.
+     */
     private func backCIImageWithPixelBuffer(
         _ ciImage: CIImage, context: CIContext,
         pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil,
@@ -655,8 +668,8 @@ extension ARCameraManager {
         guard let imagePixelBuffer = pixelBuffer else {
             throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
         }
-        let ciImage = CIImage(cvPixelBuffer: imagePixelBuffer)
-        return ciImage
+        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        return backedImage
     }
 }
 

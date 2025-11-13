@@ -58,6 +58,14 @@ struct GrayscaleToColorFilter {
         self.pipeline = pipeline
     }
 
+    /**
+        Applies the grayscale to color mapping filter to the input CIImage.
+     
+        - Parameters:
+            - inputImage: The input CIImage in grayscale format. Of color space nil, single-channel.
+            - grayscaleValues: An array of Float values representing the grayscale levels (0.0 to 1.0).
+            - colorValues: An array of CIColor values corresponding to the grayscale levels.
+     */
     func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
