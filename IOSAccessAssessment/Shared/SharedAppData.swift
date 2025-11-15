@@ -15,13 +15,13 @@ final class SharedAppData: ObservableObject {
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var currentDatasetEncoder: DatasetEncoder?
     
-    var currentCaptureDataRecord: CaptureData?
-    var captureDataQueue: SafeDeque<CaptureData>
+    var currentCaptureDataRecord: (any CaptureImageDataProtocol)?
+    var captureDataQueue: SafeDeque<(any CaptureImageDataProtocol)>
     var captureDataCapacity: Int
     
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
-        self.captureDataQueue = SafeDeque<CaptureData>(capacity: captureDataCapacity)
+        self.captureDataQueue = SafeDeque<(any CaptureImageDataProtocol)>(capacity: captureDataCapacity)
     }
     
     func refreshData() {
@@ -30,8 +30,8 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func saveCaptureData(_ data: CaptureData) async {
+    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) async {
         self.currentCaptureDataRecord = data
-        await self.captureDataQueue.appendBack(data)
+//        await self.captureDataQueue.appendBack(data)
     }
 }

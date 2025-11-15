@@ -687,7 +687,8 @@ extension ARCameraManager {
      TODO: Perform the mesh snapshot processing as well.
      */
     @MainActor
-    func performFinalSessionUpdateIfPossible() async throws -> CaptureData {
+    func performFinalSessionUpdateIfPossible(
+    ) async throws -> any (CaptureImageDataProtocol & CaptureMeshDataProtocol) {
         guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
               let meshGPUContext = self.meshGPUContext,
               let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
@@ -748,25 +749,28 @@ extension ARCameraManager {
             classificationStride: cameraMeshOtherDetails.classificationStride,
             totalVertexCount: cameraMeshOtherDetails.totalVertexCount
         )
-        let captureDataResults = CaptureDataResults(
+        let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentationCroppedSize: cameraImageResults.segmentationCroppedSize,
             segmentedClasses: cameraImageResults.segmentedClasses,
-            detectedObjectMap: cameraImageResults.detectedObjectMap,
+            detectedObjectMap: cameraImageResults.detectedObjectMap
+        )
+        let captureMeshDataResults = CaptureMeshDataResults(
             segmentedMesh: cameraMeshSnapshot
         )
         
-        let capturedData = CaptureData(
+        let capturedData = CaptureAllData(
             id: UUID(),
             timestamp: Date().timeIntervalSince1970,
             cameraImage: cameraImageResults.cameraImage,
-            depthImage: cameraImageResults.depthImage,
-            confidenceImage: cameraImageResults.confidenceImage,
             cameraTransform: cameraImageResults.cameraTransform,
             cameraIntrinsics: cameraImageResults.cameraIntrinsics,
             interfaceOrientation: self.interfaceOrientation,
             originalSize: cameraImageResults.originalImageSize,
-            captureDataResults: captureDataResults,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            captureImageDataResults: captureImageDataResults,
+            captureMeshDataResults: captureMeshDataResults
         )
         return capturedData
     }

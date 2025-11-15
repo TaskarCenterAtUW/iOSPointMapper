@@ -164,8 +164,8 @@ struct ARCameraView: View {
             do {
                 objectLocation.setLocationAndHeading()
                 let captureData = try await manager.performFinalSessionUpdateIfPossible()
-                if (captureData.captureDataResults.segmentedClasses.isEmpty) ||
-                    (captureData.captureDataResults.segmentedMesh.totalVertexCount == 0) {
+                if (captureData.captureImageDataResults.segmentedClasses.isEmpty) ||
+                    (captureData.captureMeshDataResults.segmentedMesh.totalVertexCount == 0) {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
                 try manager.pause()

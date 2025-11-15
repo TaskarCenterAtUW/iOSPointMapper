@@ -158,7 +158,12 @@ struct AnnotationView: View {
     }
     
     private func isCurrentIndexValid() -> Bool {
-        let segmentedClasses = sharedAppData.currentCaptureDataRecord?.captureDataResults.segmentedClasses ?? []
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            /// TODO: Replace this with proper error handling
+            print("Current Capture Data Record is not of type CaptureImageData")
+            return false
+        }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
         guard currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count else {
             return false
         }
@@ -167,9 +172,15 @@ struct AnnotationView: View {
     
     private func setCurrentClass() {
         guard isCurrentIndexValid() else {
+            print("Current class index \(currentClassIndex) is out of bounds")
             return
         }
-        let segmentedClasses = sharedAppData.currentCaptureDataRecord?.captureDataResults.segmentedClasses ?? []
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            /// TODO: Replace this with proper error handling
+            print("Current Capture Data Record is not of type CaptureImageData")
+            return
+        }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
         currentClass = segmentedClasses[currentClassIndex]
     }
 }
