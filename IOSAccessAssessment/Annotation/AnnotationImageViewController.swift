@@ -9,7 +9,7 @@ import SwiftUI
 
 @MainActor
 protocol AnnotationImageProcessingOutputConsumer: AnyObject {
-    
+    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: UIImage?, overlayImage: UIImage?)
 }
 
 protocol AnnotationImageProcessingDelegate: AnyObject {
@@ -72,6 +72,9 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         constraintChildViewToParent(childView: imageView, parentView: subView)
         subView.addSubview(overlayView)
         constraintChildViewToParent(childView: overlayView, parentView: subView)
+        
+        annotationImageManager.outputConsumer = self
+        annotationImageManager.setOrientation(getOrientation())
     }
     
     private func constraintChildViewToParent(childView: UIView, parentView: UIView) {
@@ -96,6 +99,28 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
             return .portrait
         }
         return .landscapeLeft
+    }
+    
+    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: UIImage?, overlayImage: UIImage?) {
+        if let img = image {
+            imageView.image = img
+        }
+        if let overlayImg = overlayImage {
+            overlayView.image = overlayImg
+        }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        annotationImageManager.setOrientation(getOrientation())
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.annotationImageManager.setOrientation(self.getOrientation())
+            self.view.layoutIfNeeded()
+        })
     }
 }
 

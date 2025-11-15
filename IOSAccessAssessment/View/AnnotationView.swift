@@ -36,6 +36,7 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
+    @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     @State var currentClassIndex = 0
     @State var currentClass: AccessibilityFeatureClass? = nil
     @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
@@ -72,6 +73,9 @@ struct AnnotationView: View {
                     setCurrentClass()
                     manager.configure(selectedClasses: selectedClasses)
                 }
+                .onReceive(manager.$interfaceOrientation) { newOrientation in
+                    interfaceOrientation = newOrientation
+                }
             } else {
                 invalidPageView()
             }
@@ -91,8 +95,8 @@ struct AnnotationView: View {
     
     @ViewBuilder
     private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-//        interfaceOrientation.isLandscape ?
-//        AnyLayout(HStackLayout())(content) :
+        interfaceOrientation.isLandscape ?
+        AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
     }
     
