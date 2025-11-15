@@ -18,26 +18,12 @@ struct MeshGPUAnchor {
     var generation: Int = 0
 }
 
-struct MeshSnapshot {
+struct MeshGPUSnapshot {
     let vertexStride: Int
     let vertexOffset: Int
     let indexStride: Int
     let classificationStride: Int
-    let meshGPUAnchors: [UUID: MeshGPUAnchor]
-}
-
-enum MeshSnapshotError: Error, LocalizedError {
-    case bufferTooSmall(expected: Int, actual: Int)
-    case bufferCreationFailed
-    
-    var errorDescription: String? {
-        switch self {
-        case .bufferTooSmall(let expected, let actual):
-            return "Buffer too small. Expected at least \(expected) bytes, but got \(actual) bytes."
-        case .bufferCreationFailed:
-            return "Failed to create MTLBuffer."
-        }
-    }
+    let anchors: [UUID: MeshGPUAnchor]
 }
 
 /**
@@ -53,14 +39,18 @@ final class MeshGPUSnapshotGenerator: NSObject {
     private let anchorLifetimeThreshold: Int = 3 // Number of generations to keep missing anchors
     
     private let device: MTLDevice
-    var currentSnapshot: MeshSnapshot?
+    var currentSnapshot: MeshGPUSnapshot?
     
     init(device: MTLDevice) {
         self.device = device
     }
     
+    func reset() {
+        currentSnapshot = nil
+    }
+    
     func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
-        return currentSnapshot?.meshGPUAnchors[anchorId]
+        return currentSnapshot?.anchors[anchorId]
     }
     
     func snapshotAnchors(_ anchors: [ARAnchor]) throws {
@@ -70,10 +60,10 @@ final class MeshGPUSnapshotGenerator: NSObject {
         
         // First, update missing anchors from previous snapshot
         let missingAnchorIds: Set<UUID> = Set(
-            currentSnapshot?.meshGPUAnchors.keys.filter { !meshAnchorIds.contains($0) } ?? []
+            currentSnapshot?.anchors.keys.filter { !meshAnchorIds.contains($0) } ?? []
         )
         for missingId in missingAnchorIds {
-            guard var existingAnchor = currentSnapshot?.meshGPUAnchors[missingId] else {
+            guard var existingAnchor = currentSnapshot?.anchors[missingId] else {
                 continue
             }
             existingAnchor.generation += 1
@@ -89,25 +79,25 @@ final class MeshGPUSnapshotGenerator: NSObject {
             meshGPUAnchors[meshAnchor.identifier] = meshGPUAnchor
         }
         
-        currentSnapshot = MeshSnapshot(
+        currentSnapshot = MeshGPUSnapshot(
             vertexStride: vertexElemSize, vertexOffset: vertexOffset,
             indexStride: indexElemSize,
             classificationStride: classificationElemSize,
-            meshGPUAnchors: meshGPUAnchors
+            anchors: meshGPUAnchors
         )
     }
     
     func removeAnchors(_ anchors: [ARAnchor]) {
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
-        var meshGPUAnchors = currentSnapshot?.meshGPUAnchors ?? [:]
+        var meshGPUAnchors = currentSnapshot?.anchors ?? [:]
         for (_, meshAnchor) in meshAnchors.enumerated() {
             meshGPUAnchors.removeValue(forKey: meshAnchor.identifier)
         }
-        currentSnapshot = MeshSnapshot(
+        currentSnapshot = MeshGPUSnapshot(
             vertexStride: vertexElemSize, vertexOffset: vertexOffset,
             indexStride: indexElemSize,
             classificationStride: classificationElemSize,
-            meshGPUAnchors: meshGPUAnchors
+            anchors: meshGPUAnchors
         )
     }
     
@@ -123,7 +113,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         let classifications = geometry.classification
         let anchorTransform = meshAnchor.transform
         
-        var meshGPUAnchor: MeshGPUAnchor = try currentSnapshot?.meshGPUAnchors[meshAnchor.identifier] ?? {
+        var meshGPUAnchor: MeshGPUAnchor = try currentSnapshot?.anchors[meshAnchor.identifier] ?? {
             let vertexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             let indexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             return MeshGPUAnchor(
@@ -132,6 +122,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         }()
         
         // Assign vertex buffer
+        // MARK: This code assumes the vertex format will always be only Float3
         let vertexElemSize = MemoryLayout<Float>.stride * 3
         let vertexByteCount = vertices.count * vertexElemSize
         try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
@@ -160,6 +151,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         
         // Assign classification buffer (if available)
         if let classifications = classifications {
+            // MARK: This code assumes the classification type will always be only UInt8
             let classificationElemSize = MemoryLayout<UInt8>.stride
             let classificationByteCount = classifications.count * classificationElemSize
             if meshGPUAnchor.classificationBuffer == nil {

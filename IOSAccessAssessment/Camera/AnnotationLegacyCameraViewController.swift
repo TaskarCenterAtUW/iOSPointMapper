@@ -10,7 +10,7 @@ import SwiftUI
 /**
     A view controller that displays the camera image and the segmentation image for user feedback and annotation.
  */
-class AnnotationCameraViewController: UIViewController {
+class AnnotationLegacyCameraViewController: UIViewController {
     var cameraImage: UIImage?
     var segmentationImage: UIImage?
     var objectsImage: UIImage?
@@ -101,13 +101,13 @@ class AnnotationCameraViewController: UIViewController {
     }
 }
 
-struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
+struct HostedAnnotationLegacyCameraViewController: UIViewControllerRepresentable{
     let cameraImage: UIImage
     let segmentationImage: UIImage
     let objectsImage: UIImage
     
-    func makeUIViewController(context: Context) -> AnnotationCameraViewController {
-        let viewController = AnnotationCameraViewController(
+    func makeUIViewController(context: Context) -> AnnotationLegacyCameraViewController {
+        let viewController = AnnotationLegacyCameraViewController(
             cameraImage: cameraImage,
             segmentationImage: segmentationImage,
             objectsImage: objectsImage
@@ -115,7 +115,7 @@ struct HostedAnnotationCameraViewController: UIViewControllerRepresentable{
         return viewController
     }
     
-    func updateUIViewController(_ uiViewController: AnnotationCameraViewController, context: Context) {
+    func updateUIViewController(_ uiViewController: AnnotationLegacyCameraViewController, context: Context) {
         uiViewController.cameraImage = cameraImage
         uiViewController.segmentationImage = segmentationImage
         uiViewController.objectsImage = objectsImage

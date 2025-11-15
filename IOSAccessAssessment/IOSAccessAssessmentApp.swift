@@ -25,7 +25,6 @@ struct IOSAccessAssessmentApp: App {
     var body: some Scene {
         WindowGroup {
             if userState.isAuthenticated {
-//                SetupView()
                 if workspaceViewModel.isWorkspaceSelected {
                     SetupView()
                     .environmentObject(userState)

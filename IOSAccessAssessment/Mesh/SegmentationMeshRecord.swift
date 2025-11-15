@@ -45,10 +45,13 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
 @MainActor
 final class SegmentationMeshRecord {
     let entity: ModelEntity
-    var mesh: LowLevelMesh
     let name: String
     let color: UIColor
     let opacity: Float
+    
+    var mesh: LowLevelMesh
+    var vertexCount: Int
+    var indexCount: Int
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
@@ -58,7 +61,7 @@ final class SegmentationMeshRecord {
     
     init(
         _ context: MeshGPUContext,
-        meshSnapshot: MeshSnapshot,
+        meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         accessibilityFeatureClass: AccessibilityFeatureClass
@@ -78,31 +81,33 @@ final class SegmentationMeshRecord {
             accessibilityFeatureClass: accessibilityFeatureClass
         )
         
-        let descriptor = SegmentationMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
+        let descriptor = SegmentationMeshRecord.createDescriptor(meshGPUSnapshot: meshGPUSnapshot)
         self.mesh = try LowLevelMesh(descriptor: descriptor)
+        self.vertexCount = 0
+        self.indexCount = 0
         self.entity = try SegmentationMeshRecord.generateEntity(
             mesh: self.mesh, color: color, opacity: opacity, name: name
         )
         try self.replace(
-            meshSnapshot: meshSnapshot,
+            meshGPUSnapshot: meshGPUSnapshot,
             segmentationImage: segmentationImage, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
     }
     
     func replace(
-        meshSnapshot: MeshSnapshot,
+        meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
         try self.update(
-            meshSnapshot: meshSnapshot,
+            meshGPUSnapshot: meshGPUSnapshot,
             segmentationImage: segmentationImage,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
     }
     
     func update(
-        meshSnapshot: MeshSnapshot,
+        meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
     ) throws {
@@ -111,7 +116,12 @@ final class SegmentationMeshRecord {
         guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
             throw SegmentationMeshRecordError.emptySegmentation
         }
-        let meshGPUAnchors = meshSnapshot.meshGPUAnchors
+        CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
+        defer {
+            CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly)
+        }
+        
+        let meshGPUAnchors = meshGPUSnapshot.anchors
         
         let totalFaceCount = meshGPUAnchors.reduce(0) { $0 + $1.value.faceCount }
         let maxTriangles   = max(totalFaceCount, 1)     // avoid 0-sized buffers
@@ -123,8 +133,9 @@ final class SegmentationMeshRecord {
         // TODO: Optimize reallocation strategy to reduce overallocation
         if (mesh.descriptor.vertexCapacity < maxVerts) ||
             (mesh.descriptor.indexCapacity < maxIndices) {
-            print("SegmentationMeshRecord '\(self.name)' capacity exceeded. Reallocating mesh.")
-            let newDescriptor = SegmentationMeshRecord.createDescriptor(meshSnapshot: meshSnapshot)
+            let meshName = self.name.replacingOccurrences(of: " ", with: "_")
+            print("SegmentationMeshRecord '\(meshName)' capacity exceeded. Reallocating mesh.")
+            let newDescriptor = SegmentationMeshRecord.createDescriptor(meshGPUSnapshot: meshGPUSnapshot)
             mesh = try LowLevelMesh(descriptor: newDescriptor)
             let resource = try MeshResource(from: mesh)
             self.entity.model?.mesh = resource
@@ -179,7 +190,7 @@ final class SegmentationMeshRecord {
         
         var accessibilityFeatureMeshClassificationParams = self.accessibilityFeatureMeshClassificationParams
         
-        for (_, anchor) in meshSnapshot.meshGPUAnchors {
+        for (_, anchor) in meshGPUSnapshot.anchors {
             guard anchor.faceCount > 0 else { continue }
             
             let hasClass: UInt32 = anchor.classificationBuffer != nil ? 1 : 0
@@ -223,7 +234,7 @@ final class SegmentationMeshRecord {
         let triCount = outTriCount.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         // Clamp to capacity (defensive)
         let triangleCount = min(Int(triCount), maxTriangles)
-//        let vertexCount   = triangleCount * 3
+        let vertexCount   = triangleCount * 3
         let indexCount    = triangleCount * 3
 
         let minU = aabbMinU.contents().bindMemory(to: UInt32.self, capacity: 3)
@@ -257,6 +268,8 @@ final class SegmentationMeshRecord {
             )
         ])
         self.mesh = mesh
+        self.vertexCount = vertexCount
+        self.indexCount = indexCount
     }
     
     @inline(__always)
@@ -303,6 +316,7 @@ final class SegmentationMeshRecord {
     // This is safer way to create MTLTexture from CIImage, which does not assume pixelBuffer availability
     // This can be used once the CIImage usage pipeline is fixed.
     // Right now, there are issues with how color spaces are handled while creating CIImage in the pipeline.
+    // MARK: Also, when using this function, that seems to be some fidelity loss in the segmentation texture.
     private func getSegmentationMTLTexture(segmentationImage: CIImage, commandBuffer: MTLCommandBuffer) throws -> MTLTexture {
         // Create Segmentation texture from Segmentation CIImage
         let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
@@ -366,15 +380,15 @@ final class SegmentationMeshRecord {
         return lookupTable
     }
     
-    static func createDescriptor(meshSnapshot: MeshSnapshot) -> LowLevelMesh.Descriptor {
-        let vertexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.vertexCount }
-        let indexCount = meshSnapshot.meshGPUAnchors.values.reduce(0) { $0 + $1.indexCount }
+    static func createDescriptor(meshGPUSnapshot: MeshGPUSnapshot) -> LowLevelMesh.Descriptor {
+        let vertexCount = meshGPUSnapshot.anchors.values.reduce(0) { $0 + $1.vertexCount }
+        let indexCount = meshGPUSnapshot.anchors.values.reduce(0) { $0 + $1.indexCount }
         var descriptor = LowLevelMesh.Descriptor()
         descriptor.vertexAttributes = [
-            .init(semantic: .position, format: .float3, offset: meshSnapshot.vertexOffset)
+            .init(semantic: .position, format: .float3, offset: meshGPUSnapshot.vertexOffset)
         ]
         descriptor.vertexLayouts = [
-            .init(bufferIndex: 0, bufferStride: meshSnapshot.vertexStride)
+            .init(bufferIndex: 0, bufferStride: meshGPUSnapshot.vertexStride)
         ]
         // MARK: Assuming uint32 for indices
         descriptor.indexType = .uint32

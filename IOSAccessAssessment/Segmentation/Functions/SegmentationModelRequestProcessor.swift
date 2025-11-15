@@ -73,9 +73,7 @@ struct SegmentationModelRequestProcessor {
         let segmentedClassSet = Set(segmentedClasses)
         segmentedClasses = self.selectedClasses.filter{ segmentedClassSet.contains($0) }
         
-        let segmentationImage = CIImage(
-            cvPixelBuffer: segmentationBuffer
-        )
+        let segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer)
         
         return (segmentationImage: segmentationImage, segmentedClasses: segmentedClasses)
     }

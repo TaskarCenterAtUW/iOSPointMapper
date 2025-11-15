@@ -21,6 +21,14 @@ enum ProfileViewConstants {
         static let confirmationDialogConfirmText = "Log out"
         static let confirmationDialogCancelText = "Cancel"
     }
+    
+    enum Images {
+        static let logoutIcon = "rectangle.portrait.and.arrow.right"
+    }
+    
+    enum Constraints {
+        static let profileIconSize: CGFloat = 20
+    }
 }
 
 struct ProfileView: View {
@@ -78,11 +86,11 @@ struct ProfileView: View {
                     Text(ProfileViewConstants.Texts.logoutButtonText)
                         .foregroundStyle(.white)
                         .bold()
-                    Image(systemName: SetupViewConstants.Images.logoutIcon)
+                    Image(systemName: ProfileViewConstants.Images.logoutIcon)
                         .resizable()
                         .frame(
-                            width: SetupViewConstants.Constraints.logoutIconSize,
-                            height: SetupViewConstants.Constraints.logoutIconSize
+                            width: ProfileViewConstants.Constraints.profileIconSize,
+                            height: ProfileViewConstants.Constraints.profileIconSize
                         )
                         .foregroundStyle(.white)
                         .bold()
