@@ -35,6 +35,7 @@ struct AnnotationView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
+    @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     @State var currentClassIndex = 0
     @State var currentClass: AccessibilityFeatureClass? = nil
     @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
@@ -69,6 +70,7 @@ struct AnnotationView: View {
                 mainContent()
                 .onAppear() {
                     setCurrentClass()
+                    manager.configure(selectedClasses: selectedClasses)
                 }
             } else {
                 invalidPageView()
@@ -115,7 +117,7 @@ struct AnnotationView: View {
     private func mainContent() -> some View {
         if let currentClass = currentClass {
             orientationStack {
-                HostedAnnotationImageViewController()
+                HostedAnnotationImageViewController(annotationImageManager: manager)
                 
                 VStack {
                     HStack {

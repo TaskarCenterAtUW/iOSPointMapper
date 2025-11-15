@@ -289,7 +289,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      results.depthImage = depthImage
                      results.confidenceImage = confidenceImage
                      self.cameraImageResults = results
-                     self.outputConsumer?.cameraManagerImage(
+                     self.outputConsumer?.cameraOutputImage(
                          self, segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
@@ -316,7 +316,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
@@ -347,7 +347,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
@@ -378,7 +378,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: true)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
@@ -720,7 +720,7 @@ extension ARCameraManager {
             segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
             colorSpace: segmentationMaskColorSpace
         )
-        outputConsumer?.cameraManagerMesh(
+        outputConsumer?.cameraOutputMesh(
             self, meshGPUContext: meshGPUContext,
             meshGPUSnapshot: meshGPUSnapshot,
             for: nil,

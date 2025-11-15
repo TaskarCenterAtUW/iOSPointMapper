@@ -100,7 +100,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
 }
 
 struct HostedAnnotationImageViewController: UIViewControllerRepresentable{
-    @ObservedObject var annotationImageManager: AnnotationImageManager
+    var annotationImageManager: AnnotationImageManager
     
     func makeUIViewController(context: Context) -> AnnotationImageViewController {
         let vc = AnnotationImageViewController(annotationImageManager: annotationImageManager)

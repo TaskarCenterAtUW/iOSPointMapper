@@ -90,7 +90,7 @@ struct ARCameraView: View {
             // Show the camera view once manager is initialized, otherwise a loading indicator
             if manager.isConfigured {
                 orientationStack {
-                    HostedARCameraViewContainer(arCameraManager: manager)
+                    HostedARCameraViewContainer(arSessionCameraProcessingDelegate: manager)
                     VStack {
                         /// Text for hinting user with status
                         Text(cameraHintText)

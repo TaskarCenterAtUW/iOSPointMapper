@@ -15,12 +15,12 @@ import simd
 /// The consumer of post-processed camera outputs (e.g., overlay images).
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
-    func cameraManagerImage(_ manager: ARSessionCameraProcessingDelegate,
+    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
                             segmentationImage: CIImage?,
                             segmentationBoundingFrameImage: CIImage?,
                             for frame: ARFrame
     )
-    func cameraManagerMesh(_ manager: ARSessionCameraProcessingDelegate,
+    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor]?,
@@ -37,7 +37,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func pauseSession()
 }
 
-protocol ARSessionCameraProcessingDelegate: ARSessionDelegate, AnyObject {
+protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
     /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
     @MainActor
     var outputConsumer: ARSessionCameraProcessingOutputConsumer? { get set }
@@ -66,7 +66,7 @@ struct MeshOtherDetails: Sendable {
  */
 @MainActor
 final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
-    var arCameraManager: ARCameraManager
+    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
     
     /**
      Sub-view containing the other views
@@ -119,8 +119,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
     private var meshOtherDetails: MeshOtherDetails? = nil
     
-    init(arCameraManager: ARCameraManager) {
-        self.arCameraManager = arCameraManager
+    init(arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate) {
+        self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -171,14 +171,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         constraintChildViewToParent(childView: segmentationBoundingFrameView, parentView: subView)
         constraintChildViewToParent(childView: segmentationImageView, parentView: subView)
 
-        arView.session.delegate = arCameraManager
-        arCameraManager.outputConsumer = self
+        arView.session.delegate = arSessionCameraProcessingDelegate
+        arSessionCameraProcessingDelegate.outputConsumer = self
         
         applyDebugIfNeeded()
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
-        arCameraManager.setOrientation(getOrientation())
+        arSessionCameraProcessingDelegate.setOrientation(getOrientation())
     }
     
     private func constraintChildViewToParent(childView: UIView, parentView: UIView) {
@@ -268,7 +268,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
-        arCameraManager.setOrientation(getOrientation())
+        arSessionCameraProcessingDelegate.setOrientation(getOrientation())
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -277,7 +277,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             self.updateFitConstraints()
             self.updateAlignConstraints()
             self.updateAspectRatio()
-            self.arCameraManager.setOrientation(self.getOrientation())
+            self.arSessionCameraProcessingDelegate.setOrientation(self.getOrientation())
             self.view.layoutIfNeeded()
         })
     }
@@ -305,14 +305,14 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         // Add Anchor Entity
         arView.scene.addAnchor(anchorEntity)
         // Set the image resolution in the camera manager
-        arCameraManager.setVideoFormatImageResolution(videoFormat.imageResolution)
+        arSessionCameraProcessingDelegate.setVideoFormatImageResolution(videoFormat.imageResolution)
     }
     
     /**
     Resumes the AR session and sets its delegate.
      */
     func resumeSession() {
-        arView.session.delegate = arCameraManager
+        arView.session.delegate = arSessionCameraProcessingDelegate
         runSessionIfNeeded()
     }
     
@@ -328,7 +328,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         self.meshOtherDetails = nil
     }
     
-    func cameraManagerImage(_ manager: any ARSessionCameraProcessingDelegate,
+    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
                        segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                        for frame: ARFrame) {
         if let segmentationImage = segmentationImage {
@@ -341,7 +341,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func cameraManagerMesh(_ manager: any ARSessionCameraProcessingDelegate,
+    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
                            meshGPUContext: MeshGPUContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor]?,
@@ -406,10 +406,10 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
 }
 
 struct HostedARCameraViewContainer: UIViewControllerRepresentable {
-    @ObservedObject var arCameraManager: ARCameraManager
+    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
     
     func makeUIViewController(context: Context) -> ARCameraViewController {
-        let vc = ARCameraViewController(arCameraManager: arCameraManager)
+        let vc = ARCameraViewController(arSessionCameraProcessingDelegate: arSessionCameraProcessingDelegate)
         return vc
     }
     
