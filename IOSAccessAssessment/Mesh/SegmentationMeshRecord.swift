@@ -133,7 +133,8 @@ final class SegmentationMeshRecord {
         // TODO: Optimize reallocation strategy to reduce overallocation
         if (mesh.descriptor.vertexCapacity < maxVerts) ||
             (mesh.descriptor.indexCapacity < maxIndices) {
-            print("SegmentationMeshRecord '\(self.name)' capacity exceeded. Reallocating mesh.")
+            let meshName = self.name.replacingOccurrences(of: " ", with: "_")
+            print("SegmentationMeshRecord '\(meshName)' capacity exceeded. Reallocating mesh.")
             let newDescriptor = SegmentationMeshRecord.createDescriptor(meshGPUSnapshot: meshGPUSnapshot)
             mesh = try LowLevelMesh(descriptor: newDescriptor)
             let resource = try MeshResource(from: mesh)
@@ -315,6 +316,7 @@ final class SegmentationMeshRecord {
     // This is safer way to create MTLTexture from CIImage, which does not assume pixelBuffer availability
     // This can be used once the CIImage usage pipeline is fixed.
     // Right now, there are issues with how color spaces are handled while creating CIImage in the pipeline.
+    // MARK: Also, when using this function, that seems to be some fidelity loss in the segmentation texture.
     private func getSegmentationMTLTexture(segmentationImage: CIImage, commandBuffer: MTLCommandBuffer) throws -> MTLTexture {
         // Create Segmentation texture from Segmentation CIImage
         let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(

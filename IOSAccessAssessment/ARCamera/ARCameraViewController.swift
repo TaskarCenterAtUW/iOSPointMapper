@@ -367,7 +367,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                     )
                     totalVertexCount += existingMeshRecord.vertexCount
                 } catch {
-                    print("Error updating mesh entity: \(error)")
+                    print("Error updating mesh entity: \(error.localizedDescription)")
                 }
             } else {
                 // Create new mesh entity
@@ -384,7 +384,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                     anchorEntity.addChild(meshRecord.entity)
                     totalVertexCount += meshRecord.vertexCount
                 } catch {
-                    print("Error creating mesh entity: \(error)")
+                    print("Error creating mesh entity: \(error.localizedDescription)")
                 }
             }
         }
