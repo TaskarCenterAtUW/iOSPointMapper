@@ -71,15 +71,19 @@ struct AnnotationView: View {
                     setCurrentClass()
                 }
             } else {
-                VStack {
-                    Label {
-                        Text(AnnotationViewConstants.Texts.invalidPageText)
-                    } icon: {
-                        Image(systemName: AnnotationViewConstants.Images.errorIcon)
-                    }
-                    Spacer()
-                }
+                invalidPageView()
             }
+        }
+    }
+    
+    private func invalidPageView() -> some View {
+        VStack {
+            Label {
+                Text(AnnotationViewConstants.Texts.invalidPageText)
+            } icon: {
+                Image(systemName: AnnotationViewConstants.Images.errorIcon)
+            }
+            Spacer()
         }
     }
     
@@ -111,7 +115,7 @@ struct AnnotationView: View {
     private func mainContent() -> some View {
         if let currentClass = currentClass {
             orientationStack {
-                HostedAnnotationCameraViewController()
+                HostedAnnotationImageViewController()
                 
                 VStack {
                     HStack {
@@ -146,14 +150,7 @@ struct AnnotationView: View {
                 }
             }
         } else {
-            VStack {
-                Label {
-                    Text(AnnotationViewConstants.Texts.invalidPageText)
-                } icon: {
-                    Image(systemName: AnnotationViewConstants.Images.errorIcon)
-                }
-                Spacer()
-            }
+            invalidPageView()
         }
     }
     

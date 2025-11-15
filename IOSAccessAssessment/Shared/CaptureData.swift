@@ -11,7 +11,6 @@ import simd
 
 struct CaptureImageDataResults: Sendable {
     let segmentationLabelImage: CIImage
-    let segmentationCroppedSize: CGSize
     let segmentedClasses: [AccessibilityFeatureClass]
     let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
 }

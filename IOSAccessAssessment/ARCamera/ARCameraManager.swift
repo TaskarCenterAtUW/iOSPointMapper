@@ -90,7 +90,6 @@ struct ARCameraImageResults {
     let cameraIntrinsics: simd_float3x3
     let interfaceOrientation: UIInterfaceOrientation
     let originalImageSize: CGSize
-    let segmentationCroppedSize: CGSize
     
     var segmentationColorImage: CIImage? = nil
     var segmentationBoundingFrameImage: CIImage? = nil
@@ -101,7 +100,7 @@ struct ARCameraImageResults {
         detectedObjectMap: [UUID: DetectedAccessibilityFeature],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation,
-        originalImageSize: CGSize, segmentationCroppedSize: CGSize,
+        originalImageSize: CGSize,
         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil
     ) {
         self.cameraImage = cameraImage
@@ -117,7 +116,6 @@ struct ARCameraImageResults {
         self.interfaceOrientation = interfaceOrientation
         
         self.originalImageSize = originalImageSize
-        self.segmentationCroppedSize = segmentationCroppedSize
         
         self.segmentationColorImage = segmentationColorImage
         self.segmentationBoundingFrameImage = segmentationBoundingFrameImage
@@ -474,7 +472,6 @@ extension ARCameraManager {
             cameraIntrinsics: cameraIntrinsics,
             interfaceOrientation: interfaceOrientation,
             originalImageSize: originalSize,
-            segmentationCroppedSize: croppedSize,
             segmentationColorImage: segmentationColorImage,
             segmentationBoundingFrameImage: segmentationBoundingFrameImage
         )
@@ -751,7 +748,6 @@ extension ARCameraManager {
         )
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
-            segmentationCroppedSize: cameraImageResults.segmentationCroppedSize,
             segmentedClasses: cameraImageResults.segmentedClasses,
             detectedObjectMap: cameraImageResults.detectedObjectMap
         )
