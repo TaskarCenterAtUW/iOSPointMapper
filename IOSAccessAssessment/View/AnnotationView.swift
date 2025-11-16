@@ -73,9 +73,6 @@ struct AnnotationView: View {
                     setCurrentClass()
                     manager.configure(selectedClasses: selectedClasses)
                 }
-                .onReceive(manager.$interfaceOrientation) { newOrientation in
-                    interfaceOrientation = newOrientation
-                }
             } else {
                 invalidPageView()
             }
@@ -95,7 +92,7 @@ struct AnnotationView: View {
     
     @ViewBuilder
     private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        interfaceOrientation.isLandscape ?
+        manager.interfaceOrientation.isLandscape ?
         AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
     }
