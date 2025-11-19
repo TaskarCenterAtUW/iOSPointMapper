@@ -29,7 +29,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
-        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.35)
         iv.isUserInteractionEnabled = false
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
@@ -39,7 +39,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
-        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.35)
         iv.isUserInteractionEnabled = false
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv

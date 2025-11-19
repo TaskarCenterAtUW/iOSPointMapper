@@ -169,7 +169,8 @@ struct ARCameraView: View {
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
-            } catch ARCameraManagerError.finalSessionNoSegmentationClass {
+            } catch ARCameraManagerError.finalSessionNoSegmentationClass,
+                ARCameraViewError.captureNoSegmentationAccessibilityFeatures {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch ARCameraManagerError.finalSessionNoSegmentationMesh {
                 setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)

@@ -18,6 +18,10 @@ enum AnnotationViewConstants {
         static let nextText = "Next"
         
         static let invalidPageText = "Invalid Content. Please Close."
+        
+        static let managerStatusAlertTitleKey = "Error"
+        static let managerStatusAlertDismissButtonKey = "OK"
+        static let managerStatusAlertMessageSuffixKey = "Press OK to close this screen."
     }
     
     enum Images {
@@ -29,6 +33,24 @@ enum AnnotationViewConstants {
     }
 }
 
+enum AnnotationViewError: Error, LocalizedError {
+    case classIndexOutofBounds
+    case invalidCaptureDataRecord
+    case managerConfigurationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .classIndexOutofBounds:
+            return "The Current Class is not in the list."
+        case .invalidCaptureDataRecord:
+            return "The Current Capture is invalid."
+        case .managerConfigurationFailed:
+            return "Annotation Configuration failed"
+        }
+    }
+}
+
+
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
@@ -36,6 +58,7 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
+    @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     @State var currentClassIndex = 0
     @State var currentClass: AccessibilityFeatureClass? = nil
@@ -77,6 +100,14 @@ struct AnnotationView: View {
                 invalidPageView()
             }
         }
+        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+            Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                managerStatusViewModel.update(isFailed: false, errorMessage: "")
+                dismiss()
+            }
+        }, message: {
+            Text(managerStatusViewModel.errorMessage)
+        })
     }
     
     private func invalidPageView() -> some View {
@@ -159,8 +190,6 @@ struct AnnotationView: View {
     
     private func isCurrentIndexValid() -> Bool {
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            /// TODO: Replace this with proper error handling
-            print("Current Capture Data Record is not of type CaptureImageData")
             return false
         }
         let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
@@ -172,12 +201,17 @@ struct AnnotationView: View {
     
     private func setCurrentClass() {
         guard isCurrentIndexValid() else {
-            print("Current class index \(currentClassIndex) is out of bounds")
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(AnnotationViewError.classIndexOutofBounds.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
             return
         }
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            /// TODO: Replace this with proper error handling
-            print("Current Capture Data Record is not of type CaptureImageData")
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
             return
         }
         let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
@@ -189,7 +223,10 @@ struct AnnotationView: View {
               let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
               let currentClass = currentClass
         else {
-            print("Failed to configure AnnotationImageManager due to missing data")
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
             return
         }
         do {
@@ -199,7 +236,10 @@ struct AnnotationView: View {
                 accessibilityFeatureClass: currentClass
             )
         } catch {
-            print("Failed to configure AnnotationImageManager: \(error)")
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(AnnotationViewError.managerConfigurationFailed.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
         }
     }
 }

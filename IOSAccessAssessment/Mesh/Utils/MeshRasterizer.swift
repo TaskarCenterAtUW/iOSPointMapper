@@ -16,11 +16,11 @@ struct MeshRasterizer {
         let path = UIBezierPath()
         guard let firstPoint = points.first else { return path }
         
-        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x) * size.width, y: (1 - CGFloat(firstPoint.y)) * size.height)
+        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x) * size.width, y: CGFloat(firstPoint.y) * size.height)
         path.move(to: firstPixelPoint)
         
         for point in points.dropFirst() {
-            let pixelPoint = CGPoint(x: CGFloat(point.x) * size.width, y: (1 - CGFloat(point.y)) * size.height)
+            let pixelPoint = CGPoint(x: CGFloat(point.x) * size.width, y: CGFloat(point.y) * size.height)
             path.addLine(to: pixelPoint)
         }
         

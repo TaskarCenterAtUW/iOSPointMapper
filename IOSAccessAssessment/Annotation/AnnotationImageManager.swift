@@ -213,6 +213,8 @@ extension AnnotationImageManager {
         }
         
         var trianglePoints: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] = []
+        let originalWidth = Float(originalSize.width)
+        let originalHeight = Float(originalSize.height)
         for i in 0..<(vertexCount / 3) {
             let (v0, v1, v2) = (vertexPositions[i*3], vertexPositions[i*3 + 1], vertexPositions[i*3 + 2])
             let worldPoints = [v0, v1, v2].map {
@@ -230,8 +232,8 @@ extension AnnotationImageManager {
             }
             let normalizedPoints = [p0, p1, p2].map {
                 SIMD2<Float>(
-                    $0.x / Float(originalSize.width),
-                    $0.y / Float(originalSize.height)
+                    $0.x / originalWidth,
+                    $0.y / originalHeight
                 )
             }
             trianglePoints.append((normalizedPoints[0], normalizedPoints[1], normalizedPoints[2]))
