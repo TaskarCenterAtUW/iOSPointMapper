@@ -79,7 +79,7 @@ struct ARCameraView: View {
     @StateObject var objectLocation = ObjectLocation()
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
-    @State private var managerConfigureStatusViewModel = ManagerStatusViewModel()
+    @StateObject private var managerConfigureStatusViewModel = ManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
     @State private var showAnnotationView = false

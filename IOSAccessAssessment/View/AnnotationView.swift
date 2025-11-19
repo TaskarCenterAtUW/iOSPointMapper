@@ -50,6 +50,31 @@ enum AnnotationViewError: Error, LocalizedError {
     }
 }
 
+class AnnotationClassSelectionViewModel: ObservableObject {
+    @Published var currentIndex: Int? = nil
+    @Published var currentClass: AccessibilityFeatureClass? = nil
+    @Published var annotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
+    @Published var selectedAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    
+    func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
+        objectWillChange.send()
+        
+        print("Setting the current class selection")
+        guard index < classes.count else {
+            throw AnnotationViewError.classIndexOutofBounds
+        }
+        currentIndex = index
+        currentClass = classes[index]
+    }
+}
+
+class AnnotationInstanceSelectionViewModel: ObservableObject {
+    @Published var currentIndex: Int? = nil
+    @Published var currentInstance: AccessibilityFeature? = nil
+    @Published var annotationOptions: [AnnotationOption] = AnnotationOption.allCases
+    @Published var selectedAnnotationOption: AnnotationOption = AnnotationOption.default
+}
+
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
@@ -58,16 +83,12 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
+    
     @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
-    @State var currentInstanceIndex: Int? = nil
-    @State var currentInstance: DetectedAccessibilityFeature? = nil
-    @State var currentClassIndex = 0
-    @State var currentClass: AccessibilityFeatureClass? = nil
-    @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
-    @State var classAnnotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
-    @State var selectedInstanceAnnotationOption: AnnotationOption = AnnotationOption.default
-    @State var selectedClassAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    
+    @StateObject var classSelectionViewModel = AnnotationClassSelectionViewModel()
+    @StateObject var instanceSelectionViewModel = AnnotationInstanceSelectionViewModel()
     
     var body: some View {
         VStack {
@@ -94,15 +115,16 @@ struct AnnotationView: View {
             
             if (isCurrentIndexValid()) {
                 mainContent()
-                .onAppear() {
-                    handleOnAppear()
-                }
-                .onChange(of: currentClassIndex) { oldValue, newValue in
-                    handleOnIndexChange()
-                }
             } else {
                 invalidPageView()
             }
+        }
+        .onAppear() {
+            handleOnAppear()
+        }
+        .onChange(of: classSelectionViewModel.currentClass) { oldClass, newClass in
+            print("Changing Class Selection index")
+            handleOnClassChange()
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -134,14 +156,14 @@ struct AnnotationView: View {
     
     private func annotationOptionsView() -> some View {
         VStack(spacing: 10) {
-            ForEach(classAnnotationOptions, id: \.self) { option in
+            ForEach(classSelectionViewModel.annotationOptions, id: \.self) { option in
                 Button(action: {
                 }) {
                     Text(option.rawValue)
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(selectedClassAnnotationOption == option ? Color.blue : Color.gray)
+                        .background(classSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
                         .foregroundStyle(.white)
                         .cornerRadius(10)
                 }
@@ -151,7 +173,7 @@ struct AnnotationView: View {
     
     @ViewBuilder
     private func mainContent() -> some View {
-        if let currentClass = currentClass {
+        if let currentClass = classSelectionViewModel.currentClass {
             orientationStack {
                 HostedAnnotationImageViewController(annotationImageManager: manager)
                 
@@ -193,75 +215,30 @@ struct AnnotationView: View {
     }
     
     private func isCurrentIndexValid() -> Bool {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let currentClassIndex = classSelectionViewModel.currentIndex else {
             return false
         }
         let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-        guard currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count else {
-            return false
-        }
-        return true
+        return (currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count)
     }
     
     private func isCurrentIndexLast() -> Bool {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let currentClassIndex = classSelectionViewModel.currentIndex else {
             return false
         }
         let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
         return currentClassIndex == segmentedClasses.count - 1
     }
     
-    private func setCurrentClass() throws {
-        guard isCurrentIndexValid() else {
-            throw AnnotationViewError.classIndexOutofBounds
-        }
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            throw AnnotationViewError.invalidCaptureDataRecord
-        }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-        currentClass = segmentedClasses[currentClassIndex]
-    }
-    
-    private func configureManager() throws {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-              let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
-              let currentClass = currentClass
-        else {
-            throw AnnotationViewError.invalidCaptureDataRecord
-        }
-        try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
-        try manager.update(
-            captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-            accessibilityFeatureClass: currentClass
-        )
-    }
-    
-    private func updateManager() throws {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-              let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
-              let currentClass = currentClass
-        else {
-            throw AnnotationViewError.invalidCaptureDataRecord
-        }
-        try manager.update(
-            captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-            accessibilityFeatureClass: currentClass
-        )
-    }
-    
-    private func confirmAnnotation() {
-        if isCurrentIndexLast() {
-            self.dismiss()
-        }
-        else {
-            currentClassIndex += 1
-        }
-    }
-    
     private func handleOnAppear() {
         do {
-            try setCurrentClass()
-            try configureManager()
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            try classSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
@@ -269,10 +246,39 @@ struct AnnotationView: View {
         }
     }
     
-    private func handleOnIndexChange() {
+    private func handleOnClassChange() {
         do {
-            try setCurrentClass()
-            try updateManager()
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
+                  let currentClass = classSelectionViewModel.currentClass else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            if (!manager.isConfigured) {
+                try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
+            }
+            try manager.update(
+                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
+                accessibilityFeatureClass: currentClass
+            )
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        }
+    }
+    
+    private func confirmAnnotation() {
+        guard (!isCurrentIndexLast()) else {
+            self.dismiss()
+            return
+        }
+        do {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let currentClassIndex = classSelectionViewModel.currentIndex else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            try classSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
