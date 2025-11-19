@@ -9,7 +9,7 @@ import SwiftUI
 
 @MainActor
 protocol AnnotationImageProcessingOutputConsumer: AnyObject {
-    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: UIImage?, overlayImage: UIImage?)
+    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: CIImage?, overlayImage: CIImage?)
 }
 
 protocol AnnotationImageProcessingDelegate: AnyObject {
@@ -101,12 +101,14 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         return .landscapeLeft
     }
     
-    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: UIImage?, overlayImage: UIImage?) {
+    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: CIImage?, overlayImage: CIImage?) {
         if let img = image {
-            imageView.image = img
+            let uiImage = UIImage(ciImage: img)
+            imageView.image = uiImage
         }
         if let overlayImg = overlayImage {
-            overlayView.image = overlayImg
+            let uiOverlayImage = UIImage(ciImage: overlayImg)
+            overlayView.image = uiOverlayImage
         }
     }
     

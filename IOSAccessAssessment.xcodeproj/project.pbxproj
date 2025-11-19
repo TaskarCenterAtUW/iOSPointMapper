@@ -55,6 +55,7 @@
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */; };
 		A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A12EC9C3F60039298C /* MeshRasterizer.swift */; };
+		A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
 		A3B2DDBD2DC99256003416FB /* ContourRequestLegacyProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */; };
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
@@ -199,6 +200,7 @@
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageManager.swift; sourceTree = "<group>"; };
 		A3A413A12EC9C3F60039298C /* MeshRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRasterizer.swift; sourceTree = "<group>"; };
+		A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RasterizeConfig.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
 		A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestLegacyProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
@@ -378,6 +380,7 @@
 			isa = PBXGroup;
 			children = (
 				A35547C02EC1AE4600F43AFD /* Utils */,
+				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
 				A35547C72EC1B0D900F43AFD /* MapData.swift */,
 				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
 				A355471D2EC1A47200F43AFD /* SharedAppData.swift */,
@@ -919,6 +922,7 @@
 				A3E84ED02DDAC7A50096A645 /* AnnotationLegacyImageManager.swift in Sources */,
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */,
+				A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,

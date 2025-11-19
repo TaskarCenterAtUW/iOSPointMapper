@@ -11,6 +11,7 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
     case imageResultCacheFailed
     case meshClassNotFound(AccessibilityFeatureClass)
     case invalidVertexData
+    case meshRasterizationFailed
     
     var errorDescription: String? {
         switch self {
@@ -22,6 +23,8 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
             return "No mesh found for the accessibility feature class: \(featureClass.name)."
         case .invalidVertexData:
             return "The vertex data for the mesh is invalid."
+        case .meshRasterizationFailed:
+            return "Failed to rasterize the mesh into an image."
         }
     }
 }
@@ -49,10 +52,30 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     var annotationImageResults: AnnotationImageResults?
     
     func configure(
-        selectedClasses: [AccessibilityFeatureClass]
+        selectedClasses: [AccessibilityFeatureClass],
+        captureImageData: (any CaptureImageDataProtocol)
     ) {
         self.selectedClasses = selectedClasses
         self.isConfigured = true
+        
+        let cameraOutputImage = getCameraOutputImage(
+            cameraImage: captureImageData.cameraImage,
+            toSize: Constants.SelectedAccessibilityFeatureConfig.inputSize
+        )
+        let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
+            cameraImage: captureImageData.cameraImage,
+            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+            cameraOutputImage: cameraOutputImage,
+            overlayedOutputImage: nil
+        )
+        self.annotationImageResults = annotationImageResults
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.annotationOutputImage(
+                    self, image: cameraOutputImage, overlayImage: nil
+                )
+            }
+        }
     }
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
@@ -75,18 +98,36 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             captureMeshData: captureMeshData,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
-    }
-    
-    func update(
-        accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws {
-        guard isConfigured else {
-            throw AnnotatiomImageManagerError.notConfigured
+        guard let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
+            meshTriangles: trianglePoints, size: captureImageData.originalSize,
+            boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
+        ) else {
+            throw AnnotatiomImageManagerError.meshRasterizationFailed
         }
-        guard let cameraImage = self.annotationImageResults?.cameraImage,
-              let segmentationLabelImage = self.annotationImageResults?.segmentationLabelImage else {
+        guard var annotationImageResults = self.annotationImageResults,
+              let cameraOutputImage = annotationImageResults.cameraOutputImage
+        else {
             throw AnnotatiomImageManagerError.imageResultCacheFailed
         }
+        let overlayedOutputImage = CIImage(cgImage: rasterizedMeshImage)
+        print("Rasterized mesh image extent: \(overlayedOutputImage.extent)")
+        annotationImageResults.overlayedOutputImage = overlayedOutputImage
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.annotationOutputImage(
+                    self,
+                    image: cameraOutputImage,
+                    overlayImage: overlayedOutputImage
+                )
+            }
+        }
+    }
+    
+    private func getCameraOutputImage(
+        cameraImage: CIImage,
+        toSize size: CGSize
+    ) -> CIImage {
+        return cameraImage
     }
     
     /**
@@ -105,9 +146,9 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         let vertexOffset: Int = capturedMeshSnapshot.vertexOffset
         let vertexData: Data = featureCapturedMeshSnapshot.vertexData
         let vertexCount: Int = featureCapturedMeshSnapshot.vertexCount
-        let indexStride: Int = capturedMeshSnapshot.indexStride
-        let indexData: Data = featureCapturedMeshSnapshot.indexData
-        let indexCount: Int = featureCapturedMeshSnapshot.indexCount
+//        let indexStride: Int = capturedMeshSnapshot.indexStride
+//        let indexData: Data = featureCapturedMeshSnapshot.indexData
+//        let indexCount: Int = featureCapturedMeshSnapshot.indexCount
         
         let cameraTransform = captureImageData.cameraTransform
         let viewMatrix = cameraTransform.inverse // world -> camera
@@ -130,7 +171,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         }
         
         var trianglePoints: [(CGPoint, CGPoint, CGPoint)] = []
-        for i in 0..<(indexCount / 3) {
+        for i in 0..<(vertexCount / 3) {
             let (v0, v1, v2) = (vertexPositions[i*3], vertexPositions[i*3 + 1], vertexPositions[i*3 + 2])
             let worldPoints = [v0, v1, v2].map {
                 projectWorldToPixel(
@@ -147,6 +188,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             }
             trianglePoints.append((p0, p1, p2))
         }
+        
         return trianglePoints
     }
     

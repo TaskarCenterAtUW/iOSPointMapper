@@ -9,26 +9,6 @@ import CoreImage
 import UIKit
 
 /**
-    Rasterizes detected contour objects into a CIImage.
-    A helper function that is not used in the main app currently, but can be useful for debugging or visualization purposes.
- */
-
-// Temporary config struct
-struct RasterizeConfig {
-    let draw: Bool
-    let color: UIColor?
-    let width: CGFloat
-    let alpha: CGFloat
-    
-    init(draw: Bool = true, color: UIColor?, width: CGFloat = 2.0, alpha: CGFloat = 1.0) {
-        self.draw = draw
-        self.color = color
-        self.width = width
-        self.alpha = alpha
-    }
-}
-
-/**
  A temporary struct to perform rasterization of detected objects.
  TODO: This should be replaced by a lower-level rasterization function that uses Metal or Core Graphics directly.
  */
