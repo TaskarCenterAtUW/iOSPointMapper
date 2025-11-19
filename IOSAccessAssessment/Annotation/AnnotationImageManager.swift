@@ -8,6 +8,7 @@ import SwiftUI
 
 enum AnnotatiomImageManagerError: Error, LocalizedError {
     case notConfigured
+    case cameraImageProcessingFailed
     case imageResultCacheFailed
     case meshClassNotFound(AccessibilityFeatureClass)
     case invalidVertexData
@@ -17,6 +18,8 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
         switch self {
         case .notConfigured:
             return "AnnotationImageManager is not configured."
+        case .cameraImageProcessingFailed:
+            return "Failed to process the camera image."
         case .imageResultCacheFailed:
             return "Failed to retrieve the cached annotation image results."
         case .meshClassNotFound(let featureClass):
@@ -35,7 +38,7 @@ struct AnnotationImageResults {
     let segmentationLabelImage: CIImage
     
     var cameraOutputImage: CIImage? = nil
-    var overlayedOutputImage: CIImage? = nil
+    var overlayOutputImage: CIImage? = nil
 }
 
 final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
@@ -54,19 +57,18 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func configure(
         selectedClasses: [AccessibilityFeatureClass],
         captureImageData: (any CaptureImageDataProtocol)
-    ) {
+    ) throws {
         self.selectedClasses = selectedClasses
         self.isConfigured = true
         
-        let cameraOutputImage = getCameraOutputImage(
-            cameraImage: captureImageData.cameraImage,
-            toSize: Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let cameraOutputImage = try getCameraOutputImage(
+            captureImageData: captureImageData
         )
         let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
             cameraImage: captureImageData.cameraImage,
             segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
             cameraOutputImage: cameraOutputImage,
-            overlayedOutputImage: nil
+            overlayOutputImage: nil
         )
         self.annotationImageResults = annotationImageResults
         Task {
@@ -93,6 +95,11 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         guard isConfigured else {
             throw AnnotatiomImageManagerError.notConfigured
         }
+        guard var annotationImageResults = self.annotationImageResults,
+              let cameraOutputImage = annotationImageResults.cameraOutputImage
+        else {
+            throw AnnotatiomImageManagerError.imageResultCacheFailed
+        }
         let trianglePointsNormalized = try getNormalizedTrianglePoints(
             captureImageData: captureImageData,
             captureMeshData: captureMeshData,
@@ -104,31 +111,67 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         ) else {
             throw AnnotatiomImageManagerError.meshRasterizationFailed
         }
-        guard var annotationImageResults = self.annotationImageResults,
-              let cameraOutputImage = annotationImageResults.cameraOutputImage
-        else {
-            throw AnnotatiomImageManagerError.imageResultCacheFailed
-        }
-        let overlayedOutputImage = CIImage(cgImage: rasterizedMeshImage)
-        annotationImageResults.overlayedOutputImage = overlayedOutputImage
+        let overlayOutputImage = try getOverlayOutputImage(
+            rasterizedMeshImage: rasterizedMeshImage,
+            captureMeshData: captureMeshData
+        )
+        annotationImageResults.overlayOutputImage = overlayOutputImage
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
                     self,
                     image: cameraOutputImage,
-                    overlayImage: overlayedOutputImage
+                    overlayImage: overlayOutputImage
                 )
             }
         }
     }
     
     private func getCameraOutputImage(
-        cameraImage: CIImage,
-        toSize size: CGSize
-    ) -> CIImage {
-        return cameraImage
+        captureImageData: (any CaptureImageDataProtocol)
+    ) throws -> CIImage {
+        let cameraImage = captureImageData.cameraImage
+        let interfaceOrientation = captureImageData.interfaceOrientation
+//        let originalSize = captureImageData.originalSize
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = cameraImage.oriented(imageOrientation)
+        let cameraOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let cameraCgImage = cIContext.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
+            throw AnnotatiomImageManagerError.cameraImageProcessingFailed
+        }
+        return CIImage(cgImage: cameraCgImage)
     }
     
+    private func getOverlayOutputImage(
+        rasterizedMeshImage: CGImage,
+        captureMeshData: (any CaptureMeshDataProtocol)
+    ) throws -> CIImage {
+        let rasterizedMeshCIImage = CIImage(cgImage: rasterizedMeshImage)
+        let interfaceOrientation = captureMeshData.interfaceOrientation
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
+        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+            throw AnnotatiomImageManagerError.meshRasterizationFailed
+        }
+        return CIImage(cgImage: overlayCgImage)
+    }
+}
+
+/**
+    Extension to handle mesh vertex processing and projection.
+ */
+extension AnnotationImageManager {
     /**
      Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
      */

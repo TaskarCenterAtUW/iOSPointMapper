@@ -410,7 +410,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.segmentationNotConfigured
         }
         let originalSize: CGSize = image.extent.size
-        let croppedSize = AccessibilityFeatureConfig.mapillaryCustom11Config.inputSize
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

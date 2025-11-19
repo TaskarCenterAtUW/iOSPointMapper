@@ -185,23 +185,21 @@ struct AnnotationView: View {
     }
     
     private func configureManager() {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
+              let currentClass = currentClass
+        else {
             print("Failed to configure AnnotationImageManager due to missing data")
             return
         }
-        manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
-        guard let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
-              let currentClass = currentClass else {
-            print("Failed to configure AnnotationImageManager due to missing mesh data or current class")
-            return
-        }
         do {
+            try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
             try manager.update(
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass
             )
         } catch {
-            print("Failed to update AnnotationImageManager: \(error)")
+            print("Failed to configure AnnotationImageManager: \(error)")
         }
     }
 }
