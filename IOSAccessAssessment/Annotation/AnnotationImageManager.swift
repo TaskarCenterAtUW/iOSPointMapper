@@ -93,13 +93,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         guard isConfigured else {
             throw AnnotatiomImageManagerError.notConfigured
         }
-        let trianglePoints = try getTrianglePoints(
+        let trianglePointsNormalized = try getNormalizedTrianglePoints(
             captureImageData: captureImageData,
             captureMeshData: captureMeshData,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
         guard let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
-            meshTriangles: trianglePoints, size: captureImageData.originalSize,
+            trianglePointsNormalized: trianglePointsNormalized, size: captureImageData.originalSize,
             boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
         ) else {
             throw AnnotatiomImageManagerError.meshRasterizationFailed
@@ -110,7 +110,6 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             throw AnnotatiomImageManagerError.imageResultCacheFailed
         }
         let overlayedOutputImage = CIImage(cgImage: rasterizedMeshImage)
-        print("Rasterized mesh image extent: \(overlayedOutputImage.extent)")
         annotationImageResults.overlayedOutputImage = overlayedOutputImage
         Task {
             await MainActor.run {
@@ -131,13 +130,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     }
     
     /**
-     Retrieves mesh details (including vertex positions) for the given accessibility feature class.
+     Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
      */
-    private func getTrianglePoints(
+    private func getNormalizedTrianglePoints(
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol),
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [(CGPoint, CGPoint, CGPoint)] {
+    ) throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
         let capturedMeshSnapshot = captureMeshData.captureMeshDataResults.segmentedMesh
         guard let featureCapturedMeshSnapshot = capturedMeshSnapshot.anchors[accessibilityFeatureClass] else {
             throw AnnotatiomImageManagerError.meshClassNotFound(accessibilityFeatureClass)
@@ -170,7 +169,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             }
         }
         
-        var trianglePoints: [(CGPoint, CGPoint, CGPoint)] = []
+        var trianglePoints: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] = []
         for i in 0..<(vertexCount / 3) {
             let (v0, v1, v2) = (vertexPositions[i*3], vertexPositions[i*3 + 1], vertexPositions[i*3 + 2])
             let worldPoints = [v0, v1, v2].map {
@@ -186,7 +185,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
                   let p2 = worldPoints[2] else {
                 continue
             }
-            trianglePoints.append((p0, p1, p2))
+            let normalizedPoints = [p0, p1, p2].map {
+                SIMD2<Float>(
+                    $0.x / Float(originalSize.width),
+                    $0.y / Float(originalSize.height)
+                )
+            }
+            trianglePoints.append((normalizedPoints[0], normalizedPoints[1], normalizedPoints[2]))
         }
         
         return trianglePoints
@@ -195,7 +200,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     private func projectWorldToPixel(_ world: simd_float3,
                              viewMatrix: simd_float4x4, // (world->camera)
                              intrinsics K: simd_float3x3,
-                             imageSize: CGSize) -> CGPoint? {
+                             imageSize: CGSize) -> SIMD2<Float>? {
         let p4   = simd_float4(world, 1.0)
         let pc   = viewMatrix * p4                                  // camera space
         let x = pc.x, y = pc.y, z = pc.z
@@ -221,7 +226,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         if u.isFinite && v.isFinite &&
             u >= 0 && v >= 0 &&
             u < Float(imageSize.width) && v < Float(imageSize.height) {
-            return CGPoint(x: CGFloat(u.rounded()), y: CGFloat(v.rounded()))
+            return SIMD2<Float>(u.rounded(), v.rounded())
         }
         return nil
     }
