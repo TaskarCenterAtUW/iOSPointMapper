@@ -93,8 +93,10 @@ struct AnnotationView: View {
             if (isCurrentIndexValid()) {
                 mainContent()
                 .onAppear() {
-                    setCurrentClass()
-                    configureManager()
+                    handleOnAppear()
+                }
+                .onChange(of: currentClassIndex) { oldValue, newValue in
+                    handleOnIndexChange()
                 }
             } else {
                 invalidPageView()
@@ -176,9 +178,9 @@ struct AnnotationView: View {
                     .padding()
                     
                     Button(action: {
-                        /// Finish annotation action
+                        confirmAnnotation()
                     }) {
-                        Text(AnnotationViewConstants.Texts.finishText)
+                        Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                             .padding()
                     }
                 }
@@ -199,47 +201,80 @@ struct AnnotationView: View {
         return true
     }
     
-    private func setCurrentClass() {
+    private func isCurrentIndexLast() -> Bool {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            return false
+        }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        return currentClassIndex == segmentedClasses.count - 1
+    }
+    
+    private func setCurrentClass() throws {
         guard isCurrentIndexValid() else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.classIndexOutofBounds.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
+            throw AnnotationViewError.classIndexOutofBounds
         }
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
+            throw AnnotationViewError.invalidCaptureDataRecord
         }
         let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
         currentClass = segmentedClasses[currentClassIndex]
     }
     
-    private func configureManager() {
+    private func configureManager() throws {
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
               let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
               let currentClass = currentClass
         else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
+            throw AnnotationViewError.invalidCaptureDataRecord
         }
+        try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
+        try manager.update(
+            captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
+            accessibilityFeatureClass: currentClass
+        )
+    }
+    
+    private func updateManager() throws {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
+              let currentClass = currentClass
+        else {
+            throw AnnotationViewError.invalidCaptureDataRecord
+        }
+        try manager.update(
+            captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
+            accessibilityFeatureClass: currentClass
+        )
+    }
+    
+    private func confirmAnnotation() {
+        if isCurrentIndexLast() {
+            self.dismiss()
+        }
+        else {
+            currentClassIndex += 1
+        }
+    }
+    
+    private func handleOnAppear() {
         do {
-            try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
-            try manager.update(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-                accessibilityFeatureClass: currentClass
-            )
+            try setCurrentClass()
+            try configureManager()
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(AnnotationViewError.managerConfigurationFailed.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        }
+    }
+    
+    private func handleOnIndexChange() {
+        do {
+            try setCurrentClass()
+            try updateManager()
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
         }
     }
 }
