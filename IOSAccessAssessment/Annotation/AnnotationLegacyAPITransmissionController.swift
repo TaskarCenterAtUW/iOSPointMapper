@@ -18,10 +18,10 @@ class AnnotatedDetectedObject {
     var isAll: Bool = false
     var label: String?
     
-    var selectedOption: AnnotationOption = .individualOption(.agree)
+    var selectedOption: AnnotationOptionParent = .individualOption(.agree)
     
     init(object: DetectedObject?, classLabel: UInt8, depthValue: Float, isAll: Bool = false,
-         label: String? = AnnotationViewConstants.Texts.selectAllLabelText) {
+         label: String? = AnnotationLegacyViewConstants.Texts.selectAllLabelText) {
         self.object = object
         self.classLabel = classLabel
         self.depthValue = depthValue
@@ -33,7 +33,7 @@ class AnnotatedDetectedObject {
 }
 
 // Extension for uploading the annotated changes to the server
-extension AnnotationView {
+extension AnnotationLegacyView {
     func uploadAnnotatedChanges(
         annotatedDetectedObjects: [AnnotatedDetectedObject], accessibilityFeatureClass: AccessibilityFeatureClass
     ) {
@@ -43,7 +43,7 @@ extension AnnotationView {
         // If the "all" object has selected option as .discard, we discard all objects.
         if let allObject = allObjects.first, allObject.selectedOption == .classOption(.discard) {
 //            print("Discarding all objects")
-            updateUploadStatus(true, message: AnnotationViewConstants.Texts.discardingAllObjectsMessage)
+            updateUploadStatus(true, message: AnnotationLegacyViewConstants.Texts.discardingAllObjectsMessage)
             return
         }
         let uploadObjects = annotatedDetectedObjects.filter { annotatedDetectedObject in
@@ -55,7 +55,7 @@ extension AnnotationView {
                     annotatedDetectedObject.selectedOption != .individualOption(.discard))
         }
         guard !uploadObjects.isEmpty else {
-            updateUploadStatus(true, message: AnnotationViewConstants.Texts.noObjectsToUploadMessage)
+            updateUploadStatus(true, message: AnnotationLegacyViewConstants.Texts.noObjectsToUploadMessage)
             return
         }
         
@@ -115,7 +115,7 @@ extension AnnotationView {
         }
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
+            updateUploadStatus(false, message: AnnotationLegacyViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: wayDataOperations) { result in
@@ -166,7 +166,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationLegacyViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }
@@ -187,7 +187,7 @@ extension AnnotationView {
         }
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
+            updateUploadStatus(false, message: AnnotationLegacyViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
@@ -215,7 +215,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationLegacyViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }
@@ -237,7 +237,7 @@ extension AnnotationView {
         let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
         
         guard let workspaceId = workspaceViewModel.workspaceId else {
-            updateUploadStatus(false, message: AnnotationViewConstants.Texts.workspaceIdNilMessage)
+            updateUploadStatus(false, message: AnnotationLegacyViewConstants.Texts.workspaceIdNilMessage)
             return
         }
         ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
@@ -263,7 +263,7 @@ extension AnnotationView {
                     }
                 }
             case .failure(let error):
-                updateUploadStatus(false, message: "\(AnnotationViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
+                updateUploadStatus(false, message: "\(AnnotationLegacyViewConstants.Texts.apiFailedMessage)\n\(error.localizedDescription)")
             }
         }
     }

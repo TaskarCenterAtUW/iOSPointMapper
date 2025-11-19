@@ -22,6 +22,10 @@ enum ARCameraManagerError: Error, LocalizedError {
     case meshSnapshotGeneratorUnavailable
     case meshSnapshotProcessingFailed
     case anchorEntityNotCreated
+    case finalSessionNotConfigured
+    case finalSessionMeshUnavailable
+    case finalSessionNoSegmentationClass
+    case finalSessionNoSegmentationMesh
     
     var errorDescription: String? {
         switch self {
@@ -49,6 +53,14 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "Mesh snapshot processing failed."
         case .anchorEntityNotCreated:
             return "Anchor Entity has not been created."
+        case .finalSessionNotConfigured:
+            return "Final session update not configured."
+        case .finalSessionMeshUnavailable:
+            return "Final session mesh data unavailable."
+        case .finalSessionNoSegmentationClass:
+            return "No segmentation class available in final session."
+        case .finalSessionNoSegmentationMesh:
+            return "No segmentation mesh available in final session."
         }
     }
 }
@@ -87,7 +99,8 @@ struct ARCameraImageResults {
         segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
         detectedObjectMap: [UUID: DetectedAccessibilityFeature],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        interfaceOrientation: UIInterfaceOrientation, originalImageSize: CGSize,
+        interfaceOrientation: UIInterfaceOrientation,
+        originalImageSize: CGSize,
         segmentationColorImage: CIImage? = nil, segmentationBoundingFrameImage: CIImage? = nil
     ) {
         self.cameraImage = cameraImage
@@ -99,7 +112,9 @@ struct ARCameraImageResults {
         self.detectedObjectMap = detectedObjectMap
         self.cameraTransform = cameraTransform
         self.cameraIntrinsics = cameraIntrinsics
+        
         self.interfaceOrientation = interfaceOrientation
+        
         self.originalImageSize = originalImageSize
         
         self.segmentationColorImage = segmentationColorImage
@@ -108,7 +123,7 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    var meshSnapshot: MeshSnapshot
+    var meshGPUSnapshot: MeshGPUSnapshot
     
     var meshAnchors: [ARMeshAnchor] = []
     var segmentationLabelImage: CIImage
@@ -118,14 +133,14 @@ struct ARCameraMeshResults {
     var lastUpdated: TimeInterval
     
     init(
-        meshSnapshot: MeshSnapshot,
+        meshGPUSnapshot: MeshGPUSnapshot,
         meshAnchors: [ARMeshAnchor] = [],
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
         lastUpdated: TimeInterval,
     ) {
-        self.meshSnapshot = meshSnapshot
+        self.meshGPUSnapshot = meshGPUSnapshot
         self.meshAnchors = meshAnchors
         self.segmentationLabelImage = segmentationLabelImage
         self.cameraTransform = cameraTransform
@@ -144,11 +159,6 @@ struct ARCameraCache {
     }
 }
 
-struct ARCameraFinalResults {
-    let cameraImageResults: ARCameraImageResults
-    let cameraMeshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord]
-}
-
 /**
     An object that manages the AR session and processes camera frames for segmentation using a provided segmentation pipeline.
  
@@ -159,12 +169,11 @@ struct ARCameraFinalResults {
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
-    var meshSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+    
     // TODO: Try to Initialize the context once and share across the app
     var meshGPUContext: MeshGPUContext? = nil
-    var isConfigured: Bool {
-        return (segmentationPipeline != nil) && (meshSnapshotGenerator != nil)
-    }
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -176,17 +185,28 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var meshFrameRate: Int = 15
     var lastMeshFrameTime: TimeInterval = 0
     
+    // Contexts depending on type of color space processing required
+    let colorContext = CIContext(options: nil)
+    let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
     // Properties for processing camera and depth frames
-    var ciContext = CIContext(options: nil)
     // Pixel buffer pools for rendering camera frames to fixed size as segmentation model input (pre-defined size)
-    var cameraPixelBufferPool: CVPixelBufferPool? = nil
-    var cameraColorSpace: CGColorSpace? = nil
+    var cameraCroppedPixelBufferPool: CVPixelBufferPool? = nil
+    var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    var cameraPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
 //    var depthPixelBufferPool: CVPixelBufferPool? = nil
 //    var depthColorSpace: CGColorSpace? = nil
     // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
-    var segmentationPixelBufferPool: CVPixelBufferPool? = nil
-    var segmentationColorSpace: CGColorSpace? = nil
+    var segmentationMaskPixelBufferPool: CVPixelBufferPool? = nil
+    var segmentationMaskPixelFormatType: OSType = kCVPixelFormatType_OneComponent8
+    /// TODO: While the segmentation color space is hard-coded for now, add it as part of the AccessibilityFeatureConfig later.
+    var segmentationMaskColorSpace: CGColorSpace? = nil
+    var segmentationColorPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     
+    @Published var isConfigured: Bool = false
+    
+    // Latest processed results
     var cameraImageResults: ARCameraImageResults?
     var cameraMeshResults: ARCameraMeshResults?
     var cameraCache: ARCameraCache = ARCameraCache()
@@ -206,9 +226,16 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard let device = device else {
             throw ARCameraManagerError.metalDeviceUnavailable
         }
-        self.meshSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
+        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
         self.meshGPUContext = try MeshGPUContext(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+        self.isConfigured = true
+        
+        Task {
+            await MainActor.run {
+                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
+            }
+        }
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
@@ -258,13 +285,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                  )
                  await MainActor.run {
-                     self.cameraImageResults = {
-                        var results = cameraImageResults
-                        results.depthImage = depthImage
-                        results.confidenceImage = confidenceImage
-                        return results
-                     }()
-                     self.outputConsumer?.cameraManagerImage(
+                     var results = cameraImageResults
+                     results.depthImage = depthImage
+                     results.confidenceImage = confidenceImage
+                     self.cameraImageResults = results
+                     self.outputConsumer?.cameraOutputImage(
                          self, segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
@@ -291,9 +316,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -322,9 +347,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -353,9 +378,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: true)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraManagerMesh(
+                    self.outputConsumer?.cameraOutputMesh(
                         self, meshGPUContext: meshGPUContext,
-                        meshSnapshot: cameraMeshResults.meshSnapshot,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
@@ -368,41 +393,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             }
         }
     }
-    
-    /**
-    Perform any final updates to the AR session configuration that will be required by the caller.
-     
-     Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
-     Currently, will not run the Mesh Processing Pipeline since it is generally performed on the main thread.
-     */
-    @MainActor
-    func performFinalSessionUpdate() async throws -> ARCameraFinalResults {
-        guard self.isConfigured else {
-            throw ARCameraManagerError.sessionConfigurationFailed
-        }
-        
-        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
-              let depthImage = self.cameraImageResults?.depthImage,
-              let cameraTransform = self.cameraImageResults?.cameraTransform,
-              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
-        else {
-            throw ARCameraManagerError.cameraImageResultsUnavailable
-        }
-        var cameraImageResults = try await self.processCameraImage(
-            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
-            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
-            highPriority: true
-        )
-        cameraImageResults.depthImage = depthImage
-        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
-        
-        let cameraMeshRecords = outputConsumer?.getMeshRecords()
-        
-        return ARCameraFinalResults(
-            cameraImageResults: cameraImageResults,
-            cameraMeshRecords: cameraMeshRecords ?? [:]
-        )
-    }
 }
 
 // Functions to handle the image processing pipeline
@@ -412,41 +402,36 @@ extension ARCameraManager {
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         highPriority: Bool = false
     ) async throws -> ARCameraImageResults {
-        guard let cameraPixelBufferPool = cameraPixelBufferPool,
-              let segmentationPixelBufferPool = segmentationPixelBufferPool else {
+        guard let cameraCroppedPixelBufferPool = cameraCroppedPixelBufferPool,
+              let segmentationPixelBufferPool = segmentationMaskPixelBufferPool else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
         let originalSize: CGSize = image.extent.size
-        let croppedSize = AccessibilityFeatureConfig.mapillaryCustom11Config.inputSize
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )
         let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = image.oriented(imageOrientation)
-        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
-        let renderedCameraPixelBuffer = try renderCIImageToPixelBuffer(
-            inputImage,
-            size: croppedSize,
-            pixelBufferPool: cameraPixelBufferPool,
-            colorSpace: cameraColorSpace
+        var inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        inputImage = try self.backCIImageWithPixelBuffer(
+            inputImage, context: colorContext, pixelBufferPool: cameraCroppedPixelBufferPool, colorSpace: cameraColorSpace
         )
-        let renderedCameraImage = CIImage(cvPixelBuffer: renderedCameraPixelBuffer)
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
-            with: renderedCameraImage, highPriority: highPriority
+            with: inputImage, highPriority: highPriority
         )
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
         segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
-        segmentationImage = try backCIImageToPixelBuffer(
-            segmentationImage,
-            pixelBufferPool: segmentationPixelBufferPool,
-            colorSpace: segmentationColorSpace
+        segmentationImage = try self.backCIImageWithPixelBuffer(
+            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool,
+            colorSpace: segmentationMaskColorSpace,
         )
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
@@ -455,11 +440,10 @@ extension ARCameraManager {
             segmentationColorCIImage, from: originalSize
         )
         segmentationColorCIImage = segmentationColorCIImage.oriented(imageOrientation)
-        let segmentationColorCGImage = ciContext.createCGImage(segmentationColorCIImage, from: segmentationColorCIImage.extent)
-        var segmentationColorImage: CIImage? = nil
-        if let segmentationColorCGImage = segmentationColorCGImage {
-            segmentationColorImage = CIImage(cgImage: segmentationColorCGImage)
-        }
+        let segmentationColorImage = try self.backCIImageWithPixelBuffer(
+            segmentationColorCIImage, context: colorContext, pixelFormatType: segmentationColorPixelFormatType,
+            colorSpace: segmentationColorColorSpace
+        )
         
         let detectedObjectMap = alignDetectedObjects(
             segmentationResults.detectedObjectMap,
@@ -549,7 +533,7 @@ extension ARCameraManager {
         }
         var segmentationFrameImage = CIImage(cgImage: segmentationFrameCGImage)
         segmentationFrameImage = segmentationFrameImage.oriented(orientation)
-        guard let segmentationFrameOrientedCGImage = ciContext.createCGImage(
+        guard let segmentationFrameOrientedCGImage = colorContext.createCGImage(
             segmentationFrameImage, from: segmentationFrameImage.extent) else {
             return nil
         }
@@ -561,7 +545,7 @@ extension ARCameraManager {
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
     private func processMeshAnchors(_ anchors: [ARAnchor], shouldRemove: Bool = false) async throws -> ARCameraMeshResults {
-        guard let meshSnapshotGenerator = meshSnapshotGenerator else {
+        guard let meshGPUSnapshotGenerator = meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }
         guard let cameraImageResults = cameraImageResults else {
@@ -569,21 +553,26 @@ extension ARCameraManager {
         }
         
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        
         let cameraTransform = cameraImageResults.cameraTransform
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
         
         // Generate mesh snapshot
         if (shouldRemove) {
-            meshSnapshotGenerator.removeAnchors(anchors)
+            meshGPUSnapshotGenerator.removeAnchors(anchors)
         } else {
-            try meshSnapshotGenerator.snapshotAnchors(anchors)
+            try meshGPUSnapshotGenerator.snapshotAnchors(anchors)
         }
-        guard let meshSnapshot = meshSnapshotGenerator.currentSnapshot else {
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.meshSnapshotProcessingFailed
         }
         return ARCameraMeshResults(
-            meshSnapshot: meshSnapshot,
-            segmentationLabelImage: segmentationLabelImage,
+            meshGPUSnapshot: meshGPUSnapshot,
+            segmentationLabelImage: backedSegmentationLabelImage,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
             lastUpdated: Date().timeIntervalSince1970
@@ -607,7 +596,7 @@ extension ARCameraManager {
             kCVPixelBufferPoolMinimumBufferCountKey as String: 5
         ]
         let cameraPixelBufferAttributes: [String: Any] = [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferPixelFormatTypeKey as String: cameraPixelFormatType,
             kCVPixelBufferWidthKey as String: size.width,
             kCVPixelBufferHeightKey as String: size.height,
             kCVPixelBufferCGImageCompatibilityKey as String: true,
@@ -619,35 +608,20 @@ extension ARCameraManager {
             kCFAllocatorDefault,
             cameraPixelBufferPoolAttributes as CFDictionary,
             cameraPixelBufferAttributes as CFDictionary,
-            &cameraPixelBufferPool
+            &cameraCroppedPixelBufferPool
         )
         guard cameraStatus == kCVReturnSuccess else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
-        cameraColorSpace = CGColorSpaceCreateDeviceRGB()
-    }
-    
-    private func renderCIImageToPixelBuffer(
-        _ image: CIImage, size: CGSize,
-        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil
-    ) throws -> CVPixelBuffer {
-        var pixelBufferOut: CVPixelBuffer?
-        let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
-        guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
-            throw ARCameraManagerError.cameraImageRenderingFailed
-        }
-        
-        ciContext.render(image, to: pixelBuffer, bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
-        return pixelBuffer
     }
     
     private func setupSegmentationPixelBufferPool(size: CGSize) throws {
         // Set up the pixel buffer pool for future flattening of segmentation images
-        let segmentationPixelBufferPoolAttributes: [String: Any] = [
+        let segmentationMaskPixelBufferPoolAttributes: [String: Any] = [
             kCVPixelBufferPoolMinimumBufferCountKey as String: 5
         ]
-        let segmentationPixelBufferAttributes: [String: Any] = [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_OneComponent8,
+        let segmentationMaskPixelBufferAttributes: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: segmentationMaskPixelFormatType,
             kCVPixelBufferWidthKey as String: size.width,
             kCVPixelBufferHeightKey as String: size.height,
             kCVPixelBufferCGImageCompatibilityKey as String: true,
@@ -655,30 +629,159 @@ extension ARCameraManager {
             kCVPixelBufferMetalCompatibilityKey as String: true,
             kCVPixelBufferIOSurfacePropertiesKey as String: [:]
         ]
-        let segmentationStatus = CVPixelBufferPoolCreate(
+        let segmentationMaskStatus = CVPixelBufferPoolCreate(
             kCFAllocatorDefault,
-            segmentationPixelBufferPoolAttributes as CFDictionary,
-            segmentationPixelBufferAttributes as CFDictionary,
-            &segmentationPixelBufferPool
+            segmentationMaskPixelBufferPoolAttributes as CFDictionary,
+            segmentationMaskPixelBufferAttributes as CFDictionary,
+            &segmentationMaskPixelBufferPool
         )
-        guard segmentationStatus == kCVReturnSuccess else {
+        guard segmentationMaskStatus == kCVReturnSuccess else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
-        segmentationColorSpace = CGColorSpaceCreateDeviceGray()
     }
     
-    private func backCIImageToPixelBuffer(
-        _ image: CIImage,
-        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil
+    /**
+    Back a CIImage with a pixel buffer of specified pixel format type and color space.
+     Also serves as a way to efficiently clone a CIImage.
+     */
+    private func backCIImageWithPixelBuffer(
+        _ ciImage: CIImage, context: CIContext,
+        pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
     ) throws -> CIImage {
-        var pixelBufferOut: CVPixelBuffer?
-        let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
-        guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
-            throw ARCameraManagerError.cameraImageRenderingFailed
+        let pixelBuffer = ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
+        guard let imagePixelBuffer = pixelBuffer else {
+            throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
         }
-        // Render the CIImage to the pixel buffer
-        ciContext.render(image, to: pixelBuffer, bounds: image.extent, colorSpace: colorSpace)
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        return ciImage
+        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        return backedImage
+    }
+    
+    /**
+    Back a CIImage with a pixel buffer from the provided pixel buffer pool and color space.
+     Also serves as a way to efficiently clone a CIImage.
+     */
+    private func backCIImageWithPixelBuffer(
+        _ ciImage: CIImage, context: CIContext,
+        pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil,
+    ) throws -> CIImage {
+        let pixelBuffer = ciImage.toPixelBuffer(context: context, pixelBufferPool: pixelBufferPool, colorSpace: colorSpace)
+        guard let imagePixelBuffer = pixelBuffer else {
+            throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
+        }
+        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        return backedImage
+    }
+}
+
+// Functions to perform final session update
+extension ARCameraManager {
+    /**
+    Perform any final updates to the AR session configuration that will be required by the caller.
+     Throws an error if the final session update cannot be performed.
+     Throws an error if the final session update returns no segmented classes or segmented mesh.
+     
+     Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
+     TODO: Perform the mesh snapshot processing as well.
+     */
+    @MainActor
+    func performFinalSessionUpdateIfPossible(
+    ) async throws -> any (CaptureImageDataProtocol & CaptureMeshDataProtocol) {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let meshGPUContext = self.meshGPUContext,
+              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
+            throw ARCameraManagerError.finalSessionNotConfigured
+        }
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
+        
+        /// Process the latest camera image with high priority
+        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
+              let depthImage = self.cameraImageResults?.depthImage,
+              let cameraTransform = self.cameraImageResults?.cameraTransform,
+              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
+        else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        var cameraImageResults = try await self.processCameraImage(
+            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            highPriority: true
+        )
+        guard cameraImageResults.segmentedClasses.count > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationClass
+        }
+        cameraImageResults.depthImage = depthImage
+        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
+        
+        /// Process the latest mesh anchors
+        let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        outputConsumer?.cameraOutputMesh(
+            self, meshGPUContext: meshGPUContext,
+            meshGPUSnapshot: meshGPUSnapshot,
+            for: nil,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            segmentationLabelImage: backedSegmentationLabelImage,
+            accessibilityFeatureClasses: self.selectedClasses
+        )
+        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+        }
+        guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
+              cameraMeshOtherDetails.totalVertexCount > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+        }
+        let cameraMeshRecords = cameraMeshRecordDetails.records
+        
+        let cameraMeshSnapshot: CapturedMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+            from: cameraMeshRecords,
+            vertexStride: cameraMeshOtherDetails.vertexStride,
+            vertexOffset: cameraMeshOtherDetails.vertexOffset,
+            indexStride: cameraMeshOtherDetails.indexStride,
+            classificationStride: cameraMeshOtherDetails.classificationStride,
+            totalVertexCount: cameraMeshOtherDetails.totalVertexCount
+        )
+        let captureImageDataResults = CaptureImageDataResults(
+            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentedClasses: cameraImageResults.segmentedClasses,
+            detectedObjectMap: cameraImageResults.detectedObjectMap
+        )
+        let captureMeshDataResults = CaptureMeshDataResults(
+            segmentedMesh: cameraMeshSnapshot
+        )
+        
+        let capturedData = CaptureAllData(
+            id: UUID(),
+            timestamp: Date().timeIntervalSince1970,
+            cameraImage: cameraImageResults.cameraImage,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            interfaceOrientation: self.interfaceOrientation,
+            originalSize: cameraImageResults.originalImageSize,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            captureImageDataResults: captureImageDataResults,
+            captureMeshDataResults: captureMeshDataResults
+        )
+        return capturedData
+    }
+    
+    @MainActor
+    func pause() throws {
+        self.outputConsumer?.pauseSession()
+        self.cameraImageResults = nil
+        self.cameraMeshResults = nil
+        self.meshGPUSnapshotGenerator?.reset()
+        self.cameraCache = ARCameraCache()
+    }
+        
+    @MainActor
+    func resume() throws {
+        self.outputConsumer?.resumeSession()
     }
 }

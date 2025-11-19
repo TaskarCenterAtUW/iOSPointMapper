@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-extension AnnotationView {
+extension AnnotationLegacyView {
     @ViewBuilder
     func openAnnotationInstanceDetailView() -> some View {
         let isWay = Constants.SelectedAccessibilityFeatureConfig.classes[sharedImageData.segmentedIndices[index]].isWay
@@ -16,7 +16,7 @@ extension AnnotationView {
         Button(action: {
             isShowingAnnotationInstanceDetailView = true
         }) {
-            Image(systemName: AnnotationViewConstants.Images.ellipsisIcon)
+            Image(systemName: AnnotationLegacyViewConstants.Images.ellipsisIcon)
         }
         .buttonStyle(.bordered)
         .disabled(disabledStatus)

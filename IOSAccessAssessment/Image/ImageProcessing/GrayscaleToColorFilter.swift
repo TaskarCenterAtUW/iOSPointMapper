@@ -38,6 +38,7 @@ struct GrayscaleToColorFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
+    private let outputColorSpace = CGColorSpaceCreateDeviceRGB()
 
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -48,7 +49,7 @@ struct GrayscaleToColorFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernelLUT"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -57,6 +58,14 @@ struct GrayscaleToColorFilter {
         self.pipeline = pipeline
     }
 
+    /**
+        Applies the grayscale to color mapping filter to the input CIImage.
+     
+        - Parameters:
+            - inputImage: The input CIImage in grayscale format. Of color space nil, single-channel.
+            - grayscaleValues: An array of Float values representing the grayscale levels (0.0 to 1.0).
+            - colorValues: An array of CIColor values corresponding to the grayscale levels.
+     */
     func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
@@ -105,7 +114,7 @@ struct GrayscaleToColorFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace]) else {
             throw GrayscaleToColorFilterError.outputImageCreationFailed
         }
         return resultImage

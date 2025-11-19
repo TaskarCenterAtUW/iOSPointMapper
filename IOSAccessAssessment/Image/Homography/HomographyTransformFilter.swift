@@ -57,6 +57,13 @@ struct HomographyTransformFilter {
         self.pipeline = pipeline
     }
     
+    /**
+        Applies a homography transformation to the input CIImage using the provided transformation matrix.
+
+        - Parameters:
+            - inputImage: The input CIImage to be transformed. Of color space nil, single-channel.
+            - transformMatrix: A 3x3 matrix representing the homography transformation.
+     */
     func apply(to inputImage: CIImage, transformMatrix: simd_float3x3) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller

@@ -49,7 +49,7 @@ struct BinaryMaskFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binaryMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -58,6 +58,13 @@ struct BinaryMaskFilter {
         self.pipeline = pipeline
     }
 
+    /**
+        Applies the binary mask filter to the input CIImage.
+     
+        - Parameters:
+            - inputImage: The input CIImage to be processed. Of color space nil, single-channel.
+            - targetValue: The target pixel value to create the binary mask.
+     */
     func apply(to inputImage: CIImage, targetValue: UInt8) throws -> CIImage {
         // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
         //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller

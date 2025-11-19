@@ -76,7 +76,7 @@ enum SetupViewConstants {
     }
     
     enum Constraints {
-        static let logoutIconSize: CGFloat = 20
+        static let profileIconSize: CGFloat = 20
     }
     
     enum Identifiers {
@@ -182,7 +182,7 @@ struct SetupView: View {
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     @StateObject private var modelInitializationViewModel = ModelInitializationViewModel()
     
-    @StateObject private var sharedImageData: SharedImageData = SharedImageData()
+    @StateObject private var sharedAppData: SharedAppData = SharedAppData()
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
     @StateObject private var depthModel: DepthModel = DepthModel()
     
@@ -220,7 +220,7 @@ struct SetupView: View {
 //                            .foregroundStyle(.white)
                     }
                     .buttonStyle(.bordered)
-                    .disabled(!sharedImageData.isUploadReady)
+                    .disabled(!sharedAppData.isUploadReady)
                 }
                 .padding(.bottom, 10)
                 TipView(changesetInfoTip, arrowEdge: .top) { action in
@@ -234,7 +234,6 @@ struct SetupView: View {
                 HStack {
                     Text(SetupViewConstants.Texts.selectClassesText)
                         .font(.headline)
-    //                    .foregroundStyle(.gray)
                     Button(action: {
                         showSelectClassesLearnMoreSheet = true
                     }) {
@@ -279,8 +278,8 @@ struct SetupView: View {
                         Image(systemName: SetupViewConstants.Images.profileIcon)
                             .resizable()
                             .frame(
-                                width: SetupViewConstants.Constraints.logoutIconSize,
-                                height: SetupViewConstants.Constraints.logoutIconSize
+                                width: SetupViewConstants.Constraints.profileIconSize,
+                                height: SetupViewConstants.Constraints.profileIconSize
                             )
                             .bold()
                     }
@@ -297,16 +296,6 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
-            // Alert for logout confirmation
-//            .alert(
-//                SetupViewConstants.Texts.confirmationDialogTitle,
-//                isPresented: $showLogoutConfirmation
-//            ) {
-//                Button(SetupViewConstants.Texts.confirmationDialogConfirmText, role: .destructive) {
-//                    userState.logout()
-//                }
-//                Button(SetupViewConstants.Texts.confirmationDialogCancelText, role: .cancel) { }
-//            }
             // Alert for changeset opening error
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
@@ -351,10 +340,9 @@ struct SetupView: View {
                     .presentationDetents([.medium, .large])
             }
         }
-        .environmentObject(self.sharedImageData)
+        .environmentObject(self.sharedAppData)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
-//        .environment(\.colorScheme, .dark)
     }
     
     private func openChangeset() {
@@ -374,7 +362,7 @@ struct SetupView: View {
                     changesetOpenViewModel.isChangesetOpened = true
                     
                     // Open a dataset encoder for the changeset
-                    sharedImageData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: changesetId)
+                    sharedAppData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: changesetId)
                 }
             case .failure(let error):
                 DispatchQueue.main.async {
@@ -392,8 +380,8 @@ struct SetupView: View {
             case .success:
                 print("Changeset closed successfully.")
                 DispatchQueue.main.async {
-                    sharedImageData.refreshData()
-                    sharedImageData.currentDatasetEncoder?.save()
+                    sharedAppData.refreshData()
+                    sharedAppData.currentDatasetEncoder?.save()
                     
                     openChangeset()
                 }

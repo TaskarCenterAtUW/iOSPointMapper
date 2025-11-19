@@ -9,13 +9,28 @@ import RealityKit
 import Metal
 import simd
 
+enum MeshBufferUtilsError: Error, LocalizedError {
+    case bufferTooSmall(expected: Int, actual: Int)
+    case bufferCreationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .bufferTooSmall(let expected, let actual):
+            return "The provided buffer is too small. Expected at least \(expected) bytes, but got \(actual) bytes."
+        case .bufferCreationFailed:
+            return "Failed to create Metal buffer."
+        }
+    }
+}
+
+
 struct MeshBufferUtils {
     static let defaultBufferSize: Int = 1024
     
     @inline(__always)
     static func copyContiguous(srcPtr: UnsafeRawPointer, dst: MTLBuffer, byteCount: Int) throws {
         guard byteCount <= dst.length else {
-            throw MeshSnapshotError.bufferTooSmall(expected: byteCount, actual: dst.length)
+            throw MeshBufferUtilsError.bufferTooSmall(expected: byteCount, actual: dst.length)
         }
         let dstPtr = dst.contents()
         dstPtr.copyMemory(from: srcPtr, byteCount: byteCount)
@@ -25,7 +40,7 @@ struct MeshBufferUtils {
     static func copyStrided(count: Int, srcPtr: UnsafeRawPointer, srcStride: Int,
                      dst: MTLBuffer, elemSize: Int) throws {
         guard count * elemSize <= dst.length else {
-            throw MeshSnapshotError.bufferTooSmall(expected: count * elemSize, actual: dst.length)
+            throw MeshBufferUtilsError.bufferTooSmall(expected: count * elemSize, actual: dst.length)
         }
         let dstPtr = dst.contents()
         for i in 0..<count {
@@ -46,7 +61,7 @@ struct MeshBufferUtils {
     @inline(__always)
     static func makeBuffer(device: MTLDevice, length: Int, options: MTLResourceOptions = .storageModeShared) throws -> MTLBuffer {
         guard let buffer = device.makeBuffer(length: length, options: options) else {
-            throw MeshSnapshotError.bufferCreationFailed
+            throw MeshBufferUtilsError.bufferCreationFailed
         }
         return buffer
     }

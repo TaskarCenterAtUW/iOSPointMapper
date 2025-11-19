@@ -2,210 +2,277 @@
 //  AnnotationImageManager.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 5/18/25.
+//  Created by Himanshu on 11/15/25.
 //
-
-import Foundation
 import SwiftUI
-import Combine
-import simd
 
-typealias AnnotationCameraUIImageOutput = (cgImage: CGImage, uiImage: UIImage)
-typealias AnnotationSegmentationUIImageOutput = (ciImage: CIImage, uiImage: UIImage)
-typealias AnnotationObjectsUIImageOutput = (annotatedDetectedObjects: [AnnotatedDetectedObject], selectedObjectId: UUID, uiImage: UIImage)
+enum AnnotatiomImageManagerError: Error, LocalizedError {
+    case notConfigured
+    case cameraImageProcessingFailed
+    case imageResultCacheFailed
+    case meshClassNotFound(AccessibilityFeatureClass)
+    case invalidVertexData
+    case meshRasterizationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .notConfigured:
+            return "AnnotationImageManager is not configured."
+        case .cameraImageProcessingFailed:
+            return "Failed to process the camera image."
+        case .imageResultCacheFailed:
+            return "Failed to retrieve the cached annotation image results."
+        case .meshClassNotFound(let featureClass):
+            return "No mesh found for the accessibility feature class: \(featureClass.name)."
+        case .invalidVertexData:
+            return "The vertex data for the mesh is invalid."
+        case .meshRasterizationFailed:
+            return "Failed to rasterize the mesh into an image."
+        }
+    }
+}
+
+struct AnnotationImageResults {
+    let cameraImage: CIImage
+    
+    let segmentationLabelImage: CIImage
+    
+    var cameraOutputImage: CIImage? = nil
+    var overlayOutputImage: CIImage? = nil
+}
+
+final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
+    var selectedClasses: [AccessibilityFeatureClass] = []
+    
+    weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
+    @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
+    
+    let cIContext = CIContext(options: nil)
+    
+    @Published var isConfigured: Bool = false
+    
+    // Latest processed results
+    var annotationImageResults: AnnotationImageResults?
+    
+    func configure(
+        selectedClasses: [AccessibilityFeatureClass],
+        captureImageData: (any CaptureImageDataProtocol)
+    ) throws {
+        self.selectedClasses = selectedClasses
+        self.isConfigured = true
+        
+        let cameraOutputImage = try getCameraOutputImage(
+            captureImageData: captureImageData
+        )
+        let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
+            cameraImage: captureImageData.cameraImage,
+            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+            cameraOutputImage: cameraOutputImage,
+            overlayOutputImage: nil
+        )
+        self.annotationImageResults = annotationImageResults
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.annotationOutputImage(
+                    self, image: cameraOutputImage, overlayImage: nil
+                )
+            }
+        }
+    }
+    
+    func setOrientation(_ orientation: UIInterfaceOrientation) {
+        self.interfaceOrientation = orientation
+    }
+    
+    /**
+     Updates the camera image, and recreates the overlay image.
+     */
+    func update(
+        captureImageData: (any CaptureImageDataProtocol),
+        captureMeshData: (any CaptureMeshDataProtocol),
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws {
+        guard isConfigured else {
+            throw AnnotatiomImageManagerError.notConfigured
+        }
+        guard var annotationImageResults = self.annotationImageResults,
+              let cameraOutputImage = annotationImageResults.cameraOutputImage
+        else {
+            throw AnnotatiomImageManagerError.imageResultCacheFailed
+        }
+        let trianglePointsNormalized = try getNormalizedTrianglePoints(
+            captureImageData: captureImageData,
+            captureMeshData: captureMeshData,
+            accessibilityFeatureClass: accessibilityFeatureClass
+        )
+        guard let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
+            trianglePointsNormalized: trianglePointsNormalized, size: captureImageData.originalSize,
+            boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
+        ) else {
+            throw AnnotatiomImageManagerError.meshRasterizationFailed
+        }
+        let overlayOutputImage = try getOverlayOutputImage(
+            rasterizedMeshImage: rasterizedMeshImage,
+            captureMeshData: captureMeshData
+        )
+        annotationImageResults.overlayOutputImage = overlayOutputImage
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.annotationOutputImage(
+                    self,
+                    image: cameraOutputImage,
+                    overlayImage: overlayOutputImage
+                )
+            }
+        }
+    }
+    
+    private func getCameraOutputImage(
+        captureImageData: (any CaptureImageDataProtocol)
+    ) throws -> CIImage {
+        let cameraImage = captureImageData.cameraImage
+        let interfaceOrientation = captureImageData.interfaceOrientation
+//        let originalSize = captureImageData.originalSize
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = cameraImage.oriented(imageOrientation)
+        let cameraOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let cameraCgImage = cIContext.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
+            throw AnnotatiomImageManagerError.cameraImageProcessingFailed
+        }
+        return CIImage(cgImage: cameraCgImage)
+    }
+    
+    private func getOverlayOutputImage(
+        rasterizedMeshImage: CGImage,
+        captureMeshData: (any CaptureMeshDataProtocol)
+    ) throws -> CIImage {
+        let rasterizedMeshCIImage = CIImage(cgImage: rasterizedMeshImage)
+        let interfaceOrientation = captureMeshData.interfaceOrientation
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
+        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+            throw AnnotatiomImageManagerError.meshRasterizationFailed
+        }
+        return CIImage(cgImage: overlayCgImage)
+    }
+}
 
 /**
- The AnnotationImageManager class is responsible for managing the images used in the annotation process.
- It handles updates to the camera image, segmentation label image, and detected objects image.
+    Extension to handle mesh vertex processing and projection.
  */
-class AnnotationImageManager: ObservableObject {
-    @Published var cameraUIImage: UIImage? = nil
-    @Published var segmentationUIImage: UIImage? = nil
-    @Published var objectsUIImage: UIImage? = nil
-    
-    @State private var transformedLabelImages: [CIImage]? = nil
-    
-    @Published var annotatedSegmentationLabelImage: CIImage? = nil
-    @Published var annotatedDetectedObjects: [AnnotatedDetectedObject]? = nil
-    
-    @Published var selectedObjectId: UUID? = nil
-    @Published var selectedObjectWidth: Float? = nil // MARK: Width Field Demo: Temporary property to hold the selected object width
-    @Published var selectedObjectBreakage: Bool? = nil // MARK: Breakage Field Demo: Temporary property to hold the selected object breakage status
-    @Published var selectedObjectSlope: Float? = nil // MARK: Slope Field Demo: Temporary property to hold the selected object slope value
-    @Published var selectedObjectCrossSlope: Float? = nil // MARK: Cross Slope Field Demo: Temporary property to hold the selected object cross slope value
-    
-    // Helpers
-    private let annotationCIContext = CIContext()
-    private let annotationSegmentationPipeline = AnnotationSegmentationPipeline()
-    // MARK: Temporarily commented out to setup refactoring
-//    private let grayscaleToColorMasker = GrayscaleToColorFilter()
-    
-    func isImageInvalid() -> Bool {
-        if (self.cameraUIImage == nil || self.segmentationUIImage == nil || self.objectsUIImage == nil) {
-            return true
+extension AnnotationImageManager {
+    /**
+     Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
+     */
+    private func getNormalizedTrianglePoints(
+        captureImageData: (any CaptureImageDataProtocol),
+        captureMeshData: (any CaptureMeshDataProtocol),
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
+        let capturedMeshSnapshot = captureMeshData.captureMeshDataResults.segmentedMesh
+        guard let featureCapturedMeshSnapshot = capturedMeshSnapshot.anchors[accessibilityFeatureClass] else {
+            throw AnnotatiomImageManagerError.meshClassNotFound(accessibilityFeatureClass)
         }
-        return false
+        let vertexStride: Int = capturedMeshSnapshot.vertexStride
+        let vertexOffset: Int = capturedMeshSnapshot.vertexOffset
+        let vertexData: Data = featureCapturedMeshSnapshot.vertexData
+        let vertexCount: Int = featureCapturedMeshSnapshot.vertexCount
+//        let indexStride: Int = capturedMeshSnapshot.indexStride
+//        let indexData: Data = featureCapturedMeshSnapshot.indexData
+//        let indexCount: Int = featureCapturedMeshSnapshot.indexCount
+        
+        let cameraTransform = captureImageData.cameraTransform
+        let viewMatrix = cameraTransform.inverse // world -> camera
+        let cameraIntrinsics = captureImageData.cameraIntrinsics
+        let originalSize = captureImageData.originalSize
+        
+        var vertexPositions: [SIMD3<Float>] = Array(
+            repeating: SIMD3<Float>(0,0,0),
+            count: vertexCount
+        )
+        try vertexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
+            guard let baseAddress = ptr.baseAddress else {
+                throw AnnotatiomImageManagerError.invalidVertexData
+            }
+            for i in 0..<vertexCount {
+                let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)
+                let vertexPointer = vertexAddress.assumingMemoryBound(to: SIMD3<Float>.self)
+                vertexPositions[i] = vertexPointer.pointee
+            }
+        }
+        
+        var trianglePoints: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] = []
+        let originalWidth = Float(originalSize.width)
+        let originalHeight = Float(originalSize.height)
+        for i in 0..<(vertexCount / 3) {
+            let (v0, v1, v2) = (vertexPositions[i*3], vertexPositions[i*3 + 1], vertexPositions[i*3 + 2])
+            let worldPoints = [v0, v1, v2].map {
+                projectWorldToPixel(
+                    $0,
+                    viewMatrix: viewMatrix,
+                    intrinsics: cameraIntrinsics,
+                    imageSize: originalSize
+                )
+            }
+            guard let p0 = worldPoints[0],
+                  let p1 = worldPoints[1],
+                  let p2 = worldPoints[2] else {
+                continue
+            }
+            let normalizedPoints = [p0, p1, p2].map {
+                SIMD2<Float>(
+                    $0.x / originalWidth,
+                    $0.y / originalHeight
+                )
+            }
+            trianglePoints.append((normalizedPoints[0], normalizedPoints[1], normalizedPoints[2]))
+        }
+        
+        return trianglePoints
     }
     
-    func update(cameraImage: CIImage, segmentationLabelImage: CIImage, imageHistory: [ImageData],
-                accessibilityFeatureClass: AccessibilityFeatureClass) {
-        // TODO: Handle the case of transformedLabelImages being nil
-        let transformedLabelImages = transformImageHistoryForUnionOfMasks(imageDataHistory: imageHistory)
+    private func projectWorldToPixel(_ world: simd_float3,
+                             viewMatrix: simd_float4x4, // (world->camera)
+                             intrinsics K: simd_float3x3,
+                             imageSize: CGSize) -> SIMD2<Float>? {
+        let p4   = simd_float4(world, 1.0)
+        let pc   = viewMatrix * p4                                  // camera space
+        let x = pc.x, y = pc.y, z = pc.z
         
-        let cameraUIImageOutput = getCameraUIImage(cameraImage: cameraImage)
-        let segmentationUIImageOutput = getSegmentationUIImage(
-            segmentationLabelImage: segmentationLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
+        guard z < 0 else {
+            return nil
+        }                       // behind camera
         
-        let objectsInputLabelImage = segmentationUIImageOutput.ciImage
-        let objectsUIImageOutput = getObjectsUIImage(
-            inputLabelImage: objectsInputLabelImage, accessibilityFeatureClass: accessibilityFeatureClass)
+        // normalized image plane coords (flip Y so +Y goes up in pixels)
+        let xn = x / -z
+        let yn = -y / -z
         
-        // Start updating the state
-        objectWillChange.send()
-        self.transformedLabelImages = transformedLabelImages
-        self.cameraUIImage = cameraUIImageOutput.uiImage
-        self.annotatedSegmentationLabelImage = segmentationUIImageOutput.ciImage
-        self.segmentationUIImage = segmentationUIImageOutput.uiImage
-        self.annotatedDetectedObjects = objectsUIImageOutput.annotatedDetectedObjects
-        self.selectedObjectId = objectsUIImageOutput.selectedObjectId
-        self.objectsUIImage = objectsUIImageOutput.uiImage
-    }
-    
-    private func transformImageHistoryForUnionOfMasks(imageDataHistory: [ImageData]) -> [CIImage]? {
-        do {
-            let transformedLabelImages = try self.annotationSegmentationPipeline.processTransformationsRequest(
-                imageDataHistory: imageDataHistory)
-            try self.annotationSegmentationPipeline.setupUnionOfMasksRequest(segmentationLabelImages: transformedLabelImages)
-            return transformedLabelImages
-        } catch {
-            print("Error processing transformations request: \(error)")
+        // intrinsics (column-major)
+        let fx = K.columns.0.x
+        let fy = K.columns.1.y
+        let cx = K.columns.2.x
+        let cy = K.columns.2.y
+        
+        // pixels in sensor/native image coordinates
+        let u = fx * xn + cx
+        let v = fy * yn + cy
+        
+        if u.isFinite && v.isFinite &&
+            u >= 0 && v >= 0 &&
+            u < Float(imageSize.width) && v < Float(imageSize.height) {
+            return SIMD2<Float>(u.rounded(), v.rounded())
         }
         return nil
-    }
-    
-    private func getCameraUIImage(cameraImage: CIImage) -> AnnotationCameraUIImageOutput {
-        let cameraCGImage = annotationCIContext.createCGImage(
-            cameraImage, from: cameraImage.extent)!
-        let cameraUIImage = UIImage(cgImage: cameraCGImage, scale: 1.0, orientation: .up)
-        return (cgImage: cameraCGImage,
-                uiImage: cameraUIImage)
-    }
-    
-    // Perform the union of masks on the label image history for the given segmentation class.
-    // Save the resultant image to the segmentedLabelImage property.
-    private func getSegmentationUIImage(segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
-    -> AnnotationSegmentationUIImageOutput {
-        var inputLabelImage = segmentationLabelImage
-        do {
-            inputLabelImage = try self.annotationSegmentationPipeline.processUnionOfMasksRequest(
-                targetValue: accessibilityFeatureClass.labelValue,
-                bounds: accessibilityFeatureClass.bounds,
-                unionOfMasksPolicy: accessibilityFeatureClass.unionOfMasksPolicy
-            )
-        } catch {
-            print("Error processing union of masks request: \(error)")
-        }
-//        self.annotatedSegmentationLabelImage = inputLabelImage
-//        let segmentationColorImage = self.grayscaleToColorMasker.apply(
-//            to: inputLabelImage, grayscaleValues: [segmentationClass.grayscaleValue], colorValues: [segmentationClass.color])
-        
-        let segmentationUIImage = UIImage(ciImage: segmentationLabelImage, scale: 1.0, orientation: .up)
-        // Check if inputLabelImage is backed by a CVPixelBuffer
-        if inputLabelImage.extent.width == 0 || inputLabelImage.extent.height == 0 {
-            print("Warning: inputLabelImage has zero width or height.")
-        }
-//        print("inputLabelImage pixelBuffer nil?: \(inputLabelImage.pixelBuffer == nil)")
-        return (ciImage: inputLabelImage,
-                uiImage: segmentationUIImage)
-    }
-    
-    private func getObjectsUIImage(inputLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass)
-    -> AnnotationObjectsUIImageOutput {
-        var inputDetectedObjects: [DetectedObject] = []
-        
-        // Get the detected objects from the resultant union image.
-        do {
-            inputDetectedObjects = try self.annotationSegmentationPipeline.processContourRequest(
-                from: inputLabelImage,
-                targetValue: accessibilityFeatureClass.labelValue,
-                isWay: accessibilityFeatureClass.isWay,
-                bounds: accessibilityFeatureClass.bounds
-            )
-        } catch {
-            print("Error processing contour request: \(error)")
-        }
-        var annotatedDetectedObjects = inputDetectedObjects.enumerated().map({ objectIndex, object in
-            AnnotatedDetectedObject(object: object, classLabel: object.classLabel, depthValue: 0.0, isAll: false,
-                                    label: accessibilityFeatureClass.name + ": " + String(objectIndex))
-        })
-        // Add the "all" object to the beginning of the list
-        annotatedDetectedObjects.insert(
-            AnnotatedDetectedObject(object: nil, classLabel: accessibilityFeatureClass.labelValue,
-                                    depthValue: 0.0, isAll: true, label: AnnotationViewConstants.Texts.selectAllLabelText),
-            at: 0
-        )
-//        self.annotatedDetectedObjects = annotatedDetectedObjects
-        let selectedObjectId = annotatedDetectedObjects[0].id
-        let objectsUIImage = UIImage(
-            cgImage: ContourObjectRasterizer.rasterizeContourObjects(
-                objects: inputDetectedObjects,
-                size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
-                polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-                boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
-                wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-                centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
-            )!,
-            scale: 1.0, orientation: .up)
-        
-        return (annotatedDetectedObjects: annotatedDetectedObjects,
-                selectedObjectId: selectedObjectId,
-                uiImage: objectsUIImage)
-    }
-    
-    func updateObjectSelection(previousSelectedObjectId: UUID?, selectedObjectId: UUID) {
-        guard let baseImage = self.objectsUIImage?.cgImage else {
-            print("Base image is nil")
-            return
-        }
-        
-        var oldObjects: [DetectedObject] = []
-        var newObjects: [DetectedObject] = []
-        var newImage: CGImage?
-        
-        if let previousSelectedObjectId = previousSelectedObjectId {
-            for object in self.annotatedDetectedObjects ?? [] {
-                if object.id == previousSelectedObjectId {
-                    if object.object != nil { oldObjects.append(object.object!) }
-                    break
-                }
-            }
-        }
-        newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: baseImage, objects: oldObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
-            polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-            boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
-            wayBoundsConfig: RasterizeConfig(draw: true, color: nil, width: 2),
-            centroidConfig: RasterizeConfig(draw: true, color: nil, width: 5)
-        )
-        if newImage == nil { print("Failed to update rasterized image") }
-        
-        for object in self.annotatedDetectedObjects ?? [] {
-            if object.id == selectedObjectId {
-                if object.object != nil { newObjects.append(object.object!) }
-                break
-            }
-        }
-        newImage = newImage ?? baseImage
-        newImage = ContourObjectRasterizer.updateRasterizedImage(
-            baseImage: newImage!, objects: newObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
-            polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
-            boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
-            wayBoundsConfig: RasterizeConfig(draw: true, color: .white, width: 2),
-            centroidConfig: RasterizeConfig(draw: true, color: .white, width: 5)
-        )        
-        
-        if let newImage = newImage {
-            self.objectsUIImage = UIImage(cgImage: newImage, scale: 1.0, orientation: .up)
-        } else { print("Failed to update rasterized image") }
     }
 }

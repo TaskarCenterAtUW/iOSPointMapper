@@ -34,7 +34,7 @@ class CameraOrientation {
         case .portraitUpsideDown:
             return .right                // Camera is rotated 90° CW to revert to original orientation
         case .landscapeLeft:
-            return .up                 // Home button on the right, camera is rotated 180°
+            return .up                 // Home button on the right, camera is not rotated
         case .landscapeRight:
             return .down                   // Home button on the left, camera is rotated 180°
         default:
@@ -64,9 +64,9 @@ class CameraOrientation {
             case .portraitUpsideDown:
                 return .left                 // Camera is rotated 90° CCW
             case .landscapeLeft:
-                return .down                   // (Home button on the right) Camera is not rotated.
+                return .down                   // (Home button on the right) Camera is rotated 180°.
             case .landscapeRight:
-                return .up                 // (Home button on the left) Camera is rotated 180°.
+                return .up                 // (Home button on the left) Camera is not rotated.
             default:
                 return .right               // Fallback to portrait
         }
