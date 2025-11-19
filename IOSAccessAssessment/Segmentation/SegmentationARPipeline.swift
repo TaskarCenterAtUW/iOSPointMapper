@@ -172,7 +172,7 @@ final class SegmentationARPipeline: ObservableObject {
         
         try Task.checkCancellation()
         
-        // MARK: Ignoring the contour detection and object tracking for now
+        // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
         let detectedObjects: [DetectedAccessibilityFeature] = try self.contourRequestProcessor?.processRequest(
             from: segmentationImage
@@ -189,9 +189,6 @@ final class SegmentationARPipeline: ObservableObject {
         ) else {
             throw SegmentationARPipelineError.invalidSegmentation
         }
-//        let segmentationResultUIImage = UIImage(
-//            ciImage: self.grayscaleToColorMasker.outputImage!,
-//            scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
         
         return SegmentationARPipelineResults(
             segmentationImage: segmentationImage,

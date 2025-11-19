@@ -13,32 +13,39 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
     
     let name: String
     
-    // Segmentation-related constants
-    // Grayscale value output for the accessibility feature class, by the relevant segmentation model
+    /**
+     Segmentation-related constants
+     */
+    /// Grayscale value output for the accessibility feature class, by the relevant segmentation model
     let grayscaleValue: Float
-    // Pre-defined label of the accessibility feature class
+    /// Pre-defined label of the accessibility feature class
     let labelValue: UInt8
-    // Color to be assigned for visualization of the segmentation class during post-processing
+    /// Color to be assigned for visualization of the segmentation class during post-processing
     let color: CIColor
     
-    // Constants related to mesh
-    let meshClassification: Set<ARMeshClassification> // Optional mesh classification for the segmentation class
+    /**
+     Constants related to mesh
+     */
+    /// Optional mesh classification for the segmentation class
+    let meshClassification: Set<ARMeshClassification>
     
-    // Post-Processing related constants
-    // Flag to indicate if the class is a road or path
+    /**
+     Post-Processing related constants.
+     */
+    /// Flag to indicate if the class is a road or path
     let isWay: Bool
-    // Optional bounds for the segmentation class
-    // Is kept optional to prevent unnecessary dimension based masking.
+    /// Optional bounds for the segmentation class
+    /// Is kept optional to prevent unnecessary dimension based masking.
     let bounds: DimensionBasedMaskBounds?
-    // Properties for union of masks
+    /// Properties for union of masks
     let unionOfMasksPolicy: UnionOfMasksPolicy
     
-    let calculatedAttributes: Set<AccessibilityFeatureAttribute>
+    let attributes: Set<AccessibilityFeatureAttribute>
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [],
-         calculatedAttributes: Set<AccessibilityFeatureAttribute> = []
+         attributes: Set<AccessibilityFeatureAttribute> = []
     ) {
         self.id = id
         self.name = name
@@ -49,7 +56,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
         self.bounds = bounds
         self.unionOfMasksPolicy = unionOfMasksPolicy
         self.meshClassification = meshClassification
-        self.calculatedAttributes = calculatedAttributes
+        self.attributes = attributes
     }
     
     static func < (lhs: AccessibilityFeatureClass, rhs: AccessibilityFeatureClass) -> Bool {

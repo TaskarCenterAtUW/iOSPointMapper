@@ -60,6 +60,8 @@ struct AnnotationView: View {
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
+    @State var currentInstanceIndex: Int? = nil
+    @State var currentInstance: DetectedAccessibilityFeature? = nil
     @State var currentClassIndex = 0
     @State var currentClass: AccessibilityFeatureClass? = nil
     @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
