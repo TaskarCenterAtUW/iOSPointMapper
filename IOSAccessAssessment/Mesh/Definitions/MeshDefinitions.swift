@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import simd
 
 /**
     Enum representing the dimensions of a mesh.
@@ -32,3 +33,22 @@ enum MeshDimension: CaseIterable, Codable, Sendable {
         }
     }
 }
+
+struct MeshCPUPolygon: Sendable {
+    let v0: simd_float3
+    let v1: simd_float3
+    let v2: simd_float3
+    
+    let index0: Int
+    let index1: Int
+    let index2: Int
+    
+    var centroid: simd_float3 {
+        return (v0 + v1 + v2) / 3.0
+    }
+    
+    var vertices: [simd_float3] {
+        return [v0, v1, v2]
+    }
+}
+

@@ -11,7 +11,7 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
     case cameraImageProcessingFailed
     case imageResultCacheFailed
     case meshClassNotFound(AccessibilityFeatureClass)
-    case invalidVertexData
+    case invalidMeshData
     case meshRasterizationFailed
     
     var errorDescription: String? {
@@ -24,8 +24,8 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
             return "Failed to retrieve the cached annotation image results."
         case .meshClassNotFound(let featureClass):
             return "No mesh found for the accessibility feature class: \(featureClass.name)."
-        case .invalidVertexData:
-            return "The vertex data for the mesh is invalid."
+        case .invalidMeshData:
+            return "The mesh data is invalid."
         case .meshRasterizationFailed:
             return "Failed to rasterize the mesh into an image."
         }
@@ -172,6 +172,67 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     Extension to handle mesh vertex processing and projection.
  */
 extension AnnotationImageManager {
+    private func getMeshCPUPolygons(
+        captureMeshData: (any CaptureMeshDataProtocol),
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> [MeshCPUPolygon] {
+        let capturedMeshSnapshot = captureMeshData.captureMeshDataResults.segmentedMesh
+        guard let featureCapturedMeshSnapshot = capturedMeshSnapshot.anchors[accessibilityFeatureClass] else {
+            throw AnnotatiomImageManagerError.meshClassNotFound(accessibilityFeatureClass)
+        }
+        
+        let vertexStride: Int = capturedMeshSnapshot.vertexStride
+        let vertexOffset: Int = capturedMeshSnapshot.vertexOffset
+        let vertexData: Data = featureCapturedMeshSnapshot.vertexData
+        let vertexCount: Int = featureCapturedMeshSnapshot.vertexCount
+        let indexStride: Int = capturedMeshSnapshot.indexStride
+        let indexData: Data = featureCapturedMeshSnapshot.indexData
+        let indexCount: Int = featureCapturedMeshSnapshot.indexCount
+        guard vertexCount > 0, vertexCount == indexCount else {
+            throw AnnotatiomImageManagerError.invalidMeshData
+        }
+        
+        var vertexPositions: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0,0,0), count: vertexCount)
+        try vertexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
+            guard let baseAddress = ptr.baseAddress else {
+                throw AnnotatiomImageManagerError.invalidMeshData
+            }
+            for i in 0..<vertexCount {
+                let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)
+                let vertexPointer = vertexAddress.assumingMemoryBound(to: SIMD3<Float>.self)
+                vertexPositions[i] = vertexPointer.pointee
+            }
+        }
+        
+        var indexPositions: [UInt32] = Array(repeating: 0, count: indexCount)
+        try indexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
+            guard let baseAddress = ptr.baseAddress else {
+                throw AnnotatiomImageManagerError.invalidMeshData
+            }
+            for i in 0..<indexCount {
+                let indexAddress = baseAddress.advanced(by: i * indexStride)
+                let indexPointer = indexAddress.assumingMemoryBound(to: UInt32.self)
+                indexPositions[i] = indexPointer.pointee
+            }
+        }
+        
+        var polygons: [MeshCPUPolygon] = []
+        for i in 0..<(indexCount / 3) {
+            let vi0 = Int(indexPositions[i*3])
+            let vi1 = Int(indexPositions[i*3 + 1])
+            let vi2 = Int(indexPositions[i*3 + 2])
+            
+            let polygon = MeshCPUPolygon(
+                v0: vertexPositions[vi0],
+                v1: vertexPositions[vi1],
+                v2: vertexPositions[vi2],
+                index0: vi0, index1: vi1, index2: vi2
+            )
+            polygons.append(polygon)
+        }
+        return polygons
+    }
+    
     /**
      Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
      */
@@ -203,7 +264,7 @@ extension AnnotationImageManager {
         )
         try vertexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
             guard let baseAddress = ptr.baseAddress else {
-                throw AnnotatiomImageManagerError.invalidVertexData
+                throw AnnotatiomImageManagerError.invalidMeshData
             }
             for i in 0..<vertexCount {
                 let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)

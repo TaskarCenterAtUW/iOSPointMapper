@@ -30,8 +30,9 @@
 		A30801642EC0A8AA00B1BA3A /* DetectedAccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30801632EC0A8A600B1BA3A /* DetectedAccessibilityFeature.swift */; };
 		A30801682EC0AE7700B1BA3A /* AccessibilityFeatureComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30801672EC0AE7200B1BA3A /* AccessibilityFeatureComponents.swift */; };
 		A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttribute.swift */; };
-		A30BED382ED162E7004A5B51 /* MeshConnectedComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30BED372ED162E2004A5B51 /* MeshConnectedComponent.swift */; };
+		A30BED382ED162E7004A5B51 /* MeshDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30BED372ED162E2004A5B51 /* MeshDefinitions.swift */; };
 		A30BED3A2ED162F1004A5B51 /* ConnectedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30BED392ED162ED004A5B51 /* ConnectedComponents.swift */; };
+		A30BED3C2ED2F48B004A5B51 /* MeshClusteringUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30BED3B2ED2F487004A5B51 /* MeshClusteringUtils.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
 		A30D05862E2E19E400316FB5 /* AnnotationLegacyCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30D05852E2E19E400316FB5 /* AnnotationLegacyCameraViewController.swift */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
@@ -179,8 +180,9 @@
 		A30801632EC0A8A600B1BA3A /* DetectedAccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetectedAccessibilityFeature.swift; sourceTree = "<group>"; };
 		A30801672EC0AE7200B1BA3A /* AccessibilityFeatureComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureComponents.swift; sourceTree = "<group>"; };
 		A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttribute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureAttribute.swift; sourceTree = "<group>"; };
-		A30BED372ED162E2004A5B51 /* MeshConnectedComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshConnectedComponent.swift; sourceTree = "<group>"; };
+		A30BED372ED162E2004A5B51 /* MeshDefinitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshDefinitions.swift; sourceTree = "<group>"; };
 		A30BED392ED162ED004A5B51 /* ConnectedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectedComponents.swift; sourceTree = "<group>"; };
+		A30BED3B2ED2F487004A5B51 /* MeshClusteringUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshClusteringUtils.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
 		A30D05852E2E19E400316FB5 /* AnnotationLegacyCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationLegacyCameraViewController.swift; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
@@ -495,9 +497,17 @@
 		A30BED362ED162DD004A5B51 /* Clustering */ = {
 			isa = PBXGroup;
 			children = (
-				A30BED372ED162E2004A5B51 /* MeshConnectedComponent.swift */,
+				A30BED3B2ED2F487004A5B51 /* MeshClusteringUtils.swift */,
 			);
 			path = Clustering;
+			sourceTree = "<group>";
+		};
+		A30BED3D2ED2F614004A5B51 /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				A30BED372ED162E2004A5B51 /* MeshDefinitions.swift */,
+			);
+			path = Definitions;
 			sourceTree = "<group>";
 		};
 		A31A1E772EAC49E3008B30B7 /* UI */ = {
@@ -609,6 +619,7 @@
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
+				A30BED3D2ED2F614004A5B51 /* Definitions */,
 				A30BED362ED162DD004A5B51 /* Clustering */,
 				A3DA4DAF2EB99A55005BB812 /* Utils */,
 				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
@@ -917,7 +928,7 @@
 				A308015F2EC09BB700B1BA3A /* MapillaryCustom11ClassConfig.swift in Sources */,
 				A30801602EC09BB700B1BA3A /* VOCClassConfig.swift in Sources */,
 				A30801612EC09BB700B1BA3A /* CocoCustom53ClassConfig.swift in Sources */,
-				A30BED382ED162E7004A5B51 /* MeshConnectedComponent.swift in Sources */,
+				A30BED382ED162E7004A5B51 /* MeshDefinitions.swift in Sources */,
 				A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */,
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtils.swift in Sources */,
 				A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */,
@@ -927,6 +938,7 @@
 				A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
+				A30BED3C2ED2F48B004A5B51 /* MeshClusteringUtils.swift in Sources */,
 				A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttribute.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
 				A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */,

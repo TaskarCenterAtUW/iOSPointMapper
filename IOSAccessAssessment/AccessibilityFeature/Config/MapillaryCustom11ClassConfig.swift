@@ -26,7 +26,7 @@ extension AccessibilityFeatureConfig {
                 ),
                 meshClassification: [.floor],
                 meshInstancePolicy: MeshInstancePolicy(
-                    clusterDistanceThreshold: 0.5, minClusterSize: 5,
+                    clusterDistanceThreshold: 1.0, minClusterSize: 5,
                     meshClusteringDimensions: Set(MeshDimension.allCases), maxClustersToConsider: 1
                 ),
                 attributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity]

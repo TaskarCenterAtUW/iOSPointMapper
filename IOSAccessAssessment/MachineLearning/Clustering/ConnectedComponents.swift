@@ -27,19 +27,20 @@ struct ConnectedComponents<Value: Equatable> {
     }
     
     private var minimumNumberOfPoints: Int
-    private var adjacencyFunction: (Value, Value) throws -> Double
-    private var adjacencyThreshold: Double = 0.0
+    private var adjacencyFunction: (Value, Value, Float) throws -> Bool
+    private var adjacencyThreshold: Float = 0.0
     
     /**
      Initializes the ConnectedComponents clustering algorithm.
      
      - Parameters:
         - minimumNumberOfPoints: The minimum number of points required to form a dense region (cluster).
-        - adjacencyFunction: A function that checks if two values are adjacent (connected). If they are not, returns the closest distance between them.
+        - adjacencyFunction: A function that checks if two values are adjacent (connected).
+            If they are not, checks if their distance is within a threshold.
      */
     init(
         minimumNumberOfPoints: Int,
-        adjacencyFunction: @escaping (Value, Value) throws -> Double, adjacencyThreshold: Double = 0.0
+        adjacencyFunction: @escaping (Value, Value, Float) throws -> Bool, adjacencyThreshold: Float = 0.0
     ) {
         self.minimumNumberOfPoints = minimumNumberOfPoints
         self.adjacencyFunction = adjacencyFunction
@@ -63,7 +64,7 @@ struct ConnectedComponents<Value: Equatable> {
             guard point.label == nil else { continue }
             
             var neighbors = try points.filter {
-                try adjacencyFunction(point.value, $0.value) <= adjacencyThreshold
+                try adjacencyFunction(point.value, $0.value, adjacencyThreshold)
             }
             defer { currentLabel += 1 }
             point.label = currentLabel
@@ -74,7 +75,7 @@ struct ConnectedComponents<Value: Equatable> {
                 neighbor.label = currentLabel
 
                 let n1 = try points.filter {
-                    try adjacencyFunction(point.value, $0.value) <= adjacencyThreshold
+                    try adjacencyFunction(point.value, $0.value, adjacencyThreshold)
                 }
                 if n1.count >= minimumNumberOfPoints {
                     neighbors.append(contentsOf: n1)
