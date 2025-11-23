@@ -5,17 +5,6 @@
 //  Created by Himanshu on 11/20/25.
 //
 
-enum DBSCANError: Error, LocalizedError {
-    case invalidMinimumNumberOfPoints
-    
-    var localizedDescription: String? {
-        switch self {
-        case .invalidMinimumNumberOfPoints:
-            return "The minimum number of points must be non-negative."
-        }
-    }
-}
-
 /**
  A density-based, non-parametric clustering algorithm
  Reference: https://github.com/mattt/DBSCAN
@@ -46,6 +35,17 @@ struct DBSCAN<Value: Equatable> {
     private var minimumNumberOfPoints: Int
     private var distanceFunction: (Value, Value) throws -> Double
     
+    /**
+    Initializes a DBSCAN clustering instance with the specified parameters.
+ 
+    - Parameters:
+     - epsilon: The maximum distance from a specified value
+                for which other values are considered to be neighbors.
+     - minimumNumberOfPoints: The minimum number of points
+                              required to form a dense region.
+     - distanceFunction: A function that computes
+                         the distance between two values.
+     */
     init(epsilon: Double, minimumNumberOfPoints: Int, distanceFunction: @escaping (Value, Value) throws -> Double) {
         self.epsilon = epsilon
         self.minimumNumberOfPoints = minimumNumberOfPoints
@@ -53,24 +53,15 @@ struct DBSCAN<Value: Equatable> {
     }
 
     /**
-     Clusters values according to the specified parameters.
+    Clusters values according to the specified parameters.
 
      - Parameters:
-       - epsilon: The maximum distance from a specified value
-                  for which other values are considered to be neighbors.
-       - minimumNumberOfPoints: The minimum number of points
-                                required to form a dense region.
-       - distanceFunction: A function that computes
-                           the distance between two values.
+        - values: An array of values to be clustered.
      - Throws: Rethrows any errors produced by `distanceFunction`.
      - Returns: A tuple containing an array of clustered values
                 and an array of outlier values.
     */
     public func fit(values: [Value]) throws -> (clusters: [[Value]], outliers: [Value]) {
-        guard (minimumNumberOfPoints >= 0) else {
-            throw DBSCANError.invalidMinimumNumberOfPoints
-        }
-
         let points = values.map { Point($0) }
 
         var currentLabel = 0
@@ -99,8 +90,8 @@ struct DBSCAN<Value: Equatable> {
         var clusters: [[Value]] = []
         var outliers: [Value] = []
 
-        for (label, points) in Dictionary(grouping: points, by: { $0.label }) {
-            let values = points.map { $0.value }
+        for (label, labelPoints) in Dictionary(grouping: points, by: { $0.label }) {
+            let values = labelPoints.map { $0.value }
             if label == nil {
                 outliers.append(contentsOf: values)
             } else {
