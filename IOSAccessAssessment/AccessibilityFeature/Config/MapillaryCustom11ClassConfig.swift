@@ -25,6 +25,10 @@ extension AccessibilityFeatureConfig {
                     minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
                 ),
                 meshClassification: [.floor],
+                meshInstancePolicy: MeshInstancePolicy(
+                    clusterDistanceThreshold: 0.5, minClusterSize: 5,
+                    meshClusteringDimensions: Set(MeshDimension.allCases), maxClustersToConsider: 1
+                ),
                 attributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity]
             ),
             AccessibilityFeatureClass(
@@ -33,7 +37,11 @@ extension AccessibilityFeatureConfig {
             ),
             AccessibilityFeatureClass(
                 id: "pole", name: "Pole", grayscaleValue: 3.0 / 255.0, labelValue: 3,
-                color: CIColor(red: 0.600, green: 0.600, blue: 0.600)
+                color: CIColor(red: 0.600, green: 0.600, blue: 0.600),
+                meshInstancePolicy: MeshInstancePolicy(
+                    clusterDistanceThreshold: 0.2, minClusterSize: 3,
+                    meshClusteringDimensions: Set([.x, .z])
+                )
             ),
             AccessibilityFeatureClass(
                 id: "traffic_light", name: "Traffic light", grayscaleValue: 4.0 / 255.0, labelValue: 4,

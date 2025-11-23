@@ -10,7 +10,6 @@ import ARKit
 
 struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
     let id: String
-    
     let name: String
     
     /**
@@ -34,17 +33,18 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
      */
     /// Flag to indicate if the class is a road or path
     let isWay: Bool
-    /// Optional bounds for the segmentation class
-    /// Is kept optional to prevent unnecessary dimension based masking.
+    /// Optional bounds for the segmentation class. Is kept optional to prevent unnecessary dimension based masking.
     let bounds: DimensionBasedMaskBounds?
     /// Properties for union of masks
     let unionOfMasksPolicy: UnionOfMasksPolicy
+    /// Properties related to mesh post-processing
+    let meshInstancePolicy: MeshInstancePolicy
     
     let attributes: Set<AccessibilityFeatureAttribute>
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
-         meshClassification: Set<ARMeshClassification> = [],
+         meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
          attributes: Set<AccessibilityFeatureAttribute> = []
     ) {
         self.id = id
@@ -56,6 +56,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
         self.bounds = bounds
         self.unionOfMasksPolicy = unionOfMasksPolicy
         self.meshClassification = meshClassification
+        self.meshInstancePolicy = meshInstancePolicy
         self.attributes = attributes
     }
     
