@@ -166,6 +166,7 @@ struct ARCameraView: View {
                 }
                 try manager.pause()
                 await sharedAppData.saveCaptureData(captureData)
+                print("Total Vertex Count: \(captureData.captureMeshDataResults.segmentedMesh.totalVertexCount)")
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
