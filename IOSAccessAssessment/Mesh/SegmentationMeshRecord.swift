@@ -177,10 +177,17 @@ final class SegmentationMeshRecord {
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
-        let segmentationTexture = try segmentationImage.toMTLTexture(
+        let segmentationImageOrientated = segmentationImage
+            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+            .transformed(by: CGAffineTransform(translationX: 0, y: segmentationImage.extent.height))
+        let segmentationTexture = try segmentationImageOrientated.toMTLTexture(
             device: self.context.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
-            contextNoColorSpace: self.context.ciContextNoColorSpace
+            context: self.context.ciContextNoColorSpace,
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space to avoid warnings
         )
+//        let segmentationTexture = try segmentationImage.toMTLTexture(
+//            textureLoader: self.context.textureLoader, context: self.context.ciContextNoColorSpace
+//        )
         
         var accessibilityFeatureMeshClassificationParams = self.accessibilityFeatureMeshClassificationParams
         

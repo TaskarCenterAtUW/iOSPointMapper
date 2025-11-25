@@ -95,10 +95,18 @@ extension CIImage {
  Extensions for converting CIImage to MTLTexture.
  */
 extension CIImage {
+    /**
+        Converts the CIImage to a MTLTexture using the provided device, command buffer, pixel format, CIContext, and color space.
+     
+        Performs a direct conversion by rendering the CIImage into a newly created MTLTexture.
+     
+        WARNING: This method has a vertical mirroring issue, thanks to the way MTLTexture coordinates conflict with CIImage coordinates.
+        For now, the issue will be handled by the calling function.
+     */
     func toMTLTexture(
         device: MTLDevice, commandBuffer: MTLCommandBuffer,
         pixelFormat: MTLPixelFormat,
-        contextNoColorSpace: CIContext
+        context: CIContext, colorSpace: CGColorSpace
     ) throws -> MTLTexture {
         let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: pixelFormat,
@@ -106,32 +114,29 @@ extension CIImage {
             mipmapped: false
         )
         mtlDescriptor.usage = [.shaderRead, .shaderWrite]
-        guard let segmentationTexture = device.makeTexture(descriptor: mtlDescriptor) else {
+        guard let texture = device.makeTexture(descriptor: mtlDescriptor) else {
             throw CIImageUtilsError.segmentationTextureError
         }
-        /// Fixing mirroring issues by orienting the image before rendering to texture
-        let segmentationImageOriented = self.oriented(.downMirrored)
-        contextNoColorSpace.render(
-            segmentationImageOriented,
-            to: segmentationTexture,
+        context.render(
+            self,
+            to: texture,
             commandBuffer: commandBuffer,
             bounds: self.extent,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: colorSpace
         )
-        return segmentationTexture
+        return texture
     }
     
+    /**
+        Converts the CIImage to a MTLTexture using the provided MTKTextureLoader and CIContext.
+     
+        This method creates a CGImage from the CIImage and then uses the texture loader to create the MTLTexture.
+        WARNING: Seems to have mirroring issues.
+     */
     func toMTLTexture(
         textureLoader: MTKTextureLoader,
         context: CIContext
     ) throws -> MTLTexture {
-        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: .r8Unorm,
-            width: Int(self.extent.width), height: Int(self.extent.height),
-            mipmapped: false
-        )
-        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
-        
         guard let cgImage = context.createCGImage(self, from: self.extent) else {
             throw CIImageUtilsError.segmentationTextureError
         }

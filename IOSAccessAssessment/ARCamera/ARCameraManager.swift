@@ -690,7 +690,7 @@ extension ARCameraManager {
         }
         
         /// Process the latest camera image with high priority
-        guard let pixelBuffer = self.cameraImageResults?.cameraImage,
+        guard let cameraImage = self.cameraImageResults?.cameraImage,
               let depthImage = self.cameraImageResults?.depthImage,
               let cameraTransform = self.cameraImageResults?.cameraTransform,
               let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
@@ -698,7 +698,7 @@ extension ARCameraManager {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
         var cameraImageResults = try await self.processCameraImage(
-            image: pixelBuffer, interfaceOrientation: self.interfaceOrientation,
+            image: cameraImage, interfaceOrientation: self.interfaceOrientation,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
             highPriority: true
         )
