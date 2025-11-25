@@ -21,7 +21,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                             for frame: ARFrame
     )
     func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
-                           meshGPUContext: MeshGPUContext,
+                           metalContext: MetalContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor]?,
                            cameraTransform: simd_float4x4,
@@ -342,7 +342,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
-                           meshGPUContext: MeshGPUContext,
+                           metalContext: MetalContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for anchors: [ARAnchor]?,
                            cameraTransform: simd_float4x4,
@@ -373,7 +373,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                 // Create new mesh entity
                 do {
                     let meshRecord = try SegmentationMeshRecord(
-                        meshGPUContext,
+                        metalContext,
                         meshGPUSnapshot: meshGPUSnapshot,
                         segmentationImage: segmentationLabelImage,
                         cameraTransform: cameraTransform,

@@ -57,11 +57,11 @@ final class SegmentationMeshRecord {
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
     
-    let context: MeshGPUContext
+    let context: MetalContext
     let pipelineState: MTLComputePipelineState
     
     init(
-        _ context: MeshGPUContext,
+        _ context: MetalContext,
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
@@ -177,13 +177,11 @@ final class SegmentationMeshRecord {
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
-        let segmentationImageOrientated = segmentationImage
-            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
-            .transformed(by: CGAffineTransform(translationX: 0, y: segmentationImage.extent.height))
-        let segmentationTexture = try segmentationImageOrientated.toMTLTexture(
+        let segmentationTexture = try segmentationImage.toMTLTexture(
             device: self.context.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.context.ciContextNoColorSpace,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space to avoid warnings
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space to avoid warnings
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
 //        let segmentationTexture = try segmentationImage.toMTLTexture(
 //            textureLoader: self.context.textureLoader, context: self.context.ciContextNoColorSpace

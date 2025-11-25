@@ -92,6 +92,14 @@ extension CIImage {
 }
 
 /**
+ Supporting enum for CIImage to MTLTexture conversion.
+ */
+enum CIImageToMTLTextureOrientation: Sendable {
+    case cICanonical
+    case metalTopLeft
+}
+
+/**
  Extensions for converting CIImage to MTLTexture.
  */
 extension CIImage {
@@ -101,12 +109,14 @@ extension CIImage {
         Performs a direct conversion by rendering the CIImage into a newly created MTLTexture.
      
         WARNING: This method has a vertical mirroring issue, thanks to the way MTLTexture coordinates conflict with CIImage coordinates.
-        For now, the issue will be handled by the calling function.
+        For now, the caller has the responsibility of deciding whether it wants to follow CIImage's coordinate system or MTLTexture's coordinate system.
+        This will be expressed using the custom enum `CIImageToMTLTextureOrientation`.
      */
     func toMTLTexture(
         device: MTLDevice, commandBuffer: MTLCommandBuffer,
         pixelFormat: MTLPixelFormat,
-        context: CIContext, colorSpace: CGColorSpace
+        context: CIContext, colorSpace: CGColorSpace,
+        cIImageToMTLTextureOrientation: CIImageToMTLTextureOrientation = .cICanonical
     ) throws -> MTLTexture {
         let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: pixelFormat,
@@ -117,8 +127,17 @@ extension CIImage {
         guard let texture = device.makeTexture(descriptor: mtlDescriptor) else {
             throw CIImageUtilsError.segmentationTextureError
         }
+        let imageOriented: CIImage
+        switch cIImageToMTLTextureOrientation {
+        case .cICanonical:
+            imageOriented = self
+        case .metalTopLeft:
+            imageOriented = self
+                .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+                .transformed(by: CGAffineTransform(translationX: 0, y: self.extent.height))
+        }
         context.render(
-            self,
+            imageOriented,
             to: texture,
             commandBuffer: commandBuffer,
             bounds: self.extent,

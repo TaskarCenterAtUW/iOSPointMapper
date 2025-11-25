@@ -80,7 +80,7 @@
 		A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MeshBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
 		A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */; };
-		A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */; };
+		A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */; };
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
@@ -231,7 +231,7 @@
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3DA4DB52EBAE101005BB812 /* Stub.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Stub.m; sourceTree = "<group>"; };
 		A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationMeshRecord.swift; sourceTree = "<group>"; };
-		A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUContext.swift; sourceTree = "<group>"; };
+		A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalContext.swift; sourceTree = "<group>"; };
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
@@ -386,10 +386,8 @@
 		55659C0B2BB786050094DF01 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				A37E720A2ED571A800CFE4EF /* Definitions */,
 				A35547C02EC1AE4600F43AFD /* Utils */,
-				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
-				A35547C72EC1B0D900F43AFD /* MapData.swift */,
-				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
 				A355471D2EC1A47200F43AFD /* SharedAppData.swift */,
 				A3C22FD02CF1643E00533BF7 /* SharedLegacyImageData.swift */,
 				DAA7F8B42CA38C11003666D8 /* Constants.swift */,
@@ -547,6 +545,17 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
+		A37E720A2ED571A800CFE4EF /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
+				A35547C72EC1B0D900F43AFD /* MapData.swift */,
+				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
+				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
+			);
+			path = Definitions;
+			sourceTree = "<group>";
+		};
 		A39C9F392DD9B01200455E45 /* API */ = {
 			isa = PBXGroup;
 			children = (
@@ -622,7 +631,6 @@
 				A30BED3D2ED2F614004A5B51 /* Definitions */,
 				A30BED362ED162DD004A5B51 /* Clustering */,
 				A3DA4DAF2EB99A55005BB812 /* Utils */,
-				A3DA4DBD2EBCB9F9005BB812 /* MeshGPUContext.swift */,
 				A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */,
 				A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */,
 				A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */,
@@ -947,7 +955,7 @@
 				A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
 				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
-				A3DA4DBE2EBCB9F9005BB812 /* MeshGPUContext.swift in Sources */,
+				A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,

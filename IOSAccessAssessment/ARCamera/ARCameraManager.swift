@@ -149,6 +149,9 @@ struct ARCameraMeshResults {
     }
 }
 
+/**
+    A struct to cache camera properties for optimization.
+ */
 struct ARCameraCache {
     var cameraImageSize: CGSize?
     var interfaceOrientation: UIInterfaceOrientation
@@ -173,7 +176,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
     
     // TODO: Try to Initialize the context once and share across the app
-    var meshGPUContext: MeshGPUContext? = nil
+    var metalContext: MetalContext? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
@@ -227,7 +230,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
             throw ARCameraManagerError.metalDeviceUnavailable
         }
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
-        self.meshGPUContext = try MeshGPUContext(device: device)
+        self.metalContext = try MetalContext(device: device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
         self.isConfigured = true
         
@@ -308,7 +311,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
             return
         }
-        guard let meshGPUContext = meshGPUContext else {
+        guard let metalContext = metalContext else {
             return
         }
         Task {
@@ -317,7 +320,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraOutputMesh(
-                        self, meshGPUContext: meshGPUContext,
+                        self, metalContext: metalContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
@@ -339,7 +342,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
             return
         }
-        guard let meshGPUContext = meshGPUContext else {
+        guard let metalContext = metalContext else {
             return
         }
         Task {
@@ -348,7 +351,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraOutputMesh(
-                        self, meshGPUContext: meshGPUContext,
+                        self, metalContext: metalContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
@@ -370,7 +373,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
             return
         }
-        guard let meshGPUContext = meshGPUContext else {
+        guard let metalContext = metalContext else {
             return
         }
         Task {
@@ -379,7 +382,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraOutputMesh(
-                        self, meshGPUContext: meshGPUContext,
+                        self, metalContext: metalContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
                         for: anchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
@@ -681,7 +684,7 @@ extension ARCameraManager {
     func performFinalSessionUpdateIfPossible(
     ) async throws -> any (CaptureImageDataProtocol & CaptureMeshDataProtocol) {
         guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
-              let meshGPUContext = self.meshGPUContext,
+              let metalContext = self.metalContext,
               let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.finalSessionNotConfigured
         }
@@ -715,9 +718,9 @@ extension ARCameraManager {
             colorSpace: segmentationMaskColorSpace
         )
         outputConsumer?.cameraOutputMesh(
-            self, meshGPUContext: meshGPUContext,
+            self, metalContext: metalContext,
             meshGPUSnapshot: meshGPUSnapshot,
-            for: nil,
+            for: nil as [ARAnchor]?,
             cameraTransform: cameraImageResults.cameraTransform,
             cameraIntrinsics: cameraImageResults.cameraIntrinsics,
             segmentationLabelImage: backedSegmentationLabelImage,

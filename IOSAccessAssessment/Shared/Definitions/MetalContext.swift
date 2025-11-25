@@ -11,7 +11,7 @@ import RealityKit
 import simd
 import MetalKit
 
-enum MeshGPUContextError: Error, LocalizedError {
+enum MetalContextError: Error, LocalizedError {
     case metalInitializationError
     
     var errorDescription: String? {
@@ -22,7 +22,7 @@ enum MeshGPUContextError: Error, LocalizedError {
     }
 }
 
-final class MeshGPUContext {
+final class MetalContext {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
 //    let pipelineState: MTLComputePipelineState
@@ -35,7 +35,7 @@ final class MeshGPUContext {
     init(device: MTLDevice) throws {
         self.device = device
         guard let commandQueue = device.makeCommandQueue() else  {
-            throw MeshGPUContextError.metalInitializationError
+            throw MetalContextError.metalInitializationError
         }
         self.commandQueue = commandQueue
         
