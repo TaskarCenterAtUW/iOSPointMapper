@@ -6,6 +6,7 @@
 //
 import ARKit
 import RealityKit
+import MetalKit
 
 enum SegmentationMeshRecordError: Error, LocalizedError {
     case isProcessingTrue
@@ -186,7 +187,8 @@ final class SegmentationMeshRecord {
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
-        let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+//        let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+        let segmentationTexture = try getSegmentationMTLTexture(segmentationImage: segmentationImage, commandBuffer: commandBuffer)
         
         var accessibilityFeatureMeshClassificationParams = self.accessibilityFeatureMeshClassificationParams
         
@@ -284,6 +286,9 @@ final class SegmentationMeshRecord {
         return Float(bitPattern: raw)
     }
     
+    /**
+        Function to create MTLTexture from CVPixelBuffer.
+     */
     @inline(__always)
     private func getSegmentationMTLTexture(segmentationPixelBuffer: CVPixelBuffer) throws -> MTLTexture {
         let width  = CVPixelBufferGetWidth(segmentationPixelBuffer)
@@ -312,13 +317,10 @@ final class SegmentationMeshRecord {
         return texture
     }
     
-    // MARK: Placeholder function for future reference
-    // This is safer way to create MTLTexture from CIImage, which does not assume pixelBuffer availability
-    // This can be used once the CIImage usage pipeline is fixed.
-    // Right now, there are issues with how color spaces are handled while creating CIImage in the pipeline.
-    // MARK: Also, when using this function, that seems to be some fidelity loss in the segmentation texture.
+    /**
+     Function to create MTLTexture from CIImage using a command buffer.
+     */
     private func getSegmentationMTLTexture(segmentationImage: CIImage, commandBuffer: MTLCommandBuffer) throws -> MTLTexture {
-        // Create Segmentation texture from Segmentation CIImage
         let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .r8Unorm,
             width: Int(segmentationImage.extent.width), height: Int(segmentationImage.extent.height),
@@ -328,14 +330,36 @@ final class SegmentationMeshRecord {
         guard let segmentationTexture = self.context.device.makeTexture(descriptor: mtlDescriptor) else {
             throw SegmentationMeshRecordError.segmentationTextureError
         }
+        /// Fixing mirroring issues by orienting the image before rendering to texture
+        let segmentationImageOriented = segmentationImage.oriented(.downMirrored)
         self.context.ciContextNoColorSpace.render(
-            segmentationImage,
+            segmentationImageOriented,
             to: segmentationTexture,
             commandBuffer: commandBuffer,
             bounds: segmentationImage.extent,
             colorSpace: CGColorSpaceCreateDeviceRGB() // Dummy color space
         )
         return segmentationTexture
+    }
+    
+    /**
+        Function to create MTLTexture from CIImage using a CIContext.
+     */
+    private func getSegmentationMTLTexture(
+        segmentationImage: CIImage, ciContext: CIContext, textureLoader: MTKTextureLoader
+    ) throws -> MTLTexture {
+        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .r8Unorm,
+            width: Int(segmentationImage.extent.width), height: Int(segmentationImage.extent.height),
+            mipmapped: false
+        )
+        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
+        
+        guard let cgImage = ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) else {
+            throw SegmentationMeshRecordError.segmentationTextureError
+        }
+        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+        return try textureLoader.newTexture(cgImage: cgImage, options: options)
     }
     
     static func getAccessibilityFeatureMeshClassificationParams(

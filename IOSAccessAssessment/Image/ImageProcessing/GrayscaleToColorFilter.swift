@@ -80,9 +80,7 @@ struct GrayscaleToColorFilter {
         
         // TODO: Instead of creating texture from CGImage, try to create from CVPixelBuffer directly
         // As shown in SegmentationMeshRecord.swift
-        guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            throw GrayscaleToColorFilterError.textureCreationFailed
-        }
+        let inputTexture = try self.textureLoader.newTexture(cgImage: cgImage, options: options)
 
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),

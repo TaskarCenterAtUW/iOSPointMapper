@@ -9,6 +9,7 @@ import SwiftUI
 import ARKit
 import RealityKit
 import simd
+import MetalKit
 
 enum MeshGPUContextError: Error, LocalizedError {
     case metalInitializationError
@@ -26,6 +27,7 @@ final class MeshGPUContext {
     let commandQueue: MTLCommandQueue
 //    let pipelineState: MTLComputePipelineState
     let textureCache: CVMetalTextureCache
+    let textureLoader: MTKTextureLoader
     
     let ciContext: CIContext
     let ciContextNoColorSpace: CIContext
@@ -37,11 +39,6 @@ final class MeshGPUContext {
         }
         self.commandQueue = commandQueue
         
-//        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
-//            throw SegmentationMeshGPUPipelineError.metalInitializationError
-//        }
-//        self.pipelineState = try device.makeComputePipelineState(function: kernelFunction)
-        
         var metalTextureCache: CVMetalTextureCache?
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, self.device, nil, &metalTextureCache) == kCVReturnSuccess,
             let textureCache = metalTextureCache
@@ -49,6 +46,7 @@ final class MeshGPUContext {
             throw SegmentationMeshRecordError.metalInitializationError
         }
         self.textureCache = textureCache
+        self.textureLoader = MTKTextureLoader(device: device)
         
 //        self.context = CIContext(mtlDevice: device, options: [.cvMetalTextureCache: textureCache])
         self.ciContext = CIContext(mtlDevice: device)

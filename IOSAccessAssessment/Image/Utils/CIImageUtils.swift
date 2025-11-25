@@ -30,6 +30,9 @@ extension CIImage {
     }
 }
 
+/**
+    Extensions for converting CIImage to CVPixelBuffer.
+ */
 extension CIImage {
     func toPixelBuffer(
         context: CIContext, pixelFormatType: OSType = kCVPixelFormatType_32BGRA, colorSpace: CGColorSpace? = nil
@@ -69,6 +72,13 @@ extension CIImage {
         context.render(self, to: pixelBuffer, bounds: self.extent, colorSpace: colorSpace)
         return pixelBuffer
     }
+}
+
+/**
+ Extensions for converting CIImage to MTLTexture.
+ */
+extension CIImage {
+    
 }
 
 /**
