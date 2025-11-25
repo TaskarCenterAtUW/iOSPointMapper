@@ -12,10 +12,13 @@ import simd
 import MetalKit
 
 enum MetalContextError: Error, LocalizedError {
+    case metalDeviceUnavailable
     case metalInitializationError
     
     var errorDescription: String? {
         switch self {
+        case .metalDeviceUnavailable:
+            return NSLocalizedString("Metal device is unavailable on this device.", comment: "")
         case .metalInitializationError:
             return NSLocalizedString("Failed to initialize Metal for Mesh GPU processing.", comment: "")
         }
@@ -32,7 +35,11 @@ final class MetalContext {
     let ciContext: CIContext
     let ciContextNoColorSpace: CIContext
     
-    init(device: MTLDevice) throws {
+    init() throws {
+        let device = MTLCreateSystemDefaultDevice()
+        guard let device = device else {
+            throw MetalContextError.metalDeviceUnavailable
+        }
         self.device = device
         guard let commandQueue = device.makeCommandQueue() else  {
             throw MetalContextError.metalInitializationError

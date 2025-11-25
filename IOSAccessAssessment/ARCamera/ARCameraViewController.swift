@@ -16,9 +16,10 @@ import simd
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
-                            segmentationImage: CIImage?,
-                            segmentationBoundingFrameImage: CIImage?,
-                            for frame: ARFrame
+                           metalContext: MetalContext,
+                           segmentationImage: CIImage?,
+                           segmentationBoundingFrameImage: CIImage?,
+                           for frame: ARFrame
     )
     func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
                            metalContext: MetalContext,
@@ -329,10 +330,12 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
     
     func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
-                       segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
-                       for frame: ARFrame) {
-        if let segmentationImage = segmentationImage {
-            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
+                           metalContext: MetalContext,
+                           segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
+                           for frame: ARFrame) {
+        if let segmentationImage = segmentationImage,
+           let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
+            self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)
         } else {
             self.segmentationImageView.image = nil
         }

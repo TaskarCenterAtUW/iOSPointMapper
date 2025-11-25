@@ -72,6 +72,7 @@ struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
     @EnvironmentObject var sharedAppData: SharedAppData
+    @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
@@ -118,7 +119,10 @@ struct ARCameraView: View {
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
-                try manager.configure(selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline)
+                try manager.configure(
+                    selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
+                    metalContext: sharedAppContext.metalContext
+                )
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }

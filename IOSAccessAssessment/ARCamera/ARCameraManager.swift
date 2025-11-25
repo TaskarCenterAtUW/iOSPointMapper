@@ -123,14 +123,14 @@ struct ARCameraImageResults {
 }
 
 struct ARCameraMeshResults {
-    var meshGPUSnapshot: MeshGPUSnapshot
+    let meshGPUSnapshot: MeshGPUSnapshot
     
-    var meshAnchors: [ARMeshAnchor] = []
-    var segmentationLabelImage: CIImage
-    var cameraTransform: simd_float4x4
-    var cameraIntrinsics: simd_float3x3
+    let meshAnchors: [ARMeshAnchor]
+    let segmentationLabelImage: CIImage
+    let cameraTransform: simd_float4x4
+    let cameraIntrinsics: simd_float3x3
     
-    var lastUpdated: TimeInterval
+    let lastUpdated: TimeInterval
     
     init(
         meshGPUSnapshot: MeshGPUSnapshot,
@@ -175,7 +175,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
     
-    // TODO: Try to Initialize the context once and share across the app
     var metalContext: MetalContext? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
@@ -219,18 +218,17 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func configure(
-        selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline
+        selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
+        metalContext: MetalContext?
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationPipeline = segmentationPipeline
         
-        // TODO: Create the device once and share across the app
-        let device = MTLCreateSystemDefaultDevice()
-        guard let device = device else {
+        guard let metalContext = metalContext else {
             throw ARCameraManagerError.metalDeviceUnavailable
         }
-        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: device)
-        self.metalContext = try MetalContext(device: device)
+        self.metalContext = metalContext
+        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
         self.isConfigured = true
         
@@ -269,6 +267,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         guard checkFrameWithinFrameRate(frame: frame) else {
             return
         }
+        guard let metalContext = metalContext else {
+            return
+        }
         
         let pixelBuffer = frame.capturedImage
         let cameraTransform = frame.camera.transform
@@ -293,7 +294,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                      results.confidenceImage = confidenceImage
                      self.cameraImageResults = results
                      self.outputConsumer?.cameraOutputImage(
-                         self, segmentationImage: cameraImageResults.segmentationColorImage,
+                         self, metalContext: metalContext,
+                         segmentationImage: cameraImageResults.segmentationColorImage,
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
                      )
