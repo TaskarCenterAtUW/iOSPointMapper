@@ -648,11 +648,8 @@ extension ARCameraManager {
         _ ciImage: CIImage, context: CIContext,
         pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
     ) throws -> CIImage {
-        let pixelBuffer = ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
-        guard let imagePixelBuffer = pixelBuffer else {
-            throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
-        }
-        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
+        let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
         return backedImage
     }
     
@@ -664,11 +661,8 @@ extension ARCameraManager {
         _ ciImage: CIImage, context: CIContext,
         pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil,
     ) throws -> CIImage {
-        let pixelBuffer = ciImage.toPixelBuffer(context: context, pixelBufferPool: pixelBufferPool, colorSpace: colorSpace)
-        guard let imagePixelBuffer = pixelBuffer else {
-            throw ARCameraManagerError.segmentationImagePixelBufferUnavailable
-        }
-        let backedImage = CIImage(cvPixelBuffer: imagePixelBuffer)
+        let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelBufferPool: pixelBufferPool, colorSpace: colorSpace)
+        let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
         return backedImage
     }
 }

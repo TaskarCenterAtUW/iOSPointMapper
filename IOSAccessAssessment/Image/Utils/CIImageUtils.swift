@@ -6,6 +6,21 @@
 //
 
 import UIKit
+import MetalKit
+
+enum CIImageUtilsError: Error, LocalizedError {
+    case pixelBufferCreationError
+    case segmentationTextureError
+    
+    var errorDescription: String? {
+        switch self {
+        case .pixelBufferCreationError:
+            return "Failed to create pixel buffer from CIImage."
+        case .segmentationTextureError:
+            return "Failed to create segmentation texture."
+        }
+    }
+}
 
 extension CIImage {
     func croppedToCenter(size: CGSize) -> CIImage {
@@ -36,7 +51,7 @@ extension CIImage {
 extension CIImage {
     func toPixelBuffer(
         context: CIContext, pixelFormatType: OSType = kCVPixelFormatType_32BGRA, colorSpace: CGColorSpace? = nil
-    ) -> CVPixelBuffer? {
+    ) throws -> CVPixelBuffer {
         let width = Int(self.extent.width)
         let height = Int(self.extent.height)
         
@@ -57,17 +72,19 @@ extension CIImage {
         )
         
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
-            return nil
+            throw CIImageUtilsError.pixelBufferCreationError
         }
         context.render(self, to: buffer, bounds: self.extent, colorSpace: colorSpace)
         return buffer
     }
     
-    func toPixelBuffer(context: CIContext, pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil) -> CVPixelBuffer? {
+    func toPixelBuffer(
+        context: CIContext, pixelBufferPool: CVPixelBufferPool, colorSpace: CGColorSpace? = nil
+    ) throws -> CVPixelBuffer {
         var pixelBufferOut: CVPixelBuffer?
         let status = CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &pixelBufferOut)
         guard status == kCVReturnSuccess, let pixelBuffer = pixelBufferOut else {
-            return nil
+            throw CIImageUtilsError.pixelBufferCreationError
         }
         context.render(self, to: pixelBuffer, bounds: self.extent, colorSpace: colorSpace)
         return pixelBuffer
@@ -78,7 +95,49 @@ extension CIImage {
  Extensions for converting CIImage to MTLTexture.
  */
 extension CIImage {
+    func toMTLTexture(
+        device: MTLDevice, commandBuffer: MTLCommandBuffer,
+        pixelFormat: MTLPixelFormat,
+        contextNoColorSpace: CIContext
+    ) throws -> MTLTexture {
+        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: pixelFormat,
+            width: Int(self.extent.width), height: Int(self.extent.height),
+            mipmapped: false
+        )
+        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
+        guard let segmentationTexture = device.makeTexture(descriptor: mtlDescriptor) else {
+            throw CIImageUtilsError.segmentationTextureError
+        }
+        /// Fixing mirroring issues by orienting the image before rendering to texture
+        let segmentationImageOriented = self.oriented(.downMirrored)
+        contextNoColorSpace.render(
+            segmentationImageOriented,
+            to: segmentationTexture,
+            commandBuffer: commandBuffer,
+            bounds: self.extent,
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+        )
+        return segmentationTexture
+    }
     
+    func toMTLTexture(
+        textureLoader: MTKTextureLoader,
+        context: CIContext
+    ) throws -> MTLTexture {
+        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .r8Unorm,
+            width: Int(self.extent.width), height: Int(self.extent.height),
+            mipmapped: false
+        )
+        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
+        
+        guard let cgImage = context.createCGImage(self, from: self.extent) else {
+            throw CIImageUtilsError.segmentationTextureError
+        }
+        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
+        return try textureLoader.newTexture(cgImage: cgImage, options: options)
+    }
 }
 
 /**
