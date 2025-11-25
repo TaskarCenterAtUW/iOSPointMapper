@@ -282,7 +282,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         let depthImage: CIImage? = depthBuffer != nil ? CIImage(cvPixelBuffer: depthBuffer!) : nil
         let confidenceImage: CIImage? = depthConfidenceBuffer != nil ? CIImage(cvPixelBuffer: depthConfidenceBuffer!) : nil
         
-        // Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
+        /// Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
         Task {
              do {
                  let cameraImageResults = try await processCameraImage(
