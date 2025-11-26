@@ -63,7 +63,7 @@ class UnionOfMasksProcessor {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "unionOfMasksKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -81,7 +81,7 @@ class UnionOfMasksProcessor {
      */
     // FIXME: Sometimes, the array texture is not set correctly.
     // This could be due to the way the AnnotationView's initialization is set up.
-    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) throws {
+    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .r8Unorm) throws {
         let imageCount = images.count
         guard imageCount > 0 else {
             throw UnionOfMasksProcessorError.invalidInputImage

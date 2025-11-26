@@ -124,7 +124,6 @@ struct AnnotationView: View {
             await handleOnAppear()
         }
         .onChange(of: classSelectionViewModel.currentClass) { oldClass, newClass in
-            print("Changing Class Selection index")
             handleOnClassChange()
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
@@ -270,7 +269,7 @@ struct AnnotationView: View {
     }
     
     private func confirmAnnotation() {
-        guard (!isCurrentIndexLast()) else {
+        if isCurrentIndexLast() {
             self.dismiss()
             return
         }

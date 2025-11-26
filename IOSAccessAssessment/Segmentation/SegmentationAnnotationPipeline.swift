@@ -193,9 +193,16 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         }
         
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
-        if bounds != nil {
-            unionImage = try self.dimensionBasedMaskFilter?.apply(
-                to: unionImage, bounds: bounds!) ?? unionImage
+        if let bounds = bounds,
+           let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter
+        {
+            do {
+                unionImage = try dimensionBasedMaskFilter.apply(
+                    to: unionImage, bounds: bounds
+                )
+            } catch {
+                print("Error applying dimension based mask filter: \(error)")
+            }
         }
         
         self.isProcessing = false
