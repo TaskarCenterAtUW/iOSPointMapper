@@ -123,6 +123,7 @@ extension CIImage {
             width: Int(self.extent.width), height: Int(self.extent.height),
             mipmapped: false
         )
+        /// TODO: Make this configurable if needed
         mtlDescriptor.usage = [.shaderRead, .shaderWrite]
         guard let texture = device.makeTexture(descriptor: mtlDescriptor) else {
             throw CIImageUtilsError.segmentationTextureError

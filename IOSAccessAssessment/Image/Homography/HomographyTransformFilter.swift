@@ -14,6 +14,7 @@ enum HomographyTransformFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
+    case metalPipelineCreationError
     case outputImageCreationFailed
     
     var errorDescription: String? {
@@ -24,6 +25,8 @@ enum HomographyTransformFilterError: Error, LocalizedError {
             return "The input image is invalid."
         case .textureCreationFailed:
             return "Failed to create Metal textures."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
         }
@@ -51,7 +54,7 @@ struct HomographyTransformFilter {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -68,30 +71,27 @@ struct HomographyTransformFilter {
             - transformMatrix: A 3x3 matrix representing the homography transformation.
      */
     func apply(to inputImage: CIImage, transformMatrix: simd_float3x3) throws -> CIImage {
-        // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
-        //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
-        
-        guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            throw HomographyTransformFilterError.invalidInputImage
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw GrayscaleToColorFilterError.metalPipelineCreationError
         }
         
-        let inputTexture = try self.textureLoader.newTexture(cgImage: cgImage, options: options)
-//        guard let inputTexture = self.renderCIImageToTexture(inputImage, on: self.device, context: self.ciContext) else {
-//            return nil
-//        }
-
-        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
-        guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
-              let commandBuffer = self.commandQueue.makeCommandBuffer(),
-              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+        let inputTexture = try inputImage.toMTLTexture(
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: self.ciContext,
+            colorSpace: CGColorSpaceCreateDeviceGray(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
+        )
+        guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw HomographyTransformFilterError.textureCreationFailed
         }
-        
         var transformMatrixLocal = transformMatrix
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw HomographyTransformFilterError.metalPipelineCreationError
+        }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
@@ -108,23 +108,12 @@ struct HomographyTransformFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]) else {
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
             throw HomographyTransformFilterError.outputImageCreationFailed
         }
-        return resultImage
+        let resultImageOriented = resultImage
+            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+            .transformed(by: CGAffineTransform(translationX: 0, y: resultImage.extent.height))
+        return resultImageOriented
     }
-    
-//    private func renderCIImageToTexture(_ ciImage: CIImage, on device: MTLDevice, context: CIContext) -> MTLTexture? {
-//        let width = Int(ciImage.extent.width)
-//        let height = Int(ciImage.extent.height)
-//
-//        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: width, height: height, mipmapped: false)
-//        descriptor.usage = [.shaderRead, .shaderWrite]
-//
-//        guard let texture = device.makeTexture(descriptor: descriptor) else { return nil }
-//
-//        context.render(ciImage, to: texture, commandBuffer: nil, bounds: ciImage.extent, colorSpace: CGColorSpaceCreateDeviceGray())
-//        return texture
-//    }
-
 }

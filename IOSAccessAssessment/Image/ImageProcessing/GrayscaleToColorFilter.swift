@@ -73,7 +73,6 @@ struct GrayscaleToColorFilter {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
 
-        /// commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw GrayscaleToColorFilterError.metalPipelineCreationError
         }

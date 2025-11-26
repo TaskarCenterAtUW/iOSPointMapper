@@ -99,7 +99,7 @@ class UnionOfMasksProcessor {
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: width, height: height, mipmapped: false)
         descriptor.textureType = .type2DArray
-        descriptor.usage = [.shaderRead] // TODO: Check if shaderWrite is needed
+        descriptor.usage = [.shaderRead]
         descriptor.arrayLength = imageCount
         
         guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {
@@ -145,8 +145,6 @@ class UnionOfMasksProcessor {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
                                                                   mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
-        
-//        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
