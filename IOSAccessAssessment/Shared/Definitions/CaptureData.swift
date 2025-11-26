@@ -12,7 +12,8 @@ import simd
 struct CaptureImageDataResults: Sendable {
     let segmentationLabelImage: CIImage
     let segmentedClasses: [AccessibilityFeatureClass]
-    let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
+    /// Map of detected accessibility features with their UUIDs. Not currently used but reserved for potential future use.
+    let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
 }
 
 struct CaptureMeshDataResults: Sendable {
@@ -61,6 +62,19 @@ struct CaptureImageData: CaptureImageDataProtocol {
     let confidenceImage: CIImage?
     
     let captureImageDataResults: CaptureImageDataResults
+    
+    init(_ captureImageData: (any CaptureImageDataProtocol)) {
+        self.id = captureImageData.id
+        self.timestamp = captureImageData.timestamp
+        self.cameraImage = captureImageData.cameraImage
+        self.cameraTransform = captureImageData.cameraTransform
+        self.cameraIntrinsics = captureImageData.cameraIntrinsics
+        self.interfaceOrientation = captureImageData.interfaceOrientation
+        self.originalSize = captureImageData.originalSize
+        self.depthImage = captureImageData.depthImage
+        self.confidenceImage = captureImageData.confidenceImage
+        self.captureImageDataResults = captureImageData.captureImageDataResults
+    }
 }
 
 struct CaptureAllData: CaptureImageDataProtocol, CaptureMeshDataProtocol {

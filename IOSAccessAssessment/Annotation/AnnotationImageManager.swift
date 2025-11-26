@@ -111,7 +111,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         ) else {
             throw AnnotatiomImageManagerError.meshRasterizationFailed
         }
-        let overlayOutputImage = try getOverlayOutputImage(
+        let overlayOutputImage = try getMeshOverlayOutputImage(
             rasterizedMeshImage: rasterizedMeshImage,
             captureMeshData: captureMeshData
         )
@@ -126,7 +126,12 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             }
         }
     }
-    
+}
+
+/**
+    Extension to handle camera image processing: orientation and cropping.
+ */
+extension AnnotationImageManager {
     private func getCameraOutputImage(
         captureImageData: (any CaptureImageDataProtocol)
     ) throws -> CIImage {
@@ -146,8 +151,20 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         }
         return CIImage(cgImage: cameraCgImage)
     }
-    
-    private func getOverlayOutputImage(
+}
+
+/**
+    Extension to define a segmentation mask processing.
+ */
+extension AnnotationImageManager {
+}
+
+/**
+    Extension to handle mesh vertex processing and projection.
+    Also handles rasterized mesh image orientation and cropping.
+ */
+extension AnnotationImageManager {
+    private func getMeshOverlayOutputImage(
         rasterizedMeshImage: CGImage,
         captureMeshData: (any CaptureMeshDataProtocol)
     ) throws -> CIImage {
@@ -166,12 +183,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         }
         return CIImage(cgImage: overlayCgImage)
     }
-}
-
-/**
-    Extension to handle mesh vertex processing and projection.
- */
-extension AnnotationImageManager {
+    
     private func getMeshCPUPolygons(
         captureMeshData: (any CaptureMeshDataProtocol),
         accessibilityFeatureClass: AccessibilityFeatureClass

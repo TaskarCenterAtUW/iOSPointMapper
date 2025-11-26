@@ -85,7 +85,7 @@ struct ARCameraImageResults {
     
     let segmentationLabelImage: CIImage
     let segmentedClasses: [AccessibilityFeatureClass]
-    let detectedObjectMap: [UUID: DetectedAccessibilityFeature]
+    let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     let cameraTransform: simd_float4x4
     let cameraIntrinsics: simd_float3x3
     let interfaceOrientation: UIInterfaceOrientation
@@ -97,7 +97,7 @@ struct ARCameraImageResults {
     init(
         cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
         segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-        detectedObjectMap: [UUID: DetectedAccessibilityFeature],
+        detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation,
         originalImageSize: CGSize,
@@ -109,7 +109,7 @@ struct ARCameraImageResults {
         
         self.segmentationLabelImage = segmentationLabelImage
         self.segmentedClasses = segmentedClasses
-        self.detectedObjectMap = detectedObjectMap
+        self.detectedFeatureMap = detectedFeatureMap
         self.cameraTransform = cameraTransform
         self.cameraIntrinsics = cameraIntrinsics
         
@@ -450,8 +450,8 @@ extension ARCameraManager {
             colorSpace: segmentationColorColorSpace
         )
         
-        let detectedObjectMap = alignDetectedObjects(
-            segmentationResults.detectedObjectMap,
+        let detectedFeatureMap = alignDetectedObjects(
+            segmentationResults.detectedFeatureMap,
             orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
         )
         
@@ -472,7 +472,7 @@ extension ARCameraManager {
             cameraImage: image,
             segmentationLabelImage: segmentationImage,
             segmentedClasses: segmentationResults.segmentedClasses,
-            detectedObjectMap: detectedObjectMap,
+            detectedFeatureMap: detectedFeatureMap,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
             interfaceOrientation: interfaceOrientation,
@@ -496,7 +496,7 @@ extension ARCameraManager {
     Align detected objects back to the original image coordinate system.
      */
     private func alignDetectedObjects(
-        _ detectedObjectMap: [UUID: DetectedAccessibilityFeature],
+        _ detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
         orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize
     ) -> [UUID: DetectedAccessibilityFeature] {
         let orientationTransform = orientation.getNormalizedToUpTransform().inverted()
@@ -505,7 +505,7 @@ extension ARCameraManager {
             imageSize: imageSize, from: originalSize)
         let alignTransform = orientationTransform.concatenating(revertTransform)
         
-        let alignedObjectMap: [UUID: DetectedAccessibilityFeature] = detectedObjectMap.mapValues { object in
+        let alignedObjectMap: [UUID: DetectedAccessibilityFeature] = detectedFeatureMap.mapValues { object in
             let centroid = object.contourDetails.centroid.applying(alignTransform)
             let boundingBox = object.contourDetails.boundingBox.applying(alignTransform)
             let normalizedPoints = object.contourDetails.normalizedPoints.map { point_simd in
@@ -748,7 +748,7 @@ extension ARCameraManager {
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,
-            detectedObjectMap: cameraImageResults.detectedObjectMap
+            detectedFeatureMap: cameraImageResults.detectedFeatureMap
         )
         let captureMeshDataResults = CaptureMeshDataResults(
             segmentedMesh: cameraMeshSnapshot

@@ -45,15 +45,15 @@ struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
-    var detectedObjectMap: [UUID: DetectedAccessibilityFeature]
+    var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-         detectedObjectMap: [UUID: DetectedAccessibilityFeature]) {
+         detectedFeatureMap: [UUID: DetectedAccessibilityFeature]) {
         self.segmentationImage = segmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
-        self.detectedObjectMap = detectedObjectMap
+        self.detectedFeatureMap = detectedFeatureMap
     }
 }
 
@@ -81,10 +81,6 @@ final class SegmentationARPipeline: ObservableObject {
     private var grayscaleToColorMasker: GrayscaleToColorFilter?
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
-    
-    init() {
-        
-    }
     
     func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
@@ -184,7 +180,7 @@ final class SegmentationARPipeline: ObservableObject {
             from: segmentationImage
         )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
-        let detectedObjectMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
+        let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
             uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) }
         )
         
@@ -198,7 +194,7 @@ final class SegmentationARPipeline: ObservableObject {
             segmentationImage: segmentationImage,
             segmentationColorImage: segmentationColorImage,
             segmentedClasses: segmentationResults.segmentedClasses,
-            detectedObjectMap: detectedObjectMap
+            detectedFeatureMap: detectedFeatureMap
         )
     }
     

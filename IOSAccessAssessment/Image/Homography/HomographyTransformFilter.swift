@@ -30,6 +30,9 @@ enum HomographyTransformFilterError: Error, LocalizedError {
     }
 }
 
+/**
+    HomographyTransformFilter is a class that applies a homography transformation to a CIImage using Metal.
+ */
 struct HomographyTransformFilter {
     // Metal-related properties
     private let device: MTLDevice

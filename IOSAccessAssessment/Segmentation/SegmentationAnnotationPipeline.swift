@@ -1,5 +1,5 @@
 //
-//  AnnotationSegmentationPipeline.swift
+//  SegmentationAnnotationPipeline.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 5/10/25.
@@ -11,18 +11,19 @@ import Vision
 import OrderedCollections
 import simd
 
-enum AnnotationSegmentationPipelineError: Error, LocalizedError {
+enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case homographyTransformFilterNil
     case imageHistoryEmpty
     case unionOfMasksProcessorNil
     case contourRequestProcessorNil
+    case homographyRequestProcessorNil
     case invalidUnionImageResult
     
     var errorDescription: String? {
         switch self {
         case .isProcessingTrue:
-            return "The AnnotationSegmentationPipeline is already processing a request."
+            return "The SegmentationAnnotationPipeline is already processing a request."
         case .homographyTransformFilterNil:
             return "Homography transform filter is not initialized."
         case .imageHistoryEmpty:
@@ -31,6 +32,8 @@ enum AnnotationSegmentationPipelineError: Error, LocalizedError {
             return "Union of masks processor is not initialized."
         case .contourRequestProcessorNil:
             return "Contour request processor is not initialized."
+        case .homographyRequestProcessorNil:
+            return "Homography request processor is not initialized."
         case .invalidUnionImageResult:
             return "Failed to apply union of masks."
         }
@@ -38,11 +41,11 @@ enum AnnotationSegmentationPipelineError: Error, LocalizedError {
 }
     
 
-struct AnnotationSegmentationPipelineResults {
+struct SegmentationAnnotationPipelineResults {
     var segmentationImage: CIImage
-    var detectedObjects: [DetectedObject]
+    var detectedObjects: [DetectedAccessibilityFeature]
     
-    init(segmentationImage: CIImage, detectedObjects: [DetectedObject]) {
+    init(segmentationImage: CIImage, detectedObjects: [DetectedAccessibilityFeature]) {
         self.segmentationImage = segmentationImage
         self.detectedObjects = detectedObjects
     }
@@ -53,15 +56,16 @@ struct AnnotationSegmentationPipelineResults {
  Unlike the main SegmentationPipeline, this class processes images and returns the results synchronously.
  Later, we can consider making it asynchronous based on the requirements.
  */
-class AnnotationSegmentationPipeline {
+final class SegmentationAnnotationPipeline: ObservableObject {
     // This will be useful only when we are using the pipeline in asynchronous mode.
     var isProcessing = false
+//    private var currentTask: Task<SegmentationARPipelineResults, Error>?
+//    private var timeoutInSeconds: Double = 3.0
     
-    var selectedClassIndices: [Int] = []
-    var selectedClasses: [AccessibilityFeatureClass] = []
-    var selectedClassLabels: [UInt8] = []
-    var selectedClassGrayscaleValues: [Float] = []
-    var selectedClassColors: [CIColor] = []
+    private var selectedClasses: [AccessibilityFeatureClass] = []
+    private var selectedClassLabels: [UInt8] = []
+    private var selectedClassGrayscaleValues: [Float] = []
+    private var selectedClassColors: [CIColor] = []
     
     // TODO: Check what would be the appropriate value for this
     var contourEpsilon: Float = 0.01
@@ -69,34 +73,32 @@ class AnnotationSegmentationPipeline {
     // For normalized points
     var perimeterThreshold: Float = 0.2
     
-    var contourRequestProcessor: ContourRequestLegacyProcessor?
-    var homographyTransformFilter: HomographyTransformFilter?
-    var unionOfMasksProcessor: UnionOfMasksProcessor?
-    var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
-    let context = CIContext()
+    private var contourRequestProcessor: ContourRequestLegacyProcessor?
+    private var homographyRequestProcessor: HomographyRequestProcessor?
+    private var homographyTransformFilter: HomographyTransformFilter?
+    private var unionOfMasksProcessor: UnionOfMasksProcessor?
+    private var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
+    /// TODO: Replace with the global Metal context
+    private let context = CIContext()
     
-    init() {
-        do {
-            self.contourRequestProcessor = try ContourRequestLegacyProcessor(
-                contourEpsilon: self.contourEpsilon,
-                perimeterThreshold: self.perimeterThreshold,
-                selectedClasses: self.selectedClasses)
-            self.homographyTransformFilter = try HomographyTransformFilter()
-            self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
-            self.unionOfMasksProcessor = try UnionOfMasksProcessor()
-        } catch {
-            print("Error initializing AnnotationSegmentationPipeline: \(error)")
-        }
+    func configure() throws {
+        self.contourRequestProcessor = try ContourRequestLegacyProcessor(
+            contourEpsilon: self.contourEpsilon,
+            perimeterThreshold: self.perimeterThreshold,
+            selectedClasses: self.selectedClasses)
+        self.homographyRequestProcessor = HomographyRequestProcessor()
+        self.homographyTransformFilter = try HomographyTransformFilter()
+        self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
+        self.unionOfMasksProcessor = try UnionOfMasksProcessor()
     }
     
     func reset() {
         self.isProcessing = false
-        self.setSelectedClassIndices([])
+        self.setSelectedClasses([])
     }
     
-    func setSelectedClassIndices(_ selectedClassIndices: [Int]) {
-        self.selectedClassIndices = selectedClassIndices
-        self.selectedClasses = selectedClassIndices.map { Constants.SelectedAccessibilityFeatureConfig.classes[$0] }
+    func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+        self.selectedClasses = selectedClasses
         self.selectedClassLabels = selectedClasses.map { $0.labelValue }
         self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
         self.selectedClassColors = selectedClasses.map { $0.color }
@@ -104,25 +106,25 @@ class AnnotationSegmentationPipeline {
         self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
-    func processTransformationsRequest(imageDataHistory: [ImageData]) throws -> [CIImage] {
+    func processTransformationsRequest(
+        currentCaptureData: CaptureImageData, captureDataHistory: [CaptureImageData]
+    ) throws -> [CIImage] {
         if self.isProcessing {
-            throw AnnotationSegmentationPipelineError.isProcessingTrue
+            throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
         guard let homographyTransformFilter = self.homographyTransformFilter else {
-            throw AnnotationSegmentationPipelineError.homographyTransformFilterNil
+            throw SegmentationAnnotationPipelineError.homographyTransformFilterNil
         }
-        
         self.isProcessing = true
         
-        if imageDataHistory.count <= 1 {
-            print("No image history available for processing.")
+        guard captureDataHistory.count > 1 else {
             self.isProcessing = false
-            if imageDataHistory.count == 1 && imageDataHistory[0].segmentationLabelImage != nil {
-                return [imageDataHistory[0].segmentationLabelImage!]
+            guard captureDataHistory.count == 1 else {
+                throw SegmentationAnnotationPipelineError.imageHistoryEmpty
             }
-            throw AnnotationSegmentationPipelineError.imageHistoryEmpty
+            let mainSegmentationLabelImage = captureDataHistory[0].captureImageDataResults.segmentationLabelImage
+            return [mainSegmentationLabelImage]
         }
-        var transformedSegmentationLabelImages: [CIImage] = []
         
         /**
          Iterate through the image data history in reverse.
@@ -130,33 +132,45 @@ class AnnotationSegmentationPipeline {
          
          TODO: Need to check if the error handling is appropriate here.
          */
-        // Identity matrix for the first image
+        var transformedSegmentationLabelImages: [CIImage] = []
+        var referenceCaptureData = currentCaptureData
+        /// Identity matrix for the first image
         var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
-        for i in (0..<imageDataHistory.count).reversed() {
-            let currentImageData = imageDataHistory[i]
-            if currentImageData.segmentationLabelImage == nil {
-                transformMatrixToNextFrame = (
-                    currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
-                ) * transformMatrixToNextFrame
-                continue
-            }
-            transformMatrixToNextFrame = (
-                currentImageData.transformMatrixToPreviousFrame?.inverse ?? matrix_identity_float3x3
-            ) * transformMatrixToNextFrame
-            // Apply the homography transform to the current image
-            var transformedImage: CIImage
+        for captureData in captureDataHistory.reversed() {
             do {
-                transformedImage = try homographyTransformFilter.apply(
-                    to: currentImageData.segmentationLabelImage!, transformMatrix: transformMatrixToNextFrame)
+                let homographyTransform = try self.getHomographyTransform(
+                    referenceCaptureData: referenceCaptureData, currentCaptureData: captureData
+                )
+                transformMatrixToNextFrame = homographyTransform * transformMatrixToNextFrame
+                let transformedImage = try homographyTransformFilter.apply(
+                    to: captureData.captureImageDataResults.segmentationLabelImage,
+                    transformMatrix: transformMatrixToNextFrame
+                )
+                transformedSegmentationLabelImages.append(transformedImage)
+                referenceCaptureData = captureData
             } catch {
-                print("Error applying homography transform: \(error)")
+                print("Error getting homography transform: \(error)")
                 continue
             }
-            transformedSegmentationLabelImages.append(transformedImage)
         }
         
         self.isProcessing = false
         return transformedSegmentationLabelImages
+    }
+    
+    /**
+     This function uses the homography request processor to compute the homography matrix
+     */
+    private func getHomographyTransform(
+        referenceCaptureData: CaptureImageData, currentCaptureData: CaptureImageData
+    ) throws -> simd_float3x3 {
+        guard let homographyRequestProcessor = self.homographyRequestProcessor else {
+            throw SegmentationAnnotationPipelineError.homographyRequestProcessorNil
+        }
+        let homographyTransform = try homographyRequestProcessor.getHomographyTransform(
+            referenceImage: referenceCaptureData.cameraImage, floatingImage: currentCaptureData.cameraImage
+        )
+        return homographyTransform
     }
     
     func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) throws {
@@ -166,12 +180,12 @@ class AnnotationSegmentationPipeline {
     func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
                                     unionOfMasksPolicy: UnionOfMasksPolicy = .default) throws -> CIImage {
         if self.isProcessing {
-            throw AnnotationSegmentationPipelineError.isProcessingTrue
+            throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
         self.isProcessing = true
         
         guard let unionOfMasksProcessor = self.unionOfMasksProcessor else {
-            throw AnnotationSegmentationPipelineError.unionOfMasksProcessorNil
+            throw SegmentationAnnotationPipelineError.unionOfMasksProcessorNil
         }
         
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
@@ -191,12 +205,12 @@ class AnnotationSegmentationPipeline {
     func processContourRequest(from ciImage: CIImage, targetValue: UInt8, isWay: Bool = false,
                                bounds: DimensionBasedMaskBounds? = nil) throws -> [DetectedObject] {
         if self.isProcessing {
-            throw AnnotationSegmentationPipelineError.isProcessingTrue
+            throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
         self.isProcessing = true
         
         guard self.contourRequestProcessor != nil else {
-            throw AnnotationSegmentationPipelineError.contourRequestProcessorNil
+            throw SegmentationAnnotationPipelineError.contourRequestProcessorNil
         }
         
         let targetClass = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap[targetValue]

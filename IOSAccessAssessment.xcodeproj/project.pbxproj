@@ -54,6 +54,7 @@
 		A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
+		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
 		A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3A2DD9B03000455E45 /* OSMElement.swift */; };
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */; };
@@ -84,7 +85,7 @@
 		A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */; };
 		A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EC2DCF10050020CE84 /* Homography.metal */; };
 		A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */; };
-		A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */; };
+		A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationLegacyPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationLegacyPipeline.swift */; };
 		A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */; };
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
@@ -93,7 +94,6 @@
 		A3E84ED22DDAD41E0096A645 /* AnnotationLegacyAPITransmissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E84ED12DDAD4130096A645 /* AnnotationLegacyAPITransmissionController.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
-		A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
 		A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */; };
 		A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */; };
@@ -204,6 +204,7 @@
 		A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationInstanceDetailView.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
+		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
 		A39C9F3A2DD9B03000455E45 /* OSMElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMElement.swift; sourceTree = "<group>"; };
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageManager.swift; sourceTree = "<group>"; };
@@ -235,7 +236,7 @@
 		A3DC22E82DCF0F9A0020CE84 /* ImageProcessing.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = ImageProcessing.metal; sourceTree = "<group>"; };
 		A3DC22EC2DCF10050020CE84 /* Homography.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Homography.metal; sourceTree = "<group>"; };
 		A3DC22EE2DCF11970020CE84 /* HomographyTransformFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyTransformFilter.swift; sourceTree = "<group>"; };
-		A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationSegmentationPipeline.swift; sourceTree = "<group>"; };
+		A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationLegacyPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationSegmentationLegacyPipeline.swift; sourceTree = "<group>"; };
 		A3DC22F62DD032960020CE84 /* UnionOfMasks.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = UnionOfMasks.metal; sourceTree = "<group>"; };
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
@@ -244,7 +245,6 @@
 		A3E84ED12DDAD4130096A645 /* AnnotationLegacyAPITransmissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationLegacyAPITransmissionController.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
-		A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CentroidTracker.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBEncoder.swift; sourceTree = "<group>"; };
 		A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfidenceEncoder.swift; sourceTree = "<group>"; };
 		A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraTransformEncoder.swift; sourceTree = "<group>"; };
@@ -441,7 +441,6 @@
 		A308014D2EC091E400B1BA3A /* Contour */ = {
 			isa = PBXGroup;
 			children = (
-				A3FCC2F82DA4E07A0037AB43 /* CentroidTracker.swift */,
 				A3BB5AFD2DB2EE74008673ED /* ContourObjectRasterizer.swift */,
 				A3B2DDBC2DC99253003416FB /* ContourRequestLegacyProcessor.swift */,
 				A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */,
@@ -748,7 +747,8 @@
 			children = (
 				A3B2DDBB2DC99212003416FB /* Functions */,
 				A3FFAA7D2DE3E41D002B99BD /* SegmentationARPipeline.swift */,
-				A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationPipeline.swift */,
+				A3DC22F02DCFF0340020CE84 /* AnnotationSegmentationLegacyPipeline.swift */,
+				A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */,
 			);
 			path = Segmentation;
 			sourceTree = "<group>";
@@ -948,12 +948,11 @@
 				A30BED3C2ED2F48B004A5B51 /* MeshClusteringUtils.swift in Sources */,
 				A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttribute.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
-				A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationPipeline.swift in Sources */,
+				A3DC22F12DCFF03A0020CE84 /* AnnotationSegmentationLegacyPipeline.swift in Sources */,
 				A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */,
 				A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */,
 				A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
-				A3FCC2F92DA4E0800037AB43 /* CentroidTracker.swift in Sources */,
 				A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
@@ -987,6 +986,7 @@
 				A3E84ED02DDAC7A50096A645 /* AnnotationLegacyImageManager.swift in Sources */,
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */,
+				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
