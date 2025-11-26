@@ -17,7 +17,7 @@ enum AnnotationViewConstants {
         static let finishText = "Finish"
         static let nextText = "Next"
         
-        static let invalidPageText = "Invalid Content. Please Close."
+        static let loadingPageText = "Loading. Please wait..."
         
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
@@ -114,10 +114,10 @@ struct AnnotationView: View {
                 }
             )
             
-            if (isCurrentIndexValid()) {
-                mainContent()
+            if let currentClass = classSelectionViewModel.currentClass {
+                mainContent(currentClass: currentClass)
             } else {
-                invalidPageView()
+                loadingPageView()
             }
         }
         .task {
@@ -137,13 +137,11 @@ struct AnnotationView: View {
         })
     }
     
-    private func invalidPageView() -> some View {
+    private func loadingPageView() -> some View {
         VStack {
-            Label {
-                Text(AnnotationViewConstants.Texts.invalidPageText)
-            } icon: {
-                Image(systemName: AnnotationViewConstants.Images.errorIcon)
-            }
+            Spacer()
+            Text(AnnotationViewConstants.Texts.loadingPageText)
+            SpinnerView()
             Spacer()
         }
     }
@@ -173,45 +171,41 @@ struct AnnotationView: View {
     }
     
     @ViewBuilder
-    private func mainContent() -> some View {
-        if let currentClass = classSelectionViewModel.currentClass {
-            orientationStack {
-                HostedAnnotationImageViewController(annotationImageManager: manager)
+    private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
+        orientationStack {
+            HostedAnnotationImageViewController(annotationImageManager: manager)
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
+                    Spacer()
+                }
                 
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
-                        Spacer()
-                    }
-                    
-                    HStack {
-                        Spacer()
-                        /// Class Instance Picker
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 30)
-                    
-                    ProgressBar(value: 0)
-                    
-                    HStack {
-                        Spacer()
-                        annotationOptionsView()
-                        Spacer()
-                    }
-                    .padding()
-                    
-                    Button(action: {
-                        confirmAnnotation()
-                    }) {
-                        Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                            .padding()
-                    }
+                HStack {
+                    Spacer()
+                    /// Class Instance Picker
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 30)
+                
+                ProgressBar(value: 0)
+                
+                HStack {
+                    Spacer()
+                    annotationOptionsView()
+                    Spacer()
+                }
+                .padding()
+                
+                Button(action: {
+                    confirmAnnotation()
+                }) {
+                    Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        .padding()
                 }
             }
-        } else {
-            invalidPageView()
         }
     }
     
