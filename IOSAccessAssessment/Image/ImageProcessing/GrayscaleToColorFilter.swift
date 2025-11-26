@@ -80,7 +80,7 @@ struct GrayscaleToColorFilter {
         let inputTexture = try inputImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceGray() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
 //        let inputTexture = try inputImage.toMTLTexture(textureLoader: textureLoader, context: ciContext)
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {

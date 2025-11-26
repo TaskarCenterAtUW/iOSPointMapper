@@ -214,8 +214,6 @@ extension AnnotationImageManager {
         captureDataHistory: [CaptureImageData]
     ) -> [CIImage] {
         do {
-            /// Temporary throw
-            throw AnnotatiomImageManagerError.segmentationNotConfigured
             guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
                 throw AnnotatiomImageManagerError.segmentationNotConfigured
             }
@@ -238,13 +236,11 @@ extension AnnotationImageManager {
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) -> CIImage {
         do {
-            /// Temporary throw
-            throw AnnotatiomImageManagerError.segmentationNotConfigured
             guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
                 throw AnnotatiomImageManagerError.segmentationNotConfigured
             }
             let targetValue = accessibilityFeatureClass.labelValue
-            let bounds = accessibilityFeatureClass.bounds
+            let bounds: DimensionBasedMaskBounds? = nil /// accessibilityFeatureClass.bounds
             let unionOfMasksPolicy = accessibilityFeatureClass.unionOfMasksPolicy
             let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
                 targetValue: targetValue, bounds: bounds, unionOfMasksPolicy: unionOfMasksPolicy

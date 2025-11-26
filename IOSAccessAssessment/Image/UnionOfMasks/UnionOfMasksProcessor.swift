@@ -11,6 +11,7 @@ import MetalKit
 
 enum UnionOfMasksProcessorError: Error, LocalizedError {
     case metalInitializationFailed
+    case metalPipelineCreationError
     case invalidInputImage
     case textureCreationFailed
     case arrayTextureNotSet
@@ -21,6 +22,8 @@ enum UnionOfMasksProcessorError: Error, LocalizedError {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .invalidInputImage:
             return "The input image is invalid."
         case .textureCreationFailed:
@@ -99,19 +102,54 @@ class UnionOfMasksProcessor {
         
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: width, height: height, mipmapped: false)
         descriptor.textureType = .type2DArray
-        descriptor.usage = [.shaderRead]
+        descriptor.usage = [.shaderRead, .shaderWrite]
         descriptor.arrayLength = imageCount
-        
-        guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {
-            throw UnionOfMasksProcessorError.textureCreationFailed
-        }
         
         let bpp = try self.bytesPerPixel(for: format)
         let bytesPerRow = width * bpp
         let bytesPerImage = bytesPerRow * height
         
+        guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {
+            throw UnionOfMasksProcessorError.textureCreationFailed
+        }
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+            throw UnionOfMasksProcessorError.metalPipelineCreationError
+        }
+        
+        var inputTextures: [MTLTexture] = []
         for (i, image) in images.enumerated() {
-            let inputTexture = try self.ciImageToTexture(image: image, descriptor: individualDescriptor, options: options)
+            guard image.extent.width == CGFloat(width),
+                  image.extent.height == CGFloat(height) else {
+                throw UnionOfMasksProcessorError.invalidInputImage
+            }
+//            guard let sliceTexture = arrayTexture.makeTextureView(
+//                pixelFormat: format,
+//                textureType: .type2D,
+//                levels: 0..<1,
+//                slices: i..<(i+1)
+//            ) else { continue }
+//            ciContext.render(
+//                image,
+//                to: sliceTexture,
+//                commandBuffer: commandBuffer,
+//                bounds: image.extent,
+//                colorSpace: CGColorSpaceCreateDeviceRGB()
+//            )
+//            let inputTexture = try self.ciImageToTexture(image: image, descriptor: individualDescriptor, options: options)
+            let inputTexture = try image.toMTLTexture(
+                device: device, commandBuffer: commandBuffer,
+                pixelFormat: format, context: ciContext,
+                colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+                cIImageToMTLTextureOrientation: .metalTopLeft
+            )
+            inputTextures.append(inputTexture)
+            
+        }
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        for (i, inputTexture) in inputTextures.enumerated() {
             let region = MTLRegionMake2D(0, 0, width, height)
             
             var data = [UInt8](repeating: 0, count: bytesPerImage)
@@ -177,12 +215,13 @@ class UnionOfMasksProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        guard let resultimage = CIImage(
-            mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]
-        ) else {
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
             throw UnionOfMasksProcessorError.outputImageCreationFailed
         }
-        return resultimage
+        let resultImageOriented = resultImage
+            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+            .transformed(by: CGAffineTransform(translationX: 0, y: resultImage.extent.height))
+        return resultImageOriented
     }
     
     private func ciImageToTexture(

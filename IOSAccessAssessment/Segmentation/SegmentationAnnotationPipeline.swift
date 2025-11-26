@@ -208,7 +208,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         self.isProcessing = false
         
         // Back the CIImage to a pixel buffer
-        unionImage = self.backCIImageToPixelBuffer(unionImage)
+//        unionImage = self.backCIImageToPixelBuffer(unionImage)
         return unionImage
     }
     

@@ -81,7 +81,7 @@ struct HomographyTransformFilter {
         let inputTexture = try inputImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceGray(), /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
             cIImageToMTLTextureOrientation: .metalTopLeft
         )
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
