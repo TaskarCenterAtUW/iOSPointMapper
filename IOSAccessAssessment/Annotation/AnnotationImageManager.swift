@@ -5,9 +5,11 @@
 //  Created by Himanshu on 11/15/25.
 //
 import SwiftUI
+import DequeModule
 
 enum AnnotatiomImageManagerError: Error, LocalizedError {
     case notConfigured
+    case segmentationNotConfigured
     case cameraImageProcessingFailed
     case imageResultCacheFailed
     case meshClassNotFound(AccessibilityFeatureClass)
@@ -18,6 +20,8 @@ enum AnnotatiomImageManagerError: Error, LocalizedError {
         switch self {
         case .notConfigured:
             return "AnnotationImageManager is not configured."
+        case .segmentationNotConfigured:
+            return "SegmentationAnnotationPipeline is not configured."
         case .cameraImageProcessingFailed:
             return "Failed to process the camera image."
         case .imageResultCacheFailed:
@@ -36,6 +40,7 @@ struct AnnotationImageResults {
     let cameraImage: CIImage
     
     let segmentationLabelImage: CIImage
+    let alignedSegmentationLabalImages: [CIImage]?
     
     var cameraOutputImage: CIImage? = nil
     var overlayOutputImage: CIImage? = nil
@@ -43,6 +48,7 @@ struct AnnotationImageResults {
 
 final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
+    var segmentationAnnotationPipeline: SegmentationAnnotationPipeline? = nil
     
     weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
@@ -55,23 +61,31 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     var annotationImageResults: AnnotationImageResults?
     
     func configure(
-        selectedClasses: [AccessibilityFeatureClass],
-        captureImageData: (any CaptureImageDataProtocol)
+        selectedClasses: [AccessibilityFeatureClass], segmentationAnnotationPipeline: SegmentationAnnotationPipeline,
+        captureImageData: (any CaptureImageDataProtocol), captureDataQueue: SafeDeque<CaptureImageData>
     ) throws {
-        self.selectedClasses = selectedClasses
-        self.isConfigured = true
-        
-        let cameraOutputImage = try getCameraOutputImage(
-            captureImageData: captureImageData
-        )
-        let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
-            cameraImage: captureImageData.cameraImage,
-            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
-            cameraOutputImage: cameraOutputImage,
-            overlayOutputImage: nil
-        )
-        self.annotationImageResults = annotationImageResults
         Task {
+            self.selectedClasses = selectedClasses
+            self.segmentationAnnotationPipeline = segmentationAnnotationPipeline
+            
+            let cameraOutputImage = try getCameraOutputImage(
+                captureImageData: captureImageData
+            )
+            let captureDataHistory = Array(await captureDataQueue.snapshot())
+            let alignedSegmentationLabelImages = alignCaptureDataHistory(
+                captureImageData: captureImageData,
+                captureDataHistory: captureDataHistory
+            )
+            let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
+                cameraImage: captureImageData.cameraImage,
+                segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+                alignedSegmentationLabalImages: alignedSegmentationLabelImages,
+                cameraOutputImage: cameraOutputImage,
+                overlayOutputImage: nil
+            )
+            self.annotationImageResults = annotationImageResults
+            self.isConfigured = true
+            
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
                     self, image: cameraOutputImage, overlayImage: nil
@@ -157,6 +171,32 @@ extension AnnotationImageManager {
     Extension to define a segmentation mask processing.
  */
 extension AnnotationImageManager {
+    /**
+        Aligns the segmentation label images from the capture data history to the current capture data.
+        MARK: Does not throw errors, instead returns empty array on failure, since this is not critical to the annotation image processing.
+     */
+    func alignCaptureDataHistory(
+        captureImageData: (any CaptureImageDataProtocol),
+        captureDataHistory: [CaptureImageData]
+    ) -> [CIImage] {
+        do {
+            guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline,
+                  let currentCaptureData = captureImageData as? CaptureImageData else {
+                throw AnnotatiomImageManagerError.segmentationNotConfigured
+            }
+            let alignedSegmentationLabelImages: [CIImage] = try segmentationAnnotationPipeline.processAlignImageDataRequest(
+                currentCaptureData: currentCaptureData, captureDataHistory: captureDataHistory
+            )
+            try segmentationAnnotationPipeline.setupUnionOfMasksRequest(
+                alignedSegmentationLabelImages: alignedSegmentationLabelImages
+            )
+            return alignedSegmentationLabelImages
+        } catch {
+            print("Error aligning capture data history: \(error.localizedDescription)")
+            return []
+        }
+    }
+    
 }
 
 /**

@@ -111,8 +111,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
-        guard let homographyTransformFilter = self.homographyTransformFilter,
-              let unionOfMasksProcessor = self.unionOfMasksProcessor else {
+        guard let homographyTransformFilter = self.homographyTransformFilter else {
             throw SegmentationAnnotationPipelineError.homographyTransformFilterNil
         }
         self.isProcessing = true
@@ -155,7 +154,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         }
         
         self.isProcessing = false
-        try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
         return alignedSegmentationLabelImages
     }
     
@@ -174,8 +172,17 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         return homographyTransform
     }
     
-    func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
-                                    unionOfMasksPolicy: UnionOfMasksPolicy = .default) throws -> CIImage {
+    func setupUnionOfMasksRequest(alignedSegmentationLabelImages: [CIImage]) throws {
+        guard let unionOfMasksProcessor = self.unionOfMasksProcessor else {
+            throw SegmentationAnnotationPipelineError.unionOfMasksProcessorNil
+        }
+        try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
+    }
+    
+    func processUnionOfMasksRequest(
+        targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
+        unionOfMasksPolicy: UnionOfMasksPolicy = .default
+    ) throws -> CIImage {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
@@ -187,7 +194,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if bounds != nil {
-//            print("Applying dimension-based mask filter")
             unionImage = try self.dimensionBasedMaskFilter?.apply(
                 to: unionImage, bounds: bounds!) ?? unionImage
         }

@@ -84,6 +84,8 @@ struct AnnotationView: View {
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
+    @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
+    
     @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
@@ -238,6 +240,7 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            try segmentationAnnontationPipeline.configure()
             try classSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
@@ -254,7 +257,10 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             if (!manager.isConfigured) {
-                try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
+                try manager.configure(
+                    selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
+                    captureImageData: currentCaptureDataRecord, captureDataQueue: sharedAppData.captureDataQueue
+                )
             }
             try manager.update(
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,

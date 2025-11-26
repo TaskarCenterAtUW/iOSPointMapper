@@ -141,7 +141,6 @@ class UnionOfMasksProcessor {
             throw UnionOfMasksProcessorError.arrayTextureNotSet
         }
         
-        
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
                                                                   mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
