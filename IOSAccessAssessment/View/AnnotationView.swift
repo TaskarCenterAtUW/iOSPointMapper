@@ -59,7 +59,6 @@ class AnnotationClassSelectionViewModel: ObservableObject {
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
         objectWillChange.send()
         
-        print("Setting the current class selection")
         guard index < classes.count else {
             throw AnnotationViewError.classIndexOutofBounds
         }
@@ -121,8 +120,8 @@ struct AnnotationView: View {
                 invalidPageView()
             }
         }
-        .onAppear() {
-            handleOnAppear()
+        .task {
+            await handleOnAppear()
         }
         .onChange(of: classSelectionViewModel.currentClass) { oldClass, newClass in
             print("Changing Class Selection index")
@@ -234,13 +233,22 @@ struct AnnotationView: View {
         return currentClassIndex == segmentedClasses.count - 1
     }
     
-    private func handleOnAppear() {
+    private func handleOnAppear() async {
         do {
             guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
+            try manager.configure(
+                selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
+                captureImageData: currentCaptureDataRecord
+            )
+            let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
+            await manager.setupAlignedSegmentationLabelImages(
+                captureImageData: currentCaptureDataRecord,
+                captureDataHistory: captureDataHistory
+            )
             try classSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
@@ -255,12 +263,6 @@ struct AnnotationView: View {
                   let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
                   let currentClass = classSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
-            }
-            if (!manager.isConfigured) {
-                try manager.configure(
-                    selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
-                    captureImageData: currentCaptureDataRecord, captureDataQueue: sharedAppData.captureDataQueue
-                )
             }
             try manager.update(
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
