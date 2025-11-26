@@ -84,8 +84,7 @@ class UnionOfMasksProcessor {
     func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) throws {
         let imageCount = images.count
         guard imageCount > 0 else {
-            print("Error: No images provided")
-            return
+            throw UnionOfMasksProcessorError.invalidInputImage
         }
         let inputImage = images[0]
         

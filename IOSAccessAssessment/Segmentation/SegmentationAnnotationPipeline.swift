@@ -39,15 +39,14 @@ enum SegmentationAnnotationPipelineError: Error, LocalizedError {
         }
     }
 }
-    
 
 struct SegmentationAnnotationPipelineResults {
     var segmentationImage: CIImage
-    var detectedObjects: [DetectedAccessibilityFeature]
+    var detectedFeatures: [DetectedAccessibilityFeature]
     
-    init(segmentationImage: CIImage, detectedObjects: [DetectedAccessibilityFeature]) {
+    init(segmentationImage: CIImage, detectedFeatures: [DetectedAccessibilityFeature]) {
         self.segmentationImage = segmentationImage
-        self.detectedObjects = detectedObjects
+        self.detectedFeatures = detectedFeatures
     }
 }
 
@@ -73,7 +72,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     // For normalized points
     var perimeterThreshold: Float = 0.2
     
-    private var contourRequestProcessor: ContourRequestLegacyProcessor?
+    private var contourRequestProcessor: ContourRequestProcessor?
     private var homographyRequestProcessor: HomographyRequestProcessor?
     private var homographyTransformFilter: HomographyTransformFilter?
     private var unionOfMasksProcessor: UnionOfMasksProcessor?
@@ -82,7 +81,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     private let context = CIContext()
     
     func configure() throws {
-        self.contourRequestProcessor = try ContourRequestLegacyProcessor(
+        self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
             selectedClasses: self.selectedClasses)
@@ -106,13 +105,14 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
-    func processTransformationsRequest(
+    func processAlignImageDataRequest(
         currentCaptureData: CaptureImageData, captureDataHistory: [CaptureImageData]
     ) throws -> [CIImage] {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
-        guard let homographyTransformFilter = self.homographyTransformFilter else {
+        guard let homographyTransformFilter = self.homographyTransformFilter,
+              let unionOfMasksProcessor = self.unionOfMasksProcessor else {
             throw SegmentationAnnotationPipelineError.homographyTransformFilterNil
         }
         self.isProcessing = true
@@ -132,7 +132,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
          
          TODO: Need to check if the error handling is appropriate here.
          */
-        var transformedSegmentationLabelImages: [CIImage] = []
+        var alignedSegmentationLabelImages: [CIImage] = []
         var referenceCaptureData = currentCaptureData
         /// Identity matrix for the first image
         var transformMatrixToNextFrame: simd_float3x3 = matrix_identity_float3x3
@@ -146,7 +146,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
                     to: captureData.captureImageDataResults.segmentationLabelImage,
                     transformMatrix: transformMatrixToNextFrame
                 )
-                transformedSegmentationLabelImages.append(transformedImage)
+                alignedSegmentationLabelImages.append(transformedImage)
                 referenceCaptureData = captureData
             } catch {
                 print("Error getting homography transform: \(error)")
@@ -155,7 +155,8 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         }
         
         self.isProcessing = false
-        return transformedSegmentationLabelImages
+        try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
+        return alignedSegmentationLabelImages
     }
     
     /**
@@ -171,10 +172,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
             referenceImage: referenceCaptureData.cameraImage, floatingImage: currentCaptureData.cameraImage
         )
         return homographyTransform
-    }
-    
-    func setupUnionOfMasksRequest(segmentationLabelImages: [CIImage]) throws {
-        try self.unionOfMasksProcessor?.setArrayTexture(images: segmentationLabelImages)
     }
     
     func processUnionOfMasksRequest(targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
@@ -200,34 +197,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         // Back the CIImage to a pixel buffer
         unionImage = self.backCIImageToPixelBuffer(unionImage)
         return unionImage
-    }
-    
-    func processContourRequest(from ciImage: CIImage, targetValue: UInt8, isWay: Bool = false,
-                               bounds: DimensionBasedMaskBounds? = nil) throws -> [DetectedObject] {
-        if self.isProcessing {
-            throw SegmentationAnnotationPipelineError.isProcessingTrue
-        }
-        self.isProcessing = true
-        
-        guard self.contourRequestProcessor != nil else {
-            throw SegmentationAnnotationPipelineError.contourRequestProcessorNil
-        }
-        
-        let targetClass = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap[targetValue]
-        let targetClasses = targetClass != nil ? [targetClass!] : []
-        self.contourRequestProcessor?.setSelectedClasses(targetClasses)
-        var detectedObjects = try self.contourRequestProcessor?.processRequest(from: ciImage) ?? []
-        if isWay && bounds != nil {
-            let largestObject = detectedObjects.sorted(by: {$0.perimeter > $1.perimeter}).first
-            if largestObject != nil {
-                let wayBounds = self.contourRequestProcessor?.getContourTrapezoid(from: largestObject?.normalizedPoints ?? [])
-                largestObject?.wayBounds = wayBounds
-                detectedObjects = [largestObject!]
-            }
-        }
-        
-        self.isProcessing = false
-        return detectedObjects
     }
     
     private func backCIImageToPixelBuffer(_ image: CIImage) -> CIImage {

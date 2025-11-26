@@ -140,9 +140,9 @@ extension ContourRequestLegacyProcessor {
         let sortedByYPoints = points.sorted(by: { $0.y < $1.y })
         
         func intersectsAtY(p1: SIMD2<Float>, p2: SIMD2<Float>, y0: Float) -> SIMD2<Float>? {
-            // Check if y0 is between y1 and y2
+            /// Check if y0 is between y1 and y2
             if (y0 - p1.y) * (y0 - p2.y) <= 0 && p1.y != p2.y {
-                // Linear interpolation to find x
+                /// Linear interpolation to find x
                 let t = (y0 - p1.y) / (p2.y - p1.y)
                 let x = p1.x + t * (p2.x - p1.x)
                 return SIMD2<Float>(x, y0)

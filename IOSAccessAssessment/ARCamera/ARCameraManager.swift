@@ -450,7 +450,7 @@ extension ARCameraManager {
             colorSpace: segmentationColorColorSpace
         )
         
-        let detectedFeatureMap = alignDetectedObjects(
+        let detectedFeatureMap = alignDetectedFeatures(
             segmentationResults.detectedFeatureMap,
             orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
         )
@@ -495,7 +495,7 @@ extension ARCameraManager {
     /**
     Align detected objects back to the original image coordinate system.
      */
-    private func alignDetectedObjects(
+    private func alignDetectedFeatures(
         _ detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
         orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize
     ) -> [UUID: DetectedAccessibilityFeature] {

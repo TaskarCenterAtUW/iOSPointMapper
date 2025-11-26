@@ -176,12 +176,12 @@ final class SegmentationARPipeline: ObservableObject {
         
         // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
-        let detectedObjects: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
+        let detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
             from: segmentationImage
         )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
-            uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) }
+            uniqueKeysWithValues: detectedFeatures.map { (UUID(), $0) }
         )
         
         try Task.checkCancellation()
