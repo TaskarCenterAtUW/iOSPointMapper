@@ -37,6 +37,7 @@ unionOfMasksKernel(
             maskColor = maskValue;
         }
     }
+    weight = weight / maskCount;
     if (weight >= unionOfMasksThreshold) {
         color = maskColor;
     }

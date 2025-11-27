@@ -70,8 +70,15 @@ struct HomographyTransformFilter {
             - inputImage: The input CIImage to be transformed. Of color space nil, single-channel.
             - transformMatrix: A 3x3 matrix representing the homography transformation.
      */
-    func apply(to inputImage: CIImage, transformMatrix: simd_float3x3) throws -> CIImage {
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+    func apply(
+        to inputImage: CIImage, transformMatrix: simd_float3x3,
+        inputPixelFormat: MTLPixelFormat = .r8Unorm,
+        outputPixelFormat: MTLPixelFormat = .r8Unorm
+    ) throws -> CIImage {
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: outputPixelFormat,
+            width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false
+        )
         descriptor.usage = [.shaderRead, .shaderWrite]
         
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
@@ -79,7 +86,7 @@ struct HomographyTransformFilter {
         }
         
         let inputTexture = try inputImage.toMTLTexture(
-            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: inputPixelFormat,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
             cIImageToMTLTextureOrientation: .metalTopLeft

@@ -43,9 +43,9 @@ struct UnionOfMasksPolicy: Sendable, Codable, Equatable, Hashable {
 
 extension UnionOfMasksPolicy {
     static let `default` = UnionOfMasksPolicy(
-        threshold: 2,
-        defaultFrameWeight: 1,
-        lastFrameWeight: 2
+        threshold: 0.6,
+        defaultFrameWeight: 1.0,
+        lastFrameWeight: 2.0
     )
 }
 

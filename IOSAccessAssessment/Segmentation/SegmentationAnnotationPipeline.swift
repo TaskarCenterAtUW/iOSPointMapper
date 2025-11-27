@@ -141,8 +141,9 @@ final class SegmentationAnnotationPipeline: ObservableObject {
                     referenceCaptureData: referenceCaptureData, currentCaptureData: captureData
                 )
                 transformMatrixToNextFrame = homographyTransform * transformMatrixToNextFrame
+                let segmentationLabelImage = captureData.captureImageDataResults.segmentationLabelImage
                 let transformedImage = try homographyTransformFilter.apply(
-                    to: captureData.captureImageDataResults.segmentationLabelImage,
+                    to: segmentationLabelImage,
                     transformMatrix: transformMatrixToNextFrame
                 )
                 alignedSegmentationLabelImages.append(transformedImage)
@@ -193,13 +194,9 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         }
         
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
-        if let bounds = bounds,
-           let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter
-        {
+        if let bounds = bounds, let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter {
             do {
-                unionImage = try dimensionBasedMaskFilter.apply(
-                    to: unionImage, bounds: bounds
-                )
+                unionImage = try dimensionBasedMaskFilter.apply(to: unionImage, bounds: bounds)
             } catch {
                 print("Error applying dimension based mask filter: \(error)")
             }
