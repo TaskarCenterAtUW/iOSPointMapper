@@ -240,7 +240,7 @@ extension AnnotationImageManager {
                 throw AnnotatiomImageManagerError.segmentationNotConfigured
             }
             let targetValue = accessibilityFeatureClass.labelValue
-            let bounds: DimensionBasedMaskBounds? = nil /// accessibilityFeatureClass.bounds
+            let bounds: DimensionBasedMaskBounds? = accessibilityFeatureClass.bounds
             let unionOfMasksPolicy = accessibilityFeatureClass.unionOfMasksPolicy
             let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
                 targetValue: targetValue, bounds: bounds, unionOfMasksPolicy: unionOfMasksPolicy

@@ -15,6 +15,7 @@ enum DimensionBasedMaskFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
+    case metalPipelineCreationError
     case outputImageCreationFailed
     
     var errorDescription: String? {
@@ -25,6 +26,8 @@ enum DimensionBasedMaskFilterError: Error, LocalizedError {
             return "The input image is invalid."
         case .textureCreationFailed:
             return "Failed to create Metal textures."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
         }
@@ -47,14 +50,14 @@ struct DimensionBasedMaskFilter {
 
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
-              let commandQueue = device.makeCommandQueue() else  {
+              let commandQueue = device.makeCommandQueue() else {
             throw DimensionBasedMaskFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "dimensionBasedMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -64,32 +67,29 @@ struct DimensionBasedMaskFilter {
     }
 
     func apply(to inputImage: CIImage, bounds: DimensionBasedMaskBounds) throws -> CIImage {
-        // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
-        //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
-        
-        guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            throw DimensionBasedMaskFilterError.invalidInputImage
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw DimensionBasedMaskFilterError.metalPipelineCreationError
         }
         
-        guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
+        let inputTexture = try inputImage.toMTLTexture(
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: self.ciContext,
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+        )
+        guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw DimensionBasedMaskFilterError.textureCreationFailed
         }
-
-        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
-        guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
-              let commandBuffer = self.commandQueue.makeCommandBuffer(),
-              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw DimensionBasedMaskFilterError.textureCreationFailed
-        }
-        
         var minXLocal = bounds.minX
         var maxXLocal = bounds.maxX
         var minYLocal = bounds.minY
         var maxYLocal = bounds.maxY
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw DimensionBasedMaskFilterError.metalPipelineCreationError
+        }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
@@ -111,7 +111,7 @@ struct DimensionBasedMaskFilter {
         commandBuffer.waitUntilCompleted()
 
         guard let resultCIImage = CIImage(
-            mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]
+            mtlTexture: outputTexture, options: [.colorSpace: NSNull()]
         ) else {
             throw DimensionBasedMaskFilterError.outputImageCreationFailed
         }

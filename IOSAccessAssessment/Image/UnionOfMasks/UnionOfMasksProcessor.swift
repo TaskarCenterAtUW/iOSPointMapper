@@ -131,25 +131,6 @@ class UnionOfMasksProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        /// Debugging loop
-        print("Number of images in array texture: \(arrayTexture.arrayLength) vs \(images.count)")
-        for (i, image) in images.enumerated() {
-            print("Verifying slice \(i)...")
-            guard image.extent.width == CGFloat(width),
-                  image.extent.height == CGFloat(height) else {
-                throw UnionOfMasksProcessorError.invalidInputImage
-            }
-            guard let _ = arrayTexture.makeTextureView(
-                pixelFormat: format,
-                textureType: .type2D,
-                levels: 0..<1,
-                slices: i..<(i+1)
-            ) else {
-                continue
-            }
-            continue
-        }
-        
         self.arrayTexture = arrayTexture
         self.imageCount = imageCount
         self.width = width
