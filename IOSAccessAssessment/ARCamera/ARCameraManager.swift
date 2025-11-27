@@ -78,6 +78,12 @@ enum ARCameraManagerConstants {
     }
 }
 
+enum MeshUpdateType {
+    case add
+    case update
+    case remove
+}
+
 struct ARCameraImageResults {
     let cameraImage: CIImage
     var depthImage: CIImage? = nil
@@ -172,15 +178,18 @@ struct ARCameraCache {
 final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
-    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
-    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
-    
     var metalContext: MetalContext? = nil
+    var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
+    /// Mesh update callbacks not in use for now, as creating snapshots in real-time is expensive.
+//    var cameraOutputMeshCallback: ((any CaptureMeshDataProtocol) -> Void)? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
     var imageResolution: CGSize = .zero
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
+    
+    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
@@ -219,7 +228,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
-        metalContext: MetalContext?
+        metalContext: MetalContext?,
+        cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationPipeline = segmentationPipeline
@@ -230,6 +240,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.metalContext = metalContext
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+        self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
         Task {
@@ -261,6 +272,25 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        handleSessionFrameUpdate(frame: frame)
+    }
+    
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        handleSessionMeshUpdate(anchors, updateType: .add)
+    }
+    
+    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        handleSessionMeshUpdate(anchors, updateType: .update)
+    }
+    
+    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+        handleSessionMeshUpdate(anchors, updateType: .remove)
+    }
+}
+
+// Functions to handle the image processing pipeline
+extension ARCameraManager {
+    private func handleSessionFrameUpdate(frame: ARFrame) {
         guard isConfigured else {
             return
         }
@@ -288,6 +318,23 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                  let cameraImageResults = try await processCameraImage(
                      image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                  )
+                 let captureImageDataResults = CaptureImageDataResults(
+                     segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+                     segmentedClasses: cameraImageResults.segmentedClasses,
+                     detectedFeatureMap: cameraImageResults.detectedFeatureMap
+                 )
+                 let captureImageData = CaptureImageData(
+                     id: UUID(),
+                     timestamp: Date().timeIntervalSince1970,
+                     cameraImage: cameraImageResults.cameraImage,
+                     cameraTransform: cameraImageResults.cameraTransform,
+                     cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+                     interfaceOrientation: self.interfaceOrientation,
+                     originalSize: cameraImageResults.originalImageSize,
+                     depthImage: cameraImageResults.depthImage,
+                     confidenceImage: cameraImageResults.confidenceImage,
+                     captureImageDataResults: captureImageDataResults
+                 )
                  await MainActor.run {
                      var results = cameraImageResults
                      results.depthImage = depthImage
@@ -299,6 +346,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
                          segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
                          for: frame
                      )
+                     self.cameraOutputImageCallback?(captureImageData)
                  }
              } catch {
                  print("Error processing camera image: \(error.localizedDescription)")
@@ -306,102 +354,6 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
          }
     }
     
-    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-        guard isConfigured else {
-            return
-        }
-        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
-            return
-        }
-        guard let metalContext = metalContext else {
-            return
-        }
-        Task {
-            do {
-                let cameraMeshResults = try await processMeshAnchors(anchors)
-                await MainActor.run {
-                    self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraOutputMesh(
-                        self, metalContext: metalContext,
-                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: anchors,
-                        cameraTransform: cameraMeshResults.cameraTransform,
-                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClasses: self.selectedClasses
-                    )
-                }
-            } catch {
-                print("Error processing anchors: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
-        guard isConfigured else {
-            return
-        }
-        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
-            return
-        }
-        guard let metalContext = metalContext else {
-            return
-        }
-        Task {
-            do {
-                let cameraMeshResults = try await processMeshAnchors(anchors)
-                await MainActor.run {
-                    self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraOutputMesh(
-                        self, metalContext: metalContext,
-                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: anchors,
-                        cameraTransform: cameraMeshResults.cameraTransform,
-                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClasses: self.selectedClasses
-                    )
-                }
-            } catch {
-                print("Error processing anchors: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
-        guard isConfigured else {
-            return
-        }
-        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
-            return
-        }
-        guard let metalContext = metalContext else {
-            return
-        }
-        Task {
-            do {
-                let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: true)
-                await MainActor.run {
-                    self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraOutputMesh(
-                        self, metalContext: metalContext,
-                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: anchors,
-                        cameraTransform: cameraMeshResults.cameraTransform,
-                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClasses: self.selectedClasses
-                    )
-                }
-            } catch {
-                print("Error processing anchors: \(error.localizedDescription)")
-            }
-        }
-    }
-}
-
-// Functions to handle the image processing pipeline
-extension ARCameraManager {
     private func processCameraImage(
         image: CIImage, interfaceOrientation: UIInterfaceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
@@ -549,6 +501,38 @@ extension ARCameraManager {
 
 // Functions to handle the mesh processing pipeline
 extension ARCameraManager {
+    private func handleSessionMeshUpdate(_ anchors: [ARAnchor], updateType: MeshUpdateType) {
+        let shouldRemove = (updateType == .remove)
+        guard isConfigured else {
+            return
+        }
+        guard checkMeshWithinMeshFrameRate(currentTime: Date().timeIntervalSince1970) else {
+            return
+        }
+        guard let metalContext = metalContext else {
+            return
+        }
+        Task {
+            do {
+                let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: shouldRemove)
+                await MainActor.run {
+                    self.cameraMeshResults = cameraMeshResults
+                    self.outputConsumer?.cameraOutputMesh(
+                        self, metalContext: metalContext,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
+                        for: anchors,
+                        cameraTransform: cameraMeshResults.cameraTransform,
+                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                        accessibilityFeatureClasses: self.selectedClasses
+                    )
+                }
+            } catch {
+                print("Error processing anchors: \(error.localizedDescription)")
+            }
+        }
+    }
+    
     private func processMeshAnchors(_ anchors: [ARAnchor], shouldRemove: Bool = false) async throws -> ARCameraMeshResults {
         guard let meshGPUSnapshotGenerator = meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
@@ -754,7 +738,7 @@ extension ARCameraManager {
             segmentedMesh: cameraMeshSnapshot
         )
         
-        let capturedData = CaptureAllData(
+        let captureData = CaptureAllData(
             id: UUID(),
             timestamp: Date().timeIntervalSince1970,
             cameraImage: cameraImageResults.cameraImage,
@@ -767,7 +751,7 @@ extension ARCameraManager {
             captureImageDataResults: captureImageDataResults,
             captureMeshDataResults: captureMeshDataResults
         )
-        return capturedData
+        return captureData
     }
     
     @MainActor

@@ -121,7 +121,8 @@ struct ARCameraView: View {
             do {
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
-                    metalContext: sharedAppContext.metalContext
+                    metalContext: sharedAppContext.metalContext,
+                    cameraOutputImageCallback: cameraOutputImageCallback
                 )
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
@@ -159,6 +160,12 @@ struct ARCameraView: View {
         AnyLayout(VStackLayout())(content)
     }
     
+    private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
+        Task {
+            await sharedAppData.appendCaptureDataToQueue(captureImageData)
+        }
+    }
+    
     private func capture() {
         Task {
             do {
@@ -169,7 +176,8 @@ struct ARCameraView: View {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
                 try manager.pause()
-                await sharedAppData.saveCaptureData(captureData)
+                sharedAppData.saveCaptureData(captureData)
+//                await sharedAppData.appendCaptureDataToQueue(captureData)
 //                print("Total Vertex Count: \(captureData.captureMeshDataResults.segmentedMesh.totalVertexCount)")
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {

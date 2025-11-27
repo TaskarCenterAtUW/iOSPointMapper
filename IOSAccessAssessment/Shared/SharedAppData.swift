@@ -31,9 +31,11 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) async {
+    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) {
         self.currentCaptureDataRecord = data
-        
+    }
+    
+    func appendCaptureDataToQueue(_ data: (any CaptureImageDataProtocol)) async {
         let captureImageData = CaptureImageData(data)
         await self.captureDataQueue.appendBack(captureImageData)
     }

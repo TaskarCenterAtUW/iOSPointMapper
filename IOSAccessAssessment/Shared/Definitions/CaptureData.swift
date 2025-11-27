@@ -63,6 +63,25 @@ struct CaptureImageData: CaptureImageDataProtocol {
     
     let captureImageDataResults: CaptureImageDataResults
     
+    init(
+        id: UUID, timestamp: TimeInterval,
+        cameraImage: CIImage, cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        interfaceOrientation: UIInterfaceOrientation, originalSize: CGSize,
+        depthImage: CIImage?, confidenceImage: CIImage?,
+        captureImageDataResults: CaptureImageDataResults
+    ) {
+        self.id = id
+        self.timestamp = timestamp
+        self.cameraImage = cameraImage
+        self.cameraTransform = cameraTransform
+        self.cameraIntrinsics = cameraIntrinsics
+        self.interfaceOrientation = interfaceOrientation
+        self.originalSize = originalSize
+        self.depthImage = depthImage
+        self.confidenceImage = confidenceImage
+        self.captureImageDataResults = captureImageDataResults
+    }
+    
     init(_ captureImageData: (any CaptureImageDataProtocol)) {
         self.id = captureImageData.id
         self.timestamp = captureImageData.timestamp
