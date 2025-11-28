@@ -8,16 +8,19 @@ import ARKit
 import RealityKit
 
 enum CapturedMeshSnapshotError: Error, LocalizedError {
+    case invalidMeshData
     case invalidVertexData
     case invalidIndexData
     case meshClassNotFound(AccessibilityFeatureClass)
     
     var errorDescription: String? {
         switch self {
+        case .invalidMeshData:
+            return "The mesh data in the segmentation mesh record is invalid"
         case .invalidVertexData:
-            return "The vertex data in the segmentation mesh record invalid."
+            return "The vertex data in the segmentation mesh record is invalid."
         case .invalidIndexData:
-            return "The index data in the segmentation mesh record invalid."
+            return "The index data in the segmentation mesh record is invalid."
         case .meshClassNotFound(let featureClass):
             return "No mesh found for the accessibility feature class: \(featureClass.name)."
         }
@@ -116,13 +119,13 @@ final class CapturedMeshSnapshotHelper {
         let indexData: Data = featureCapturedMeshSnapshot.indexData
         let indexCount: Int = featureCapturedMeshSnapshot.indexCount
         guard vertexCount > 0, vertexCount == indexCount else {
-            throw AnnotatiomImageManagerError.invalidMeshData
+            throw CapturedMeshSnapshotError.invalidMeshData
         }
         
         var vertexPositions: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0,0,0), count: vertexCount)
         try vertexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
             guard let baseAddress = ptr.baseAddress else {
-                throw AnnotatiomImageManagerError.invalidMeshData
+                throw CapturedMeshSnapshotError.invalidMeshData
             }
             for i in 0..<vertexCount {
                 let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)
@@ -134,7 +137,7 @@ final class CapturedMeshSnapshotHelper {
         var indexPositions: [UInt32] = Array(repeating: 0, count: indexCount)
         try indexData.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) in
             guard let baseAddress = ptr.baseAddress else {
-                throw AnnotatiomImageManagerError.invalidMeshData
+                throw CapturedMeshSnapshotError.invalidMeshData
             }
             for i in 0..<indexCount {
                 let indexAddress = baseAddress.advanced(by: i * indexStride)

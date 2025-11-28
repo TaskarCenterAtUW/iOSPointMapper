@@ -9,7 +9,10 @@ import SwiftUI
 
 @MainActor
 protocol AnnotationImageProcessingOutputConsumer: AnyObject {
-    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: CIImage?, overlayImage: CIImage?)
+    func annotationOutputImage(
+        _ delegate: AnnotationImageProcessingDelegate,
+        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?
+    )
 }
 
 protocol AnnotationImageProcessingDelegate: AnyObject {
@@ -29,7 +32,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
-        iv.backgroundColor = UIColor(white: 0, alpha: 0.35)
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
         iv.isUserInteractionEnabled = false
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
@@ -39,7 +42,17 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
-        iv.backgroundColor = UIColor(white: 0, alpha: 0.35)
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
+        iv.isUserInteractionEnabled = false
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        return iv
+    }()
+    private let overlay2View: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 12
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
         iv.isUserInteractionEnabled = false
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
@@ -72,6 +85,8 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         constraintChildViewToParent(childView: imageView, parentView: subView)
         subView.addSubview(overlayView)
         constraintChildViewToParent(childView: overlayView, parentView: subView)
+        subView.addSubview(overlay2View)
+        constraintChildViewToParent(childView: overlay2View, parentView: subView)
         
         annotationImageManager.outputConsumer = self
         annotationImageManager.setOrientation(getOrientation())
@@ -101,7 +116,10 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         return .landscapeLeft
     }
     
-    func annotationOutputImage(_ delegate: AnnotationImageProcessingDelegate, image: CIImage?, overlayImage: CIImage?) {
+    func annotationOutputImage(
+        _ delegate: AnnotationImageProcessingDelegate,
+        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?
+    ) {
         if let img = image {
             let uiImage = UIImage(ciImage: img)
             imageView.image = uiImage
@@ -109,6 +127,10 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         if let overlayImg = overlayImage {
             let uiOverlayImage = UIImage(ciImage: overlayImg)
             overlayView.image = uiOverlayImage
+        }
+        if let overlay2Img = overlay2Image {
+            let uiOverlay2Image = UIImage(ciImage: overlay2Img)
+            overlay2View.image = uiOverlay2Image
         }
     }
     

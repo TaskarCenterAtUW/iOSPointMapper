@@ -225,12 +225,15 @@ extension ContourUtils {
                     upperRightX = nil
                 }
             }
-            if upperLineFound && lowerLineFound {
+            if upperLineFound && lowerLineFound,
+            let lowerLeftX = lowerLeftX, let lowerRightX = lowerRightX,
+            let upperLeftX = upperLeftX, let upperRightX = upperRightX
+            {
                 return [
-                    SIMD2<Float>(lowerLeftX!, sortedByYPoints[lowY].y),
-                    SIMD2<Float>(upperLeftX!, sortedByYPoints[highY].y),
-                    SIMD2<Float>(upperRightX!, sortedByYPoints[highY].y),
-                    SIMD2<Float>(lowerRightX!, sortedByYPoints[lowY].y)
+                    SIMD2<Float>(lowerLeftX, sortedByYPoints[lowY].y),
+                    SIMD2<Float>(upperLeftX, sortedByYPoints[highY].y),
+                    SIMD2<Float>(upperRightX, sortedByYPoints[highY].y),
+                    SIMD2<Float>(lowerRightX, sortedByYPoints[lowY].y)
                 ]
             }
             

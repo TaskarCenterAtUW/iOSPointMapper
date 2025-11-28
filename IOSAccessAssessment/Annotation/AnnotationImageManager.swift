@@ -97,7 +97,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
-                    self, image: cameraOutputImage, overlayImage: nil
+                    self, image: cameraOutputImage, overlayImage: nil, overlay2Image: nil
                 )
             }
         }
@@ -177,7 +177,8 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
                 self.outputConsumer?.annotationOutputImage(
                     self,
                     image: cameraOutputImage,
-                    overlayImage: segmentationOverlayOutputImage
+                    overlayImage: segmentationOverlayOutputImage,
+                    overlay2Image: featuresOverlayOutputImage
                 )
             }
         }
@@ -316,7 +317,10 @@ extension AnnotationImageManager {
         accessibilityFeatures: [AccessibilityFeature]
     ) throws -> CIImage {
         guard let raterizedDetectedFeaturesImage = ContourFeatureRasterizer.rasterizeFeatures(
-            accessibilityFeatures: accessibilityFeatures, size: captureImageData.originalSize
+            accessibilityFeatures: accessibilityFeatures, size: captureImageData.originalSize,
+            polygonConfig: RasterizeConfig(draw: true, color: nil, width: 5),
+            boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
+            centroidConfig: RasterizeConfig(draw: true, color: nil, width: 10)
         ) else {
             throw AnnotationImageManagerError.featureRasterizationFailed
         }
