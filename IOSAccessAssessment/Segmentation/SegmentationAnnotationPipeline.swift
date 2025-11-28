@@ -227,12 +227,19 @@ final class SegmentationAnnotationPipeline: ObservableObject {
             from: segmentationLabelImage
         )
         /// TODO: Handle way features differently if needed, and improve the relevant trapezoid-creation logic.
-        if accessibilityFeatureClass.isWay {
-            let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.perimeter > $1.contourDetails.perimeter}).first
-            if let largestFeature = largestFeature {
-            }
+        let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.perimeter > $1.contourDetails.perimeter}).first
+        guard let largestFeature = largestFeature,
+              accessibilityFeatureClass.isWay else {
+            self.isProcessing = false
+            return detectedFeatures
         }
-        
+        if let trapezoidPoints = ContourUtils.getTrapezoid(normalizedPoints: largestFeature.contourDetails.normalizedPoints) {
+            let trapezoidFeature = DetectedAccessibilityFeature(
+                accessibilityFeatureClass: largestFeature.accessibilityFeatureClass,
+                contourDetails: ContourDetails(normalizedPoints: trapezoidPoints)
+            )
+            detectedFeatures = [trapezoidFeature]
+        }
         self.isProcessing = false
         return detectedFeatures
     }
