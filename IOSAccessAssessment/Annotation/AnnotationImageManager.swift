@@ -137,7 +137,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
               let cameraOutputImage = annotationImageResults.cameraOutputImage else {
             throw AnnotatiomImageManagerError.imageResultCacheFailed
         }
-//        let trianglePointsNormalized = try getNormalizedTrianglePoints(
+//        let trianglePointsNormalized = try getPolygonsNormalizedCoordinates(
 //            captureImageData: captureImageData,
 //            captureMeshData: captureMeshData,
 //            accessibilityFeatureClass: accessibilityFeatureClass
@@ -310,7 +310,7 @@ extension AnnotationImageManager {
     /**
      Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
      */
-    private func getNormalizedTrianglePoints(
+    private func getPolygonsNormalizedCoordinates(
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol),
         accessibilityFeatureClass: AccessibilityFeatureClass
@@ -324,68 +324,23 @@ extension AnnotationImageManager {
         let viewMatrix = cameraTransform.inverse // world -> camera
         let cameraIntrinsics = captureImageData.cameraIntrinsics
         let originalSize = captureImageData.originalSize
+        let polygonsCoordinates = MeshHelpers.getPolygonsCoordinates(
+            meshPolygons: meshPolygons,
+            viewMatrix: viewMatrix,
+            cameraIntrinsics: cameraIntrinsics,
+            originalSize: originalSize
+        )
         
-        var trianglePoints: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] = []
         let originalWidth = Float(originalSize.width)
         let originalHeight = Float(originalSize.height)
-        for meshPolygon in meshPolygons {
-            let (v0, v1, v2) = (meshPolygon.v0, meshPolygon.v1, meshPolygon.v2)
-            let worldPoints = [v0, v1, v2].map {
-                projectWorldToPixel(
-                    $0,
-                    viewMatrix: viewMatrix,
-                    intrinsics: cameraIntrinsics,
-                    imageSize: originalSize
-                )
-            }
-            guard let p0 = worldPoints[0],
-                  let p1 = worldPoints[1],
-                  let p2 = worldPoints[2] else {
-                continue
-            }
-            let normalizedPoints = [p0, p1, p2].map {
-                SIMD2<Float>(
-                    $0.x / originalWidth,
-                    $0.y / originalHeight
-                )
-            }
-            trianglePoints.append((normalizedPoints[0], normalizedPoints[1], normalizedPoints[2]))
+        let polygonsNormalizedCoordinates = polygonsCoordinates.map { (p0, p1, p2) in
+            return (
+                SIMD2<Float>(p0.x / originalWidth, p0.y / originalHeight),
+                SIMD2<Float>(p1.x / originalWidth, p1.y / originalHeight),
+                SIMD2<Float>(p2.x / originalWidth, p2.y / originalHeight)
+            )
         }
         
-        return trianglePoints
-    }
-    
-    private func projectWorldToPixel(_ world: simd_float3,
-                             viewMatrix: simd_float4x4, // (world->camera)
-                             intrinsics K: simd_float3x3,
-                             imageSize: CGSize) -> SIMD2<Float>? {
-        let p4   = simd_float4(world, 1.0)
-        let pc   = viewMatrix * p4                                  // camera space
-        let x = pc.x, y = pc.y, z = pc.z
-        
-        guard z < 0 else {
-            return nil
-        }                       // behind camera
-        
-        // normalized image plane coords (flip Y so +Y goes up in pixels)
-        let xn = x / -z
-        let yn = -y / -z
-        
-        // intrinsics (column-major)
-        let fx = K.columns.0.x
-        let fy = K.columns.1.y
-        let cx = K.columns.2.x
-        let cy = K.columns.2.y
-        
-        // pixels in sensor/native image coordinates
-        let u = fx * xn + cx
-        let v = fy * yn + cy
-        
-        if u.isFinite && v.isFinite &&
-            u >= 0 && v >= 0 &&
-            u < Float(imageSize.width) && v < Float(imageSize.height) {
-            return SIMD2<Float>(u.rounded(), v.rounded())
-        }
-        return nil
+        return polygonsNormalizedCoordinates
     }
 }
