@@ -147,7 +147,7 @@ class AnnotationLegacyImageManager: ObservableObject {
 //        self.annotatedDetectedObjects = annotatedDetectedObjects
         let selectedObjectId = annotatedDetectedObjects[0].id
         let objectsUIImage = UIImage(
-            cgImage: ContourObjectRasterizer.rasterizeContourObjects(
+            cgImage: ContourLegacyObjectRasterizer.rasterizeContourObjects(
                 objects: inputDetectedObjects,
                 size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
                 polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
@@ -180,7 +180,7 @@ class AnnotationLegacyImageManager: ObservableObject {
                 }
             }
         }
-        newImage = ContourObjectRasterizer.updateRasterizedImage(
+        newImage = ContourLegacyObjectRasterizer.updateRasterizedImage(
             baseImage: baseImage, objects: oldObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: nil, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
@@ -196,7 +196,7 @@ class AnnotationLegacyImageManager: ObservableObject {
             }
         }
         newImage = newImage ?? baseImage
-        newImage = ContourObjectRasterizer.updateRasterizedImage(
+        newImage = ContourLegacyObjectRasterizer.updateRasterizedImage(
             baseImage: newImage!, objects: newObjects, size: Constants.SelectedAccessibilityFeatureConfig.inputSize,
             polygonConfig: RasterizeConfig(draw: true, color: .white, width: 2),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),

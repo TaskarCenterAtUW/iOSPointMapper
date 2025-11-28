@@ -18,12 +18,17 @@ enum AccessibilityFeatureError: Error, LocalizedError {
 
 class AccessibilityFeature {
     let accessibilityFeatureClass: AccessibilityFeatureClass
+    let detectedAccessibilityFeature: DetectedAccessibilityFeature
     
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     
-    init(accessibilityFeatureClass: AccessibilityFeatureClass) {
+    init(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        detectedAccessibilityFeature: DetectedAccessibilityFeature
+    ) {
         self.accessibilityFeatureClass = accessibilityFeatureClass
+        self.detectedAccessibilityFeature = detectedAccessibilityFeature
         
         calculatedAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
             return (attribute, attribute.nilValue)

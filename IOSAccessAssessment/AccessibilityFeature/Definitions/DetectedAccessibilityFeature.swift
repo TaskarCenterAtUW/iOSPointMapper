@@ -12,7 +12,22 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     let area: Float
     let perimeter: Float
     
+    init(centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float) {
+        self.centroid = centroid
+        self.boundingBox = boundingBox
+        self.normalizedPoints = normalizedPoints
+        self.area = area
+        self.perimeter = perimeter
+    }
     
+    init(normalizedPoints: [SIMD2<Float>]) {
+        let contourDetails = ContourUtils.getCentroidAreaBounds(normalizedPoints: normalizedPoints)
+        self.centroid = contourDetails.centroid
+        self.boundingBox = contourDetails.boundingBox
+        self.normalizedPoints = normalizedPoints
+        self.area = contourDetails.area
+        self.perimeter = contourDetails.perimeter
+    }
 }
 
 /**
