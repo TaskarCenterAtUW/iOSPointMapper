@@ -34,7 +34,7 @@ enum MeshDimension: CaseIterable, Codable, Sendable {
     }
 }
 
-struct MeshCPUPolygon: Sendable {
+struct MeshPolygon: Sendable {
     let v0: simd_float3
     let v1: simd_float3
     let v2: simd_float3

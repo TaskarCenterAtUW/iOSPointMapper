@@ -79,8 +79,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     private var dimensionBasedMaskFilter: DimensionBasedMaskFilter?
     /// TODO: Replace with the global Metal context
     private let context = CIContext()
-    /// MARK: Temp
-    var grayscaleToColorFilter: GrayscaleToColorFilter?
     
     func configure() throws {
         self.contourRequestProcessor = try ContourRequestProcessor(
@@ -91,7 +89,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         self.homographyTransformFilter = try HomographyTransformFilter()
         self.dimensionBasedMaskFilter = try DimensionBasedMaskFilter()
         self.unionOfMasksProcessor = try UnionOfMasksProcessor()
-        self.grayscaleToColorFilter = try GrayscaleToColorFilter()
     }
     
     func reset() {
@@ -200,12 +197,6 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         if let bounds = bounds, let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter {
             do {
                 unionImage = try dimensionBasedMaskFilter.apply(to: unionImage, bounds: bounds)
-                let unionColorImage = try grayscaleToColorFilter?.apply(
-                    to: unionImage,
-                    grayscaleValues: Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
-                    colorValues: Constants.SelectedAccessibilityFeatureConfig.colors
-                )
-                print("Union Color Image: \(String(describing: unionColorImage))")
             } catch {
                 print("Error applying dimension based mask filter: \(error)")
             }
