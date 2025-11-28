@@ -37,13 +37,13 @@ struct MeshRasterizer {
             - boundsConfig: Configuration for drawing triangle bounds, including color and line width.
      */
     static func rasterizeMesh(
-        trianglePointsNormalized: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)], size: CGSize,
+        polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)], size: CGSize,
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0)
     ) -> CGImage? {
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
-        for triangle in trianglePointsNormalized {
+        for triangle in polygonsNormalizedCoordinates {
             if boundsConfig.draw {
                 let points = [triangle.0, triangle.1, triangle.2]
                 let path = createPath(points: points, size: size)

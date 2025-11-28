@@ -52,11 +52,15 @@ struct SegmentationAnnotationPipelineResults {
 
 /**
  A class to handle the segmentation pipeline for annotation purposes.
- Unlike the main SegmentationPipeline, this class processes images and returns the results synchronously.
+ 
+ MARK: Unlike the main SegmentationPipeline, this class processes images and returns the results synchronously.
  Later, we can consider making it asynchronous based on the requirements.
+ 
+ MARK: Also, instead of runnin the whole pipeline at once, this class needs to run individual steps of the pipeline separately, as they occur at different steps in the app flow.
+ Hence, it gives full control to the caller to run the steps as needed.
  */
 final class SegmentationAnnotationPipeline: ObservableObject {
-    // This will be useful only when we are using the pipeline in asynchronous mode.
+    /// This will be useful only when we are using the pipeline in asynchronous mode.
     var isProcessing = false
 //    private var currentTask: Task<SegmentationARPipelineResults, Error>?
 //    private var timeoutInSeconds: Double = 3.0
@@ -180,10 +184,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(
-        targetValue: UInt8, bounds: DimensionBasedMaskBounds? = nil,
-        unionOfMasksPolicy: UnionOfMasksPolicy = .default
-    ) throws -> CIImage {
+    func processUnionOfMasksRequest(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> CIImage {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
@@ -193,6 +194,9 @@ final class SegmentationAnnotationPipeline: ObservableObject {
             throw SegmentationAnnotationPipelineError.unionOfMasksProcessorNil
         }
         
+        let targetValue = accessibilityFeatureClass.labelValue
+        let bounds: DimensionBasedMaskBounds? = accessibilityFeatureClass.bounds
+        let unionOfMasksPolicy = accessibilityFeatureClass.unionOfMasksPolicy
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if let bounds = bounds, let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter {
             do {
@@ -204,35 +208,32 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         
         self.isProcessing = false
         
-        // Back the CIImage to a pixel buffer
-//        unionImage = self.backCIImageToPixelBuffer(unionImage)
         return unionImage
     }
     
-    private func backCIImageToPixelBuffer(_ image: CIImage) -> CIImage {
-        var imageBuffer: CVPixelBuffer?
-        let attributes: [CFString: Any] = [
-            kCVPixelBufferCGImageCompatibilityKey: true,
-            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
-            kCVPixelBufferIOSurfacePropertiesKey: [:] // Required for Metal/CoreImage
-        ]
-        let status = CVPixelBufferCreate(
-            kCFAllocatorDefault,
-            Int(image.extent.width),
-            Int(image.extent.height),
-            kCVPixelFormatType_OneComponent8,
-            attributes as CFDictionary,
-            &imageBuffer
-        )
-        guard status == kCVReturnSuccess, let imageBuffer = imageBuffer else {
-            print("Error: Failed to create pixel buffer")
-            return image
+    func processContourRequest(
+        segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> [DetectedAccessibilityFeature] {
+        if self.isProcessing {
+            throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
-        // Render the CIImage to the pixel buffer
-        self.context.render(image, to: imageBuffer, bounds: image.extent, colorSpace: CGColorSpaceCreateDeviceGray())
-        // Create a CIImage from the pixel buffer
-        let ciImage = CIImage(cvPixelBuffer: imageBuffer)
-        return ciImage
-    }
+        self.isProcessing = true
+        guard var contourRequestProcessor = self.contourRequestProcessor else {
+            throw SegmentationAnnotationPipelineError.contourRequestProcessorNil
+        }
         
+        contourRequestProcessor.setSelectedClasses([accessibilityFeatureClass])
+        var detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
+            from: segmentationLabelImage
+        )
+        /// TODO: Handle way features differently if needed, and improve the relevant trapezoid-creation logic.
+        if accessibilityFeatureClass.isWay {
+            let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.perimeter > $1.contourDetails.perimeter}).first
+            if let largestFeature = largestFeature {
+            }
+        }
+        
+        self.isProcessing = false
+        return detectedFeatures
+    }
 }

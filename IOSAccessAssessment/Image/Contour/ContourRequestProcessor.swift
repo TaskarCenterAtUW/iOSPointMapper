@@ -27,7 +27,7 @@ enum ContourRequestProcessorError: Error, LocalizedError {
  */
 struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01
-    // For normalized points
+    /// For normalized points
     var perimeterThreshold: Float = 0.01
     var selectedClasses: [AccessibilityFeatureClass] = []
 //    var selectedClassLabels: [UInt8] = []
@@ -72,7 +72,7 @@ struct ContourRequestProcessor {
         let contours = contourResult?.topLevelContours
         for contour in (contours ?? []) {
             let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
-            let contourCentroidAreaBounds = contourApproximation.getCentroidAreaBounds()
+            let contourCentroidAreaBounds = ContourUtils.getCentroidAreaBounds(contour: contourApproximation)
             if contourCentroidAreaBounds.perimeter < self.perimeterThreshold {continue}
             
             detectedFeatures.append(DetectedAccessibilityFeature(

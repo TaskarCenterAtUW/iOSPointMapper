@@ -11,6 +11,8 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     let normalizedPoints: [SIMD2<Float>]
     let area: Float
     let perimeter: Float
+    
+    
 }
 
 /**

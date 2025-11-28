@@ -137,13 +137,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
               let cameraOutputImage = annotationImageResults.cameraOutputImage else {
             throw AnnotatiomImageManagerError.imageResultCacheFailed
         }
-//        let trianglePointsNormalized = try getPolygonsNormalizedCoordinates(
+//        let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
 //            captureImageData: captureImageData,
 //            captureMeshData: captureMeshData,
 //            accessibilityFeatureClass: accessibilityFeatureClass
 //        )
 //        guard let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
-//            trianglePointsNormalized: trianglePointsNormalized, size: captureImageData.originalSize,
+//            polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
 //            boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
 //        ) else {
 //            throw AnnotatiomImageManagerError.meshRasterizationFailed
@@ -239,11 +239,8 @@ extension AnnotationImageManager {
             guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
                 throw AnnotatiomImageManagerError.segmentationNotConfigured
             }
-            let targetValue = accessibilityFeatureClass.labelValue
-            let bounds: DimensionBasedMaskBounds? = accessibilityFeatureClass.bounds
-            let unionOfMasksPolicy = accessibilityFeatureClass.unionOfMasksPolicy
             let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
-                targetValue: targetValue, bounds: bounds, unionOfMasksPolicy: unionOfMasksPolicy
+                accessibilityFeatureClass: accessibilityFeatureClass
             )
             return processedSegmentationLabelImage
         } catch {

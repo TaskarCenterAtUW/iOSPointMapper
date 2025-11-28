@@ -72,7 +72,7 @@ struct ContourRequestLegacyProcessor {
         let contours = contourResult?.topLevelContours
         for contour in (contours ?? []) {
             let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
-            let contourDetails = contourApproximation.getCentroidAreaBounds()
+            let contourDetails = ContourUtils.getCentroidAreaBounds(contour: contourApproximation)
             if contourDetails.perimeter < self.perimeterThreshold {continue}
             
             detectedObjects.append(DetectedObject(classLabel: classLabel,

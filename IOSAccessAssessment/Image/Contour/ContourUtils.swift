@@ -7,19 +7,26 @@
 
 import Vision
 
-extension VNContour {
+struct ContourUtils {
     /**
      Function to compute the centroid, bounding box, and perimeter of a contour more efficiently
      
      TODO: Check if the performance can be improved by using SIMD operations
      */
-    func getCentroidAreaBounds() -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
-        let points = self.normalizedPoints
+    static func getCentroidAreaBounds(
+        contour: VNContour
+    ) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
+        let points = contour.normalizedPoints
+        return getCentroidAreaBounds(normalizedPoints: points)
+    }
+    static func getCentroidAreaBounds(
+        normalizedPoints points: [simd_float2]
+    ) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
         guard !points.isEmpty else { return (CGPoint.zero, .zero, 0, 0) }
         
-        let centroidAreaResults = self.getCentroidAndArea()
-        let boundingBox = self.getBoundingBox()
-        let perimeter = self.getPerimeter()
+        let centroidAreaResults = self.getCentroidAndArea(normalizedPoints: points)
+        let boundingBox = self.getBoundingBox(normalizedPoints: points)
+        let perimeter = self.getPerimeter(normalizedPoints: points)
         
         return (centroid: centroidAreaResults.centroid, boundingBox, perimeter, centroidAreaResults.area)
     }
@@ -27,8 +34,11 @@ extension VNContour {
     /**
      Use shoelace formula to calculate the area and centroid of the contour together.
      */
-    func getCentroidAndArea() -> (centroid: CGPoint, area: Float) {
-        let points = self.normalizedPoints
+    static func getCentroidAndArea(contour: VNContour) -> (centroid: CGPoint, area: Float) {
+        let points = contour.normalizedPoints
+        return getCentroidAndArea(normalizedPoints: points)
+    }
+    static func getCentroidAndArea(normalizedPoints points: [simd_float2]) -> (centroid: CGPoint, area: Float) {
         guard !points.isEmpty else { return (CGPoint.zero, 0) }
         
         let count = points.count
@@ -64,8 +74,11 @@ extension VNContour {
         return (centroid, area)
     }
     
-    func getBoundingBox() -> CGRect {
-        let points = self.normalizedPoints
+    static func getBoundingBox(contour: VNContour) -> CGRect {
+        let points = contour.normalizedPoints
+        return getBoundingBox(normalizedPoints: points)
+    }
+    static func getBoundingBox(normalizedPoints points: [simd_float2]) -> CGRect {
         guard !points.isEmpty else { return .zero }
         
         var minX = points[0].x
@@ -86,8 +99,11 @@ extension VNContour {
         )
     }
     
-    private func getPerimeter() -> Float {
-        let points = self.normalizedPoints
+    static func getPerimeter(contour: VNContour) -> Float {
+        let points = contour.normalizedPoints
+        return getPerimeter(normalizedPoints: points)
+    }
+    static func getPerimeter(normalizedPoints points: [simd_float2]) -> Float {
         guard !points.isEmpty else { return 0 }
         
         var perimeter: Float = 0.0
@@ -104,7 +120,12 @@ extension VNContour {
         
         return perimeter
     }
-    
+}
+
+/**
+ NOTE: Methods that need to be replaced. 
+ */
+extension ContourUtils {
     /**
         Function to get the bounding box of the contour as a trapezoid. This is the largest trapezoid that can be contained in the contour and has horizontal lines.
         - Parameters:
@@ -121,9 +142,14 @@ extension VNContour {
      but it returns the trapezoid with the smaller line.
      We may have to come up with a better heuristic to determine the right shape for getting the way bounds.
      */
-    func getTrapezoid(x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
-        let points = self.normalizedPoints
-        
+    static func getTrapezoid(contour: VNContour, x_delta: Float = 0.1, y_delta: Float = 0.1) -> [SIMD2<Float>]? {
+        let points = contour.normalizedPoints
+        return getTrapezoid(normalizedPoints: points, x_delta: x_delta, y_delta: y_delta)
+    }
+    static func getTrapezoid(
+        normalizedPoints points: [simd_float2], x_delta: Float = 0.1, y_delta: Float = 0.1
+    ) -> [SIMD2<Float>]? {
+        guard !points.isEmpty else { return nil }
         let sortedByYPoints = points.sorted(by: { $0.y < $1.y })
         
         func intersectsAtY(p1: SIMD2<Float>, p2: SIMD2<Float>, y0: Float) -> SIMD2<Float>? {
