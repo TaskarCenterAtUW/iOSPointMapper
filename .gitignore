@@ -18,6 +18,7 @@ Frameworks/*
 # No additional model updates for now. These will be added to separate storage
 *.mlpackage
 *.mlmodel
+!IOSAccessAssessment/MachineLearning/SemanticSegmentation/bisenetv2_11_640_640.mlpackage
 
 *.mlperf
 

@@ -17,8 +17,16 @@ enum AnnotationViewConstants {
         static let finishText = "Finish"
         static let nextText = "Next"
         
-        static let invalidPageText = "Invalid Content. Please Close."
+        static let selectObjectText = "Select an object"
         
+        static let loadingPageText = "Loading. Please wait..."
+        
+        /// Feature Detail View Text
+        static let featureDetailViewTitle = "Feature Details"
+        static let featureDetailViewIdKey = "ID"
+        static let featureDetailNotAvailableText = "Not Available"
+        
+        /// Alert texts
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
         static let managerStatusAlertMessageSuffixKey = "Press OK to close this screen."
@@ -35,6 +43,7 @@ enum AnnotationViewConstants {
 
 enum AnnotationViewError: Error, LocalizedError {
     case classIndexOutofBounds
+    case instanceIndexOutofBounds
     case invalidCaptureDataRecord
     case managerConfigurationFailed
     
@@ -42,11 +51,63 @@ enum AnnotationViewError: Error, LocalizedError {
         switch self {
         case .classIndexOutofBounds:
             return "The Current Class is not in the list."
+        case .instanceIndexOutofBounds:
+            return "Exceeded the number of instances for the current class."
         case .invalidCaptureDataRecord:
             return "The Current Capture is invalid."
         case .managerConfigurationFailed:
             return "Annotation Configuration failed"
         }
+    }
+}
+
+class AnnotationFeatureClassSelectionViewModel: ObservableObject {
+    @Published var currentIndex: Int? = nil
+    @Published var currentClass: AccessibilityFeatureClass? = nil
+    @Published var annotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
+    @Published var selectedAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    
+    func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
+        guard index < classes.count else {
+            throw AnnotationViewError.classIndexOutofBounds
+        }
+        self.currentIndex = index
+        self.currentClass = classes[index]
+    }
+}
+
+class AnnotationFeatureSelectionViewModel: ObservableObject {
+    @Published var instances: [AccessibilityFeature] = []
+    @Published var currentIndex: Int? = nil
+    @Published var currentFeature: AccessibilityFeature? = nil
+    @Published var annotationOptions: [AnnotationOption] = AnnotationOption.allCases
+    @Published var selectedAnnotationOption: AnnotationOption = AnnotationOption.default
+    
+    func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+        self.instances = instances
+        if (currentClass.isWay) {
+            try setIndex(index: 0)
+        } else {
+            try setIndex(index: nil)
+        }
+    }
+    
+    func setIndex(index: Int?) throws {
+        guard let index = index else {
+            self.currentIndex = nil
+            self.currentFeature = nil
+            return
+        }
+        guard index < instances.count else {
+            throw AnnotationViewError.instanceIndexOutofBounds
+        }
+        self.currentIndex = index
+        self.currentFeature = instances[index]
+    }
+    
+    func setCurrent(index: Int?, instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+        try setInstances(instances, currentClass: currentClass)
+        try setIndex(index: index)
     }
 }
 
@@ -58,14 +119,15 @@ struct AnnotationView: View {
     @Environment(\.dismiss) var dismiss
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
+    
+    @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
+    
     @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
-    @State var currentClassIndex = 0
-    @State var currentClass: AccessibilityFeatureClass? = nil
-    @State var instanceAnnotationOptions: [AnnotationOption] = AnnotationOption.allCases
-    @State var classAnnotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
-    @State var selectedInstanceAnnotationOption: AnnotationOption = AnnotationOption.default
-    @State var selectedClassAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    
+    @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
+    @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewModel()
+    @State private var isShowingAnnotationFeatureDetailView: Bool = false
     
     var body: some View {
         VStack {
@@ -90,14 +152,36 @@ struct AnnotationView: View {
                 }
             )
             
-            if (isCurrentIndexValid()) {
-                mainContent()
-                .onAppear() {
-                    setCurrentClass()
-                    configureManager()
-                }
+            if let currentClass = featureClassSelectionViewModel.currentClass {
+                mainContent(currentClass: currentClass)
             } else {
-                invalidPageView()
+                loadingPageView()
+            }
+        }
+        .task {
+            await handleOnAppear()
+        }
+        .onChange(of: featureClassSelectionViewModel.currentClass) { oldClass, newClass in
+            handleOnClassChange()
+        }
+        /// We are using index to track change in instance, instead of the instance itself, because we want to use the index for naming the instance in the picker.
+        /// To use the instance directly would require AccessibilityFeature to conform to Hashable, which is possible, by just using id.
+        /// But while rendering the picker, we would need to create a new Array of enumerated instances, which would be less efficient.
+        .onChange(of: featureSelectionViewModel.currentIndex) { oldIndex, newIndex in
+            handleOnInstanceChange()
+        }
+        .sheet(isPresented: $isShowingAnnotationFeatureDetailView) {
+            if let currentFeature = featureSelectionViewModel.currentFeature,
+               let currentFeatureIndex = featureSelectionViewModel.currentIndex
+            {
+                AnnotationFeatureDetailView(
+                    accessibilityFeature: currentFeature,
+                    title: "\(currentFeature.accessibilityFeatureClass.name.capitalized): \(currentFeatureIndex)"
+                )
+                    .presentationDetents([.medium, .large])
+            } else {
+                Text(AnnotationViewConstants.Texts.featureDetailNotAvailableText)
+                    .presentationDetents([.medium, .large])
             }
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
@@ -110,13 +194,11 @@ struct AnnotationView: View {
         })
     }
     
-    private func invalidPageView() -> some View {
+    private func loadingPageView() -> some View {
         VStack {
-            Label {
-                Text(AnnotationViewConstants.Texts.invalidPageText)
-            } icon: {
-                Image(systemName: AnnotationViewConstants.Images.errorIcon)
-            }
+            Spacer()
+            Text(AnnotationViewConstants.Texts.loadingPageText)
+            SpinnerView()
             Spacer()
         }
     }
@@ -130,14 +212,14 @@ struct AnnotationView: View {
     
     private func annotationOptionsView() -> some View {
         VStack(spacing: 10) {
-            ForEach(classAnnotationOptions, id: \.self) { option in
+            ForEach(featureClassSelectionViewModel.annotationOptions, id: \.self) { option in
                 Button(action: {
                 }) {
                     Text(option.rawValue)
                         .font(.subheadline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(selectedClassAnnotationOption == option ? Color.blue : Color.gray)
+                        .background(featureClassSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
                         .foregroundStyle(.white)
                         .cornerRadius(10)
                 }
@@ -146,100 +228,149 @@ struct AnnotationView: View {
     }
     
     @ViewBuilder
-    private func mainContent() -> some View {
-        if let currentClass = currentClass {
-            orientationStack {
-                HostedAnnotationImageViewController(annotationImageManager: manager)
+    private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
+        let isDisabledFeatureDetailButton = featureSelectionViewModel.currentFeature == nil
+        orientationStack {
+            HostedAnnotationImageViewController(annotationImageManager: manager)
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
+                    Spacer()
+                }
                 
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
-                        Spacer()
+                HStack {
+                    Spacer()
+                    CustomPicker (
+                        label: AnnotationViewConstants.Texts.selectObjectText,
+                        selection: $featureSelectionViewModel.currentIndex,
+                        isContainsAll: !currentClass.isWay
+                    ) {
+                        ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
+                            Text("\(currentClass.name.capitalized): \(featureIndex)")
+                                .tag(featureIndex as Int?)
+                        }
                     }
-                    
-                    HStack {
-                        Spacer()
-                        /// Class Instance Picker
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 30)
-                    
-                    ProgressBar(value: 0)
-                    
-                    HStack {
-                        Spacer()
-                        annotationOptionsView()
-                        Spacer()
-                    }
-                    .padding()
-                    
                     Button(action: {
-                        /// Finish annotation action
+                        isShowingAnnotationFeatureDetailView = true
                     }) {
-                        Text(AnnotationViewConstants.Texts.finishText)
-                            .padding()
+                        Image(systemName: AnnotationViewConstants.Images.ellipsisIcon)
                     }
+                    .buttonStyle(.bordered)
+                    .padding(.horizontal, 5)
+                    .disabled(isDisabledFeatureDetailButton)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 30)
+                
+                ProgressBar(value: 0)
+                
+                HStack {
+                    Spacer()
+                    annotationOptionsView()
+                    Spacer()
+                }
+                .padding()
+                
+                Button(action: {
+                    confirmAnnotation()
+                }) {
+                    Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                        .padding()
                 }
             }
-        } else {
-            invalidPageView()
         }
     }
     
     private func isCurrentIndexValid() -> Bool {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            return false
-        }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-        guard currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count else {
-            return false
-        }
-        return true
-    }
-    
-    private func setCurrentClass() {
-        guard isCurrentIndexValid() else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.classIndexOutofBounds.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
-        }
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
-        }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-        currentClass = segmentedClasses[currentClassIndex]
-    }
-    
-    private func configureManager() {
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-              let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
-              let currentClass = currentClass
-        else {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(AnnotationViewError.invalidCaptureDataRecord.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
-            )
-            return
+              let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+            return false
         }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        return (currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count)
+    }
+    
+    private func isCurrentIndexLast() -> Bool {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+            return false
+        }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        return currentClassIndex == segmentedClasses.count - 1
+    }
+    
+    private func handleOnAppear() async {
         do {
-            try manager.configure(selectedClasses: selectedClasses, captureImageData: currentCaptureDataRecord)
-            try manager.update(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-                accessibilityFeatureClass: currentClass
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            try segmentationAnnontationPipeline.configure()
+            try manager.configure(
+                selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
+                captureImageData: currentCaptureDataRecord
             )
+            let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
+            manager.setupAlignedSegmentationLabelImages(
+                captureImageData: currentCaptureDataRecord,
+                captureDataHistory: captureDataHistory
+            )
+            try featureClassSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(AnnotationViewError.managerConfigurationFailed.localizedDescription). \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        }
+    }
+    
+    private func handleOnClassChange() {
+        do {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
+                  let currentClass = featureClassSelectionViewModel.currentClass else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            let accessibilityFeatures = try manager.update(
+                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
+                accessibilityFeatureClass: currentClass
             )
+            try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        }
+    }
+    
+    private func handleOnInstanceChange() {
+        do {
+            try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        }
+    }
+    
+    private func confirmAnnotation() {
+        if isCurrentIndexLast() {
+            self.dismiss()
+            return
+        }
+        do {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
         }
     }
 }

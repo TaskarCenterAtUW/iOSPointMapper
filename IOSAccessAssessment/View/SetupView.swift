@@ -25,6 +25,9 @@ enum SetupViewConstants {
         static let modelInitializationErrorTitle = "Machine Learning Model initialization failed. Please retry."
         static let modelInitializationRetryText = "Retry"
         static let modelInitializationRetryMessageText = "Failed to initialize the machine learning model."
+        static let sharedAppContextInitializationErrorTitle = "App Context configuration failed. Please retry."
+        static let sharedAppContextInitializationRetryText = "Retry"
+        static let sharedAppContextInitializationRetryMessageText = "Failed to configure the app context."
         
         static let confirmationDialogTitle = "Are you sure you want to log out?"
         static let confirmationDialogConfirmText = "Log out"
@@ -134,8 +137,6 @@ class ChangeSetOpenViewModel: ObservableObject {
     @Published var retryMessage: String = ""
     
     func update(isChangesetOpened: Bool, showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.isChangesetOpened = isChangesetOpened
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
@@ -148,8 +149,6 @@ class ChangeSetCloseViewModel: ObservableObject {
     @Published var retryMessage = ""
     
     func update(showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
     }
@@ -161,8 +160,19 @@ class ModelInitializationViewModel: ObservableObject {
     @Published var retryMessage: String = ""
     
     func update(areModelsInitialized: Bool, showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
+        self.areModelsInitialized = areModelsInitialized
+        self.showRetryAlert = showRetryAlert
+        self.retryMessage = retryMessage
+    }
+}
+
+class SharedAppContextInitializationViewModel: ObservableObject {
+    @Published var isContextConfigured: Bool = false
+    @Published var showRetryAlert: Bool = false
+    @Published var retryMessage: String = ""
+    
+    func update(isContextConfigured: Bool, showRetryAlert: Bool, retryMessage: String) {
+        self.isContextConfigured = isContextConfigured
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
     }
@@ -178,13 +188,15 @@ struct SetupView: View {
 //    @EnvironmentObject var userState: UserStateViewModel
 //    @State private var showLogoutConfirmation = false
     
+    @StateObject private var sharedAppData: SharedAppData = SharedAppData()
+    @StateObject private var sharedAppContext: SharedAppContext = SharedAppContext()
+    @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
+    @StateObject private var depthModel: DepthModel = DepthModel()
+    
     @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     @StateObject private var modelInitializationViewModel = ModelInitializationViewModel()
-    
-    @StateObject private var sharedAppData: SharedAppData = SharedAppData()
-    @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
-    @StateObject private var depthModel: DepthModel = DepthModel()
+    @StateObject private var sharedAppContextInitializationViewModel = SharedAppContextInitializationViewModel()
     
     var changesetInfoTip = ChangesetInfoTip()
     @State private var showChangesetLearnMoreSheet = false
@@ -296,7 +308,7 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
-            // Alert for changeset opening error
+            /// Alert for changeset opening error
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
                     changesetOpenViewModel.update(isChangesetOpened: false, showRetryAlert: false, retryMessage: "")
@@ -306,7 +318,7 @@ struct SetupView: View {
             } message: {
                 Text(changesetOpenViewModel.retryMessage)
             }
-            // Alert for changeset closing error
+            /// Alert for changeset closing error
             .alert(SetupViewConstants.Texts.changesetClosingErrorTitle, isPresented: $changeSetCloseViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.changesetClosingRetryText) {
                     changeSetCloseViewModel.update(showRetryAlert: false, retryMessage: "")
@@ -316,11 +328,22 @@ struct SetupView: View {
             } message: {
                 Text(changeSetCloseViewModel.retryMessage)
             }
+            /// Alert for model initialization error
             .alert(SetupViewConstants.Texts.modelInitializationErrorTitle, isPresented: $modelInitializationViewModel.showRetryAlert) {
                 Button(SetupViewConstants.Texts.modelInitializationRetryText) {
                     modelInitializationViewModel.update(areModelsInitialized: false, showRetryAlert: false, retryMessage: "")
                     
                     initializeModels()
+                }
+            }
+            /// Alert for shared app context configuration error
+            .alert(SetupViewConstants.Texts.sharedAppContextInitializationErrorTitle, isPresented: $sharedAppContextInitializationViewModel.showRetryAlert) {
+                Button(SetupViewConstants.Texts.sharedAppContextInitializationRetryText) {
+                    sharedAppContextInitializationViewModel.update(
+                        isContextConfigured: false, showRetryAlert: false, retryMessage: ""
+                    )
+                    
+                    configureSharedAppContext()
                 }
             }
             .onAppear {
@@ -329,6 +352,9 @@ struct SetupView: View {
                 }
                 if !modelInitializationViewModel.areModelsInitialized {
                     initializeModels()
+                }
+                if !sharedAppContextInitializationViewModel.isContextConfigured {
+                    configureSharedAppContext()
                 }
             }
             .sheet(isPresented: $showChangesetLearnMoreSheet) {
@@ -341,6 +367,7 @@ struct SetupView: View {
             }
         }
         .environmentObject(self.sharedAppData)
+        .environmentObject(self.sharedAppContext)
         .environmentObject(self.segmentationPipeline)
         .environmentObject(self.depthModel)
     }
@@ -400,11 +427,25 @@ struct SetupView: View {
             try segmentationPipeline.configure()
             modelInitializationViewModel.update(areModelsInitialized: true, showRetryAlert: false, retryMessage: "")
         } catch {
-            // Sleep for a short duration to avoid rapid retry loops
+            /// Sleep for a short duration to avoid rapid retry loops
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 modelInitializationViewModel.update(
                     areModelsInitialized: false, showRetryAlert: true,
                     retryMessage: "\(SetupViewConstants.Texts.modelInitializationRetryMessageText) \nError: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func configureSharedAppContext() {
+        do {
+            try sharedAppContext.configure()
+            sharedAppContextInitializationViewModel.update(isContextConfigured: true, showRetryAlert: false, retryMessage: "")
+        } catch {
+            /// Sleep for a short duration to avoid rapid retry loops
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                sharedAppContextInitializationViewModel.update(
+                    isContextConfigured: false, showRetryAlert: true,
+                    retryMessage: "\(SetupViewConstants.Texts.sharedAppContextInitializationRetryMessageText) \nError: \(error.localizedDescription)")
             }
         }
     }

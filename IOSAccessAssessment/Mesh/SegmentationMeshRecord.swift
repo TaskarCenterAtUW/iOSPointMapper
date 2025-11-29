@@ -6,6 +6,7 @@
 //
 import ARKit
 import RealityKit
+import MetalKit
 
 enum SegmentationMeshRecordError: Error, LocalizedError {
     case isProcessingTrue
@@ -56,11 +57,11 @@ final class SegmentationMeshRecord {
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
     
-    let context: MeshGPUContext
+    let context: MetalContext
     let pipelineState: MTLComputePipelineState
     
     init(
-        _ context: MeshGPUContext,
+        _ context: MetalContext,
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
@@ -110,17 +111,7 @@ final class SegmentationMeshRecord {
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
-    ) throws {
-        // TODO: The assumption that segmentationImage.pixelBuffer is available may not always hold true.
-        // Need to implement a more robust way to create MTLTexture from CIImage that does not depend on pixelBuffer.
-        guard let segmentationPixelBuffer = segmentationImage.pixelBuffer else {
-            throw SegmentationMeshRecordError.emptySegmentation
-        }
-        CVPixelBufferLockBaseAddress(segmentationPixelBuffer, .readOnly)
-        defer {
-            CVPixelBufferUnlockBaseAddress(segmentationPixelBuffer, .readOnly)
-        }
-        
+    ) throws {        
         let meshGPUAnchors = meshGPUSnapshot.anchors
         
         let totalFaceCount = meshGPUAnchors.reduce(0) { $0 + $1.value.faceCount }
@@ -186,7 +177,15 @@ final class SegmentationMeshRecord {
         let outVertexBuf = mesh.replace(bufferIndex: 0, using: commandBuffer)
         let outIndexBuf = mesh.replaceIndices(using: commandBuffer)
         
-        let segmentationTexture = try getSegmentationMTLTexture(segmentationPixelBuffer: segmentationPixelBuffer)
+        let segmentationTexture = try segmentationImage.toMTLTexture(
+            device: self.context.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: self.context.ciContextNoColorSpace,
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space to avoid warnings
+            cIImageToMTLTextureOrientation: .metalTopLeft
+        )
+//        let segmentationTexture = try segmentationImage.toMTLTexture(
+//            textureLoader: self.context.textureLoader, context: self.context.ciContextNoColorSpace
+//        )
         
         var accessibilityFeatureMeshClassificationParams = self.accessibilityFeatureMeshClassificationParams
         
@@ -284,6 +283,11 @@ final class SegmentationMeshRecord {
         return Float(bitPattern: raw)
     }
     
+    /**
+        Function to create MTLTexture from CVPixelBuffer.
+     
+        MARK: Not in use, as its usage has been replaced by CIImage extension toMTLTexture()
+     */
     @inline(__always)
     private func getSegmentationMTLTexture(segmentationPixelBuffer: CVPixelBuffer) throws -> MTLTexture {
         let width  = CVPixelBufferGetWidth(segmentationPixelBuffer)
@@ -310,32 +314,6 @@ final class SegmentationMeshRecord {
             throw SegmentationMeshRecordError.segmentationTextureError
         }
         return texture
-    }
-    
-    // MARK: Placeholder function for future reference
-    // This is safer way to create MTLTexture from CIImage, which does not assume pixelBuffer availability
-    // This can be used once the CIImage usage pipeline is fixed.
-    // Right now, there are issues with how color spaces are handled while creating CIImage in the pipeline.
-    // MARK: Also, when using this function, that seems to be some fidelity loss in the segmentation texture.
-    private func getSegmentationMTLTexture(segmentationImage: CIImage, commandBuffer: MTLCommandBuffer) throws -> MTLTexture {
-        // Create Segmentation texture from Segmentation CIImage
-        let mtlDescriptor: MTLTextureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: .r8Unorm,
-            width: Int(segmentationImage.extent.width), height: Int(segmentationImage.extent.height),
-            mipmapped: false
-        )
-        mtlDescriptor.usage = [.shaderRead, .shaderWrite]
-        guard let segmentationTexture = self.context.device.makeTexture(descriptor: mtlDescriptor) else {
-            throw SegmentationMeshRecordError.segmentationTextureError
-        }
-        self.context.ciContextNoColorSpace.render(
-            segmentationImage,
-            to: segmentationTexture,
-            commandBuffer: commandBuffer,
-            bounds: segmentationImage.extent,
-            colorSpace: CGColorSpaceCreateDeviceRGB() // Dummy color space
-        )
-        return segmentationTexture
     }
     
     static func getAccessibilityFeatureMeshClassificationParams(

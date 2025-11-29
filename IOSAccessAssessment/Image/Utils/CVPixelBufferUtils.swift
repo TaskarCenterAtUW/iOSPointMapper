@@ -9,7 +9,80 @@ import UIKit
 import Accelerate
 
 struct CVPixelBufferUtils {
-    
+    /**
+     TODO: Currently, this function is quite hardcoded. For example, it uses a fixed pixel format and attributes.
+        It would be better to make it more flexible by allowing the caller to specify the pixel format and attributes.
+     */
+    static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
+        var pixelBuffer: CVPixelBuffer?
+        let attrs = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true
+        ] as CFDictionary
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
+        if status != kCVReturnSuccess {
+            print("Failed to create pixel buffer")
+            return nil
+        }
+        return pixelBuffer
+    }
+
+    static func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
+        let width = Int(targetSize.width)
+        let height = Int(targetSize.height)
+        
+        let pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
+        
+        guard let blankPixelBuffer = pixelBuffer else { return nil }
+        
+        CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
+        let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!
+        let blankBufferPointer = blankBaseAddress.bindMemory(to: Float.self, capacity: width * height)
+        vDSP_vclr(blankBufferPointer, 1, vDSP_Length(width * height))
+        CVPixelBufferUnlockBaseAddress(blankPixelBuffer, [])
+        
+        return blankPixelBuffer
+    }
+
+    /**
+     This function extracts unique grayscale values from a pixel buffer,
+     gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
+        and returns both the unique values and their corresponding indices.
+     
+     TODO: The function does more than just extracting unique grayscale values.
+     It also returns the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues.
+     This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
+     */
+    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        
+        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            return Set<UInt8>()
+        }
+        
+        var buffer = vImage_Buffer(data: baseAddress,
+                                     height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
+                                     width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
+                                     rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
+        var histogram = [vImagePixelCount](repeating: 0, count: 256)
+        let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
+        guard histogramError == kvImageNoError else { return Set<UInt8>() }
+        
+        var uniqueValues = Set<UInt8>()
+        for i in 0..<histogram.count {
+            if histogram[i] > 0 {
+                uniqueValues.insert(UInt8(i))
+            }
+        }
+        return uniqueValues
+    }
+}
+
+/**
+ Archived methods to be removed later if not needed.
+ */
+extension CVPixelBufferUtils {
     // TODO: Check if any of the methods can be sped up using GPU
     // TODO: Check if the forced unwrapping used all over the functions is safe in the given context
     static func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
@@ -80,42 +153,7 @@ struct CVPixelBufferUtils {
         }
         return cropCenterOfPixelBuffer(resizedPixelBuffer, cropSize: cropSize)
     }
-
-    /**
-     TODO: Currently, this function is quite hardcoded. For example, it uses a fixed pixel format and attributes.
-        It would be better to make it more flexible by allowing the caller to specify the pixel format and attributes.
-     */
-    static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
-        var pixelBuffer: CVPixelBuffer?
-        let attrs = [
-            kCVPixelBufferCGImageCompatibilityKey: true,
-            kCVPixelBufferCGBitmapContextCompatibilityKey: true
-        ] as CFDictionary
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
-        if status != kCVReturnSuccess {
-            print("Failed to create pixel buffer")
-            return nil
-        }
-        return pixelBuffer
-    }
-
-    static func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
-        let width = Int(targetSize.width)
-        let height = Int(targetSize.height)
-        
-        let pixelBuffer: CVPixelBuffer? = createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_DepthFloat32)
-        
-        guard let blankPixelBuffer = pixelBuffer else { return nil }
-        
-        CVPixelBufferLockBaseAddress(blankPixelBuffer, [])
-        let blankBaseAddress = CVPixelBufferGetBaseAddress(blankPixelBuffer)!
-        let blankBufferPointer = blankBaseAddress.bindMemory(to: Float.self, capacity: width * height)
-        vDSP_vclr(blankBufferPointer, 1, vDSP_Length(width * height))
-        CVPixelBufferUnlockBaseAddress(blankPixelBuffer, [])
-        
-        return blankPixelBuffer
-    }
-
+    
     /// Temporary function to get the average value of a pixel in a depth image
     /// Only used for debugging purposes
     static func averagePixelBufferValue(in pixelBuffer: CVPixelBuffer) -> Float32? {
@@ -150,40 +188,6 @@ struct CVPixelBufferUtils {
         }
         
         return sum / Float32(totalPixels)
-    }
-
-    /**
-     This function extracts unique grayscale values from a pixel buffer,
-     gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
-        and returns both the unique values and their corresponding indices.
-     
-     TODO: The function does more than just extracting unique grayscale values.
-     It also returns the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues.
-     This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
-     */
-    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-        
-        guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-            return Set<UInt8>()
-        }
-        
-        var buffer = vImage_Buffer(data: baseAddress,
-                                     height: vImagePixelCount(CVPixelBufferGetHeight(pixelBuffer)),
-                                     width: vImagePixelCount(CVPixelBufferGetWidth(pixelBuffer)),
-                                     rowBytes: CVPixelBufferGetBytesPerRow(pixelBuffer))
-        var histogram = [vImagePixelCount](repeating: 0, count: 256)
-        let histogramError = vImageHistogramCalculation_Planar8(&buffer, &histogram, vImage_Flags(kvImageNoFlags))
-        guard histogramError == kvImageNoError else { return Set<UInt8>() }
-        
-        var uniqueValues = Set<UInt8>()
-        for i in 0..<histogram.count {
-            if histogram[i] > 0 {
-                uniqueValues.insert(UInt8(i))
-            }
-        }
-        return uniqueValues
     }
 }
 

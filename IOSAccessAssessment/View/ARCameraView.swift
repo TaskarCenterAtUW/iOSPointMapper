@@ -60,9 +60,7 @@ class ManagerStatusViewModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
     
-    func update(isFailed: Bool, errorMessage: String) {
-        objectWillChange.send()
-        
+    func update(isFailed: Bool, errorMessage: String) {        
         self.isFailed = isFailed
         self.errorMessage = errorMessage
     }
@@ -72,6 +70,7 @@ struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
     @EnvironmentObject var sharedAppData: SharedAppData
+    @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
@@ -79,7 +78,7 @@ struct ARCameraView: View {
     @StateObject var objectLocation = ObjectLocation()
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
-    @State private var managerConfigureStatusViewModel = ManagerStatusViewModel()
+    @StateObject private var managerConfigureStatusViewModel = ManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
     @State private var showAnnotationView = false
@@ -118,7 +117,11 @@ struct ARCameraView: View {
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
-                try manager.configure(selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline)
+                try manager.configure(
+                    selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
+                    metalContext: sharedAppContext.metalContext,
+                    cameraOutputImageCallback: cameraOutputImageCallback
+                )
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -155,6 +158,12 @@ struct ARCameraView: View {
         AnyLayout(VStackLayout())(content)
     }
     
+    private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
+        Task {
+            await sharedAppData.appendCaptureDataToQueue(captureImageData)
+        }
+    }
+    
     private func capture() {
         Task {
             do {
@@ -165,7 +174,9 @@ struct ARCameraView: View {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
                 try manager.pause()
-                await sharedAppData.saveCaptureData(captureData)
+                sharedAppData.saveCaptureData(captureData)
+//                await sharedAppData.appendCaptureDataToQueue(captureData)
+//                print("Total Vertex Count: \(captureData.captureMeshDataResults.segmentedMesh.totalVertexCount)")
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)

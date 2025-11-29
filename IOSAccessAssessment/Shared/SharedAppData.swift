@@ -16,12 +16,13 @@ final class SharedAppData: ObservableObject {
     var currentDatasetEncoder: DatasetEncoder?
     
     var currentCaptureDataRecord: (any CaptureImageDataProtocol)?
-    var captureDataQueue: SafeDeque<(any CaptureImageDataProtocol)>
+    /// A queue to hold recent capture image data.
+    var captureDataQueue: SafeDeque<CaptureImageData>
     var captureDataCapacity: Int
     
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
-        self.captureDataQueue = SafeDeque<(any CaptureImageDataProtocol)>(capacity: captureDataCapacity)
+        self.captureDataQueue = SafeDeque<CaptureImageData>(capacity: captureDataCapacity)
     }
     
     func refreshData() {
@@ -30,8 +31,12 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) async {
+    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) {
         self.currentCaptureDataRecord = data
-//        await self.captureDataQueue.appendBack(data)
+    }
+    
+    func appendCaptureDataToQueue(_ data: (any CaptureImageDataProtocol)) async {
+        let captureImageData = CaptureImageData(data)
+        await self.captureDataQueue.appendBack(captureImageData)
     }
 }

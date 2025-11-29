@@ -15,6 +15,7 @@ enum BinaryMaskFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
+    case metalPipelineCreationError
     case outputImageCreationFailed
     
     var errorDescription: String? {
@@ -25,6 +26,8 @@ enum BinaryMaskFilterError: Error, LocalizedError {
             return "The input image is invalid."
         case .textureCreationFailed:
             return "Failed to create Metal textures."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
         }
@@ -66,27 +69,26 @@ struct BinaryMaskFilter {
             - targetValue: The target pixel value to create the binary mask.
      */
     func apply(to inputImage: CIImage, targetValue: UInt8) throws -> CIImage {
-        // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
-        //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
-        
-        guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            throw BinaryMaskFilterError.invalidInputImage
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw BinaryMaskFilterError.metalPipelineCreationError
         }
         
-        let inputTexture = try self.textureLoader.newTexture(cgImage: cgImage, options: options)
-
-        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
-        guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
-              let commandBuffer = self.commandQueue.makeCommandBuffer(),
-              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+        let inputTexture = try inputImage.toMTLTexture(
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: self.ciContext,
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+        )
+        guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw BinaryMaskFilterError.textureCreationFailed
         }
-        
         var targetValueLocal = targetValue
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw BinaryMaskFilterError.metalPipelineCreationError
+        }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)

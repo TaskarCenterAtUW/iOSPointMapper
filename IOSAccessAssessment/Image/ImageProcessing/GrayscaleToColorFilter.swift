@@ -14,6 +14,7 @@ enum GrayscaleToColorFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
+    case metalPipelineCreationError
     case outputImageCreationFailed
     
     var errorDescription: String? {
@@ -24,6 +25,8 @@ enum GrayscaleToColorFilterError: Error, LocalizedError {
             return "The input image is invalid."
         case .textureCreationFailed:
             return "Failed to create Metal textures."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
         }
@@ -67,36 +70,31 @@ struct GrayscaleToColorFilter {
             - colorValues: An array of CIColor values corresponding to the grayscale levels.
      */
     func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) throws -> CIImage {
-        // TODO: Check if descriptor can be added to initializer by saving the input image dimensions as constants
-        //  This may be possible since we know that the vision model returns fixed sized images to the segmentation view controller
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
-        
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
-        
-        guard let cgImage = self.ciContext.createCGImage(inputImage, from: inputImage.extent) else {
-            throw GrayscaleToColorFilterError.invalidInputImage
-        }
-        
-        // TODO: Instead of creating texture from CGImage, try to create from CVPixelBuffer directly
-        // As shown in SegmentationMeshRecord.swift
-        guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            throw GrayscaleToColorFilterError.textureCreationFailed
-        }
 
-        // commandEncoder is used for compute pipeline instead of the traditional render pipeline
-        guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
-              let commandBuffer = self.commandQueue.makeCommandBuffer(),
-              let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw GrayscaleToColorFilterError.metalPipelineCreationError
+        }
+        
+        let inputTexture = try inputImage.toMTLTexture(
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: self.ciContext,
+            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+        )
+//        let inputTexture = try inputImage.toMTLTexture(textureLoader: textureLoader, context: ciContext)
+        guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw GrayscaleToColorFilterError.textureCreationFailed
         }
         
-        var grayscaleToColorLUT: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0, 0, 0), count: 256)
-        for (i, grayscaleValue) in grayscaleValues.enumerated() {
-            let index = min(Int((grayscaleValue * 255).rounded()), 255)
-            grayscaleToColorLUT[index] = SIMD3<Float>(Float(colorValues[i].red), Float(colorValues[i].green), Float(colorValues[i].blue))
-        }
+        let grayscaleToColorLUT: [SIMD3<Float>] = self.getGrayscaleToColorLookupTable(
+            grayscaleValues: grayscaleValues, colorValues: colorValues
+        )
         let grayscaleToColorLUTBuffer = self.device.makeBuffer(bytes: grayscaleToColorLUT, length: grayscaleToColorLUT.count * MemoryLayout<SIMD3<Float>>.size, options: [])
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw GrayscaleToColorFilterError.metalPipelineCreationError
+        }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
@@ -118,5 +116,14 @@ struct GrayscaleToColorFilter {
             throw GrayscaleToColorFilterError.outputImageCreationFailed
         }
         return resultImage
+    }
+    
+    private func getGrayscaleToColorLookupTable(grayscaleValues: [Float], colorValues: [CIColor]) -> [SIMD3<Float>] {
+        var grayscaleToColorLUT: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0, 0, 0), count: 256)
+        for (i, grayscaleValue) in grayscaleValues.enumerated() {
+            let index = min(Int((grayscaleValue * 255).rounded()), 255)
+            grayscaleToColorLUT[index] = SIMD3<Float>(Float(colorValues[i].red), Float(colorValues[i].green), Float(colorValues[i].blue))
+        }
+        return grayscaleToColorLUT
     }
 }

@@ -15,6 +15,7 @@ import simd
 enum SegmentationARPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
+    case segmentationResourcesNotConfigured
     case invalidSegmentation
     case invalidContour
     case invalidTransform
@@ -26,6 +27,8 @@ enum SegmentationARPipelineError: Error, LocalizedError {
             return "The Segmentation Image Pipeline is already processing a request."
         case .emptySegmentation:
             return "The Segmentation array is Empty"
+        case .segmentationResourcesNotConfigured:
+            return "The Segmentation Image Pipeline resources are not configured"
         case .invalidSegmentation:
             return "The Segmentation is invalid"
         case .invalidContour:
@@ -42,15 +45,15 @@ struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
-    var detectedObjectMap: [UUID: DetectedAccessibilityFeature]
+    var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-         detectedObjectMap: [UUID: DetectedAccessibilityFeature]) {
+         detectedFeatureMap: [UUID: DetectedAccessibilityFeature]) {
         self.segmentationImage = segmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
-        self.detectedObjectMap = detectedObjectMap
+        self.detectedFeatureMap = detectedFeatureMap
     }
 }
 
@@ -75,13 +78,9 @@ final class SegmentationARPipeline: ObservableObject {
     // For normalized points
     private var perimeterThreshold: Float = 0.01
     
-    private var grayscaleToColorMasker: GrayscaleToColorFilter?
+    private var grayscaleToColorFilter: GrayscaleToColorFilter?
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
-    
-    init() {
-        
-    }
     
     func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
@@ -90,7 +89,7 @@ final class SegmentationARPipeline: ObservableObject {
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
             selectedClasses: self.selectedClasses)
-        self.grayscaleToColorMasker = try GrayscaleToColorFilter()
+        self.grayscaleToColorFilter = try GrayscaleToColorFilter()
     }
     
     func reset() {
@@ -165,39 +164,37 @@ final class SegmentationARPipeline: ObservableObject {
      Since this function can be called within a Task, it checks for cancellation at various points to ensure that it can exit early if needed.
      */
     private func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
-        let segmentationResults = try self.segmentationModelRequestProcessor?.processSegmentationRequest(with: cIImage)
-        guard let segmentationImage = segmentationResults?.segmentationImage else {
-            throw SegmentationARPipelineError.invalidSegmentation
+        guard let segmentationModelRequestProcessor = self.segmentationModelRequestProcessor,
+              let contourRequestProcessor = self.contourRequestProcessor,
+              let grayscaleToColorFilter = self.grayscaleToColorFilter else {
+            throw SegmentationARPipelineError.segmentationResourcesNotConfigured
         }
+        let segmentationResults = try segmentationModelRequestProcessor.processSegmentationRequest(with: cIImage)
+        let segmentationImage = segmentationResults.segmentationImage
         
         try Task.checkCancellation()
         
-        // MARK: Ignoring the contour detection and object tracking for now
+        // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
-        let detectedObjects: [DetectedAccessibilityFeature] = try self.contourRequestProcessor?.processRequest(
+        let detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
             from: segmentationImage
-        ) ?? []
+        )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
-        let detectedObjectMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
-            uniqueKeysWithValues: detectedObjects.map { (UUID(), $0) }
+        let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
+            uniqueKeysWithValues: detectedFeatures.map { (UUID(), $0) }
         )
         
         try Task.checkCancellation()
         
-        guard let segmentationColorImage = try self.grayscaleToColorMasker?.apply(
+        let segmentationColorImage = try grayscaleToColorFilter.apply(
             to: segmentationImage, grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
-        ) else {
-            throw SegmentationARPipelineError.invalidSegmentation
-        }
-//        let segmentationResultUIImage = UIImage(
-//            ciImage: self.grayscaleToColorMasker.outputImage!,
-//            scale: 1.0, orientation: .up) // Orientation is handled in processSegmentationRequest
+        )
         
         return SegmentationARPipelineResults(
             segmentationImage: segmentationImage,
             segmentationColorImage: segmentationColorImage,
-            segmentedClasses: segmentationResults?.segmentedClasses ?? [],
-            detectedObjectMap: detectedObjectMap
+            segmentedClasses: segmentationResults.segmentedClasses,
+            detectedFeatureMap: detectedFeatureMap
         )
     }
     

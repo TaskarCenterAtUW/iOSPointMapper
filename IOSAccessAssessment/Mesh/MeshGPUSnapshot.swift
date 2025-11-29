@@ -7,25 +7,6 @@
 import ARKit
 import RealityKit
 
-struct MeshGPUAnchor {
-    var vertexBuffer: MTLBuffer
-    var indexBuffer: MTLBuffer
-    var classificationBuffer: MTLBuffer? = nil
-    var anchorTransform: simd_float4x4
-    var vertexCount: Int = 0
-    var indexCount: Int = 0
-    var faceCount: Int = 0
-    var generation: Int = 0
-}
-
-struct MeshGPUSnapshot {
-    let vertexStride: Int
-    let vertexOffset: Int
-    let indexStride: Int
-    let classificationStride: Int
-    let anchors: [UUID: MeshGPUAnchor]
-}
-
 /**
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
@@ -36,7 +17,16 @@ final class MeshGPUSnapshotGenerator: NSObject {
     private let vertexOffset: Int = 0
     private let indexElemSize: Int = MemoryLayout<UInt32>.stride
     private let classificationElemSize: Int = MemoryLayout<UInt8>.stride
-    private let anchorLifetimeThreshold: Int = 3 // Number of generations to keep missing anchors
+    /**
+     Number of generations to keep missing anchors
+     
+     We can presumably keep this value high because the segmentation-based filtering takes care of removing polygons that are no longer relevant.
+     However, for performance reasons, we don't want to keep it too high, as the filtering function will have to go through too many anchors.
+     
+     TODO: Instead of having a fixed threshold, we can consider a more adaptive approach where we don't remove the anchor if it's representative transform
+     is still within the camera view frustum.
+     */
+    private let anchorLifetimeThreshold: Int = 10
     
     private let device: MTLDevice
     var currentSnapshot: MeshGPUSnapshot?
@@ -68,6 +58,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
             }
             existingAnchor.generation += 1
             guard existingAnchor.generation < anchorLifetimeThreshold else {
+                print("Removing anchor \(missingId) after exceeding lifetime threshold")
                 continue
             }
             meshGPUAnchors[missingId] = existingAnchor

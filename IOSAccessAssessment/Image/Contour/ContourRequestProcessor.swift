@@ -27,7 +27,7 @@ enum ContourRequestProcessorError: Error, LocalizedError {
  */
 struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01
-    // For normalized points
+    /// For normalized points
     var perimeterThreshold: Float = 0.01
     var selectedClasses: [AccessibilityFeatureClass] = []
 //    var selectedClassLabels: [UInt8] = []
@@ -55,7 +55,7 @@ struct ContourRequestProcessor {
     /**
         Function to rasterize the detected objects on the image. Creates a unique request and handler since it is run on a separate thread
     */
-    func getObjectsFromBinaryImage(
+    func getFeaturesFromBinaryImage(
         for binaryImage: CIImage, targetClass: AccessibilityFeatureClass, orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {
         let contourRequest = VNDetectContoursRequest()
@@ -68,14 +68,14 @@ struct ContourRequestProcessor {
         
         let contourResult = contourResults.first
         
-        var detectedObjects = [DetectedAccessibilityFeature]()
+        var detectedFeatures = [DetectedAccessibilityFeature]()
         let contours = contourResult?.topLevelContours
         for contour in (contours ?? []) {
             let contourApproximation = try contour.polygonApproximation(epsilon: self.contourEpsilon)
-            let contourCentroidAreaBounds = contourApproximation.getCentroidAreaBounds()
+            let contourCentroidAreaBounds = ContourUtils.getCentroidAreaBounds(contour: contourApproximation)
             if contourCentroidAreaBounds.perimeter < self.perimeterThreshold {continue}
             
-            detectedObjects.append(DetectedAccessibilityFeature(
+            detectedFeatures.append(DetectedAccessibilityFeature(
                 accessibilityFeatureClass: targetClass,
                 contourDetails: ContourDetails(
                     centroid: contourCentroidAreaBounds.centroid,
@@ -86,7 +86,7 @@ struct ContourRequestProcessor {
                 )
             ))
         }
-        return detectedObjects
+        return detectedFeatures
     }
     
     /**
@@ -97,24 +97,24 @@ struct ContourRequestProcessor {
     func processRequest(
         from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {
-        var detectedObjects: [DetectedAccessibilityFeature] = []
+        var detectedFeatures: [DetectedAccessibilityFeature] = []
         let lock = NSLock()
         DispatchQueue.concurrentPerform(iterations: self.selectedClasses.count) { index in
             do {
 //                let targetValue = self.selectedClassLabels[index]
                 let targetValue = self.selectedClasses[index].labelValue
                 let mask = try self.binaryMaskFilter.apply(to: segmentationImage, targetValue: targetValue)
-                let detectedObjectsFromBinaryImage = try self.getObjectsFromBinaryImage(
+                let detectedFeaturesFromBinaryImage = try self.getFeaturesFromBinaryImage(
                     for: mask, targetClass: self.selectedClasses[index], orientation: orientation
                 )
                 
                 lock.lock()
-                detectedObjects.append(contentsOf: detectedObjectsFromBinaryImage)
+                detectedFeatures.append(contentsOf: detectedFeaturesFromBinaryImage)
                 lock.unlock()
             } catch {
                 print("Error processing contour for class \(self.selectedClasses[index].name): \(error.localizedDescription)")
             }
         }
-        return detectedObjects
+        return detectedFeatures
     }
 }

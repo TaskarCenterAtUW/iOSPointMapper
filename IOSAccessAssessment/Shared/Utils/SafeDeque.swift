@@ -7,7 +7,7 @@
 
 import DequeModule
 
-actor SafeDeque<Element: Sendable> {
+actor SafeDeque<Element: Sendable>: Sendable {
     private var storage = Deque<Element>()
     private let capacity: Int
     var isEmpty: Bool { storage.isEmpty }

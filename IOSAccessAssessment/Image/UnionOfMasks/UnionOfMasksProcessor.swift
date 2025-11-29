@@ -11,6 +11,7 @@ import MetalKit
 
 enum UnionOfMasksProcessorError: Error, LocalizedError {
     case metalInitializationFailed
+    case metalPipelineCreationError
     case invalidInputImage
     case textureCreationFailed
     case arrayTextureNotSet
@@ -21,6 +22,8 @@ enum UnionOfMasksProcessorError: Error, LocalizedError {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
         case .invalidInputImage:
             return "The input image is invalid."
         case .textureCreationFailed:
@@ -63,7 +66,7 @@ class UnionOfMasksProcessor {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        self.ciContext = CIContext(mtlDevice: device)
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "unionOfMasksKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
@@ -79,58 +82,55 @@ class UnionOfMasksProcessor {
             - images: An array of CIImage objects to be combined into an array texture.
             - format: The pixel format for the texture. Default is .rgba8Unorm.
      */
-    // FIXME: Sometimes, the array texture is not set correctly.
-    // This could be due to the way the AnnotationView's initialization is set up.
-    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .rgba8Unorm) throws {
+    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .r8Unorm) throws {
         let imageCount = images.count
         guard imageCount > 0 else {
-            print("Error: No images provided")
-            return
+            throw UnionOfMasksProcessorError.invalidInputImage
         }
         let inputImage = images[0]
         
         let width = Int(inputImage.extent.width)
         let height = Int(inputImage.extent.height)
         
-        // Assuming every image has the same size
-        let individualDescriptor = MTLTextureDescriptor.texture2DDescriptor(
-            pixelFormat: format, width: width, height: height, mipmapped: false)
-        individualDescriptor.usage = [.shaderRead, .shaderWrite]
-        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
-        
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: format, width: width, height: height, mipmapped: false)
         descriptor.textureType = .type2DArray
-        descriptor.usage = [.shaderRead] // TODO: Check if shaderWrite is needed
+        descriptor.usage = [.shaderRead, .shaderWrite]
         descriptor.arrayLength = imageCount
         
         guard let arrayTexture = device.makeTexture(descriptor: descriptor) else {
             throw UnionOfMasksProcessorError.textureCreationFailed
         }
-        
-        let bpp = try self.bytesPerPixel(for: format)
-        let bytesPerRow = width * bpp
-        let bytesPerImage = bytesPerRow * height
-        
-        for (i, image) in images.enumerated() {
-            let inputTexture = try self.ciImageToTexture(image: image, descriptor: individualDescriptor, options: options)
-            let region = MTLRegionMake2D(0, 0, width, height)
-            
-            var data = [UInt8](repeating: 0, count: bytesPerImage)
-            inputTexture.getBytes(
-                &data,
-                bytesPerRow: bytesPerRow,
-                from: region,
-                mipmapLevel: 0)
-            arrayTexture.replace(
-                region: region,
-                mipmapLevel: 0,
-                slice: i,
-                withBytes: data,
-                bytesPerRow: bytesPerRow,
-                bytesPerImage: bytesPerImage)
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
+            throw UnionOfMasksProcessorError.metalPipelineCreationError
         }
         
-//        print("Successfully created array texture with \(imageCount) images")
+        for (i, image) in images.enumerated() {
+            guard image.extent.width == CGFloat(width),
+                  image.extent.height == CGFloat(height) else {
+                throw UnionOfMasksProcessorError.invalidInputImage
+            }
+            /// Taking reference from CIImageUtils
+            let imageOriented = image
+                .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+                .transformed(by: CGAffineTransform(translationX: 0, y: image.extent.height))
+            guard let sliceTexture = arrayTexture.makeTextureView(
+                pixelFormat: format,
+                textureType: .type2D,
+                levels: 0..<1,
+                slices: i..<(i+1)
+            ) else { continue }
+            ciContext.render(
+                imageOriented,
+                to: sliceTexture,
+                commandBuffer: commandBuffer,
+                bounds: imageOriented.extent,
+                colorSpace: CGColorSpaceCreateDeviceRGB()
+            )
+        }
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
         self.arrayTexture = arrayTexture
         self.imageCount = imageCount
         self.width = width
@@ -143,12 +143,9 @@ class UnionOfMasksProcessor {
             throw UnionOfMasksProcessorError.arrayTextureNotSet
         }
         
-        
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: self.format, width: self.width, height: self.height,
                                                                   mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
-        
-//        let options: [MTKTextureLoader.Option: Any] = [.origin: MTKTextureLoader.Origin.bottomLeft]
         
         // commandEncoder is used for compute pipeline instead of the traditional render pipeline
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor),
@@ -182,34 +179,12 @@ class UnionOfMasksProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        guard let resultimage = CIImage(
-            mtlTexture: outputTexture, options: [.colorSpace: CGColorSpaceCreateDeviceGray()]
-        ) else {
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
             throw UnionOfMasksProcessorError.outputImageCreationFailed
         }
-        return resultimage
-    }
-    
-    private func ciImageToTexture(
-        image: CIImage, descriptor: MTLTextureDescriptor, options: [MTKTextureLoader.Option: Any]
-    ) throws -> MTLTexture {
-        guard let cgImage = self.ciContext.createCGImage(image, from: image.extent) else {
-            throw UnionOfMasksProcessorError.invalidInputImage
-        }
-        guard let inputTexture = try? self.textureLoader.newTexture(cgImage: cgImage, options: options) else {
-            throw UnionOfMasksProcessorError.textureCreationFailed
-        }
-        return inputTexture
-    }
-    
-    private func bytesPerPixel(for format: MTLPixelFormat) throws -> Int {
-        switch format {
-        case .r8Unorm: return 1
-        case .r32Float: return 4
-        case .rgba8Unorm: return 4
-        case .bgra8Unorm: return 4
-        default:
-            throw UnionOfMasksProcessorError.invalidPixelFormat
-        }
+        let resultImageOriented = resultImage
+            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+            .transformed(by: CGAffineTransform(translationX: 0, y: resultImage.extent.height))
+        return resultImageOriented
     }
 }
