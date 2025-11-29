@@ -24,7 +24,7 @@ enum AnnotationViewConstants {
         /// Feature Detail View Text
         static let featureDetailViewTitle = "Feature Details"
         static let featureDetailViewIdKey = "ID"
-        
+        static let featureDetailNotAvailableText = "Not Available"
         
         /// Alert texts
         static let managerStatusAlertTitleKey = "Error"
@@ -127,6 +127,7 @@ struct AnnotationView: View {
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
     @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewModel()
+    @State private var isShowingAnnotationFeatureDetailView: Bool = false
     
     var body: some View {
         VStack {
@@ -168,6 +169,20 @@ struct AnnotationView: View {
         /// But while rendering the picker, we would need to create a new Array of enumerated instances, which would be less efficient.
         .onChange(of: featureSelectionViewModel.currentIndex) { oldIndex, newIndex in
             handleOnInstanceChange()
+        }
+        .sheet(isPresented: $isShowingAnnotationFeatureDetailView) {
+            if let currentFeature = featureSelectionViewModel.currentFeature,
+               let currentFeatureIndex = featureSelectionViewModel.currentIndex
+            {
+                AnnotationFeatureDetailView(
+                    accessibilityFeature: currentFeature,
+                    title: "\(currentFeature.accessibilityFeatureClass.name.capitalized): \(currentFeatureIndex)"
+                )
+                    .presentationDetents([.medium, .large])
+            } else {
+                Text(AnnotationViewConstants.Texts.featureDetailNotAvailableText)
+                    .presentationDetents([.medium, .large])
+            }
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -214,6 +229,7 @@ struct AnnotationView: View {
     
     @ViewBuilder
     private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
+        let isDisabledFeatureDetailButton = featureSelectionViewModel.currentFeature == nil
         orientationStack {
             HostedAnnotationImageViewController(annotationImageManager: manager)
             
@@ -236,6 +252,14 @@ struct AnnotationView: View {
                                 .tag(featureIndex as Int?)
                         }
                     }
+                    Button(action: {
+                        isShowingAnnotationFeatureDetailView = true
+                    }) {
+                        Image(systemName: AnnotationViewConstants.Images.ellipsisIcon)
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.horizontal, 5)
+                    .disabled(isDisabledFeatureDetailButton)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
@@ -323,9 +347,6 @@ struct AnnotationView: View {
     
     private func handleOnInstanceChange() {
         do {
-            guard let currentClass = featureClassSelectionViewModel.currentClass else {
-                throw AnnotationViewError.invalidCaptureDataRecord
-            }
             try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
         } catch {
             managerStatusViewModel.update(

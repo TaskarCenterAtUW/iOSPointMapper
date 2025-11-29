@@ -13,6 +13,7 @@ import SwiftUI
  */
 struct AnnotationFeatureDetailView: View {
     var accessibilityFeature: AccessibilityFeature
+    let title: String
     
     var numberFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -22,7 +23,7 @@ struct AnnotationFeatureDetailView: View {
     
     var body: some View {
         VStack {
-            Text(accessibilityFeature.accessibilityFeatureClass.name)
+            Text(title)
                 .font(.headline)
                 .padding()
             
@@ -41,23 +42,31 @@ struct AnnotationFeatureDetailView: View {
                 
                 if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.width))
                 {
-                    numberTextFieldView(attribute: .width)
+                    Section(header: Text(AccessibilityFeatureAttribute.width.displayName)) {
+                        numberTextFieldView(attribute: .width)
+                    }
                 }
                 
                 if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.runningSlope))
                 {
-                    numberTextFieldView(attribute: .runningSlope)
+                    Section(header: Text(AccessibilityFeatureAttribute.runningSlope.displayName)) {
+                        numberTextFieldView(attribute: .runningSlope)
+                    }
                 }
-            }
-            
-            if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.crossSlope))
-            {
-                numberTextFieldView(attribute: .crossSlope)
-            }
-            
-            if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.surfaceIntegrity))
-            {
-                toggleView(attribute: .surfaceIntegrity)
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.crossSlope))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.crossSlope.displayName)) {
+                        numberTextFieldView(attribute: .crossSlope)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.surfaceIntegrity))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.surfaceIntegrity.displayName)) {
+                        toggleView(attribute: .surfaceIntegrity)
+                    }
+                }
             }
         }
     }
