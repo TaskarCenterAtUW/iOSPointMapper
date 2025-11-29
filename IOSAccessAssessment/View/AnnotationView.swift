@@ -21,6 +21,12 @@ enum AnnotationViewConstants {
         
         static let loadingPageText = "Loading. Please wait..."
         
+        /// Feature Detail View Text
+        static let featureDetailViewTitle = "Feature Details"
+        static let featureDetailViewIdKey = "ID"
+        
+        
+        /// Alert texts
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
         static let managerStatusAlertMessageSuffixKey = "Press OK to close this screen."
