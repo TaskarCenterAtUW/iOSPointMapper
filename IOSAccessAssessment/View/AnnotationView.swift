@@ -322,7 +322,8 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
         }
     }
     
@@ -341,7 +342,8 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
         }
     }
     
@@ -370,7 +372,8 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+            )
         }
     }
 }

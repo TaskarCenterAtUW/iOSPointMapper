@@ -68,7 +68,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
-    private let cIContext = CIContext(options: nil)
+    private let context = CIContext(options: nil)
     
     @Published var isConfigured: Bool = false
     
@@ -204,7 +204,7 @@ extension AnnotationImageManager {
         let orientedImage = cameraImage.oriented(imageOrientation)
         let cameraOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let cameraCgImage = cIContext.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
+        guard let cameraCgImage = context.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
             throw AnnotationImageManagerError.cameraImageProcessingFailed
         }
         return CIImage(cgImage: cameraCgImage)
@@ -282,7 +282,7 @@ extension AnnotationImageManager {
         let orientedImage = segmentationColorImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.segmentationImageRasterizationFailed
         }
         return CIImage(cgImage: overlayCgImage)
@@ -335,7 +335,7 @@ extension AnnotationImageManager {
         let orientedImage = rasterizedDetectedFeaturesCIImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.segmentationImageRasterizationFailed
         }
         return CIImage(cgImage: overlayCgImage)
@@ -370,7 +370,7 @@ extension AnnotationImageManager {
         let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.meshRasterizationFailed
         }
         return CIImage(cgImage: overlayCgImage)

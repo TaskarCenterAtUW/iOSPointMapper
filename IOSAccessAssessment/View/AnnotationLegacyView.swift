@@ -88,7 +88,7 @@ struct AnnotationLegacyView: View {
     
     @StateObject var annotationImageManager = AnnotationLegacyImageManager()
     
-    @State var depthMapProcessor: DepthMapProcessor? = nil
+    @State var depthMapProcessor: DepthMapLegacyProcessor? = nil
     
     @State private var confirmAnnotationFailed: Bool = false
     
@@ -202,7 +202,7 @@ struct AnnotationLegacyView: View {
             .navigationBarTitle(AnnotationLegacyViewConstants.Texts.annotationViewTitle, displayMode: .inline)
             .onAppear {
                 // Initialize the depthMapProcessor with the current depth image
-                depthMapProcessor = DepthMapProcessor(depthImage: sharedImageData.depthImage!)
+                depthMapProcessor = DepthMapLegacyProcessor(depthImage: sharedImageData.depthImage!)
 //                initializeAnnotationSegmentationPipeline()
                 refreshView()
                 refreshOptions()
