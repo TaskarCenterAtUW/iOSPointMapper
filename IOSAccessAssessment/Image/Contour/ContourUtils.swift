@@ -64,11 +64,11 @@ struct ContourUtils {
             cy += (p0.y + p1.y) * crossProduct
         }
         
-        area = 0.5 * abs(area)
-        guard area > 0 else { return (CGPoint.zero, 0) }
-        
+        area = 0.5 * area
         cx /= (6 * area)
         cy /= (6 * area)
+        area = abs(area)
+        guard area > 0 else { return (CGPoint.zero, 0) }
         
         let centroid = CGPoint(x: CGFloat(cx), y: CGFloat(cy))
         return (centroid, area)

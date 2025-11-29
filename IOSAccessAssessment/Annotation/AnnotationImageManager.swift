@@ -110,7 +110,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func setupAlignedSegmentationLabelImages(
         captureImageData: (any CaptureImageDataProtocol),
         captureDataHistory: [CaptureImageData]
-    ) async {
+    ) {
         guard var annotationImageResults = self.annotationImageResults else {
             return
         }
@@ -133,7 +133,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol),
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws {
+    ) throws -> [AccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
@@ -182,6 +182,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
                 )
             }
         }
+        return accessibilityFeatures
     }
 }
 

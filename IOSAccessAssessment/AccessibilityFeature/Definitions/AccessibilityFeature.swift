@@ -16,7 +16,9 @@ enum AccessibilityFeatureError: Error, LocalizedError {
     }
 }
 
-class AccessibilityFeature {
+class AccessibilityFeature: Identifiable, Equatable {
+    let id = UUID()
+    
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let detectedAccessibilityFeature: DetectedAccessibilityFeature
     
@@ -52,5 +54,9 @@ class AccessibilityFeature {
         } else {
             finalAttributeValues[attribute] = value
         }
+    }
+    
+    static func == (lhs: AccessibilityFeature, rhs: AccessibilityFeature) -> Bool {
+        return lhs.id == rhs.id
     }
 }

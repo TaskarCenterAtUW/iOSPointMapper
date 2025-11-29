@@ -60,9 +60,7 @@ class ManagerStatusViewModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
     
-    func update(isFailed: Bool, errorMessage: String) {
-        objectWillChange.send()
-        
+    func update(isFailed: Bool, errorMessage: String) {        
         self.isFailed = isFailed
         self.errorMessage = errorMessage
     }

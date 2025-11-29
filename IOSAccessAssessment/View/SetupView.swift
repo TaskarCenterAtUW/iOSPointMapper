@@ -137,8 +137,6 @@ class ChangeSetOpenViewModel: ObservableObject {
     @Published var retryMessage: String = ""
     
     func update(isChangesetOpened: Bool, showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.isChangesetOpened = isChangesetOpened
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
@@ -151,8 +149,6 @@ class ChangeSetCloseViewModel: ObservableObject {
     @Published var retryMessage = ""
     
     func update(showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
     }
@@ -164,8 +160,6 @@ class ModelInitializationViewModel: ObservableObject {
     @Published var retryMessage: String = ""
     
     func update(areModelsInitialized: Bool, showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.areModelsInitialized = areModelsInitialized
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage
@@ -178,8 +172,6 @@ class SharedAppContextInitializationViewModel: ObservableObject {
     @Published var retryMessage: String = ""
     
     func update(isContextConfigured: Bool, showRetryAlert: Bool, retryMessage: String) {
-        objectWillChange.send()
-        
         self.isContextConfigured = isContextConfigured
         self.showRetryAlert = showRetryAlert
         self.retryMessage = retryMessage

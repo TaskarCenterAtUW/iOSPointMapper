@@ -35,6 +35,7 @@ enum AnnotationViewConstants {
 
 enum AnnotationViewError: Error, LocalizedError {
     case classIndexOutofBounds
+    case instanceIndexOutofBounds
     case invalidCaptureDataRecord
     case managerConfigurationFailed
     
@@ -42,6 +43,8 @@ enum AnnotationViewError: Error, LocalizedError {
         switch self {
         case .classIndexOutofBounds:
             return "The Current Class is not in the list."
+        case .instanceIndexOutofBounds:
+            return "Exceeded the number of instances for the current class."
         case .invalidCaptureDataRecord:
             return "The Current Capture is invalid."
         case .managerConfigurationFailed:
@@ -57,21 +60,48 @@ class AnnotationClassSelectionViewModel: ObservableObject {
     @Published var selectedAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
     
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
-        objectWillChange.send()
         
         guard index < classes.count else {
             throw AnnotationViewError.classIndexOutofBounds
         }
-        currentIndex = index
-        currentClass = classes[index]
+        self.currentIndex = index
+        self.currentClass = classes[index]
     }
 }
 
 class AnnotationInstanceSelectionViewModel: ObservableObject {
+    @Published var instances: [AccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
     @Published var currentInstance: AccessibilityFeature? = nil
     @Published var annotationOptions: [AnnotationOption] = AnnotationOption.allCases
     @Published var selectedAnnotationOption: AnnotationOption = AnnotationOption.default
+    
+    func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+        self.instances = instances
+        if (currentClass.isWay) {
+            try setIndex(index: 0)
+        } else {
+            try setIndex(index: nil)
+        }
+    }
+    
+    func setIndex(index: Int?) throws {
+        guard let index = index else {
+            self.currentIndex = nil
+            self.currentInstance = nil
+            return
+        }
+        guard index < instances.count else {
+            throw AnnotationViewError.instanceIndexOutofBounds
+        }
+        self.currentIndex = index
+        self.currentInstance = instances[index]
+    }
+    
+    func setCurrent(index: Int?, instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+        try setInstances(instances, currentClass: currentClass)
+        try setIndex(index: index)
+    }
 }
 
 
@@ -238,7 +268,7 @@ struct AnnotationView: View {
                 captureImageData: currentCaptureDataRecord
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
-            await manager.setupAlignedSegmentationLabelImages(
+            manager.setupAlignedSegmentationLabelImages(
                 captureImageData: currentCaptureDataRecord,
                 captureDataHistory: captureDataHistory
             )
@@ -257,10 +287,11 @@ struct AnnotationView: View {
                   let currentClass = classSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            try manager.update(
+            let accessibilityFeatures = try manager.update(
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass
             )
+            try instanceSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
