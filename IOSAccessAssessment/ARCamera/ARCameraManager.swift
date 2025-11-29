@@ -315,7 +315,7 @@ extension ARCameraManager {
         /// Perform async processing in a Task. Read the consumer-provided orientation on the MainActor
         Task {
              do {
-                 let cameraImageResults = try await processCameraImage(
+                 let cameraImageResults = try await self.processCameraImage(
                      image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                  )
                  let captureImageDataResults = CaptureImageDataResults(
@@ -514,7 +514,7 @@ extension ARCameraManager {
         }
         Task {
             do {
-                let cameraMeshResults = try await processMeshAnchors(anchors, shouldRemove: shouldRemove)
+                let cameraMeshResults = try await self.processMeshAnchors(anchors, shouldRemove: shouldRemove)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
                     self.outputConsumer?.cameraOutputMesh(

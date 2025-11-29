@@ -17,6 +17,8 @@ enum AnnotationViewConstants {
         static let finishText = "Finish"
         static let nextText = "Next"
         
+        static let selectObjectText = "Select an object"
+        
         static let loadingPageText = "Loading. Please wait..."
         
         static let managerStatusAlertTitleKey = "Error"
@@ -213,7 +215,16 @@ struct AnnotationView: View {
                 
                 HStack {
                     Spacer()
-                    /// Class Instance Picker
+                    CustomPicker (
+                        label: AnnotationViewConstants.Texts.selectObjectText,
+                        selection: $instanceSelectionViewModel.currentIndex,
+                        isContainsAll: !currentClass.isWay
+                    ) {
+                        ForEach(instanceSelectionViewModel.instances.indices, id: \.self) { instanceIndex in
+                            Text("\(currentClass.name.capitalized): \(instanceIndex)")
+                                .tag(instanceIndex as Int?)
+                        }
+                    }
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
