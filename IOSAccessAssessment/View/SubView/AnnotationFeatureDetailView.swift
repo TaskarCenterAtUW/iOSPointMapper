@@ -15,6 +15,8 @@ struct AnnotationFeatureDetailView: View {
     var accessibilityFeature: AccessibilityFeature
     let title: String
     
+    @FocusState private var focusedField: AccessibilityFeatureAttribute?
+    
     var numberFormatter: NumberFormatter = {
         var nf = NumberFormatter()
         nf.numberStyle = .decimal
@@ -44,6 +46,7 @@ struct AnnotationFeatureDetailView: View {
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.width.displayName)) {
                         numberTextFieldView(attribute: .width)
+                            .focused($focusedField, equals: .width)
                     }
                 }
                 
@@ -51,6 +54,7 @@ struct AnnotationFeatureDetailView: View {
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.runningSlope.displayName)) {
                         numberTextFieldView(attribute: .runningSlope)
+                            .focused($focusedField, equals: .runningSlope)
                     }
                 }
                 
@@ -58,6 +62,7 @@ struct AnnotationFeatureDetailView: View {
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.crossSlope.displayName)) {
                         numberTextFieldView(attribute: .crossSlope)
+                            .focused($focusedField, equals: .crossSlope)
                     }
                 }
                 
@@ -65,9 +70,14 @@ struct AnnotationFeatureDetailView: View {
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.surfaceIntegrity.displayName)) {
                         toggleView(attribute: .surfaceIntegrity)
+                            .focused($focusedField, equals: .surfaceIntegrity)
                     }
                 }
             }
+        }
+        .onTapGesture {
+            // Dismiss the keyboard when tapping outside of a TextField
+            focusedField = nil
         }
     }
     
@@ -85,8 +95,8 @@ struct AnnotationFeatureDetailView: View {
             ),
             format: .number
         )
+        .textFieldStyle(.roundedBorder)
         .keyboardType(.decimalPad)
-        .submitLabel(.done)
     }
     
     @ViewBuilder
