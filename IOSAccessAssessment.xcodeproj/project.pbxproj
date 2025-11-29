@@ -51,7 +51,7 @@
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */; };
-		A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */; };
+		A36C6E002E1338FE00A86004 /* AnnotationLegacyInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
 		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
@@ -60,6 +60,7 @@
 		A37E72182ED95D0600CFE4EF /* CapturedMeshDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E72172ED95D0100CFE4EF /* CapturedMeshDefinitions.swift */; };
 		A37E721D2ED99C0A00CFE4EF /* ContourFeatureRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E721C2ED99C0A00CFE4EF /* ContourFeatureRasterizer.swift */; };
 		A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A38338BE2EDA889A00F1A402 /* CustomPicker.swift */; };
+		A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A38338C12EDA9E6500F1A402 /* AnnotationFeatureDetailView.swift */; };
 		A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3A2DD9B03000455E45 /* OSMElement.swift */; };
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */; };
@@ -206,7 +207,7 @@
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapProcessor.swift; sourceTree = "<group>"; };
-		A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationInstanceDetailView.swift; sourceTree = "<group>"; };
+		A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationLegacyInstanceDetailView.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
 		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
@@ -215,6 +216,7 @@
 		A37E72172ED95D0100CFE4EF /* CapturedMeshDefinitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshDefinitions.swift; sourceTree = "<group>"; };
 		A37E721C2ED99C0A00CFE4EF /* ContourFeatureRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourFeatureRasterizer.swift; sourceTree = "<group>"; };
 		A38338BE2EDA889A00F1A402 /* CustomPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPicker.swift; sourceTree = "<group>"; };
+		A38338C12EDA9E6500F1A402 /* AnnotationFeatureDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationFeatureDetailView.swift; sourceTree = "<group>"; };
 		A39C9F3A2DD9B03000455E45 /* OSMElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMElement.swift; sourceTree = "<group>"; };
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageManager.swift; sourceTree = "<group>"; };
@@ -411,12 +413,12 @@
 			children = (
 				A35547CB2EC3018C00F43AFD /* AnnotationView.swift */,
 				A3D78D752E654F14003BFE78 /* ProfileView.swift */,
-				A36C6DFF2E1338F900A86004 /* AnnotationInstanceDetailView.swift */,
 				CAA947752CDE6FBB000C6918 /* LoginView.swift */,
 				55659C0F2BB7863F0094DF01 /* SetupView.swift */,
 				A3FFAA792DE01A0F002B99BD /* ARCameraView.swift */,
 				55659C132BB786700094DF01 /* AnnotationLegacyView.swift */,
 				A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */,
+				A38338C02EDA9E3200F1A402 /* SubView */,
 				A31A1E772EAC49E3008B30B7 /* UI */,
 				CAF812C32CFA108100D44B84 /* ViewModel */,
 			);
@@ -576,6 +578,15 @@
 				A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A38338C02EDA9E3200F1A402 /* SubView */ = {
+			isa = PBXGroup;
+			children = (
+				A38338C12EDA9E6500F1A402 /* AnnotationFeatureDetailView.swift */,
+				A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */,
+			);
+			path = SubView;
 			sourceTree = "<group>";
 		};
 		A39C9F392DD9B01200455E45 /* API */ = {
@@ -940,7 +951,7 @@
 				A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */,
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
-				A36C6E002E1338FE00A86004 /* AnnotationInstanceDetailView.swift in Sources */,
+				A36C6E002E1338FE00A86004 /* AnnotationLegacyInstanceDetailView.swift in Sources */,
 				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
 				A3B2DDBD2DC99256003416FB /* ContourRequestLegacyProcessor.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
@@ -1017,6 +1028,7 @@
 				A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
+				A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */,
 				A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */,
 				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,

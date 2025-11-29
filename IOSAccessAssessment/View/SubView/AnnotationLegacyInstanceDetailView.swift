@@ -52,7 +52,7 @@ extension AnnotationLegacyView {
             }
         )
         
-        AnnotationInstanceDetailView(
+        AnnotationLegacyInstanceDetailView(
             selectedObjectId: selectedObjectId,
             selectedObjectWidth: selectedObjectWidth,
             selectedObjectBreakage: selectedObjectBreakage,
@@ -98,7 +98,7 @@ extension AnnotationLegacyView {
     }
 }
 
-struct AnnotationInstanceDetailView: View {
+struct AnnotationLegacyInstanceDetailView: View {
     var selectedObjectId: UUID
     @Binding var selectedObjectWidth: Float
     @Binding var selectedObjectBreakage: Bool
