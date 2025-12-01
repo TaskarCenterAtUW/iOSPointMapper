@@ -16,7 +16,7 @@ enum DepthMapProcessorError: Error, LocalizedError {
         switch self {
         case .unableToAccessDepthData:
             return "Unable to access depth data from the depth map."
-        case .invalidDepthData:
+        case .invalidDepth:
             return "The depth value retrieved is invalid."
         }
     }
@@ -94,7 +94,7 @@ struct DepthMapProcessor {
         return try getDepthAtPoint(point: featureCentroidPoint)
     }
     
-    func getFeatureDepthAtCentroidInRadius(accessibilityFeature: AccessibilityFeature, radius: CGFloat) throws -> Float {
+    func getFeatureDepthAtCentroidInRadius(accessibilityFeature: AccessibilityFeature, radius: CGFloat = 5) throws -> Float {
         let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
         
