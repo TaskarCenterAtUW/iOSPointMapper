@@ -10,11 +10,14 @@ import CoreVideo
 
 enum DepthMapProcessorError: Error, LocalizedError {
     case unableToAccessDepthData
+    case invalidDepth
     
     var errorDescription: String? {
         switch self {
         case .unableToAccessDepthData:
             return "Unable to access depth data from the depth map."
+        case .invalidDepthData:
+            return "The depth value retrieved is invalid."
         }
     }
 }
@@ -40,10 +43,7 @@ struct DepthMapProcessor {
         )
     }
     
-    func getDepthAtCentroid(accessibilityFeature: AccessibilityFeature) throws -> Float {
-        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
-        let featureCentroid = featureContourDetails.centroid
-        
+    func getDepthAtPoint(point: CGPoint) throws -> Float {
         CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
         
@@ -53,17 +53,76 @@ struct DepthMapProcessor {
         let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
         let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
         
+        let depthIndexRow = Int(point.y)
+        let depthIndexCol = Int(point.x)
+        let depthIndex = depthIndexRow * (depthBytesPerRow / MemoryLayout<Float>.size) + depthIndexCol
+        let depthAtPoint = depthBuffer[depthIndex]
+        return depthAtPoint
+    }
+    
+    func getDepthAtPoints(points: [CGPoint]) throws -> [Float] {
+        CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
+        
+        guard let depthBaseAddress = CVPixelBufferGetBaseAddress(depthBuffer) else {
+            throw DepthMapProcessorError.unableToAccessDepthData
+        }
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
+        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
+        
+        var depths: [Float] = points.map { _ in 0.0 }
+        for (index, point) in points.enumerated() {
+            let depthIndexRow = Int(point.y)
+            let depthIndexCol = Int(point.x)
+            let depthIndex = depthIndexRow * (depthBytesPerRow / MemoryLayout<Float>.size) + depthIndexCol
+            depths[index] = depthBuffer[depthIndex]
+        }
+        return depths
+    }
+    
+    func getFeatureDepthAtCentroid(accessibilityFeature: AccessibilityFeature) throws -> Float {
+        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+        let featureCentroid = featureContourDetails.centroid
+        
         /**
          TODO: Check if the y-axis needs to be flipped based on coordinate systems
          */
-        let featureCentroidCoordinates: CGPoint = CGPoint(
+        let featureCentroidPoint: CGPoint = CGPoint(
             x: featureCentroid.x * CGFloat(depthWidth),
             y: (1 - featureCentroid.y) * CGFloat(depthHeight)
         )
-        let featureDepthIndexRow = Int(featureCentroidCoordinates.y)
-        let featureDepthIndexCol = Int(featureCentroidCoordinates.x)
-        let featureDepthIndex = featureDepthIndexRow * (depthBytesPerRow / MemoryLayout<Float>.size) + featureDepthIndexCol
-        let depthAtCentroid = depthBuffer[featureDepthIndex]
-        return depthAtCentroid
+        return try getDepthAtPoint(point: featureCentroidPoint)
+    }
+    
+    func getFeatureDepthAtCentroidInRadius(accessibilityFeature: AccessibilityFeature, radius: CGFloat) throws -> Float {
+        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+        let featureCentroid = featureContourDetails.centroid
+        
+        var pointDeltas: [CGPoint] = []
+        for xDelta in stride(from: -radius, through: radius, by: 1) {
+            for yDelta in stride(from: -radius, through: radius, by: 1) {
+                let distance = sqrt(xDelta * xDelta + yDelta * yDelta)
+                if distance <= radius {
+                    pointDeltas.append(CGPoint(x: xDelta, y: yDelta))
+                }
+            }
+        }
+        /**
+         TODO: Check if the y-axis needs to be flipped based on coordinate systems
+        */
+        let featureCentroidRadiusPoints: [CGPoint] = pointDeltas.map { delta in
+            CGPoint(
+                x: featureCentroid.x * CGFloat(depthWidth) + delta.x,
+                /// Symmetry in circle ensures that we do not worry about the sign of delta.y here
+                y: (1 - featureCentroid.y) * CGFloat(depthHeight) + delta.y
+            )
+        }
+        let depths = try getDepthAtPoints(points: featureCentroidRadiusPoints)
+        let validDepths = depths.filter { $0.isFinite && $0 > 0 }
+        guard !validDepths.isEmpty else {
+            throw DepthMapProcessorError.invalidDepth
+        }
+        let averageDepth = validDepths.reduce(0, +) / Float(validDepths.count)
+        return averageDepth
     }
 }
