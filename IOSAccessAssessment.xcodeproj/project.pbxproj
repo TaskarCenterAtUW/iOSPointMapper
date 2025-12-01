@@ -51,6 +51,7 @@
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
 		A35E050A2EDE299F003C26CF /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05092EDE2999003C26CF /* LocationManager.swift */; };
+		A35E050D2EDE35E1003C26CF /* LocalizationProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapLegacyProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapLegacyProcessor.swift */; };
 		A36C6E002E1338FE00A86004 /* AnnotationLegacyInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
@@ -209,6 +210,7 @@
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
 		A35E05092EDE2999003C26CF /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationProcessor.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapLegacyProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapLegacyProcessor.swift; sourceTree = "<group>"; };
 		A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationLegacyInstanceDetailView.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
@@ -342,11 +344,11 @@
 				CAA947772CDE7001000C6918 /* Auth */,
 				A39C9F392DD9B01200455E45 /* API */,
 				A305B05A2E1887AE00ECCF9B /* LocalDataset */,
-				A3F38C4A2D38A2BF00900547 /* Depth */,
-				DAA7F8C52CA6858C003666D8 /* Localization */,
-				DAA7F8BB2CA67A3C003666D8 /* Camera */,
+				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
+				DAA7F8C52CA6858C003666D8 /* Location */,
 				A34B70CC2DDFE638007B191F /* ARCamera */,
 				A30801512EC0984F00B1BA3A /* AccessibilityFeature */,
+				A35E050B2EDE359C003C26CF /* AttributeEstimation */,
 				A3E84ECE2DDAC7980096A645 /* Annotation */,
 				DAA7F8C62CA76514003666D8 /* Image */,
 				A3DA4DA62EB9320E005BB812 /* Mesh */,
@@ -541,6 +543,7 @@
 		A34B70CC2DDFE638007B191F /* ARCamera */ = {
 			isa = PBXGroup;
 			children = (
+				DAA7F8BB2CA67A3C003666D8 /* CameraLegacy */,
 				A3FFAA762DE01631002B99BD /* Helpers */,
 				A3DA4DC12EBE87B6005BB812 /* Utils */,
 				A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */,
@@ -555,6 +558,22 @@
 				A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		A35E050B2EDE359C003C26CF /* AttributeEstimation */ = {
+			isa = PBXGroup;
+			children = (
+				A35E050E2EDE35ED003C26CF /* Localization */,
+			);
+			path = AttributeEstimation;
+			sourceTree = "<group>";
+		};
+		A35E050E2EDE35ED003C26CF /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		A362AEC72DB59577002D7598 /* Helpers */ = {
@@ -735,7 +754,6 @@
 			isa = PBXGroup;
 			children = (
 				A3E84ECB2DDAA82B0096A645 /* OrientationObserver.swift */,
-				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -752,17 +770,18 @@
 			path = Annotation;
 			sourceTree = "<group>";
 		};
-		A3F38C4A2D38A2BF00900547 /* Depth */ = {
+		A3F38C4A2D38A2BF00900547 /* DepthEstimation */ = {
 			isa = PBXGroup;
 			children = (
 				A3F38C4B2D38A2C500900547 /* DepthModel.swift */,
 			);
-			path = Depth;
+			path = DepthEstimation;
 			sourceTree = "<group>";
 		};
 		A3FFAA762DE01631002B99BD /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
 				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
 			);
 			path = Helpers;
@@ -787,13 +806,13 @@
 			path = ViewModel;
 			sourceTree = "<group>";
 		};
-		DAA7F8BB2CA67A3C003666D8 /* Camera */ = {
+		DAA7F8BB2CA67A3C003666D8 /* CameraLegacy */ = {
 			isa = PBXGroup;
 			children = (
 				A3E84ECD2DDAAECB0096A645 /* Helpers */,
 				A30D05852E2E19E400316FB5 /* AnnotationLegacyCameraViewController.swift */,
 			);
-			path = Camera;
+			path = CameraLegacy;
 			sourceTree = "<group>";
 		};
 		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
@@ -807,13 +826,13 @@
 			path = Segmentation;
 			sourceTree = "<group>";
 		};
-		DAA7F8C52CA6858C003666D8 /* Localization */ = {
+		DAA7F8C52CA6858C003666D8 /* Location */ = {
 			isa = PBXGroup;
 			children = (
 				A35E05092EDE2999003C26CF /* LocationManager.swift */,
 				55C2F2832C00078D00B633D7 /* ObjectLocationLegacy.swift */,
 			);
-			path = Localization;
+			path = Location;
 			sourceTree = "<group>";
 		};
 		DAA7F8C62CA76514003666D8 /* Image */ = {
@@ -1057,6 +1076,7 @@
 				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
+				A35E050D2EDE35E1003C26CF /* LocalizationProcessor.swift in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourLegacyObjectRasterizer.swift in Sources */,
 				A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */,
 				A3DA4DA82EB94D84005BB812 /* MeshGPUSnapshot.swift in Sources */,
