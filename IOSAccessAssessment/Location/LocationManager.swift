@@ -7,7 +7,7 @@
 
 import CoreLocation
 
-enum LocationError: Error, LocalizedError {
+enum LocationManagerError: Error, LocalizedError {
     case locationUnavailable
     case headingUnavailable
     
@@ -21,18 +21,14 @@ enum LocationError: Error, LocalizedError {
     }
 }
 
+/**
+ A wrapper around CLLocationManager to manage location and heading updates in a more controlled and safe manner.
+ */
 class LocationManager {
     let locationManager: CLLocationManager
-    var longitude: CLLocationDegrees?
-    var latitude: CLLocationDegrees?
-    var altitude: CLLocationDistance?
-    var headingDegrees: CLLocationDirection?
     
     init() {
         self.locationManager = CLLocationManager()
-        self.longitude = nil
-        self.latitude = nil
-        self.headingDegrees = nil
         self.setupLocationManager()
     }
     
@@ -48,63 +44,24 @@ class LocationManager {
         locationManager.startUpdatingHeading()
     }
     
-    private func setLocation() throws {
-        // TODO: Ensure that the horizontal and vertical accuracy are acceptable
-        // Else, do not update the location
+    private func getLocation() throws -> CLLocation {
         guard let location = locationManager.location,
         location.horizontalAccuracy > 0, location.verticalAccuracy > 0 else {
-            throw LocationError.locationUnavailable
+            throw LocationManagerError.locationUnavailable
         }
-        self.latitude = location.coordinate.latitude
-        self.longitude = location.coordinate.longitude
-        self.altitude = location.altitude
+        return location
     }
     
-    private func setHeading() throws {
+    private func getHeading() throws -> CLHeading {
         guard let heading = locationManager.heading,
         heading.headingAccuracy > 0 else {
-            throw LocationError.headingUnavailable
+            throw LocationManagerError.headingUnavailable
         }
-        self.headingDegrees = heading.trueHeading
+        return heading
     }
     
-    func setLocationAndHeading(maxRetries: Int = 3) throws {
-        var retries = 0
-        while retries < maxRetries {
-            do {
-                try self.setLocation()
-                /// Currently, we are not using heading information
-//                try self.setHeading()
-                return
-            } catch {
-                if retries == maxRetries - 1 {
-                    throw error
-                }
-                retries += 1
-                Thread.sleep(forTimeInterval: 0.05)
-            }
-        }
-    }
-    
-    func getLocation() throws -> CLLocationCoordinate2D {
-        guard let latitude = self.latitude,
-              let longitude = self.longitude else {
-            throw LocationError.locationUnavailable
-        }
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-    
-    func getAltitude() throws -> CLLocationDistance {
-        guard let altitude = self.altitude else {
-            throw LocationError.locationUnavailable
-        }
-        return altitude
-    }
-    
-    func getHeading() throws -> CLLocationDirection {
-        guard let headingDegrees = self.headingDegrees else {
-            throw LocationError.headingUnavailable
-        }
-        return headingDegrees
+    func getLocationCoordinate() throws -> CLLocationCoordinate2D {
+        let location = try getLocation()
+        return location.coordinate
     }
 }

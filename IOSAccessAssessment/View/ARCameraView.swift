@@ -11,6 +11,7 @@ import Vision
 import Metal
 import CoreImage
 import MetalKit
+import CoreLocation
 
 enum ARCameraViewConstants {
     enum Texts {
@@ -23,11 +24,16 @@ enum ARCameraViewConstants {
         static let cameraHintNoMeshText = "No Mesh Captured"
         static let cameraHintNoSegmentationText = "No Features Detected"
         static let cameraHintMeshNotProcessedText = "Features Not Processed"
+        static let cameraHintLocationErrorText = "Location Error"
         static let cameraHintUnknownErrorText = "Unknown Error"
         
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
+        
+        /// Invalid Content View
+        static let invalidContentViewTitle = "Invalid Capture"
+        static let invalidContentViewMessage = "The captured data is invalid. Please try again."
     }
     
     enum Images {
@@ -72,14 +78,14 @@ struct ARCameraView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
-    @EnvironmentObject var depthModel: DepthModel
     @Environment(\.dismiss) var dismiss
-    
-    @StateObject var objectLocation = ObjectLocation()
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @StateObject private var managerConfigureStatusViewModel = ManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
+    
+    var locationManager: LocationManager = LocationManager()
+    @State private var captureLocation: CLLocationCoordinate2D?
     
     @State private var showAnnotationView = false
     
@@ -99,7 +105,7 @@ struct ARCameraView: View {
                             .truncationMode(.tail)
                         
                         Button {
-                            capture()
+                            cameraCapture()
                         } label: {
                             Image(systemName: ARCameraViewConstants.Images.cameraIcon)
                                 .resizable()
@@ -137,12 +143,20 @@ struct ARCameraView: View {
             Text(managerConfigureStatusViewModel.errorMessage)
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
-            AnnotationView(selectedClasses: selectedClasses)
+            if let captureLocation {
+                AnnotationView(selectedClasses: selectedClasses, captureLocation: captureLocation)
+            } else {
+                InvalidContentView(
+                    title: ARCameraViewConstants.Texts.invalidContentViewTitle,
+                    message: ARCameraViewConstants.Texts.invalidContentViewMessage
+                )
+            }
         }
         .onChange(of: showAnnotationView, initial: false) { oldValue, newValue in
             // If the AnnotationView is dismissed, reconfigure the manager for a new session
             if (oldValue == true && newValue == false) {
                 do {
+                    captureLocation = nil
                     try manager.resume()
                 } catch {
                     managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
@@ -164,19 +178,18 @@ struct ARCameraView: View {
         }
     }
     
-    private func capture() {
+    private func cameraCapture() {
         Task {
             do {
-                objectLocation.setLocationAndHeading()
                 let captureData = try await manager.performFinalSessionUpdateIfPossible()
                 if (captureData.captureImageDataResults.segmentedClasses.isEmpty) ||
                     (captureData.captureMeshDataResults.segmentedMesh.totalVertexCount == 0) {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
+                captureLocation = try locationManager.getLocationCoordinate()
                 try manager.pause()
+                /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
-//                await sharedAppData.appendCaptureDataToQueue(captureData)
-//                print("Total Vertex Count: \(captureData.captureMeshDataResults.segmentedMesh.totalVertexCount)")
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
@@ -185,6 +198,8 @@ struct ARCameraView: View {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch ARCameraManagerError.finalSessionNoSegmentationMesh {
                 setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+            } catch _ as LocationManagerError {
+                setHintText(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
             } catch {
                 setHintText(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
             }

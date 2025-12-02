@@ -191,7 +191,6 @@ struct SetupView: View {
     @StateObject private var sharedAppData: SharedAppData = SharedAppData()
     @StateObject private var sharedAppContext: SharedAppContext = SharedAppContext()
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
-    @StateObject private var depthModel: DepthModel = DepthModel()
     
     @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
@@ -369,7 +368,6 @@ struct SetupView: View {
         .environmentObject(self.sharedAppData)
         .environmentObject(self.sharedAppContext)
         .environmentObject(self.segmentationPipeline)
-        .environmentObject(self.depthModel)
     }
     
     private func openChangeset() {

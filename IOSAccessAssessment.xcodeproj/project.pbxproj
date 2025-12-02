@@ -52,6 +52,7 @@
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
 		A35E050A2EDE299F003C26CF /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05092EDE2999003C26CF /* LocationManager.swift */; };
 		A35E050D2EDE35E1003C26CF /* LocalizationProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */; };
+		A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */; };
 		A362AECB2DB7056D002D7598 /* DepthMapLegacyProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A362AECA2DB7056B002D7598 /* DepthMapLegacyProcessor.swift */; };
 		A36C6E002E1338FE00A86004 /* AnnotationLegacyInstanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
@@ -211,6 +212,7 @@
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
 		A35E05092EDE2999003C26CF /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationProcessor.swift; sourceTree = "<group>"; };
+		A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvalidContentView.swift; sourceTree = "<group>"; };
 		A362AECA2DB7056B002D7598 /* DepthMapLegacyProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapLegacyProcessor.swift; sourceTree = "<group>"; };
 		A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationLegacyInstanceDetailView.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
@@ -606,6 +608,7 @@
 		A38338C02EDA9E3200F1A402 /* SubView */ = {
 			isa = PBXGroup;
 			children = (
+				A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */,
 				A38338C12EDA9E6500F1A402 /* AnnotationFeatureDetailView.swift */,
 				A36C6DFF2E1338F900A86004 /* AnnotationLegacyInstanceDetailView.swift */,
 			);
@@ -1076,6 +1079,7 @@
 				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
+				A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */,
 				A35E050D2EDE35E1003C26CF /* LocalizationProcessor.swift in Sources */,
 				A3BB5AFE2DB2EE7E008673ED /* ContourLegacyObjectRasterizer.swift in Sources */,
 				A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */,

@@ -114,6 +114,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let captureLocation: CLLocationCoordinate2D
     
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
