@@ -73,8 +73,8 @@ struct AnnotationLegacyView: View {
     
     @State var index = 0
     
-    @State var options: [AnnotationOptionParent] = AnnotationOptionClass.allCases.map { .classOption($0) }
-    @State private var selectedOption: AnnotationOptionParent? = nil
+    @State var options: [AnnotationOption] = AnnotationOptionFeatureClass.allCases.map { .classOption($0) }
+    @State private var selectedOption: AnnotationOption? = nil
     @State private var isShowingClassSelectionModal: Bool = false
     @State var isShowingAnnotationInstanceDetailView: Bool = false
     @State var selectedClassIndex: Int? = nil
@@ -305,16 +305,16 @@ struct AnnotationLegacyView: View {
             let selectedObject = annotatedDetectedObjects.first(where: { $0.id == selectedObjectId })
             if let selectedObject = selectedObject {
                 options = selectedObject.isAll ?
-                AnnotationOptionClass.allCases.map { .classOption($0) } :
-                AnnotationOption.allCases.map { .individualOption($0) }
+                AnnotationOptionFeatureClass.allCases.map { .classOption($0) } :
+                AnnotationOptionFeature.allCases.map { .individualOption($0) }
                 selectedOption = selectedObject.selectedOption
             } else {
-                options = AnnotationOptionClass.allCases.map { .classOption($0) }
+                options = AnnotationOptionFeatureClass.allCases.map { .classOption($0) }
             }
         }
     }
     
-    func updateAnnotation(newOption: AnnotationOptionParent) {
+    func updateAnnotation(newOption: AnnotationOption) {
         if let selectedObjectId = annotationImageManager.selectedObjectId,
            let annotatedDetectedObjects = annotationImageManager.annotatedDetectedObjects {
             let selectedObject = annotatedDetectedObjects.first(where: { $0.id == selectedObjectId })

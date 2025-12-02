@@ -64,8 +64,7 @@ enum AnnotationViewError: Error, LocalizedError {
 class AnnotationFeatureClassSelectionViewModel: ObservableObject {
     @Published var currentIndex: Int? = nil
     @Published var currentClass: AccessibilityFeatureClass? = nil
-    @Published var annotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
-    @Published var selectedAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    @Published var selectedAnnotationOption: AnnotationOption = .classOption(AnnotationOptionFeatureClass.default)
     
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
         guard index < classes.count else {
@@ -80,8 +79,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     @Published var instances: [AccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
     @Published var currentFeature: AccessibilityFeature? = nil
-    @Published var annotationOptions: [AnnotationOption] = AnnotationOption.allCases
-    @Published var selectedAnnotationOption: AnnotationOption = AnnotationOption.default
+    @Published var selectedAnnotationOption: AnnotationOption = .individualOption(AnnotationOptionFeature.default)
     
     func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
@@ -211,23 +209,6 @@ struct AnnotationView: View {
         AnyLayout(VStackLayout())(content)
     }
     
-    private func annotationOptionsView() -> some View {
-        VStack(spacing: 10) {
-            ForEach(featureClassSelectionViewModel.annotationOptions, id: \.self) { option in
-                Button(action: {
-                }) {
-                    Text(option.rawValue)
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(featureClassSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
-                        .foregroundStyle(.white)
-                        .cornerRadius(10)
-                }
-            }
-        }
-    }
-    
     @ViewBuilder
     private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
         let isDisabledFeatureDetailButton = featureSelectionViewModel.currentFeature == nil
@@ -270,7 +251,7 @@ struct AnnotationView: View {
                 
                 HStack {
                     Spacer()
-                    annotationOptionsView()
+                    annotationOptionsView(currentClass: currentClass)
                     Spacer()
                 }
                 .padding()
@@ -280,6 +261,42 @@ struct AnnotationView: View {
                 }) {
                     Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                         .padding()
+                }
+            }
+        }
+    }
+    
+    private func annotationOptionsView(currentClass: AccessibilityFeatureClass) -> some View {
+        if let currentFeature = featureSelectionViewModel.currentFeature {
+            let annotationOptions: [AnnotationOption] = AnnotationOptionFeature.allCases.map { .individualOption($0) }
+            return VStack(spacing: 10) {
+                ForEach(annotationOptions, id: \.self) { option in
+                    Button(action: {
+                    }) {
+                        Text(option.rawValue)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(featureSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
+                            .foregroundStyle(.white)
+                            .cornerRadius(10)
+                    }
+                }
+            }
+        } else {
+            let annotationOptions: [AnnotationOption] = AnnotationOptionFeatureClass.allCases.map { .classOption($0) }
+            return VStack(spacing: 10) {
+                ForEach(annotationOptions, id: \.self) { option in
+                    Button(action: {
+                    }) {
+                        Text(option.rawValue)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(featureClassSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
+                            .foregroundStyle(.white)
+                            .cornerRadius(10)
+                    }
                 }
             }
         }
