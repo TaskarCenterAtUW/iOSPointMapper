@@ -42,7 +42,7 @@ extension AnnotationLegacyView {
         let allObjects = annotatedDetectedObjects.filter { $0.isAll }
         // If the "all" object has selected option as .discard, we discard all objects.
         if let allObject = allObjects.first, allObject.selectedOption == .classOption(.discard) {
-//            print("Discarding all objects")
+            //            print("Discarding all objects")
             updateUploadStatus(true, message: AnnotationLegacyViewConstants.Texts.discardingAllObjectsMessage)
             return
         }
@@ -86,7 +86,7 @@ extension AnnotationLegacyView {
         var wayWidth = self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue]?.last
         // If the wayData is already present, we will modify the existing wayData instead of creating a new one.
         if wayData != nil, wayData?.id != "-1" && wayData?.id != "" {
-//            var wayData = wayData!
+            //            var wayData = wayData!
             if let nodeData = nodeData {
                 wayData?.nodeRefs.append(nodeData.id)
                 
@@ -108,7 +108,7 @@ extension AnnotationLegacyView {
             
             // Create wayWidth and add to wayWidthHistory
             wayWidth = WayWidth(id: String(tempId), classLabel: accessibilityFeatureClass.labelValue,
-                widths: [annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0])
+                                widths: [annotatedDetectedObject.object?.finalWidth ?? annotatedDetectedObject.object?.calculatedWidth ?? 0.0])
         }
         if let wayWidth = wayWidth {
             self.sharedImageData.wayWidthHistory[accessibilityFeatureClass.labelValue, default: []].append(wayWidth)
@@ -134,7 +134,7 @@ extension AnnotationLegacyView {
                     for nodeId in nodeMap.keys {
                         guard nodeData?.id == nodeId else { continue }
                         guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
-                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                              let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
                         else { continue }
                         nodeData?.id = newId
                         nodeData?.version = newVersion
@@ -150,13 +150,13 @@ extension AnnotationLegacyView {
                     for wayId in wayMap.keys {
                         guard wayData?.id == wayId else { continue }
                         guard let newId = wayMap[wayId]?[APIConstants.AttributeKeys.newId],
-                                let newVersion = wayMap[wayId]?[APIConstants.AttributeKeys.newVersion]
+                              let newVersion = wayMap[wayId]?[APIConstants.AttributeKeys.newVersion]
                         else { continue }
                         wayData?.id = newId
                         wayData?.version = newVersion
                         // Update the wayData's nodeRefs with the new node id
                         if let nodeData = nodeData,
-                            let oldNodeId = oldNodeId,
+                           let oldNodeId = oldNodeId,
                            let oldNodeIdIndex = wayData?.nodeRefs.firstIndex(of: oldNodeId) {
                             wayData?.nodeRefs[oldNodeIdIndex] = nodeData.id
                         }
@@ -206,7 +206,7 @@ extension AnnotationLegacyView {
                     for nodeId in nodeMap.keys {
                         guard var nodeData = nodeDataObjectMap[nodeId] else { continue }
                         guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
-                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                              let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
                         else { continue }
                         nodeData.id = newId
                         nodeData.version = newVersion
@@ -254,7 +254,7 @@ extension AnnotationLegacyView {
                     for nodeId in nodeMap.keys {
                         guard nodeData.id == nodeId else { continue }
                         guard let newId = nodeMap[nodeId]?[APIConstants.AttributeKeys.newId],
-                                let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
+                              let newVersion = nodeMap[nodeId]?[APIConstants.AttributeKeys.newVersion]
                         else { continue }
                         nodeData.id = newId
                         nodeData.version = newVersion
@@ -269,9 +269,9 @@ extension AnnotationLegacyView {
     }
     
     /**
-        Get the NodeData from the AnnotatedDetectedObject.
-        Calculates the location of the object based on the depth value and device location.
-        Calculates other attributes such as width for ways.
+     Get the NodeData from the AnnotatedDetectedObject.
+     Calculates the location of the object based on the depth value and device location.
+     Calculates other attributes such as width for ways.
      */
     func getNodeDataFromAnnotatedObject(
         annotatedDetectedObject: AnnotatedDetectedObject,
@@ -284,7 +284,7 @@ extension AnnotationLegacyView {
             z: annotatedDetectedObject.depthValue
         )
         let imageSize = annotationImageManager.segmentationUIImage?.size ?? CGSize.zero
-//        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
+        //        let location = objectLocation.getCalcLocation(depthValue: annotatedDetectedObject.depthValue)
         let location = objectLocation.getCalcLocation(
             pointWithDepth: pointWithDepth, imageSize: imageSize,
             cameraTransform: self.sharedImageData.cameraTransform,
@@ -292,7 +292,7 @@ extension AnnotationLegacyView {
             deviceOrientation: self.sharedImageData.deviceOrientation ?? .landscapeLeft,
             originalImageSize: self.sharedImageData.originalImageSize ?? imageSize
         )
-//        self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
+        //        self.currentDepthValues = self.currentDepthValues + "\nObject: \(location?.latitude ?? 0.0),\(location?.longitude ?? 0.0),\(annotatedDetectedObject.depthValue)"
         guard let nodeLatitude = location?.latitude,
               let nodeLongitude = location?.longitude
         else { return nil }
@@ -384,7 +384,9 @@ extension AnnotationLegacyView {
                                 latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
         return nodeData
     }
-    
+}
+
+extension AnnotationLegacyView {
     /**
      Get the depth values for each point in the way bounds.
      */
