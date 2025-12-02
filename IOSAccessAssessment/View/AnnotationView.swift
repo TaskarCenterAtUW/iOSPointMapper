@@ -143,6 +143,9 @@ struct AnnotationView: View {
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
+    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
+    
+    let apiTransmissionController: APITransmissionController = APITransmissionController()
     
     @State private var managerStatusViewModel = AnnotationImageManagerStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
@@ -384,6 +387,8 @@ struct AnnotationView: View {
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass
             )
+            accessibilityFeatures.forEach { feature in
+            }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
         } catch {

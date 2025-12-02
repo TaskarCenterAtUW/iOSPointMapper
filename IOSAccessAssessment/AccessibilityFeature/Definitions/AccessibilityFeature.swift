@@ -4,6 +4,8 @@
 //
 //  Created by Himanshu on 11/18/25.
 //
+import Foundation
+import CoreLocation
 
 enum AccessibilityFeatureError: Error, LocalizedError {
     case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttributeValue)
@@ -23,6 +25,8 @@ class AccessibilityFeature: Identifiable, Equatable {
     let detectedAccessibilityFeature: DetectedAccessibilityFeature
     
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
+    
+    var calculatedLocation: CLLocationCoordinate2D?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     
