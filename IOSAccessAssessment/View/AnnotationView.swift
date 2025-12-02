@@ -143,7 +143,7 @@ struct AnnotationView: View {
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
-    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
+//    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
@@ -353,20 +353,19 @@ struct AnnotationView: View {
     
     private func handleOnAppear() async {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol) else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
-                captureImageData: currentCaptureDataRecord
+                captureImageData: currentCaptureDataRecord,
+                captureMeshData: captureMeshData
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
-            manager.setupAlignedSegmentationLabelImages(
-                captureImageData: currentCaptureDataRecord,
-                captureDataHistory: captureDataHistory
-            )
+            manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)
             try featureClassSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
             managerStatusViewModel.update(
@@ -379,14 +378,10 @@ struct AnnotationView: View {
     private func handleOnClassChange() {
         do {
             guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
                   let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            let accessibilityFeatures = try manager.updateFeatureClass(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-                accessibilityFeatureClass: currentClass
-            )
+            let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             accessibilityFeatures.forEach { feature in
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
@@ -409,7 +404,6 @@ struct AnnotationView: View {
         }
         do {
             guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
                   let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
@@ -421,7 +415,6 @@ struct AnnotationView: View {
             }
             let isSelected = featureSelectionViewModel.currentFeature != nil
             try manager.updateFeature(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass,
                 accessibilityFeatures: accessibilityFeatures,
                 isSelected: isSelected
