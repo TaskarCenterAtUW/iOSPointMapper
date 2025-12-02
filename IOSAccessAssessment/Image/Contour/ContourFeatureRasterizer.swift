@@ -89,13 +89,13 @@ struct ContourFeatureRasterizer {
         return cgImage
     }
     
-    static func updateRasterizedImage(
+    static func updateRasterizedFeatures(
         baseImage: CGImage,
         accessibilityFeatures: [AccessibilityFeature], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         centroidConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0)
-    ) -> CGImage {
+    ) -> CGImage? {
         let baseUIImage = UIImage(cgImage: baseImage)
         
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
@@ -146,9 +146,6 @@ struct ContourFeatureRasterizer {
         let cgImage = UIGraphicsGetImageFromCurrentImageContext()?.cgImage
         UIGraphicsEndImageContext()
         
-        if let cgImage = cgImage {
-            return cgImage
-        }
-        return baseImage
+        return cgImage
     }
 }

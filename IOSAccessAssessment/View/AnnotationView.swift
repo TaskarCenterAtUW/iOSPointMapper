@@ -29,7 +29,8 @@ enum AnnotationViewConstants {
         /// Alert texts
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
-        static let managerStatusAlertMessageSuffixKey = "Press OK to close this screen."
+        static let managerStatusAlertMessageDismissScreenSuffixKey = "Press OK to close this screen."
+        static let managerStatusAlertMessageDismissAlertSuffixKey = "Press OK to dismiss this alert."
     }
     
     enum Images {
@@ -119,6 +120,18 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     }
 }
 
+class AnnotationImageManagerStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    @Published var shouldDismiss: Bool = true
+    
+    func update(isFailed: Bool, errorMessage: String, shouldDismiss: Bool = true) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+        self.shouldDismiss = shouldDismiss
+    }
+}
+
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
@@ -131,7 +144,7 @@ struct AnnotationView: View {
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
     
-    @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
+    @State private var managerStatusViewModel = AnnotationImageManagerStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
@@ -195,8 +208,11 @@ struct AnnotationView: View {
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                let shouldDismiss = managerStatusViewModel.shouldDismiss
                 managerStatusViewModel.update(isFailed: false, errorMessage: "")
-                dismiss()
+                if shouldDismiss {
+                    dismiss()
+                }
             }
         }, message: {
             Text(managerStatusViewModel.errorMessage)
@@ -352,7 +368,7 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
             )
         }
     }
@@ -364,7 +380,7 @@ struct AnnotationView: View {
                   let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            let accessibilityFeatures = try manager.update(
+            let accessibilityFeatures = try manager.updateFeatureClass(
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass
             )
@@ -373,7 +389,7 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
             )
         }
     }
@@ -384,7 +400,32 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)")
+        }
+        do {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
+                  let currentClass = featureClassSelectionViewModel.currentClass else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            var accessibilityFeatures: [AccessibilityFeature]
+            if let currentFeature = featureSelectionViewModel.currentFeature {
+                accessibilityFeatures = [currentFeature]
+            } else {
+                accessibilityFeatures = featureSelectionViewModel.instances
+            }
+            let isSelected = featureSelectionViewModel.currentFeature != nil
+            try manager.updateFeature(
+                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
+                accessibilityFeatureClass: currentClass,
+                accessibilityFeatures: accessibilityFeatures,
+                isSelected: isSelected
+            )
+        } catch {
+            managerStatusViewModel.update(
+                isFailed: true,
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey)",
+                shouldDismiss: false)
         }
     }
     
@@ -403,7 +444,7 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(
                 isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)"
+                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
             )
         }
     }

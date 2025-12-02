@@ -62,7 +62,7 @@ enum ARCameraViewError: Error, LocalizedError {
     }
 }
 
-class ManagerStatusViewModel: ObservableObject {
+class ARCameraManagerStatusViewModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
     
@@ -81,7 +81,7 @@ struct ARCameraView: View {
     @Environment(\.dismiss) var dismiss
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
-    @StateObject private var managerConfigureStatusViewModel = ManagerStatusViewModel()
+    @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
     var locationManager: LocationManager = LocationManager()

@@ -42,7 +42,6 @@ class AccessibilityFeature: Identifiable, Equatable {
     }
     
     func setAnnotationOption(_ option: AnnotationOption) {
-        print("Setting annotation option to \(option)")
         self.selectedAnnotationOption = option
     }
     
