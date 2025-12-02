@@ -17,9 +17,11 @@ struct AnnotationFeatureDetailView: View {
     
     @FocusState private var focusedField: AccessibilityFeatureAttribute?
     
-    var numberFormatter: NumberFormatter = {
+    var locationFormatter: NumberFormatter = {
         var nf = NumberFormatter()
         nf.numberStyle = .decimal
+        nf.maximumFractionDigits = 6
+        nf.minimumFractionDigits = 6
         return nf
     }()
     
@@ -33,6 +35,30 @@ struct AnnotationFeatureDetailView: View {
                 Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewIdKey)) {
                     Text(accessibilityFeature.id.uuidString)
                         .foregroundStyle(.secondary)
+                }
+                
+                /**
+                 Location Section
+                 */
+                if let calculatedLocation = accessibilityFeature.calculatedLocation {
+                    Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
+                        HStack {
+                            Spacer()
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: calculatedLocation.latitude)
+                                ) ?? "N/A"
+                            )
+                                .padding(.horizontal)
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: calculatedLocation.longitude)
+                                ) ?? "N/A"
+                            )
+                                .padding(.horizontal)
+                            Spacer()
+                        }
+                    }
                 }
                 
                 /**

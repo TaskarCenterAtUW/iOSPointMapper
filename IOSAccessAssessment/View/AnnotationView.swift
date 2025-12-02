@@ -24,6 +24,7 @@ enum AnnotationViewConstants {
         /// Feature Detail View Text
         static let featureDetailViewTitle = "Feature Details"
         static let featureDetailViewIdKey = "ID"
+        static let featureDetailViewLocationKey = "Location"
         static let featureDetailNotAvailableText = "Not Available"
         
         /// Alert texts
@@ -143,7 +144,7 @@ struct AnnotationView: View {
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
-//    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
+    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
@@ -359,6 +360,9 @@ struct AnnotationView: View {
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
+            try attributeEstimationPipeline.configure(
+                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData
+            )
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
                 captureImageData: currentCaptureDataRecord,
@@ -377,12 +381,15 @@ struct AnnotationView: View {
     
     private func handleOnClassChange() {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let currentClass = featureClassSelectionViewModel.currentClass else {
+            guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
-            accessibilityFeatures.forEach { feature in
+            try accessibilityFeatures.forEach { accessibilityFeature in
+                accessibilityFeature.calculatedLocation = try attributeEstimationPipeline.processLocationRequest(
+                    deviceLocation: captureLocation,
+                    accessibilityFeature: accessibilityFeature
+                )
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
@@ -403,8 +410,7 @@ struct AnnotationView: View {
                 errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)")
         }
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let currentClass = featureClassSelectionViewModel.currentClass else {
+            guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             var accessibilityFeatures: [AccessibilityFeature]

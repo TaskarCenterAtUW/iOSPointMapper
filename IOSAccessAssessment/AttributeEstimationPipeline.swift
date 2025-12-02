@@ -9,10 +9,13 @@ import SwiftUI
 import CoreLocation
 
 enum AttributeEstimationPipelineError: Error, LocalizedError {
+    case configurationError
     case missingDepthImage
     
     var errorDescription: String? {
         switch self {
+        case .configurationError:
+            return NSLocalizedString("Error occurred during pipeline configuration.", comment: "")
         case .missingDepthImage:
             return NSLocalizedString("Depth image is missing from the capture data.", comment: "")
         }
@@ -20,10 +23,12 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
 }
 
 class AttributeEstimationPipeline: ObservableObject {
-    let depthMapProcessor: DepthMapProcessor
-    let localizationProcessor: LocalizationProcessor
+    var depthMapProcessor: DepthMapProcessor?
+    var localizationProcessor: LocalizationProcessor?
+    var captureImageData: (any CaptureImageDataProtocol)?
+    var captureMeshData: (any CaptureMeshDataProtocol)?
     
-    init(
+    func configure(
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol)
     ) throws {
@@ -33,21 +38,25 @@ class AttributeEstimationPipeline: ObservableObject {
         }
         self.depthMapProcessor = try DepthMapProcessor(depthImage: depthImage)
         self.localizationProcessor = LocalizationProcessor()
+        self.captureImageData = captureImageData
+        self.captureMeshData = captureMeshData
     }
     
     func processLocationRequest(
-        captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol),
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: AccessibilityFeature
     ) throws -> CLLocationCoordinate2D {
+        guard let depthMapProcessor = self.depthMapProcessor,
+              let localizationProcessor = self.localizationProcessor,
+              let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.configurationError
+        }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
-        let featureDepthValue = try self.depthMapProcessor.getFeatureDepthAtCentroidInRadius(
+        let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
             accessibilityFeature: accessibilityFeature, radius: 3
         )
         let featureCentroid = accessibilityFeature.detectedAccessibilityFeature.contourDetails.centroid
-        let imageSize = captureImageDataConcrete.originalSize
-        let locationCoordinate = self.localizationProcessor.calculateLocation(
+        let locationCoordinate = localizationProcessor.calculateLocation(
             point: featureCentroid, depth: featureDepthValue,
             imageSize: captureImageDataConcrete.originalSize,
             cameraTransform: captureImageDataConcrete.cameraTransform,
