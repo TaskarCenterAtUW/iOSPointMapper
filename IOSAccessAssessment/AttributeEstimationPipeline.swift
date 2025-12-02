@@ -75,10 +75,6 @@ class AttributeEstimationPipeline: ObservableObject {
     func processAttributeRequest(
         accessibilityFeature: AccessibilityFeature
     ) throws {
-        guard let depthMapProcessor = self.depthMapProcessor,
-              let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.configurationError
-        }
         var attributeAssignmentFlagError = false
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
             do {
@@ -86,6 +82,12 @@ class AttributeEstimationPipeline: ObservableObject {
                 case .width:
                     let widthAttributeValue = try self.calculateWidth(accessibilityFeature: accessibilityFeature)
                     try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
+                case .runningSlope:
+                    let runningSlopeAttributeValue = try self.calculateRunningSlope(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlope, isCalculated: true)
+                case .crossSlope:
+                    let crossSlopeAttributeValue = try self.calculateCrossSlope(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
                 default:
                     continue
                 }
@@ -98,7 +100,13 @@ class AttributeEstimationPipeline: ObservableObject {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
     }
-    
+}
+
+/**
+ Extension for attribute calculation with rudimentary methods.
+ TODO: Improve upon these methods with more robust implementations.
+ */
+extension AttributeEstimationPipeline {
     private func calculateWidth(
         accessibilityFeature: AccessibilityFeature
     ) throws -> AccessibilityFeatureAttributeValue {
@@ -130,5 +138,75 @@ class AttributeEstimationPipeline: ObservableObject {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue
+    }
+    
+    private func calculateRunningSlope(
+        accessibilityFeature: AccessibilityFeature
+    ) throws -> AccessibilityFeatureAttributeValue {
+        guard let depthMapProcessor = self.depthMapProcessor,
+              let localizationProcessor = self.localizationProcessor,
+              let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.configurationError
+        }
+        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        guard trapezoidBoundPoints.count == 4 else {
+            throw AttributeEstimationPipelineError.invalidAttributeData
+        }
+        let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
+            accessibilityFeature: accessibilityFeature
+        )
+        let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
+            PointWithDepth(
+                point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)),
+                depth: $0.1
+            )
+        }
+        let runningSlopeValue: Float = try localizationProcessor.calculateRunningSlope(
+            trapezoidBoundsWithDepth: trapezoidBoundPointsWithDepth,
+            imageSize: captureImageData.originalSize,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics
+        )
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.createFromDouble(
+            Double(runningSlopeValue)
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return runningSlopeAttributeValue
+    }
+    
+    private func calculateCrossSlope(
+        accessibilityFeature: AccessibilityFeature
+    ) throws -> AccessibilityFeatureAttributeValue {
+        guard let depthMapProcessor = self.depthMapProcessor,
+              let localizationProcessor = self.localizationProcessor,
+              let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.configurationError
+        }
+        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        guard trapezoidBoundPoints.count == 4 else {
+            throw AttributeEstimationPipelineError.invalidAttributeData
+        }
+        let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
+            accessibilityFeature: accessibilityFeature
+        )
+        let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
+            PointWithDepth(
+                point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)),
+                depth: $0.1
+            )
+        }
+        let crossSlopeValue: Float = try localizationProcessor.calculateCrossSlope(
+            trapezoidBoundsWithDepth: trapezoidBoundPointsWithDepth,
+            imageSize: captureImageData.originalSize,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics
+        )
+        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.createFromDouble(
+            Double(crossSlopeValue)
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return crossSlopeAttributeValue
     }
 }

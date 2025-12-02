@@ -17,11 +17,14 @@ struct PointWithDepth: Sendable, Equatable, Hashable, Codable {
 
 enum LocalizationProcessorError: Error, LocalizedError {
     case invalidBounds
+    case divisionByZero
     
     var errorDescription: String? {
         switch self {
         case .invalidBounds:
             return "The provided bounds for localization are invalid."
+        case .divisionByZero:
+            return "A division by zero occurred during localization calculations."
         }
     }
 }
@@ -161,6 +164,8 @@ extension LocalizationProcessor {
      
         - Note: Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
         - Note: This method is part of a rudimentary width calculation logic that restricts the object to a trapezoidal shape.
+     
+        TODO: Improve upon this basic width calculation method.
      */
     func calculateWidth(
         trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
@@ -186,5 +191,95 @@ extension LocalizationProcessor {
         
         let width = (bottomWidth + topWidth) / 2.0
         return width
+    }
+    
+    /**
+     Calculate the running slope of an object given its trapezoid bounds with depth information.
+     
+        - Parameters:
+            - trapezoidBoundsWithDepth: An array of four tuples containing the CGPoint and depth Float for each corner of the trapezoid, in image normalized coordinates.
+            Trapezoid corners should be ordered as: bottom-left, top-left, top-right, bottom-right.
+            - imageSize: The size of the image from which the points are taken.
+            - cameraTransform: The camera transform matrix.
+            - cameraIntrinsics: The camera intrinsics matrix.
+     
+        - Returns: The calculated running slope of the object in degrees as a Float.
+     
+        - Throws: `LocalizationProcessorError.invalidBounds` if the provided bounds are not valid.
+                     `LocalizationProcessorError.divisionByZero` if a division by zero occurs during calculations.
+      
+        - Note: Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
+        - Note: This method is part of a rudimentary slope calculation logic that restricts the object to a trapezoidal shape.
+     
+        TODO: Improve upon this basic slope calculation method.
+     */
+    func calculateRunningSlope(
+        trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3
+    ) throws -> Float {
+        guard trapezoidBoundsWithDepth.count == 4 else {
+            throw LocalizationProcessorError.invalidBounds
+        }
+        let trapezoidDeltas = trapezoidBoundsWithDepth.map { pointWithDepth in
+            return getDeltaFromPoint(
+                point: pointWithDepth.point, depth: pointWithDepth.depth, imageSize: imageSize,
+                cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+            )
+        }
+        let bottomLeft = trapezoidDeltas[0]
+        let topLeft = trapezoidDeltas[1]
+        let topRight = trapezoidDeltas[2]
+        let bottomRight = trapezoidDeltas[3]
+        
+        let topMidpoint = (topLeft + topRight) / 2.0
+        let bottomMidpoint = (bottomLeft + bottomRight) / 2.0
+        
+        let verticalDistance = topMidpoint.y - bottomMidpoint.y
+        let horizontalDistance = simd_distance(
+            SIMD2<Float>(topMidpoint.x, topMidpoint.z),
+            SIMD2<Float>(bottomMidpoint.x, bottomMidpoint.z)
+        )
+        guard horizontalDistance != 0 else {
+            throw LocalizationProcessorError.divisionByZero
+        }
+        let slope = atan(verticalDistance / horizontalDistance)
+        let slopeInDegrees = slope * 180.0 / .pi
+        return slopeInDegrees
+    }
+    
+    func calculateCrossSlope(
+        trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3
+    ) throws -> Float {
+        guard trapezoidBoundsWithDepth.count == 4 else {
+            throw LocalizationProcessorError.invalidBounds
+        }
+        let trapezoidDeltas = trapezoidBoundsWithDepth.map { pointWithDepth in
+            return getDeltaFromPoint(
+                point: pointWithDepth.point, depth: pointWithDepth.depth, imageSize: imageSize,
+                cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+            )
+        }
+        let bottomLeft = trapezoidDeltas[0]
+        let topLeft = trapezoidDeltas[1]
+        let topRight = trapezoidDeltas[2]
+        let bottomRight = trapezoidDeltas[3]
+        
+        let leftMidpoint = (bottomLeft + topLeft) / 2.0
+        let rightMidpoint = (bottomRight + topRight) / 2.0
+        
+        let verticalDistance = leftMidpoint.y - rightMidpoint.y
+        let horizontalDistance = simd_distance(
+            SIMD2<Float>(leftMidpoint.x, leftMidpoint.z),
+            SIMD2<Float>(rightMidpoint.x, rightMidpoint.z)
+        )
+        guard horizontalDistance != 0 else {
+            throw LocalizationProcessorError.divisionByZero
+        }
+        let slope = atan(verticalDistance / horizontalDistance)
+        let slopeInDegrees = slope * 180.0 / .pi
+        return slopeInDegrees
     }
 }
