@@ -43,7 +43,7 @@ struct DepthMapProcessor {
         )
     }
     
-    func getDepthAtPoint(point: CGPoint) throws -> Float {
+    private func getDepthAtPoint(point: CGPoint) throws -> Float {
         CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
         
@@ -60,7 +60,7 @@ struct DepthMapProcessor {
         return depthAtPoint
     }
     
-    func getDepthAtPoints(points: [CGPoint]) throws -> [Float] {
+    private func getDepthsAtPoints(points: [CGPoint]) throws -> [Float] {
         CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
         
@@ -80,6 +80,19 @@ struct DepthMapProcessor {
         return depths
     }
     
+    /**
+        Retrieves the depth value at the centroid of the given accessibility feature.
+     
+        - Parameters:
+            - accessibilityFeature: The AccessibilityFeature object containing the detected feature.
+     
+        - Returns: The depth value at the centroid of the feature.
+     
+        - Throws: DepthMapProcessorError.unableToAccessDepthData if depth data cannot be accessed.
+                    DepthMapProcessorError.invalidDepth if the retrieved depth value is invalid.
+     
+        - Note: The centroid coordinates are normalized (0 to 1) and need to be converted to pixel coordinates.
+     */
     func getFeatureDepthAtCentroid(accessibilityFeature: AccessibilityFeature) throws -> Float {
         let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
@@ -94,6 +107,20 @@ struct DepthMapProcessor {
         return try getDepthAtPoint(point: featureCentroidPoint)
     }
     
+    /**
+        Retrieves the average depth value within a specified radius around the centroid of the given accessibility feature.
+     
+        - Parameters:
+            - accessibilityFeature: The AccessibilityFeature object containing the detected feature.
+            - radius: The radius (in pixels) around the centroid to consider for averaging depth values. Default is 5 pixels.
+     
+        - Returns: The average depth value within the specified radius around the feature's centroid.
+     
+        - Throws: DepthMapProcessorError.unableToAccessDepthData if depth data cannot be accessed.
+                    DepthMapProcessorError.invalidDepth if no valid depth values are found within the radius.
+     
+        - Note: The centroid coordinates are normalized (0 to 1) and need to be converted to pixel coordinates.
+     */
     func getFeatureDepthAtCentroidInRadius(accessibilityFeature: AccessibilityFeature, radius: CGFloat = 5) throws -> Float {
         let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
@@ -117,12 +144,26 @@ struct DepthMapProcessor {
                 y: (1 - featureCentroid.y) * CGFloat(depthHeight) + delta.y
             )
         }
-        let depths = try getDepthAtPoints(points: featureCentroidRadiusPoints)
+        let depths = try getDepthsAtPoints(points: featureCentroidRadiusPoints)
         let validDepths = depths.filter { $0.isFinite && $0 > 0 }
         guard !validDepths.isEmpty else {
             throw DepthMapProcessorError.invalidDepth
         }
         let averageDepth = validDepths.reduce(0, +) / Float(validDepths.count)
         return averageDepth
+    }
+    
+    func getFeatureDepthsAtBounds(accessibilityFeature: AccessibilityFeature) throws -> [Float] {
+        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+        let normalizedPoints: [SIMD2<Float>] = featureContourDetails.normalizedPoints
+        
+        let featureBoundPoints: [CGPoint] = normalizedPoints.map { point in
+            CGPoint(
+                x: CGFloat(point.x * Float(depthWidth)),
+                y: CGFloat((1 - point.y) * Float(depthHeight))
+            )
+        }
+        let depths = try getDepthsAtPoints(points: featureBoundPoints)
+        return depths
     }
 }

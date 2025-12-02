@@ -10,6 +10,11 @@ import CoreImage
 import CoreLocation
 import simd
 
+struct PointWithDepth: Sendable, Equatable, Hashable, Codable {
+    let point: CGPoint
+    let depth: Float
+}
+
 enum LocalizationProcessorError: Error, LocalizedError {
     case invalidBounds
     
@@ -142,7 +147,7 @@ extension LocalizationProcessor {
         Calculate the width of an object given its trapezoid bounds with depth information.
         
         - Parameters:
-            - trapezoidBoundsWithDepth: An array of four tuples containing the CGPoint and depth Float for each corner of the trapezoid.
+            - trapezoidBoundsWithDepth: An array of four tuples containing the CGPoint and depth Float for each corner of the trapezoid, in image normalized coordinates.
             Trapezoid corners should be ordered as: bottom-left, top-left, top-right, bottom-right.
             - imageSize: The size of the image from which the points are taken.
             - cameraTransform: The camera transform matrix.
@@ -158,10 +163,9 @@ extension LocalizationProcessor {
         - Note: This method is part of a rudimentary width calculation logic that restricts the object to a trapezoidal shape.
      */
     func calculateWidth(
-        trapezoidBoundsWithDepth: [(point: CGPoint, depth: Float)], imageSize: CGSize,
+        trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
         cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3,
-        deviceLocation: CLLocationCoordinate2D
+        cameraIntrinsics: simd_float3x3
     ) throws -> Float {
         guard trapezoidBoundsWithDepth.count == 4 else {
             throw LocalizationProcessorError.invalidBounds

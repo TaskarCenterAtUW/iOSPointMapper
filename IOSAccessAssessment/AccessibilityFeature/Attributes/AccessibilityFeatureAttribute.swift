@@ -140,7 +140,7 @@ extension AccessibilityFeatureAttribute {
             return measurement.converted(to: .degrees).value
         case (.crossSlope, .angle(let measurement)):
             return measurement.converted(to: .degrees).value
-        case (.surfaceIntegrity, .flag(let flag)):
+        case (.surfaceIntegrity, .flag(_)):
             return -1
         default:
             return -1

@@ -48,6 +48,7 @@ enum AnnotationViewError: Error, LocalizedError {
     case instanceIndexOutofBounds
     case invalidCaptureDataRecord
     case managerConfigurationFailed
+    case attributeEstimationFailed
     
     var errorDescription: String? {
         switch self {
@@ -59,6 +60,8 @@ enum AnnotationViewError: Error, LocalizedError {
             return "The Current Capture is invalid."
         case .managerConfigurationFailed:
             return "Annotation Configuration failed"
+        case .attributeEstimationFailed:
+            return "Some Attribute Estimation calculations failed. They may be ignored."
         }
     }
 }
@@ -129,6 +132,15 @@ class AnnotationImageManagerStatusViewModel: ObservableObject {
     func update(isFailed: Bool, errorMessage: String, shouldDismiss: Bool = true) {
         self.isFailed = isFailed
         self.errorMessage = errorMessage
+        self.shouldDismiss = shouldDismiss
+    }
+    
+    func update(isFailed: Bool, error: Error, shouldDismiss: Bool = true) {
+        self.isFailed = isFailed
+        let dismissKey = shouldDismiss ?
+        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey :
+        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey
+        self.errorMessage = "\(error.localizedDescription) \(dismissKey)"
         self.shouldDismiss = shouldDismiss
     }
 }
@@ -372,10 +384,7 @@ struct AnnotationView: View {
             manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)
             try featureClassSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
-            )
+            managerStatusViewModel.update(isFailed: true, error: error)
         }
     }
     
@@ -385,19 +394,31 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
-            try accessibilityFeatures.forEach { accessibilityFeature in
-                accessibilityFeature.calculatedLocation = try attributeEstimationPipeline.processLocationRequest(
-                    deviceLocation: captureLocation,
-                    accessibilityFeature: accessibilityFeature
-                )
+            var calculationErrorFlag: Bool = false
+            accessibilityFeatures.forEach { accessibilityFeature in
+                do {
+                    try attributeEstimationPipeline.processLocationRequest(
+                        deviceLocation: captureLocation,
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try attributeEstimationPipeline.processAttributeRequest(accessibilityFeature: accessibilityFeature)
+                } catch {
+                    accessibilityFeature.calculatedLocation = nil
+                    calculationErrorFlag = true
+                }
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
+            if calculationErrorFlag {
+                throw AnnotationViewError.attributeEstimationFailed
+            }
+        } catch AnnotationViewError.attributeEstimationFailed {
+            managerStatusViewModel.update(
+                isFailed: true, error: AnnotationViewError.attributeEstimationFailed, shouldDismiss: false
+            )
         } catch {
             managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
-            )
+                isFailed: true, error: error)
         }
     }
     
@@ -405,9 +426,7 @@ struct AnnotationView: View {
         do {
             try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)")
+            managerStatusViewModel.update(isFailed: true, error: error)
         }
         do {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
@@ -427,9 +446,7 @@ struct AnnotationView: View {
             )
         } catch {
             managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey)",
-                shouldDismiss: false)
+                isFailed: true, error: error, shouldDismiss: false)
         }
     }
     
@@ -446,10 +463,7 @@ struct AnnotationView: View {
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey)"
-            )
+            managerStatusViewModel.update(isFailed: true, error: error)
         }
     }
 }

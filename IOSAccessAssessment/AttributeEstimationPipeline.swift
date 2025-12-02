@@ -11,6 +11,8 @@ import CoreLocation
 enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError
     case missingDepthImage
+    case invalidAttributeData
+    case attributeAssignmentError
     
     var errorDescription: String? {
         switch self {
@@ -18,6 +20,10 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
             return NSLocalizedString("Error occurred during pipeline configuration.", comment: "")
         case .missingDepthImage:
             return NSLocalizedString("Depth image is missing from the capture data.", comment: "")
+        case .invalidAttributeData:
+            return NSLocalizedString("Invalid attribute data encountered.", comment: "")
+        case .attributeAssignmentError:
+            return NSLocalizedString("Error occurred while assigning attribute value.", comment: "")
         }
     }
 }
@@ -45,7 +51,7 @@ class AttributeEstimationPipeline: ObservableObject {
     func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: AccessibilityFeature
-    ) throws -> CLLocationCoordinate2D {
+    ) throws {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
@@ -63,6 +69,66 @@ class AttributeEstimationPipeline: ObservableObject {
             cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
             deviceLocation: deviceLocation
         )
-        return locationCoordinate
+        accessibilityFeature.calculatedLocation = locationCoordinate
+    }
+    
+    func processAttributeRequest(
+        accessibilityFeature: AccessibilityFeature
+    ) throws {
+        guard let depthMapProcessor = self.depthMapProcessor,
+              let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.configurationError
+        }
+        var attributeAssignmentFlagError = false
+        for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
+            do {
+                switch attribute {
+                case .width:
+                    let widthAttributeValue = try self.calculateWidth(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
+                default:
+                    continue
+                }
+            } catch {
+                attributeAssignmentFlagError = true
+                print("Error processing attribute \(attribute) for feature \(accessibilityFeature.id): \(error.localizedDescription)")
+            }
+        }
+        guard !attributeAssignmentFlagError else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+    }
+    
+    private func calculateWidth(
+        accessibilityFeature: AccessibilityFeature
+    ) throws -> AccessibilityFeatureAttributeValue {
+        guard let depthMapProcessor = self.depthMapProcessor,
+              let localizationProcessor = self.localizationProcessor,
+              let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.configurationError
+        }
+        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        guard trapezoidBoundPoints.count == 4 else {
+            throw AttributeEstimationPipelineError.invalidAttributeData
+        }
+        let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
+            accessibilityFeature: accessibilityFeature
+        )
+        let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
+            PointWithDepth(
+                point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)),
+                depth: $0.1
+            )
+        }
+        let widthValue = try localizationProcessor.calculateWidth(
+            trapezoidBoundsWithDepth: trapezoidBoundPointsWithDepth,
+            imageSize: captureImageData.originalSize,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics
+        )
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.createFromDouble(Double(widthValue)) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return widthAttributeValue
     }
 }
