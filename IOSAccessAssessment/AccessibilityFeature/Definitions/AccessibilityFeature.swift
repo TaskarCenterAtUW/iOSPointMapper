@@ -22,6 +22,7 @@ class AccessibilityFeature: Identifiable, Equatable {
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let detectedAccessibilityFeature: DetectedAccessibilityFeature
     
+    var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
     
@@ -40,7 +41,12 @@ class AccessibilityFeature: Identifiable, Equatable {
         })
     }
     
-    func setValue(
+    func setAnnotationOption(_ option: AnnotationOption) {
+        print("Setting annotation option to \(option)")
+        self.selectedAnnotationOption = option
+    }
+    
+    func setAttributeValue(
         _ value: AccessibilityFeatureAttributeValue,
         for attribute: AccessibilityFeatureAttribute,
         isCalculated: Bool = false

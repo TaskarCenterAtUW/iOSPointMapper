@@ -344,7 +344,7 @@
 			children = (
 				A3FE166A2E18DD2A00DAE5BE /* Info.plist */,
 				CAA947772CDE7001000C6918 /* Auth */,
-				A39C9F392DD9B01200455E45 /* API */,
+				A39C9F392DD9B01200455E45 /* TDEI */,
 				A305B05A2E1887AE00ECCF9B /* LocalDataset */,
 				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
 				DAA7F8C52CA6858C003666D8 /* Location */,
@@ -578,6 +578,39 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
+		A35E05112EDE7435003C26CF /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */,
+				A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		A35E05122EDE7446003C26CF /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
+				A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A35E05132EDE7456003C26CF /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				A39C9F3A2DD9B03000455E45 /* OSMElement.swift */,
+			);
+			path = Definitions;
+			sourceTree = "<group>";
+		};
+		A35E05142EDE7494003C26CF /* Transmission */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Transmission;
+			sourceTree = "<group>";
+		};
 		A362AEC72DB59577002D7598 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
@@ -632,17 +665,16 @@
 			path = Depth;
 			sourceTree = "<group>";
 		};
-		A39C9F392DD9B01200455E45 /* API */ = {
+		A39C9F392DD9B01200455E45 /* TDEI */ = {
 			isa = PBXGroup;
 			children = (
 				A3A739432DD4BA330073C7D2 /* Helpers */,
-				A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */,
-				A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */,
-				A39C9F3A2DD9B03000455E45 /* OSMElement.swift */,
-				CA924A922CEB9AB000FCA928 /* ChangesetService.swift */,
-				A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */,
+				A35E05132EDE7456003C26CF /* Definitions */,
+				A35E05112EDE7435003C26CF /* Config */,
+				A35E05122EDE7446003C26CF /* Services */,
+				A35E05142EDE7494003C26CF /* Transmission */,
 			);
-			path = API;
+			path = TDEI;
 			sourceTree = "<group>";
 		};
 		A3A413A72ECF94690039298C /* SemanticSegmentation */ = {

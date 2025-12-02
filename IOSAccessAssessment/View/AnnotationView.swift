@@ -64,7 +64,7 @@ enum AnnotationViewError: Error, LocalizedError {
 class AnnotationFeatureClassSelectionViewModel: ObservableObject {
     @Published var currentIndex: Int? = nil
     @Published var currentClass: AccessibilityFeatureClass? = nil
-    @Published var selectedAnnotationOption: AnnotationOption = .classOption(AnnotationOptionFeatureClass.default)
+    @Published var selectedAnnotationOption: AnnotationOption = .classOption(.default)
     
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
         guard index < classes.count else {
@@ -73,13 +73,16 @@ class AnnotationFeatureClassSelectionViewModel: ObservableObject {
         self.currentIndex = index
         self.currentClass = classes[index]
     }
+    
+    func setOption(option: AnnotationOption) {
+        self.selectedAnnotationOption = option
+    }
 }
 
 class AnnotationFeatureSelectionViewModel: ObservableObject {
     @Published var instances: [AccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
     @Published var currentFeature: AccessibilityFeature? = nil
-    @Published var selectedAnnotationOption: AnnotationOption = .individualOption(AnnotationOptionFeature.default)
     
     func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
@@ -106,6 +109,13 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     func setCurrent(index: Int?, instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         try setInstances(instances, currentClass: currentClass)
         try setIndex(index: index)
+    }
+    
+    func setOptionOnFeature(option: AnnotationOption) {
+        if let currentFeature = self.currentFeature {
+            objectWillChange.send()
+            currentFeature.setAnnotationOption(option)
+        }
     }
 }
 
@@ -272,12 +282,13 @@ struct AnnotationView: View {
             return VStack(spacing: 10) {
                 ForEach(annotationOptions, id: \.self) { option in
                     Button(action: {
+                        featureSelectionViewModel.setOptionOnFeature(option: option)
                     }) {
                         Text(option.rawValue)
                             .font(.subheadline)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(featureSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
+                            .background(currentFeature.selectedAnnotationOption == option ? Color.blue : Color.gray)
                             .foregroundStyle(.white)
                             .cornerRadius(10)
                     }
@@ -288,6 +299,7 @@ struct AnnotationView: View {
             return VStack(spacing: 10) {
                 ForEach(annotationOptions, id: \.self) { option in
                     Button(action: {
+                        featureClassSelectionViewModel.setOption(option: option)
                     }) {
                         Text(option.rawValue)
                             .font(.subheadline)
@@ -356,6 +368,7 @@ struct AnnotationView: View {
                 captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
                 accessibilityFeatureClass: currentClass
             )
+            featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
         } catch {
             managerStatusViewModel.update(
