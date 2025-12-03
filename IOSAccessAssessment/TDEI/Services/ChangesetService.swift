@@ -25,7 +25,6 @@ class ChangesetService {
     private init() {}
     
     private let accessToken = KeychainService().getValue(for: .accessToken)
-    private(set) var changesetId: String?
     
     func openChangeset(workspaceId: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let url = URL(string: "\(Constants.baseUrl)/changeset/create"),
@@ -61,7 +60,6 @@ class ChangesetService {
             }
             
             if let data = data, let changesetId = String(data: data, encoding: .utf8) {
-                self.changesetId = changesetId
                 completion(.success(changesetId))
             } else {
                 completion(.failure(NSError(domain: "ChangesetError",
@@ -71,9 +69,12 @@ class ChangesetService {
         }.resume()
     }
     
-    func performUpload(workspaceId: String, operations: [ChangesetDiffOperation], completion: @escaping (Result<ParsedElements, Error>) -> Void) {
-        guard let changesetId,
-              let accessToken,
+    func performUpload(
+        workspaceId: String, changesetId: String,
+        operations: [ChangesetDiffOperation],
+        completion: @escaping (Result<ParsedElements, Error>) -> Void
+    ) {
+        guard let accessToken,
               let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
         else {
             completion(.failure(NSError(domain: "Invalid state", code: -2)))
@@ -129,8 +130,8 @@ class ChangesetService {
         }.resume()
     }
     
-    func closeChangeset(completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let changesetId, let accessToken else { return }
+    func closeChangeset(changesetId: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let accessToken else { return }
         
         guard let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/close") else { return }
         
@@ -144,8 +145,6 @@ class ChangesetService {
                 completion(.failure(error))
                 return
             }
-            self.changesetId = nil
-            
             completion(.success(()))
         }.resume()
     }
@@ -155,7 +154,15 @@ class ChangesetService {
  Async versions of the ChangesetService methods
  */
 extension ChangesetService {
-    func openChangeset(workspaceId: String) async throws -> String {
+    /**
+     Opens a changeset asynchronously.
+     
+     - Parameters:
+        - workspaceId: The ID of the workspace where the changeset will be opened.
+     
+     - Returns: The ID of the opened changeset.
+     */
+    func openChangesetAsync(workspaceId: String) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
             openChangeset(workspaceId: workspaceId) { result in
                 switch result {
@@ -168,9 +175,22 @@ extension ChangesetService {
         }
     }
     
-    func performUpload(workspaceId: String, operations: [ChangesetDiffOperation]) async throws -> ParsedElements {
+    /**
+        Performs an upload of changeset operations asynchronously.
+     
+        - Parameters:
+              - workspaceId: The ID of the workspace where the changeset is located.
+                - operations: An array of `ChangesetDiffOperation` representing the changes to be uploaded.
+     
+        - Returns: A tuple containing parsed nodes and ways with their attributes.
+     */
+    func performUploadAsync(
+        workspaceId: String,
+        changesetId: String,
+        operations: [ChangesetDiffOperation]
+    ) async throws -> ParsedElements {
         return try await withCheckedThrowingContinuation { continuation in
-            performUpload(workspaceId: workspaceId, operations: operations) { result in
+            performUpload(workspaceId: workspaceId, changesetId: changesetId, operations: operations) { result in
                 switch result {
                 case .success(let parsedElements):
                     continuation.resume(returning: parsedElements)
@@ -181,9 +201,12 @@ extension ChangesetService {
         }
     }
     
-    func closeChangeset() async throws {
+    /**
+        Closes the current changeset asynchronously.
+     */
+    func closeChangesetAsync(changesetId: String) async throws {
         return try await withCheckedThrowingContinuation { continuation in
-            closeChangeset { result in
+            closeChangeset(changesetId: changesetId) { result in
                 switch result {
                 case .success():
                     continuation.resume()

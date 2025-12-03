@@ -80,7 +80,7 @@
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
 		A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtils.swift */; };
-		A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */; };
+		A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
 		A3DA4DA82EB94D84005BB812 /* MeshGPUSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */; };
 		A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */; };
@@ -231,7 +231,7 @@
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtils.swift; sourceTree = "<group>"; };
-		A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewModel.swift; sourceTree = "<group>"; };
+		A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUSnapshot.swift; sourceTree = "<group>"; };
 		A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MeshPipeline.metal; sourceTree = "<group>"; };
@@ -814,7 +814,7 @@
 			isa = PBXGroup;
 			children = (
 				A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */,
-				A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */,
+				A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */,
 				CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */,
 			);
 			path = ViewModel;
@@ -1069,7 +1069,7 @@
 				A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */,
 				A38338C62EDAF3E900F1A402 /* DepthMapProcessor.swift in Sources */,
 				A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */,
-				A3D78D742E65108E003BFE78 /* WorkspaceListViewModel.swift in Sources */,
+				A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */,

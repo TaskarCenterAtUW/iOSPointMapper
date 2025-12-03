@@ -77,7 +77,7 @@ struct LoginView: View {
                 self.isLoading = false
                 
                 switch result {
-                case .success(let response):
+                case .success(_):
                     authService.storeUsername(username: username)
                     
                     if let _ = authService.getAccessToken(),

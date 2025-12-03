@@ -19,6 +19,10 @@ class UserStateViewModel: ObservableObject {
         return authService.getUsername()
     }
     
+    func getAccessToken() -> String? {
+        return authService.getAccessToken()
+    }
+    
     func loginSuccess() {
         isAuthenticated = true
     }

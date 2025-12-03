@@ -46,6 +46,20 @@ enum WorkspaceSelectionViewConstants {
     }
 }
 
+enum WorkspaceSelectionViewError: Error, LocalizedError {
+    case failedToLoadWorkspaces
+    case authenticationError
+
+    var errorDescription: String? {
+        switch self {
+        case .failedToLoadWorkspaces:
+            return "Failed to load workspaces. Please try again."
+        case .authenticationError:
+            return "Authentication error. Please log in again."
+        }
+    }
+}
+
 struct WorkspaceInfoTip: Tip {
     
     var title: Text {
@@ -69,6 +83,7 @@ struct WorkspaceInfoTip: Tip {
 }
 
 struct WorkspaceSelectionView: View {
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @State var workspaces: [Workspace] = []
     @State var primaryWorkspaces: [Workspace] = []
@@ -177,7 +192,13 @@ struct WorkspaceSelectionView: View {
     
     func loadWorkspaces() async {
         do {
-            var workspaces = try await WorkspaceService.shared.fetchWorkspaces(location: nil, radius: 2000)
+            guard let accessToken = userStateViewModel.getAccessToken() else {
+                throw WorkspaceSelectionViewError.authenticationError
+            }
+            var workspaces = try await WorkspaceService.shared.fetchWorkspaces(
+                location: nil, radius: 2000,
+                accessToken: accessToken
+            )
             // MARK: Eventually, we should ensure that even primary workspaces have externalAppAccess enabled
             let primaryWorkspaces = workspaces.filter { workspace in
                 return Constants.WorkspaceConstants.primaryWorkspaceIds.contains("\(workspace.id)")
@@ -189,6 +210,8 @@ struct WorkspaceSelectionView: View {
             self.primaryWorkspaces = primaryWorkspaces
         } catch {
             print("Error loading workspaces: \(error.localizedDescription)")
+            self.workspaces = []
+            self.primaryWorkspaces = []
         }
     }
 }
