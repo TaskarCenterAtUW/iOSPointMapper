@@ -63,7 +63,7 @@ struct IOSAccessAssessmentApp: App {
     private func callRefreshToken() {
         authService.callRefreshToken() { result in
             switch result {
-            case .success(let authResponse):
+            case .success(_):
                 print("Refresh token successful")
             case .failure(let authError):
                 print("Refresh token failed: \(authError.localizedDescription)")

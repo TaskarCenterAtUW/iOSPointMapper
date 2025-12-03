@@ -8,17 +8,15 @@
 import Foundation
 
 class UserStateViewModel: ObservableObject {
-    
     @Published var isAuthenticated: Bool = false
-    
-    private let keychainService = KeychainService()
+    private let authService: AuthService = AuthService.shared
     
     init() {
-        isAuthenticated = keychainService.isTokenValid()
+        isAuthenticated = authService.checkTokenValid()
     }
     
     func getUsername() -> String? {
-        return keychainService.getValue(for: .username)
+        return authService.getUsername()
     }
     
     func loginSuccess() {
@@ -26,8 +24,7 @@ class UserStateViewModel: ObservableObject {
     }
     
     func logout() {
-        keychainService.removeValue(for: .accessToken)
-        keychainService.removeValue(for: .expirationDate)
+        authService.logout()
         
         isAuthenticated = false
     }

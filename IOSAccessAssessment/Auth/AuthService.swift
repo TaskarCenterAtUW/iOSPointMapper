@@ -66,6 +66,10 @@ class AuthService {
         performRequest(with: request, completion: completion)
     }
     
+    func storeUsername(username: String) {
+        keychainService.setValue(username, for: .username)
+    }
+    
     private func createLoginRequest(username: String, password: String) -> URLRequest? {
         guard let url = URL(string: APIConstants.Constants.tdeiCoreAuthUrl) else { return nil }
 
@@ -173,5 +177,25 @@ class AuthService {
         let refreshExpirationDate = Date().addingTimeInterval(TimeInterval(authResponse.refreshExpiresIn))
         keychainService.setDate(refreshExpirationDate, for: .refreshExpirationDate)
     }
+}
+
+/**
+ Methods to access stored authentication data.
+ */
+extension AuthService {
+    func getAccessToken() -> String? {
+        keychainService.getValue(for: .accessToken)
+    }
     
+    func getUsername() -> String? {
+        keychainService.getValue(for: .username)
+    }
+    
+    func getExpirationDate() -> Date? {
+        keychainService.getDate(for: .expirationDate)
+    }
+    
+    func checkTokenValid() -> Bool {
+        keychainService.isTokenValid()
+    }
 }

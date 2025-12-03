@@ -56,7 +56,6 @@
 		A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051B2EDFB093003C26CF /* OSMNode.swift */; };
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
-		A374FAB52EDFD19800055268 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB42EDFD19100055268 /* AuthViewModel.swift */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
 		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
 		A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */; };
@@ -209,7 +208,6 @@
 		A35E051B2EDFB093003C26CF /* OSMNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMNode.swift; sourceTree = "<group>"; };
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
-		A374FAB42EDFD19100055268 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
 		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
 		A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshHelpers.swift; sourceTree = "<group>"; };
@@ -818,7 +816,6 @@
 				A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */,
 				A3D78D732E65108A003BFE78 /* WorkspaceListViewModel.swift */,
 				CAF812C22CFA108100D44B84 /* UserStateViewModel.swift */,
-				A374FAB42EDFD19100055268 /* AuthViewModel.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -1035,7 +1032,6 @@
 				A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */,
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,
-				A374FAB52EDFD19800055268 /* AuthViewModel.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,
 				A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */,
