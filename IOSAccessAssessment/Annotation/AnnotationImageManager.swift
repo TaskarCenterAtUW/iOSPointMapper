@@ -328,12 +328,17 @@ extension AnnotationImageManager {
         segmentationLabelImage: CIImage,
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> [AccessibilityFeature] {
-        guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
+        guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline,
+              let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.segmentationNotConfigured
         }
+        let imageOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: captureImageData.interfaceOrientation
+        )
         let detectedFeatures = try segmentationAnnotationPipeline.processContourRequest(
             segmentationLabelImage: segmentationLabelImage,
-            accessibilityFeatureClass: accessibilityFeatureClass
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            orientation: imageOrientation
         )
         let accessibilityFeatures = detectedFeatures.map { detectedFeature in
             return AccessibilityFeature(

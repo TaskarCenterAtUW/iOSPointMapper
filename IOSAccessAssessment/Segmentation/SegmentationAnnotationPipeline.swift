@@ -212,7 +212,8 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     }
     
     func processContourRequest(
-        segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass
+        segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass,
+        orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
@@ -233,7 +234,11 @@ final class SegmentationAnnotationPipeline: ObservableObject {
             self.isProcessing = false
             return detectedFeatures
         }
-        if let trapezoidPoints = ContourUtils.getTrapezoid(normalizedPoints: largestFeature.contourDetails.normalizedPoints) {
+        let isTrapezoidFlipped = [.left, .leftMirrored, .right, .rightMirrored].contains(orientation)
+        if let trapezoidPoints = ContourUtils.getTrapezoid(
+            normalizedPoints: largestFeature.contourDetails.normalizedPoints,
+            isFlipped: isTrapezoidFlipped
+        ) {
             let trapezoidFeature = DetectedAccessibilityFeature(
                 accessibilityFeatureClass: largestFeature.accessibilityFeatureClass,
                 contourDetails: ContourDetails(normalizedPoints: trapezoidPoints)
