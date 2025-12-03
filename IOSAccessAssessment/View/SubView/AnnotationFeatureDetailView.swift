@@ -113,10 +113,18 @@ struct AnnotationFeatureDetailView: View {
             attribute.displayName,
             value: Binding(
                 get: {
-                    attribute.getDouble(from: accessibilityFeature.finalAttributeValues[attribute])
+                    guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
+                          let attributeValue,
+                          let attributeBindableValue = attributeValue.toDouble() else {
+                        return 0.0
+                    }
+                    return attributeBindableValue
                 },
                 set: { newValue in
-                    accessibilityFeature.finalAttributeValues[attribute] = attribute.createFromDouble(newValue)
+                    guard let newAttributeValue = attribute.valueFromDouble(newValue) else {
+                        return
+                    }
+                    accessibilityFeature.finalAttributeValues[attribute] = newAttributeValue
                 }
             ),
             format: .number
@@ -130,10 +138,18 @@ struct AnnotationFeatureDetailView: View {
         Toggle(
             isOn: Binding(
                 get: {
-                    attribute.getBool(from: accessibilityFeature.finalAttributeValues[attribute])
+                    guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
+                          let attributeValue,
+                          let attributeBindableValue = attributeValue.toBool() else {
+                        return false
+                    }
+                    return attributeBindableValue
                 },
                 set: { newValue in
-                    accessibilityFeature.finalAttributeValues[attribute] = attribute.createFromBool(newValue)
+                    guard let newAttributeValue = attribute.valueFromBool(newValue) else {
+                        return
+                    }
+                    accessibilityFeature.finalAttributeValues[attribute] = newAttributeValue
                 }
             )
         ) {

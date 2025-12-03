@@ -7,52 +7,88 @@
 
 import Foundation
 
+/**
+    Enumeration defining various accessibility feature attributes, along with their metadata and value types.
+ 
+    - Note: One needs to be aware of the value types associated with each attribute. The valueType property is only meant for reference.
+ */
 enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable, Sendable, Comparable {
     case width
     case runningSlope
     case crossSlope
     case surfaceIntegrity
     
-    var id: Int {
+    enum Value: Sendable, Codable, Equatable {
+        case length(Measurement<UnitLength>)
+        case angle(Measurement<UnitAngle>)
+        case flag(Bool)
+        
+        static func == (lhs: Value, rhs: Value) -> Bool {
+            switch (lhs, rhs) {
+            case (.length(let l1), .length(let l2)):
+                return l1 == l2
+            case (.angle(let a1), .angle(let a2)):
+                return a1 == a2
+            case (.flag(let f1), .flag(let f2)):
+                return f1 == f2
+            default:
+                return false
+            }
+        }
+    }
+    
+    struct Metadata {
+        let id: Int
+        let name: String
+        let unit: Dimension?
+        let valueType: Value
+        let osmTagKey: String
+    }
+    
+    var metadata: Metadata {
         switch self {
         case .width:
-            return 10
+            return Metadata(
+                id: 10, name: "Width", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: "width"
+            )
         case .runningSlope:
-            return 20
+            return Metadata(
+                id: 20, name: "Running Slope", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "running_slope"
+            )
         case .crossSlope:
-            return 30
+            return Metadata(
+                id: 30, name: "Cross Slope", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "cross_slope"
+            )
         case .surfaceIntegrity:
-            return 40
+            return Metadata(
+                id: 40, name: "Surface Integrity", unit: nil,
+                valueType: .flag(false),
+                osmTagKey: "surface_integrity"
+            )
         }
+    }
+    
+    var id: Int {
+        return metadata.id
     }
     
     var name: String {
-        switch self {
-        case .width:
-            return "Width"
-        case .runningSlope:
-            return "Running Slope"
-        case .crossSlope:
-            return "Cross Slope"
-        case .surfaceIntegrity:
-            return "Surface Integrity"
-        }
+        return metadata.name
     }
     
-    var unit: String? {
-        switch self {
-        case .width:
-            return "m"
-        case .runningSlope, .crossSlope:
-            return "°"
-        case .surfaceIntegrity:
-            return nil
-        }
+    var unit: Dimension? {
+        return metadata.unit
     }
     
     var displayName: String {
         if let unit = unit {
-            return "\(name) (\(unit))"
+            return "\(name) (\(unit.symbol))"
         } else {
             return name
         }
@@ -60,16 +96,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     
     /// TODO: Verify these OSM tag keys
     var osmTagKey: String {
-        switch self {
-        case .width:
-            return "width"
-        case .runningSlope:
-            return "running_slope"
-        case .crossSlope:
-            return "cross_slope"
-        case .surfaceIntegrity:
-            return "surface_integrity"
-        }
+        return metadata.osmTagKey
     }
     
     static func < (lhs: AccessibilityFeatureAttribute, rhs: AccessibilityFeatureAttribute) -> Bool {
@@ -77,56 +104,11 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     }
 }
 
-enum AccessibilityFeatureAttributeValue: Sendable, Codable, Equatable {
-    case length(Measurement<UnitLength>)
-    case angle(Measurement<UnitAngle>)
-    case flag(Bool)
-    
-    static func == (lhs: AccessibilityFeatureAttributeValue, rhs: AccessibilityFeatureAttributeValue) -> Bool {
-        switch (lhs, rhs) {
-        case (.length(let l1), .length(let l2)):
-            return l1 == l2
-        case (.angle(let a1), .angle(let a2)):
-            return a1 == a2
-        case (.flag(let f1), .flag(let f2)):
-            return f1 == f2
-        default:
-            return false
-        }
-    }
-}
-
 /**
  Extensions for AccessibilityFeatureAttribute to provide expected value types,
  */
 extension AccessibilityFeatureAttribute {
-    var expectedValueType: AccessibilityFeatureAttributeValue {
-        switch self {
-        case .width:
-            return .length(Measurement(value: 0, unit: .meters))
-        case .runningSlope:
-            return .angle(Measurement(value: 0, unit: .degrees))
-        case .crossSlope:
-            return .angle(Measurement(value: 0, unit: .degrees))
-        case .surfaceIntegrity:
-            return .flag(false)
-        }
-    }
-    
-    var nilValue: AccessibilityFeatureAttributeValue {
-        switch self {
-        case .width:
-            return .length(Measurement(value: -1, unit: .meters))
-        case .runningSlope:
-            return .angle(Measurement(value: -1, unit: .degrees))
-        case .crossSlope:
-            return .angle(Measurement(value: -1, unit: .degrees))
-        case .surfaceIntegrity:
-            return .flag(false)
-        }
-    }
-    
-    func isCompatible(with value: AccessibilityFeatureAttributeValue) -> Bool {
+    func isCompatible(with value: Value) -> Bool {
         switch (self, value) {
         case (.width, .length):
             return true
@@ -143,28 +125,32 @@ extension AccessibilityFeatureAttribute {
 }
 
 /**
-    Extensions for converting AccessibilityFeatureAttributeValue to/from compatible types.
+ Extension to convert AccessibilityFeatureAttribute.Value to and from primitive types.
  */
-extension AccessibilityFeatureAttribute {
-    func getDouble(from attributeValue: AccessibilityFeatureAttributeValue?) -> Double {
-        guard let attributeValue = attributeValue else {
-            return -1
-        }
-        switch (self, attributeValue) {
-        case (.width, .length(let measurement)):
+extension AccessibilityFeatureAttribute.Value {
+    func toDouble() -> Double? {
+        switch self {
+        case .length(let measurement):
             return measurement.converted(to: .meters).value
-        case (.runningSlope, .angle(let measurement)):
+        case .angle(let measurement):
             return measurement.converted(to: .degrees).value
-        case (.crossSlope, .angle(let measurement)):
-            return measurement.converted(to: .degrees).value
-        case (.surfaceIntegrity, .flag(_)):
-            return -1
-        default:
-            return -1
+        case .flag:
+            return nil
         }
     }
     
-    func createFromDouble(_ value: Double) -> AccessibilityFeatureAttributeValue? {
+    func toBool() -> Bool? {
+        switch self {
+        case .flag(let value):
+            return value
+        default:
+            return nil
+        }
+    }
+}
+
+extension AccessibilityFeatureAttribute {
+    func valueFromDouble(_ value: Double) -> Value? {
         switch self {
         case .width:
             return .length(Measurement(value: value, unit: .meters))
@@ -177,33 +163,16 @@ extension AccessibilityFeatureAttribute {
         }
     }
     
-    func getBool(from attributeValue: AccessibilityFeatureAttributeValue?) -> Bool {
-        guard let attributeValue = attributeValue else {
-            return false
-        }
-        switch (self, attributeValue) {
-        case (.surfaceIntegrity, .flag(let flag)):
-            return flag
-        default:
-            return false
-        }
-    }
-    
-    func createFromBool(_ value: Bool) -> AccessibilityFeatureAttributeValue? {
+    func valueFromBool(_ value: Bool) -> Value? {
         switch self {
         case .surfaceIntegrity:
             return .flag(value)
         default:
-            return nil // Only Surface Integrity uses Bool representation
+            return nil // Other attributes do not have a boolean representation
         }
     }
-}
-
-/**
- 
- */
-extension AccessibilityFeatureAttribute {
-    func getOSMTagValue(from attributeValue: AccessibilityFeatureAttributeValue?) -> String? {
+    
+    func getOSMTagFromValue(from attributeValue: Value?) -> String? {
         guard let attributeValue = attributeValue else {
             return nil
         }

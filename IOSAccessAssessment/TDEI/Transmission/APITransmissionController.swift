@@ -124,7 +124,7 @@ class APITransmissionController: ObservableObject {
             let attributeKey = attributeKeyValuePair.key
             let attributeTagKey = attributeKey.osmTagKey
             let attributeValue = attributeKeyValuePair.value
-            let attributeTagValue = attributeKey.getOSMTagValue(from: attributeValue)
+            let attributeTagValue = attributeKey.getOSMTagFromValue(from: attributeValue)
             guard let attributeTagValue else { return }
             nodeTags[attributeTagKey] = attributeTagValue
         }

@@ -40,7 +40,7 @@
 		A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A355471D2EC1A47200F43AFD /* SharedAppData.swift */; };
 		A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */; };
 		A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C32EC1AF5500F43AFD /* CaptureData.swift */; };
-		A35547C82EC1B0DB00F43AFD /* MapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* MapData.swift */; };
+		A35547C82EC1B0DB00F43AFD /* MappingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* MappingData.swift */; };
 		A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */; };
 		A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CB2EC3018C00F43AFD /* AnnotationView.swift */; };
 		A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */; };
@@ -56,6 +56,7 @@
 		A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051B2EDFB093003C26CF /* OSMNode.swift */; };
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
+		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
 		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
 		A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */; };
@@ -192,7 +193,7 @@
 		A355471D2EC1A47200F43AFD /* SharedAppData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppData.swift; sourceTree = "<group>"; };
 		A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
 		A35547C32EC1AF5500F43AFD /* CaptureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureData.swift; sourceTree = "<group>"; };
-		A35547C72EC1B0D900F43AFD /* MapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapData.swift; sourceTree = "<group>"; };
+		A35547C72EC1B0D900F43AFD /* MappingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappingData.swift; sourceTree = "<group>"; };
 		A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshSnapshot.swift; sourceTree = "<group>"; };
 		A35547CB2EC3018C00F43AFD /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageViewController.swift; sourceTree = "<group>"; };
@@ -208,6 +209,7 @@
 		A35E051B2EDFB093003C26CF /* OSMNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMNode.swift; sourceTree = "<group>"; };
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
+		A374FAB62EE0173200055268 /* OSMResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMResponseElement.swift; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
 		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
 		A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshHelpers.swift; sourceTree = "<group>"; };
@@ -594,6 +596,7 @@
 			isa = PBXGroup;
 			children = (
 				A39C9F3A2DD9B03000455E45 /* OSMElement.swift */,
+				A374FAB62EE0173200055268 /* OSMResponseElement.swift */,
 				A35E05192EDFB015003C26CF /* OSMPayload.swift */,
 				A35E051B2EDFB093003C26CF /* OSMNode.swift */,
 				A35E051D2EDFB099003C26CF /* OSMWay.swift */,
@@ -613,7 +616,7 @@
 			isa = PBXGroup;
 			children = (
 				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
-				A35547C72EC1B0D900F43AFD /* MapData.swift */,
+				A35547C72EC1B0D900F43AFD /* MappingData.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
 				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
 			);
@@ -1003,7 +1006,7 @@
 				A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
-				A35547C82EC1B0DB00F43AFD /* MapData.swift in Sources */,
+				A35547C82EC1B0DB00F43AFD /* MappingData.swift in Sources */,
 				A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */,
 				A308015E2EC09BB700B1BA3A /* CocoCustom35ClassConfig.swift in Sources */,
 				A308015F2EC09BB700B1BA3A /* MapillaryCustom11ClassConfig.swift in Sources */,
@@ -1011,6 +1014,7 @@
 				A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */,
 				A30801612EC09BB700B1BA3A /* CocoCustom53ClassConfig.swift in Sources */,
 				A30BED382ED162E7004A5B51 /* MeshDefinitions.swift in Sources */,
+				A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */,
 				A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */,
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtils.swift in Sources */,
 				A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */,

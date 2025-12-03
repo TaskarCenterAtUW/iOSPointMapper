@@ -109,7 +109,7 @@ class AttributeEstimationPipeline: ObservableObject {
 extension AttributeEstimationPipeline {
     private func calculateWidth(
         accessibilityFeature: AccessibilityFeature
-    ) throws -> AccessibilityFeatureAttributeValue {
+    ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
@@ -134,7 +134,7 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.createFromDouble(Double(widthValue)) else {
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(widthValue)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue
@@ -142,7 +142,7 @@ extension AttributeEstimationPipeline {
     
     private func calculateRunningSlope(
         accessibilityFeature: AccessibilityFeature
-    ) throws -> AccessibilityFeatureAttributeValue {
+    ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
@@ -167,7 +167,7 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.createFromDouble(
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(
             Double(runningSlopeValue)
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
@@ -177,7 +177,7 @@ extension AttributeEstimationPipeline {
     
     private func calculateCrossSlope(
         accessibilityFeature: AccessibilityFeature
-    ) throws -> AccessibilityFeatureAttributeValue {
+    ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
@@ -202,7 +202,7 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.createFromDouble(
+        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(
             Double(crossSlopeValue)
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError

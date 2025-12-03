@@ -8,7 +8,7 @@ import Foundation
 import CoreLocation
 
 enum AccessibilityFeatureError: Error, LocalizedError {
-    case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttributeValue)
+    case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttribute.Value)
     
     var errorDescription: String? {
         switch self {
@@ -27,8 +27,8 @@ class AccessibilityFeature: Identifiable, Equatable {
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
     var calculatedLocation: CLLocationCoordinate2D?
-    var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
-    var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttributeValue] = [:]
+    var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
     init(
         accessibilityFeatureClass: AccessibilityFeatureClass,
@@ -38,10 +38,10 @@ class AccessibilityFeature: Identifiable, Equatable {
         self.detectedAccessibilityFeature = detectedAccessibilityFeature
         
         calculatedAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
-            return (attribute, attribute.nilValue)
+            return (attribute, nil)
         })
         finalAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
-            return (attribute, attribute.nilValue)
+            return (attribute, nil)
         })
     }
     
@@ -50,7 +50,7 @@ class AccessibilityFeature: Identifiable, Equatable {
     }
     
     func setAttributeValue(
-        _ value: AccessibilityFeatureAttributeValue,
+        _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute,
         isCalculated: Bool = false
     ) throws {
@@ -59,7 +59,9 @@ class AccessibilityFeature: Identifiable, Equatable {
         }
         if isCalculated {
             calculatedAttributeValues[attribute] = value
-            if (finalAttributeValues[attribute] == attribute.nilValue) { finalAttributeValues[attribute] = value }
+            if finalAttributeValues[attribute] == nil {
+                finalAttributeValues[attribute] = value
+            }
         } else {
             finalAttributeValues[attribute] = value
         }
