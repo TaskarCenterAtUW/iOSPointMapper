@@ -9,6 +9,8 @@ import Foundation
 
 /**
     ViewModel to manage the state of workspace selection
+ 
+    TODO: Utilize UserDefaults or Keychain to persist the selected workspace across app launches
  */
 class WorkspaceViewModel: ObservableObject {
     
@@ -17,14 +19,6 @@ class WorkspaceViewModel: ObservableObject {
     var workspaceId: String? = nil
     
     init() {
-        // User Defaults to check if workspace is selected
-//        if let savedWorkspaceId = UserDefaults.standard.string(forKey: "selectedWorkspaceId") {
-//            self.workspaceId = savedWorkspaceId
-//            self.isWorkspaceSelected = true
-//        } else {
-//            self.isWorkspaceSelected = false
-//            self.workspaceId = nil
-//        }
     }
     
     func workspaceSelected(id: String) {

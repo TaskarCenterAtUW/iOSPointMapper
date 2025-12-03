@@ -10,6 +10,8 @@ struct APIConstants {
         // For the URLs, we only use staging for now
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
         static let tdeiCoreBaseUrl = "https://tdei-gateway-stage.azurewebsites.net"
+        static let tdeiCoreAuthUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/authenticate"
+        static let tdeiCoreRefreshAuthUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/refresh-token"
         static let workspacesAPIBaseUrl = "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
         static let workspacesOSMBaseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
         static let workspaceId = "288"

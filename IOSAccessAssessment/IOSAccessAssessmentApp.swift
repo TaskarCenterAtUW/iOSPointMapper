@@ -30,7 +30,7 @@ struct IOSAccessAssessmentApp: App {
                     .environmentObject(userState)
                     .environmentObject(workspaceViewModel)
                     .onAppear {
-                        authService.refreshToken()
+                        callRefreshToken()
                     }
                 }
                 else {
@@ -38,7 +38,7 @@ struct IOSAccessAssessmentApp: App {
                     .environmentObject(userState)
                     .environmentObject(workspaceViewModel)
                     .onAppear {
-                        authService.refreshToken()
+                        callRefreshToken()
                     }
                 }
             } else {
@@ -57,5 +57,17 @@ struct IOSAccessAssessmentApp: App {
         
         // Configure and load all tips in the app.
         try Tips.configure()
+    }
+    
+    /// TODO: Handle refresh token failure case
+    private func callRefreshToken() {
+        authService.callRefreshToken() { result in
+            switch result {
+            case .success(let authResponse):
+                print("Refresh token successful")
+            case .failure(let authError):
+                print("Refresh token failed: \(authError.localizedDescription)")
+            }
+        }
     }
 }

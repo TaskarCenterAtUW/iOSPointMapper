@@ -135,10 +135,10 @@ class DatasetEncoder {
             self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
         
-        // TODO: Add error handling for each encoder
+        /// TODO: Add error handling for each encoder
         
-        // Add a capture point to the TDEI workspaces
-        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
+        /// Add a capture point to the TDEI workspaces
+//        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)

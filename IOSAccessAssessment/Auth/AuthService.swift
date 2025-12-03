@@ -29,28 +29,79 @@ struct ErrorResponse: Decodable {
 }
 
 class AuthService {
-    
-    private enum Constants {
-        static let serverUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/authenticate"
-    }
+    static let shared = AuthService()
     
     private let keychainService = KeychainService()
     
     func login(
-        username: String,
-        password: String,
+        username: String, password: String,
         completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
     ) {
-        guard let request = createRequest(username: username, password: password) else {
+        guard let request = createLoginRequest(username: username, password: password) else {
             completion(.failure(.invalidURL))
             return
         }
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        performRequest(with: request, completion: completion)
+    }
+    
+    func logout() {
+        keychainService.removeValue(for: .accessToken)
+        keychainService.removeValue(for: .expirationDate)
+        keychainService.removeValue(for: .refreshToken)
+        keychainService.removeValue(for: .refreshExpirationDate)
+    }
+    
+    func callRefreshToken(completion: @escaping (Result<AuthResponse, NetworkError>) -> Void) {
+        guard let refreshToken = keychainService.getValue(for: .refreshToken) else {
+            print("No refresh token found.")
+            return
+        }
+        
+        guard let request = createRefreshRequest(refreshToken: refreshToken) else {
+            print("Invalid URL for refresh token.")
+            return
+        }
+        
+        performRequest(with: request, completion: completion)
+    }
+    
+    private func createLoginRequest(username: String, password: String) -> URLRequest? {
+        guard let url = URL(string: APIConstants.Constants.tdeiCoreAuthUrl) else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = [
+            "username": username,
+            "password": password
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        return request
+    }
+    
+    private func createRefreshRequest(refreshToken: String) -> URLRequest? {
+        guard let url = URL(string: APIConstants.Constants.tdeiCoreRefreshAuthUrl) else { return nil }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = refreshToken.data(using: .utf8)
+        
+        return request
+    }
+    
+    private func performRequest(
+        with request: URLRequest,
+        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
+    ) {
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             if let error {
                 completion(.failure(.serverError(message: error.localizedDescription)))
                 return
             }
+            guard let self = self else { return }
             
             guard let data else {
                 completion(.failure(.noData))
@@ -66,84 +117,6 @@ class AuthService {
                                 httpResponse: httpResponse,
                                 completion: completion)
         }.resume()
-    }
-    
-    func logout() {
-        keychainService.removeValue(for: .accessToken)
-        keychainService.removeValue(for: .expirationDate)
-        keychainService.removeValue(for: .refreshToken)
-        keychainService.removeValue(for: .refreshExpirationDate)
-    }
-    
-    func refreshToken() {
-        guard let refreshToken = keychainService.getValue(for: .refreshToken) else {
-            print("No refresh token found.")
-            return
-        }
-        
-        sendRefreshTokenRequest(refreshToken: refreshToken) { [weak self] result in
-            switch result {
-            case .success(let authResponse):
-                self?.storeAuthData(authResponse: authResponse)
-            case .failure(let error):
-                print("Failed to refresh token: \(error)")
-            }
-        }
-    }
-    
-    private func sendRefreshTokenRequest(
-        refreshToken: String,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
-        guard let url = URL(string: "https://tdei-gateway-stage.azurewebsites.net/api/v1/refresh-token") else {
-            completion(.failure(.invalidURL))
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = refreshToken.data(using: .utf8)
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                completion(.failure(.serverError(message: error.localizedDescription)))
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.invalidResponse))
-                return
-            }
-
-            guard let data = data else {
-                completion(.failure(.noData))
-                return
-            }
-
-            do {
-                let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
-                completion(.success(authResponse))
-            } catch {
-                completion(.failure(.decodingError))
-            }
-        }.resume()
-    }
-    
-    private func createRequest(username: String, password: String) -> URLRequest? {
-        guard let url = URL(string: Constants.serverUrl) else { return nil }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body = [
-            "username": username,
-            "password": password
-        ]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        return request
     }
 
     private func handleResponse(
