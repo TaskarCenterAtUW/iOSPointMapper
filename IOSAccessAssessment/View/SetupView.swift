@@ -199,6 +199,7 @@ struct SetupView: View {
     }
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
     
     @StateObject private var sharedAppData: SharedAppData = SharedAppData()
     @StateObject private var sharedAppContext: SharedAppContext = SharedAppContext()
@@ -387,11 +388,14 @@ struct SetupView: View {
     private func openChangeset() {
         Task {
             do {
-                guard let workspaceId = workspaceViewModel.workspaceId else {
+                guard let workspaceId = workspaceViewModel.workspaceId,
+                      let accessToken = userStateViewModel.getAccessToken() else {
                     throw SetupViewError.noWorkspaceId
                 }
                 
-                let openedChangesetId = try await ChangesetService.shared.openChangesetAsync(workspaceId: workspaceId)
+                let openedChangesetId = try await ChangesetService.shared.openChangesetAsync(
+                    workspaceId: workspaceId, accessToken: accessToken
+                )
                 workspaceViewModel.updateChangeset(id: openedChangesetId)
                 changesetOpenViewModel.isChangesetOpened = true
                 sharedAppData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: openedChangesetId)
@@ -408,11 +412,14 @@ struct SetupView: View {
     private func closeChangeset() {
         Task {
             do {
-                guard let changesetId = workspaceViewModel.changesetId else {
+                guard let changesetId = workspaceViewModel.changesetId,
+                      let accessToken = userStateViewModel.getAccessToken() else {
                     throw SetupViewError.changesetOpenFailed
                 }
                 
-                try await ChangesetService.shared.closeChangesetAsync(changesetId: changesetId)
+                try await ChangesetService.shared.closeChangesetAsync(
+                    changesetId: changesetId, accessToken: accessToken
+                )
                 sharedAppData.refreshData()
                 sharedAppData.currentDatasetEncoder?.save()
                 openChangeset()

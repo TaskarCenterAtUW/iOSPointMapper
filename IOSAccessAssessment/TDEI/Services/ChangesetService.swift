@@ -16,20 +16,17 @@ enum ChangesetDiffOperation {
 }
 
 class ChangesetService {
-    // TODO: Replace with globally available APIConstants
-    private enum Constants {
-        static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
-    }
-    
     static let shared = ChangesetService()
     private init() {}
     
-    private let accessToken = KeychainService().getValue(for: .accessToken)
-    
-    func openChangeset(workspaceId: String, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let url = URL(string: "\(Constants.baseUrl)/changeset/create"),
-              let accessToken
-        else { return }
+    func openChangeset(
+        workspaceId: String,
+        accessToken: String,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/create") else {
+            return
+        }
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -72,11 +69,10 @@ class ChangesetService {
     func performUpload(
         workspaceId: String, changesetId: String,
         operations: [ChangesetDiffOperation],
+        accessToken: String,
         completion: @escaping (Result<ParsedElements, Error>) -> Void
     ) {
-        guard let accessToken,
-              let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/upload")
-        else {
+        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/upload") else {
             completion(.failure(NSError(domain: "Invalid state", code: -2)))
             return
         }
@@ -130,10 +126,14 @@ class ChangesetService {
         }.resume()
     }
     
-    func closeChangeset(changesetId: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let accessToken else { return }
-        
-        guard let url = URL(string: "\(Constants.baseUrl)/changeset/\(changesetId)/close") else { return }
+    func closeChangeset(
+        changesetId: String,
+        accessToken: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/close") else {
+            return
+        }
         
         var request = URLRequest(url: url)
         request.httpMethod = "PUT"
@@ -162,9 +162,12 @@ extension ChangesetService {
      
      - Returns: The ID of the opened changeset.
      */
-    func openChangesetAsync(workspaceId: String) async throws -> String {
+    func openChangesetAsync(
+        workspaceId: String,
+        accessToken: String
+    ) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
-            openChangeset(workspaceId: workspaceId) { result in
+            openChangeset(workspaceId: workspaceId, accessToken: accessToken) { result in
                 switch result {
                 case .success(let changesetId):
                     continuation.resume(returning: changesetId)
@@ -187,10 +190,14 @@ extension ChangesetService {
     func performUploadAsync(
         workspaceId: String,
         changesetId: String,
-        operations: [ChangesetDiffOperation]
+        operations: [ChangesetDiffOperation],
+        accessToken: String
     ) async throws -> ParsedElements {
         return try await withCheckedThrowingContinuation { continuation in
-            performUpload(workspaceId: workspaceId, changesetId: changesetId, operations: operations) { result in
+            performUpload(
+                workspaceId: workspaceId, changesetId: changesetId, operations: operations,
+                accessToken: accessToken
+            ) { result in
                 switch result {
                 case .success(let parsedElements):
                     continuation.resume(returning: parsedElements)
@@ -204,9 +211,12 @@ extension ChangesetService {
     /**
         Closes the current changeset asynchronously.
      */
-    func closeChangesetAsync(changesetId: String) async throws {
+    func closeChangesetAsync(
+        changesetId: String,
+        accessToken: String
+    ) async throws {
         return try await withCheckedThrowingContinuation { continuation in
-            closeChangeset(changesetId: changesetId) { result in
+            closeChangeset(changesetId: changesetId, accessToken: accessToken) { result in
                 switch result {
                 case .success():
                     continuation.resume()
