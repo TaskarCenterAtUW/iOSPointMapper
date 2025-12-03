@@ -149,5 +149,48 @@ class ChangesetService {
             completion(.success(()))
         }.resume()
     }
+}
+
+/**
+ Async versions of the ChangesetService methods
+ */
+extension ChangesetService {
+    func openChangeset(workspaceId: String) async throws -> String {
+        return try await withCheckedThrowingContinuation { continuation in
+            openChangeset(workspaceId: workspaceId) { result in
+                switch result {
+                case .success(let changesetId):
+                    continuation.resume(returning: changesetId)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
     
+    func performUpload(workspaceId: String, operations: [ChangesetDiffOperation]) async throws -> ParsedElements {
+        return try await withCheckedThrowingContinuation { continuation in
+            performUpload(workspaceId: workspaceId, operations: operations) { result in
+                switch result {
+                case .success(let parsedElements):
+                    continuation.resume(returning: parsedElements)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+    
+    func closeChangeset() async throws {
+        return try await withCheckedThrowingContinuation { continuation in
+            closeChangeset { result in
+                switch result {
+                case .success():
+                    continuation.resume()
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
 }

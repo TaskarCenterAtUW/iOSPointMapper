@@ -58,6 +58,20 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         }
     }
     
+    /// TODO: Verify these OSM tag keys
+    var osmTagKey: String {
+        switch self {
+        case .width:
+            return "width"
+        case .runningSlope:
+            return "running_slope"
+        case .crossSlope:
+            return "cross_slope"
+        case .surfaceIntegrity:
+            return "surface_integrity"
+        }
+    }
+    
     static func < (lhs: AccessibilityFeatureAttribute, rhs: AccessibilityFeatureAttribute) -> Bool {
         return lhs.id < rhs.id
     }
@@ -128,6 +142,9 @@ extension AccessibilityFeatureAttribute {
     }
 }
 
+/**
+    Extensions for converting AccessibilityFeatureAttributeValue to/from compatible types.
+ */
 extension AccessibilityFeatureAttribute {
     func getDouble(from attributeValue: AccessibilityFeatureAttributeValue?) -> Double {
         guard let attributeValue = attributeValue else {
@@ -178,6 +195,29 @@ extension AccessibilityFeatureAttribute {
             return .flag(value)
         default:
             return nil // Only Surface Integrity uses Bool representation
+        }
+    }
+}
+
+/**
+ 
+ */
+extension AccessibilityFeatureAttribute {
+    func getOSMTagValue(from attributeValue: AccessibilityFeatureAttributeValue?) -> String? {
+        guard let attributeValue = attributeValue else {
+            return nil
+        }
+        switch (self, attributeValue) {
+        case (.width, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.runningSlope, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case (.crossSlope, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case (.surfaceIntegrity, .flag(let flag)):
+            return flag ? "yes" : "no"
+        default:
+            return nil
         }
     }
 }

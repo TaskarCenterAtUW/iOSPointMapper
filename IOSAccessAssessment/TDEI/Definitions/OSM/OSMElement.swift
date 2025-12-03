@@ -14,7 +14,7 @@ protocol OSMElement {
     func toOSMDeleteXML(changesetId: String) -> String
 }
 
-struct NodeData: OSMElement {
+struct OSMNode: OSMElement {
     var id: String
     var version: String
     var latitude: Double
@@ -54,7 +54,7 @@ struct NodeData: OSMElement {
     }
 }
 
-struct WayData: OSMElement {
+struct OSMWay: OSMElement {
     var id: String
     var version: String
     var tags: [String: String]

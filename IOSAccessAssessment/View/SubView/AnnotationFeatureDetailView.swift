@@ -20,8 +20,8 @@ struct AnnotationFeatureDetailView: View {
     var locationFormatter: NumberFormatter = {
         var nf = NumberFormatter()
         nf.numberStyle = .decimal
-        nf.maximumFractionDigits = 6
-        nf.minimumFractionDigits = 6
+        nf.maximumFractionDigits = 7
+        nf.minimumFractionDigits = 7
         return nf
     }()
     
