@@ -48,7 +48,9 @@ enum AnnotationViewError: Error, LocalizedError {
     case instanceIndexOutofBounds
     case invalidCaptureDataRecord
     case managerConfigurationFailed
-    case attributeEstimationFailed
+    case authenticationError
+    case workspaceConfigurationFailed
+    case attributeEstimationFailed(Error)
     
     var errorDescription: String? {
         switch self {
@@ -60,8 +62,12 @@ enum AnnotationViewError: Error, LocalizedError {
             return "The Current Capture is invalid."
         case .managerConfigurationFailed:
             return "Annotation Configuration failed"
-        case .attributeEstimationFailed:
-            return "Some Attribute Estimation calculations failed. They may be ignored."
+        case .authenticationError:
+            return "Authentication error. Please log in again."
+        case .workspaceConfigurationFailed:
+            return "Workspace configuration failed. Please check your workspace settings."
+        case .attributeEstimationFailed(let error):
+            return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
         }
     }
 }
@@ -145,11 +151,22 @@ class AnnotationImageManagerStatusViewModel: ObservableObject {
     }
 }
 
+class APITransmissionStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     let captureLocation: CLLocationCoordinate2D
     
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
@@ -161,6 +178,7 @@ struct AnnotationView: View {
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
     @State private var managerStatusViewModel = AnnotationImageManagerStatusViewModel()
+    @State private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
@@ -232,6 +250,13 @@ struct AnnotationView: View {
             }
         }, message: {
             Text(managerStatusViewModel.errorMessage)
+        })
+        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
+            Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                apiTransmissionStatusViewModel.update(isFailed: false, errorMessage: "")
+            }
+        }, message: {
+            Text(apiTransmissionStatusViewModel.errorMessage)
         })
     }
     
@@ -394,7 +419,7 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
-            var calculationErrorFlag: Bool = false
+            var lastEstimationError: Error? = nil
             accessibilityFeatures.forEach { accessibilityFeature in
                 do {
                     try attributeEstimationPipeline.processLocationRequest(
@@ -404,17 +429,17 @@ struct AnnotationView: View {
                     try attributeEstimationPipeline.processAttributeRequest(accessibilityFeature: accessibilityFeature)
                 } catch {
                     accessibilityFeature.calculatedLocation = nil
-                    calculationErrorFlag = true
+                    lastEstimationError = error
                 }
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
-            if calculationErrorFlag {
-                throw AnnotationViewError.attributeEstimationFailed
+            if let lastEstimationError {
+                throw AnnotationViewError.attributeEstimationFailed(lastEstimationError)
             }
-        } catch AnnotationViewError.attributeEstimationFailed {
+        } catch AnnotationViewError.attributeEstimationFailed(let error) {
             managerStatusViewModel.update(
-                isFailed: true, error: AnnotationViewError.attributeEstimationFailed, shouldDismiss: false
+                isFailed: true, error: AnnotationViewError.attributeEstimationFailed(error), shouldDismiss: false
             )
         } catch {
             managerStatusViewModel.update(
@@ -451,19 +476,49 @@ struct AnnotationView: View {
     }
     
     private func confirmAnnotation() {
-        if isCurrentIndexLast() {
-            self.dismiss()
-            return
-        }
-        do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
-                throw AnnotationViewError.invalidCaptureDataRecord
+        Task {
+            do {
+                try await uploadAnnotations()
+                if isCurrentIndexLast() {
+                    self.dismiss()
+                    return
+                }
+                /// Move to next class
+                guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                      let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+                    throw AnnotationViewError.invalidCaptureDataRecord
+                }
+                let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+                try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
+            } catch {
+                managerStatusViewModel.update(isFailed: true, error: error)
             }
-            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-            try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
-        } catch {
-            managerStatusViewModel.update(isFailed: true, error: error)
         }
     }
+    
+    private func uploadAnnotations() async throws {
+        guard let workspaceId = workspaceViewModel.workspaceId,
+              let changesetId = workspaceViewModel.changesetId else {
+            throw AnnotationViewError.workspaceConfigurationFailed
+        }
+        guard let accessToken = userStateViewModel.getAccessToken() else {
+            throw AnnotationViewError.authenticationError
+        }
+        guard let accessibilityFeatureClass = featureClassSelectionViewModel.currentClass else {
+            throw AnnotationViewError.classIndexOutofBounds
+        }
+        let uploadedElements = try await apiTransmissionController.uploadFeatures(
+            workspaceId: workspaceId,
+            changesetId: changesetId,
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            classAnnotationOption: featureClassSelectionViewModel.selectedAnnotationOption,
+            accessibilityFeatures: featureSelectionViewModel.instances,
+            accessToken: accessToken
+        )
+        guard (uploadedElements.nodes.count + uploadedElements.ways.count) > 0 else {
+            return
+        }
+        sharedAppData.isUploadReady = true
+    }
+
 }

@@ -61,7 +61,6 @@ enum WorkspaceSelectionViewError: Error, LocalizedError {
 }
 
 struct WorkspaceInfoTip: Tip {
-    
     var title: Text {
         Text(WorkspaceSelectionViewConstants.Texts.workspaceInfoTipTitle)
     }

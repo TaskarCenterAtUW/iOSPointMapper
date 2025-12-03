@@ -7,12 +7,29 @@
 
 import Foundation
 
-typealias ParsedElements = (nodes: [String: [String: String]]?, ways: [String: [String: String]]?)
+struct UploadedElements: Sendable {
+    let nodes: [String: [String: String]]
+    let ways: [String: [String: String]]
+}
 
 enum ChangesetDiffOperation {
     case create(OSMElement)
     case modify(OSMElement)
     case delete(OSMElement)
+}
+
+enum ChangesetServiceError: Error, LocalizedError {
+    case invalidResponse
+    case invalidData
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidResponse:
+            return "The response from the server is invalid."
+        case .invalidData:
+            return "The data received is invalid."
+        }
+    }
 }
 
 class ChangesetService {
@@ -70,7 +87,7 @@ class ChangesetService {
         workspaceId: String, changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String,
-        completion: @escaping (Result<ParsedElements, Error>) -> Void
+        completion: @escaping (Result<UploadedElements, Error>) -> Void
     ) {
         guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/upload") else {
             completion(.failure(NSError(domain: "Invalid state", code: -2)))
@@ -99,7 +116,7 @@ class ChangesetService {
             \(deleteXML.isEmpty ? "" : "<delete>\n\(deleteXML)</delete>")
         </osmChange>
         """
-//        print("XML Content: ", osmChangeXML)
+        print("XML Content: ", osmChangeXML)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -115,14 +132,14 @@ class ChangesetService {
             }
 
             guard let data = data else {
-                completion(.success((nil, nil)))
+                completion(.failure(ChangesetServiceError.invalidData))
                 return
             }
 
             let parser = ChangesetXMLParser()
             parser.parse(data: data)
 
-            completion(.success((parser.nodesWithAttributes, parser.waysWithAttributes)))
+            completion(.success(UploadedElements(nodes: parser.nodesWithAttributes, ways: parser.waysWithAttributes)))
         }.resume()
     }
     
@@ -192,15 +209,15 @@ extension ChangesetService {
         changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String
-    ) async throws -> ParsedElements {
+    ) async throws -> UploadedElements {
         return try await withCheckedThrowingContinuation { continuation in
             performUpload(
                 workspaceId: workspaceId, changesetId: changesetId, operations: operations,
                 accessToken: accessToken
             ) { result in
                 switch result {
-                case .success(let parsedElements):
-                    continuation.resume(returning: parsedElements)
+                case .success(let uploadedElements):
+                    continuation.resume(returning: uploadedElements)
                 case .failure(let error):
                     continuation.resume(throwing: error)
                 }

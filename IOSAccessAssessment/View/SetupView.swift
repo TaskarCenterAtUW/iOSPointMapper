@@ -91,6 +91,7 @@ enum SetupViewConstants {
 enum SetupViewError: Error, LocalizedError {
     case noWorkspaceId
     case changesetOpenFailed
+    case authenticationError
     
     var errorDescription: String? {
         switch self {
@@ -98,6 +99,8 @@ enum SetupViewError: Error, LocalizedError {
             return "Workspace ID is missing."
         case .changesetOpenFailed:
             return "Failed to open changeset."
+        case .authenticationError:
+            return "Authentication error. Please log in again."
         }
     }
 }
@@ -388,9 +391,11 @@ struct SetupView: View {
     private func openChangeset() {
         Task {
             do {
-                guard let workspaceId = workspaceViewModel.workspaceId,
-                      let accessToken = userStateViewModel.getAccessToken() else {
+                guard let workspaceId = workspaceViewModel.workspaceId else {
                     throw SetupViewError.noWorkspaceId
+                }
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw SetupViewError.authenticationError
                 }
                 
                 let openedChangesetId = try await ChangesetService.shared.openChangesetAsync(
@@ -412,9 +417,11 @@ struct SetupView: View {
     private func closeChangeset() {
         Task {
             do {
-                guard let changesetId = workspaceViewModel.changesetId,
-                      let accessToken = userStateViewModel.getAccessToken() else {
+                guard let changesetId = workspaceViewModel.changesetId else {
                     throw SetupViewError.changesetOpenFailed
+                }
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw SetupViewError.authenticationError
                 }
                 
                 try await ChangesetService.shared.closeChangesetAsync(
