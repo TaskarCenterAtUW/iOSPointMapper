@@ -12,9 +12,70 @@ import SwiftUI
     Sub-view of the `AnnotationView`.
  */
 struct AnnotationFeatureDetailView: View {
+    enum Constants {
+        enum Texts {
+            /// Alert texts
+            static let statusAlertTitleKey: String = "Error"
+            static let statusAlertDismissAlertSuffixKey: String = "Press OK to dismiss this alert."
+            static let statusAlertDismissButtonKey: String = "OK"
+        }
+        
+        enum Images {
+            /// Alert images
+            static let statusAlertImageNameKey: String = "exclamationmark.triangle.fill"
+        }
+    }
+    
+    enum AnnotationFeatureDetailViewError: Error, LocalizedError {
+        case invalidAttributeValue(attribute: AccessibilityFeatureAttribute, message: String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .invalidAttributeValue(let attribute, let message):
+                return "Invalid value for \(attribute.displayName): \(message)"
+            }
+        }
+    }
+    
+    struct AttributeErrorStatus {
+        var isError: Bool
+        var errorMessage: String
+        
+        init(isError: Bool, errorMessage: String) {
+            self.isError = isError
+            self.errorMessage = errorMessage
+        }
+    }
+    
+    class StatusViewModel: ObservableObject {
+        @Published var attributeStatusMap: [AccessibilityFeatureAttribute: AttributeErrorStatus] = [:]
+        
+        func configure(accessibilityFeature: AccessibilityFeature) {
+            let attributes = accessibilityFeature.accessibilityFeatureClass.attributes
+            var attributeStatusMap: [AccessibilityFeatureAttribute: AttributeErrorStatus] = [:]
+            attributes.forEach {
+                let initialStatus = AttributeErrorStatus(isError: false, errorMessage: "")
+                attributeStatusMap[$0] = initialStatus
+            }
+            self.attributeStatusMap = attributeStatusMap
+        }
+        
+        func updateAttributeStatus(
+            for attribute: AccessibilityFeatureAttribute,
+            isError: Bool,
+            errorMessage: String
+        ) {
+            if let _ = attributeStatusMap[attribute] {
+                attributeStatusMap[attribute]?.isError = isError
+                attributeStatusMap[attribute]?.errorMessage = errorMessage
+            }
+        }
+    }
+    
     var accessibilityFeature: AccessibilityFeature
     let title: String
     
+    @StateObject private var statusViewModel = AnnotationFeatureDetailView.StatusViewModel()
     @FocusState private var focusedField: AccessibilityFeatureAttribute?
     
     var locationFormatter: NumberFormatter = {
@@ -101,6 +162,9 @@ struct AnnotationFeatureDetailView: View {
                 }
             }
         }
+        .onAppear {
+            self.statusViewModel.configure(accessibilityFeature: accessibilityFeature)
+        }
         .onTapGesture {
             // Dismiss the keyboard when tapping outside of a TextField
             focusedField = nil
@@ -109,28 +173,48 @@ struct AnnotationFeatureDetailView: View {
     
     @ViewBuilder
     private func numberTextFieldView(attribute: AccessibilityFeatureAttribute) -> some View {
-        TextField(
-            attribute.displayName,
-            value: Binding(
-                get: {
-                    guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
-                          let attributeValue,
-                          let attributeBindableValue = attributeValue.toDouble() else {
-                        return 0.0
-                    }
-                    return attributeBindableValue
-                },
-                set: { newValue in
-                    guard let newAttributeValue = attribute.valueFromDouble(newValue) else {
-                        return
-                    }
-                    accessibilityFeature.finalAttributeValues[attribute] = newAttributeValue
+        let attributeStatus = statusViewModel.attributeStatusMap[attribute] ?? .init(isError: false, errorMessage: "")
+        VStack {
+            if (attributeStatus.isError) {
+                /// A red colored error message
+                HStack {
+                    Label(
+                        attributeStatus.errorMessage,
+                        systemImage: AnnotationFeatureDetailView.Constants.Images.statusAlertImageNameKey
+                    )
+                        .foregroundColor(.red)
+                        .font(.caption)
+                    Spacer()
                 }
-            ),
-            format: .number
-        )
-        .textFieldStyle(.roundedBorder)
-        .keyboardType(.decimalPad)
+            }
+            TextField(
+                attribute.displayName,
+                value: Binding(
+                    get: {
+                        guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
+                              let attributeValue,
+                              let attributeBindableValue = attributeValue.toDouble() else {
+                            return 0.0
+                        }
+                        return attributeBindableValue
+                    },
+                    set: { newValue in
+                        do {
+                            let newDoubleValue = Double(newValue)
+                            guard let newAttributeValue = attribute.valueFromDouble(newDoubleValue) else {
+                                return
+                            }
+                            try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
+                        } catch {
+                            setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
+                        }
+                    }
+                ),
+                format: .number
+            )
+            .textFieldStyle(.roundedBorder)
+            .keyboardType(.decimalPad)
+        }
     }
     
     @ViewBuilder
@@ -146,14 +230,41 @@ struct AnnotationFeatureDetailView: View {
                     return attributeBindableValue
                 },
                 set: { newValue in
-                    guard let newAttributeValue = attribute.valueFromBool(newValue) else {
-                        return
+                    do {
+                        let newBoolValue = Bool(newValue)
+                        guard let newAttributeValue = attribute.valueFromBool(newBoolValue) else {
+                            return
+                        }
+                        try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
+                    } catch {
+                        setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
                     }
-                    accessibilityFeature.finalAttributeValues[attribute] = newAttributeValue
                 }
             )
         ) {
             Text(attribute.displayName)
+        }
+    }
+    
+    private func setAttributeStatusErrorText(
+        for attribute: AccessibilityFeatureAttribute, message: String
+    ) {
+        statusViewModel.updateAttributeStatus(
+            for: attribute,
+            isError: true,
+            errorMessage: message
+        )
+        Task {
+            do {
+                try await Task.sleep(for: .seconds(2))
+                statusViewModel.updateAttributeStatus(
+                    for: attribute,
+                    isError: false,
+                    errorMessage: ""
+                )
+            } catch {
+                print("Failed to reset attribute error status: \(error.localizedDescription)")
+            }
         }
     }
 }

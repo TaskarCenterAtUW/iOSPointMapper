@@ -59,12 +59,8 @@ class AccessibilityFeature: Identifiable, Equatable {
         }
         if isCalculated {
             calculatedAttributeValues[attribute] = value
-            if finalAttributeValues[attribute] == nil {
-                finalAttributeValues[attribute] = value
-            }
-        } else {
-            finalAttributeValues[attribute] = value
         }
+        finalAttributeValues[attribute] = value
     }
     
     static func == (lhs: AccessibilityFeature, rhs: AccessibilityFeature) -> Bool {
