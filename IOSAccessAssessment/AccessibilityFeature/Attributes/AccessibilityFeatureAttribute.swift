@@ -42,6 +42,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         let name: String
         let unit: Dimension?
         let valueType: Value
+        /// TODO: Verify these OSM tag keys
         let osmTagKey: String
     }
     
@@ -172,7 +173,7 @@ extension AccessibilityFeatureAttribute {
         }
     }
     
-    func getOSMTagFromValue(from attributeValue: Value?) -> String? {
+    func getOSMTagFromValue(attributeValue: Value?) -> String? {
         guard let attributeValue = attributeValue else {
             return nil
         }
