@@ -20,58 +20,104 @@ enum MappingDataError: Error, LocalizedError {
         }
     }
 }
+
+struct MappingNodeData: Sendable {
+    var nodes: [MappedAccessibilityFeature] = []
     
+    mutating func append(_ featureNode: MappedAccessibilityFeature) {
+        nodes.append(featureNode)
+    }
+    
+    mutating func append(contentsOf featureNodes: [MappedAccessibilityFeature]) {
+        nodes.append(contentsOf: featureNodes)
+    }
+}
+
+struct MappingWayData: Sendable, Hashable {
+    let way: OSMWay
+    var nodes: [MappedAccessibilityFeature] = []
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(way)
+    }
+    
+    mutating func appendNode(_ featureNode: MappedAccessibilityFeature) {
+        nodes.append(featureNode)
+    }
+    
+    mutating func appendNodes(contentsOf featureNodes: [MappedAccessibilityFeature]) {
+        nodes.append(contentsOf: featureNodes)
+    }
+    
+    mutating func appendWayData(_ wayData: MappingWayData) {
+        nodes.append(contentsOf: wayData.nodes)
+    }
+}
 
 class MappingData {
-    var featureNodeMap: [AccessibilityFeatureClass: [MappedAccessibilityFeature]] = [:]
+    var featureNodeMap: [AccessibilityFeatureClass: MappingNodeData] = [:]
     
-    var featureWayMap: [AccessibilityFeatureClass: [OSMWay: [MappedAccessibilityFeature]]] = [:]
+    var featureWayMap: [AccessibilityFeatureClass: Set<MappingWayData>] = [:]
     /// Ways that are currently being processed/constructed. Only one active way per feature class at a time.
-    var activeWays: [AccessibilityFeatureClass: OSMWay] = [:]
+    var activeFeatureWays: [AccessibilityFeatureClass: MappingWayData] = [:]
     
     init() { }
     
-    func appendFeatureNode(featureClass: AccessibilityFeatureClass, featureNode: MappedAccessibilityFeature) {
-        if featureNodeMap[featureClass] == nil {
-            featureNodeMap[featureClass] = []
-        }
-        featureNodeMap[featureClass]?.append(featureNode)
+    func appendNode(featureClass: AccessibilityFeatureClass, node: MappedAccessibilityFeature) {
+        featureNodeMap[featureClass, default: MappingNodeData()].append(node)
     }
     
-    func appendFeatureNodes(featureClass: AccessibilityFeatureClass, featureNodes: [MappedAccessibilityFeature]) {
-        if featureNodeMap[featureClass] == nil {
-            featureNodeMap[featureClass] = []
-        }
-        featureNodeMap[featureClass]?.append(contentsOf: featureNodes)
+    func appendNodes(featureClass: AccessibilityFeatureClass, nodes: [MappedAccessibilityFeature]) {
+        featureNodeMap[featureClass, default: MappingNodeData()].append(contentsOf: nodes)
     }
     
-    func getActiveWay(featureClass: AccessibilityFeatureClass) -> OSMWay? {
-        return activeWays[featureClass]
+    func appendNodeData(featureClass: AccessibilityFeatureClass, nodeData: MappingNodeData) {
+        featureNodeMap[featureClass, default: MappingNodeData()].append(contentsOf: nodeData.nodes)
     }
     
-    func appendWay(featureClass: AccessibilityFeatureClass, way: OSMWay, featureNodes: [MappedAccessibilityFeature]) throws {
+    func getActiveFeatureWayData(featureClass: AccessibilityFeatureClass) -> MappingWayData? {
+        return activeFeatureWays[featureClass]
+    }
+    
+    func appendWayData(
+        featureClass: AccessibilityFeatureClass, wayData: MappingWayData, nodes: [MappedAccessibilityFeature]
+    ) throws {
         guard featureClass.isWay else {
             throw MappingDataError.featureClassNotWay(featureClass)
         }
-        if featureWayMap[featureClass] == nil {
-            featureWayMap[featureClass] = [:]
-        }
-        featureWayMap[featureClass]?[way] = featureNodes
-        activeWays[featureClass] = way
+        var wayData = wayData
+        wayData.appendNodes(contentsOf: nodes)
+        activeWays[featureClass] = wayData
+        
+        featureWayMap[featureClass, default: []].insert(wayData)
     }
     
     func appendNodesToWay(
-        featureClass: AccessibilityFeatureClass, way: OSMWay, featureNodes: [MappedAccessibilityFeature]
+        featureClass: AccessibilityFeatureClass, wayData: MappingWayData, nodes: [MappedAccessibilityFeature]
+    ) throws {
+        guard featureClass.isWay else {
+            throw MappingDataError.featureClassNotWay(featureClass)
+        }
+        var wayData = wayData
+        wayData.appendNodes(contentsOf: nodes)
+        activeWays[featureClass] = wayData
+        
+        featureWayMap[featureClass, default: []].update(with: wayData)
+    }
+    
+    func appendWayDataToWay(
+        featureClass: AccessibilityFeatureClass, wayData: MappingWayData, wayDataToAppend: MappingWayData
     ) throws {
         guard featureClass.isWay else {
             throw MappingDataError.featureClassNotWay(featureClass)
         }
         if featureWayMap[featureClass] == nil {
-            featureWayMap[featureClass] = [:]
+            featureWayMap[featureClass] = []
         }
-        if featureWayMap[featureClass]?[way] == nil {
-            featureWayMap[featureClass]?[way] = []
-        }
-        featureWayMap[featureClass]?[way]?.append(contentsOf: featureNodes)
+        var wayData = wayData
+        wayData.appendWayData(wayDataToAppend)
+        activeWays[featureClass] = wayData
+        
+        featureWayMap[featureClass, default: []].update(with: wayData)
     }
 }
