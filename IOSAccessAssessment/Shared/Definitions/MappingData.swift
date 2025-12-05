@@ -35,7 +35,7 @@ struct MappingNodeData: Sendable {
 
 struct MappingWayData: Sendable, Hashable {
     let way: OSMWay
-    var nodes: [MappedAccessibilityFeature] = []
+    var nodes: [MappedAccessibilityFeature]
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(way)
@@ -87,7 +87,7 @@ class MappingData {
         }
         var wayData = wayData
         wayData.appendNodes(contentsOf: nodes)
-        activeWays[featureClass] = wayData
+        activeFeatureWays[featureClass] = wayData
         
         featureWayMap[featureClass, default: []].insert(wayData)
     }
@@ -100,7 +100,7 @@ class MappingData {
         }
         var wayData = wayData
         wayData.appendNodes(contentsOf: nodes)
-        activeWays[featureClass] = wayData
+        activeFeatureWays[featureClass] = wayData
         
         featureWayMap[featureClass, default: []].update(with: wayData)
     }
@@ -116,7 +116,7 @@ class MappingData {
         }
         var wayData = wayData
         wayData.appendWayData(wayDataToAppend)
-        activeWays[featureClass] = wayData
+        activeFeatureWays[featureClass] = wayData
         
         featureWayMap[featureClass, default: []].update(with: wayData)
     }

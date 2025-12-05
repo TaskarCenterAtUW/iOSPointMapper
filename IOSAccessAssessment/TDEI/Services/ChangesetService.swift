@@ -7,9 +7,9 @@
 
 import Foundation
 
-struct UploadedElements: Sendable {
-    let nodes: [String: [String: String]]
-    let ways: [String: [String: String]]
+struct UploadedOSMResponseElements: Sendable {
+    let nodes: [String: OSMResponseNode]
+    let ways: [String: OSMResponseWay]
 }
 
 enum ChangesetDiffOperation {
@@ -87,7 +87,7 @@ class ChangesetService {
         workspaceId: String, changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String,
-        completion: @escaping (Result<UploadedElements, Error>) -> Void
+        completion: @escaping (Result<UploadedOSMResponseElements, Error>) -> Void
     ) {
         guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/upload") else {
             completion(.failure(NSError(domain: "Invalid state", code: -2)))
@@ -139,7 +139,9 @@ class ChangesetService {
             let parser = ChangesetXMLParser()
             parser.parse(data: data)
 
-            completion(.success(UploadedElements(nodes: parser.nodesWithAttributes, ways: parser.waysWithAttributes)))
+            completion(.success(UploadedOSMResponseElements(
+                nodes: parser.nodesWithAttributes, ways: parser.waysWithAttributes
+            )))
         }.resume()
     }
     
@@ -209,7 +211,7 @@ extension ChangesetService {
         changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String
-    ) async throws -> UploadedElements {
+    ) async throws -> UploadedOSMResponseElements {
         return try await withCheckedThrowingContinuation { continuation in
             performUpload(
                 workspaceId: workspaceId, changesetId: changesetId, operations: operations,

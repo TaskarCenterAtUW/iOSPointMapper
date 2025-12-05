@@ -11,8 +11,8 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
     var currentElement = ""
     var parsedItems: [String] = []
     
-    var nodesWithAttributes: [String: [String : String]] = [:]
-    var waysWithAttributes: [String: [String : String]] = [:]
+    var nodesWithAttributes: [String: OSMResponseNode] = [:]
+    var waysWithAttributes: [String: OSMResponseWay] = [:]
 
     func parse(data: Data) {
         let parser = XMLParser(data: data)
@@ -27,18 +27,24 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
         currentElement = elementName
         
         if currentElement == "node"  {
-            if let oldId = attributeDict[APIConstants.AttributeKeys.oldId] {
-                nodesWithAttributes[oldId] = attributeDict
-            } else if let newId = attributeDict[APIConstants.AttributeKeys.newId] {
-                nodesWithAttributes[newId] = attributeDict
+            guard let oldId = attributeDict[APIConstants.AttributeKeys.oldId],
+                  let newId = attributeDict[APIConstants.AttributeKeys.newId],
+                  let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
+                return
             }
+            nodesWithAttributes[oldId] = OSMResponseNode(
+                oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
+            )
         }
         if currentElement == "way" {
-            if let oldId = attributeDict[APIConstants.AttributeKeys.oldId] {
-                waysWithAttributes[oldId] = attributeDict
-            } else if let newId = attributeDict[APIConstants.AttributeKeys.newId] {
-                waysWithAttributes[newId] = attributeDict
+            guard let oldId = attributeDict[APIConstants.AttributeKeys.oldId],
+                  let newId = attributeDict[APIConstants.AttributeKeys.newId],
+                  let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
+                return
             }
+            waysWithAttributes[oldId] = OSMResponseWay(
+                oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
+            )
         }
     }
 

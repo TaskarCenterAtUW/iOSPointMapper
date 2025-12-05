@@ -17,12 +17,24 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
     
     var osmNode: OSMNode?
     
+    init (
+        id: UUID = UUID(),
+        accessibilityFeature: (any AccessibilityFeatureProtocol),
+        osmNode: OSMNode
+    ) {
+        self.id = id
+        self.accessibilityFeatureClass = accessibilityFeature.accessibilityFeatureClass
+        self.location = accessibilityFeature.location
+        self.attributeValues = accessibilityFeature.attributeValues
+        self.osmNode = osmNode
+    }
+    
     init(
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         location: CLLocationCoordinate2D?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:],
-        osmNode: OSMNode?
+        osmNode: OSMNode
     ) {
         self.id = id
         self.accessibilityFeatureClass = accessibilityFeatureClass
