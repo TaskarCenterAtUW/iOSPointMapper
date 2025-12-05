@@ -525,10 +525,21 @@ struct AnnotationView: View {
             accessToken: accessToken
         )
         if accessibilityFeatureClass.isWay {
-            
-        }
-        guard (uploadedElements.nodes.count + uploadedElements.ways.count) > 0 else {
-            return
+            guard let wayData = uploadedElements.wayData else {
+                return
+            }
+            try sharedAppData.mappingData.appendWay(
+                accessibilityFeatureClass: accessibilityFeatureClass,
+                osmWay: wayData.way,
+                nodes: wayData.nodes
+            )
+        } else {
+            guard let nodeData = uploadedElements.nodeData else {
+                return
+            }
+            sharedAppData.mappingData.appendNodes(
+                accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
+            )
         }
         sharedAppData.isUploadReady = true
     }

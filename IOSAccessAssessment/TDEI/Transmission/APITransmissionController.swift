@@ -150,7 +150,7 @@ class APITransmissionController: ObservableObject {
         var featureWay: OSMWay
         var wayOperations: [ChangesetDiffOperation] = []
         wayOperations.append(.create(featureOSMIdToNodePair.1))
-        if let activeWayData = mappingData.getActiveFeatureWayData(featureClass: accessibilityFeatureClass) {
+        if let activeWayData = mappingData.getActiveFeatureWayData(accessibilityFeatureClass: accessibilityFeatureClass) {
             featureWay = activeWayData.way
             wayOperations.append(.modify(featureWay))
         } else if let newWay = featureToWay(
