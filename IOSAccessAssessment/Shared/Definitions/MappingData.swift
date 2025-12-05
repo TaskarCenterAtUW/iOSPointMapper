@@ -33,13 +33,9 @@ struct MappingNodeData: Sendable {
     }
 }
 
-struct MappingWayData: Sendable, Hashable {
+struct MappingWayData: Sendable {
     let way: OSMWay
     var nodes: [MappedAccessibilityFeature]
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(way)
-    }
     
     mutating func appendNode(_ featureNode: MappedAccessibilityFeature) {
         nodes.append(featureNode)
@@ -57,7 +53,7 @@ struct MappingWayData: Sendable, Hashable {
 class MappingData {
     var featureNodeMap: [AccessibilityFeatureClass: MappingNodeData] = [:]
     
-    var featureWayMap: [AccessibilityFeatureClass: Set<MappingWayData>] = [:]
+    var featureWayMap: [AccessibilityFeatureClass: [MappingWayData]] = [:]
     /// Ways that are currently being processed/constructed. Only one active way per feature class at a time.
     var activeFeatureWays: [AccessibilityFeatureClass: MappingWayData] = [:]
     
@@ -79,45 +75,47 @@ class MappingData {
         return activeFeatureWays[featureClass]
     }
     
-    func appendWayData(
-        featureClass: AccessibilityFeatureClass, wayData: MappingWayData, nodes: [MappedAccessibilityFeature]
+    func appendWay(
+        featureClass: AccessibilityFeatureClass, osmWay: OSMWay, nodes: [MappedAccessibilityFeature]
     ) throws {
         guard featureClass.isWay else {
             throw MappingDataError.featureClassNotWay(featureClass)
         }
-        var wayData = wayData
-        wayData.appendNodes(contentsOf: nodes)
-        activeFeatureWays[featureClass] = wayData
-        
-        featureWayMap[featureClass, default: []].insert(wayData)
+        let wayDataIndex = findWayDataIndex(featureClass: featureClass, osmWay: osmWay)
+        if var existingWayDataList = featureWayMap[featureClass],
+           let wayDataIndex = wayDataIndex,
+           wayDataIndex < existingWayDataList.count {
+            var existingWayData = existingWayDataList[wayDataIndex]
+            existingWayData.appendNodes(contentsOf: nodes)
+            existingWayDataList[wayDataIndex] = existingWayData
+            featureWayMap[featureClass] = existingWayDataList
+        } else {
+            let wayData = MappingWayData(way: osmWay, nodes: nodes)
+            featureWayMap[featureClass, default: []].append(wayData)
+        }
     }
     
     func appendNodesToWay(
         featureClass: AccessibilityFeatureClass, wayData: MappingWayData, nodes: [MappedAccessibilityFeature]
     ) throws {
-        guard featureClass.isWay else {
-            throw MappingDataError.featureClassNotWay(featureClass)
-        }
-        var wayData = wayData
-        wayData.appendNodes(contentsOf: nodes)
-        activeFeatureWays[featureClass] = wayData
-        
-        featureWayMap[featureClass, default: []].update(with: wayData)
+        let osmWay = wayData.way
+        try appendWay(featureClass: featureClass, osmWay: osmWay, nodes: nodes)
     }
     
     func appendWayDataToWay(
         featureClass: AccessibilityFeatureClass, wayData: MappingWayData, wayDataToAppend: MappingWayData
     ) throws {
-        guard featureClass.isWay else {
-            throw MappingDataError.featureClassNotWay(featureClass)
+        let osmWay = wayData.way
+        let nodesToAppend = wayDataToAppend.nodes
+        try appendWay(featureClass: featureClass, osmWay: osmWay, nodes: nodesToAppend)
+    }
+    
+    private func findWayDataIndex(
+        featureClass: AccessibilityFeatureClass, osmWay: OSMWay
+    ) -> Int? {
+        guard let wayDataList = featureWayMap[featureClass] else {
+            return nil
         }
-        if featureWayMap[featureClass] == nil {
-            featureWayMap[featureClass] = []
-        }
-        var wayData = wayData
-        wayData.appendWayData(wayDataToAppend)
-        activeFeatureWays[featureClass] = wayData
-        
-        featureWayMap[featureClass, default: []].update(with: wayData)
+        return wayDataList.firstIndex(where: { $0.way.id == osmWay.id })
     }
 }

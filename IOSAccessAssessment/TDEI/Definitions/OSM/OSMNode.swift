@@ -6,11 +6,11 @@
 //
 
 struct OSMNode: OSMElement {
-    var id: String
-    var version: String
-    var latitude: Double
-    var longitude: Double
-    var tags: [String: String]
+    let id: String
+    let version: String
+    let latitude: Double
+    let longitude: Double
+    let tags: [String: String]
     
     init(id: String = "-1", version: String = "1", latitude: Double, longitude: Double, tags: [String: String]) {
         self.id = id

@@ -6,10 +6,10 @@
 //
 
 struct OSMWay: OSMElement {
-    var id: String
-    var version: String
-    var tags: [String: String]
-    var nodeRefs: [String]
+    let id: String
+    let version: String
+    let tags: [String: String]
+    let nodeRefs: [String]
     
     init(id: String = "-2", version: String = "1", tags: [String: String], nodeRefs: [String]) {
         self.id = id

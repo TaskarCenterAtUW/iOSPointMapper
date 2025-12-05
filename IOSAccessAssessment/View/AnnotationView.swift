@@ -521,8 +521,12 @@ struct AnnotationView: View {
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
             accessibilityFeatures: featureSelectionViewModel.instances,
+            mappingData: sharedAppData.mappingData,
             accessToken: accessToken
         )
+        if accessibilityFeatureClass.isWay {
+            
+        }
         guard (uploadedElements.nodes.count + uploadedElements.ways.count) > 0 else {
             return
         }

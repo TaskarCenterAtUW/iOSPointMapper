@@ -5,7 +5,7 @@
 //  Created by Himanshu on 5/17/25.
 //
 
-protocol OSMElement: Sendable, Equatable, Hashable {
+protocol OSMElement: Sendable, Equatable {
     var id: String { get }
     var version: String { get }
     
