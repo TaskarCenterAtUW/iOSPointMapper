@@ -34,6 +34,8 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
 /**
     A struct representing a detected accessibility feature in an image.
  
+    This AccessibilityFeature definition does not need to adhere to the AccessibilityFeatureProtocol, because it is relatively ephemeral in nature.
+ 
     TODO: Currently, this struct only represents the contour details of the detected feature.
     Eventually, the goal is to generalize this struct to include all details that would be used to represent a detected accessibility feature.
     This may include a sub-mesh, depth information, etc.

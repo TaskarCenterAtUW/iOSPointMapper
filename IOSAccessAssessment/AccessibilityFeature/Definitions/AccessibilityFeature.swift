@@ -18,7 +18,14 @@ enum AccessibilityFeatureError: Error, LocalizedError {
     }
 }
 
-class AccessibilityFeature: Identifiable, Equatable {
+protocol AccessibilityFeatureProtocol: AnyObject, Identifiable, Equatable {
+    var id: UUID { get }
+    var accessibilityFeatureClass: AccessibilityFeatureClass { get }
+    
+    var location: CLLocationCoordinate2D? { get set }
+}
+
+class AccessibilityFeature: Identifiable, Equatable, AccessibilityFeatureProtocol {
     let id = UUID()
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
@@ -26,7 +33,7 @@ class AccessibilityFeature: Identifiable, Equatable {
     
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
-    var calculatedLocation: CLLocationCoordinate2D?
+    var location: CLLocationCoordinate2D?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var finalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
@@ -37,6 +44,7 @@ class AccessibilityFeature: Identifiable, Equatable {
         self.accessibilityFeatureClass = accessibilityFeatureClass
         self.detectedAccessibilityFeature = detectedAccessibilityFeature
         
+        self.location = nil
         calculatedAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
             return (attribute, nil)
         })
@@ -47,6 +55,10 @@ class AccessibilityFeature: Identifiable, Equatable {
     
     func setAnnotationOption(_ option: AnnotationOption) {
         self.selectedAnnotationOption = option
+    }
+    
+    func setLocation(_ location: CLLocationCoordinate2D?) {
+        self.location = location
     }
     
     func setAttributeValue(

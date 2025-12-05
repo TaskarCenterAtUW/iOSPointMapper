@@ -114,7 +114,7 @@ class APITransmissionController: ObservableObject {
     }
     
     private func featureToNode(_ feature: AccessibilityFeature, id: String, version: String) -> OSMNode? {
-        guard let featureLocation = feature.calculatedLocation else {
+        guard let featureLocation = feature.location else {
             return nil
         }
         var nodeTags: [String: String] = [:]

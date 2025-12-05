@@ -101,19 +101,19 @@ struct AnnotationFeatureDetailView: View {
                 /**
                  Location Section
                  */
-                if let calculatedLocation = accessibilityFeature.calculatedLocation {
+                if let featureLocation = accessibilityFeature.location {
                     Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
                         HStack {
                             Spacer()
                             Text(
                                 locationFormatter.string(
-                                    from: NSNumber(value: calculatedLocation.latitude)
+                                    from: NSNumber(value: featureLocation.latitude)
                                 ) ?? "N/A"
                             )
                                 .padding(.horizontal)
                             Text(
                                 locationFormatter.string(
-                                    from: NSNumber(value: calculatedLocation.longitude)
+                                    from: NSNumber(value: featureLocation.longitude)
                                 ) ?? "N/A"
                             )
                                 .padding(.horizontal)
@@ -249,19 +249,11 @@ struct AnnotationFeatureDetailView: View {
     private func setAttributeStatusErrorText(
         for attribute: AccessibilityFeatureAttribute, message: String
     ) {
-        statusViewModel.updateAttributeStatus(
-            for: attribute,
-            isError: true,
-            errorMessage: message
-        )
+        statusViewModel.updateAttributeStatus(for: attribute, isError: true, errorMessage: message)
         Task {
             do {
                 try await Task.sleep(for: .seconds(2))
-                statusViewModel.updateAttributeStatus(
-                    for: attribute,
-                    isError: false,
-                    errorMessage: ""
-                )
+                statusViewModel.updateAttributeStatus(for: attribute, isError: false, errorMessage: "")
             } catch {
                 print("Failed to reset attribute error status: \(error.localizedDescription)")
             }

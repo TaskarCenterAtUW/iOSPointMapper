@@ -69,7 +69,7 @@ class AttributeEstimationPipeline: ObservableObject {
             cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
             deviceLocation: deviceLocation
         )
-        accessibilityFeature.calculatedLocation = locationCoordinate
+        accessibilityFeature.setLocation(locationCoordinate)
     }
     
     func processAttributeRequest(

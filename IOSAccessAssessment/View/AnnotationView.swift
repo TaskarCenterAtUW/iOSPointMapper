@@ -428,7 +428,6 @@ struct AnnotationView: View {
                     )
                     try attributeEstimationPipeline.processAttributeRequest(accessibilityFeature: accessibilityFeature)
                 } catch {
-                    accessibilityFeature.calculatedLocation = nil
                     lastEstimationError = error
                 }
             }
