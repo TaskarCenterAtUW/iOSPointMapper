@@ -91,11 +91,11 @@ class AnnotationFeatureClassSelectionViewModel: ObservableObject {
 }
 
 class AnnotationFeatureSelectionViewModel: ObservableObject {
-    @Published var instances: [AccessibilityFeature] = []
+    @Published var instances: [EditableAccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
-    @Published var currentFeature: AccessibilityFeature? = nil
+    @Published var currentFeature: EditableAccessibilityFeature? = nil
     
-    func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
         if (currentClass.isWay) {
             try setIndex(index: 0)
@@ -117,7 +117,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
         self.currentFeature = instances[index]
     }
     
-    func setCurrent(index: Int?, instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setCurrent(index: Int?, instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         try setInstances(instances, currentClass: currentClass)
         try setIndex(index: index)
     }
@@ -456,7 +456,7 @@ struct AnnotationView: View {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            var accessibilityFeatures: [AccessibilityFeature]
+            var accessibilityFeatures: [EditableAccessibilityFeature]
             if let currentFeature = featureSelectionViewModel.currentFeature {
                 accessibilityFeatures = [currentFeature]
             } else {
@@ -506,11 +506,20 @@ struct AnnotationView: View {
         guard let accessibilityFeatureClass = featureClassSelectionViewModel.currentClass else {
             throw AnnotationViewError.classIndexOutofBounds
         }
+        guard featureClassSelectionViewModel.selectedAnnotationOption != .classOption(.discard) else {
+            return
+        }
+        let featuresToUpload: [any AccessibilityFeatureProtocol] = featureSelectionViewModel.instances.filter { feature in
+            feature.selectedAnnotationOption != .individualOption(.discard) &&
+            feature.accessibilityFeatureClass == accessibilityFeatureClass
+        }
+        guard !featuresToUpload.isEmpty else {
+            return
+        }
         let uploadedElements = try await apiTransmissionController.uploadFeatures(
             workspaceId: workspaceId,
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
-            classAnnotationOption: featureClassSelectionViewModel.selectedAnnotationOption,
             accessibilityFeatures: featureSelectionViewModel.instances,
             accessToken: accessToken
         )

@@ -28,6 +28,9 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     }
 }
 
+/**
+    An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
+ */
 class AttributeEstimationPipeline: ObservableObject {
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
@@ -50,7 +53,7 @@ class AttributeEstimationPipeline: ObservableObject {
     
     func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: AccessibilityFeature
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
@@ -59,9 +62,9 @@ class AttributeEstimationPipeline: ObservableObject {
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
         let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
-            accessibilityFeature: accessibilityFeature, radius: 3
+            detectedFeature: accessibilityFeature, radius: 3
         )
-        let featureCentroid = accessibilityFeature.detectedAccessibilityFeature.contourDetails.centroid
+        let featureCentroid = accessibilityFeature.contourDetails.centroid
         let locationCoordinate = localizationProcessor.calculateLocation(
             point: featureCentroid, depth: featureDepthValue,
             imageSize: captureImageDataConcrete.originalSize,
@@ -73,7 +76,7 @@ class AttributeEstimationPipeline: ObservableObject {
     }
     
     func processAttributeRequest(
-        accessibilityFeature: AccessibilityFeature
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         var attributeAssignmentFlagError = false
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
@@ -108,19 +111,19 @@ class AttributeEstimationPipeline: ObservableObject {
  */
 extension AttributeEstimationPipeline {
     private func calculateWidth(
-        accessibilityFeature: AccessibilityFeature
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.configurationError
         }
-        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
-            accessibilityFeature: accessibilityFeature
+            detectedFeature: accessibilityFeature
         )
         let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
             PointWithDepth(
@@ -141,19 +144,19 @@ extension AttributeEstimationPipeline {
     }
     
     private func calculateRunningSlope(
-        accessibilityFeature: AccessibilityFeature
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.configurationError
         }
-        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
-            accessibilityFeature: accessibilityFeature
+            detectedFeature: accessibilityFeature
         )
         let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
             PointWithDepth(
@@ -176,19 +179,19 @@ extension AttributeEstimationPipeline {
     }
     
     private func calculateCrossSlope(
-        accessibilityFeature: AccessibilityFeature
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor,
               let localizationProcessor = self.localizationProcessor,
               let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.configurationError
         }
-        let trapezoidBoundPoints = accessibilityFeature.detectedAccessibilityFeature.contourDetails.normalizedPoints
+        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
-            accessibilityFeature: accessibilityFeature
+            detectedFeature: accessibilityFeature
         )
         let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
             PointWithDepth(

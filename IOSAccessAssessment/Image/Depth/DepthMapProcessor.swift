@@ -93,8 +93,8 @@ struct DepthMapProcessor {
      
         - Note: The centroid coordinates are normalized (0 to 1) and need to be converted to pixel coordinates.
      */
-    func getFeatureDepthAtCentroid(accessibilityFeature: AccessibilityFeature) throws -> Float {
-        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+    func getFeatureDepthAtCentroid(detectedFeature: any DetectedFeatureProtocol) throws -> Float {
+        let featureContourDetails = detectedFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
         
         /**
@@ -121,8 +121,8 @@ struct DepthMapProcessor {
      
         - Note: The centroid coordinates are normalized (0 to 1) and need to be converted to pixel coordinates.
      */
-    func getFeatureDepthAtCentroidInRadius(accessibilityFeature: AccessibilityFeature, radius: CGFloat = 5) throws -> Float {
-        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+    func getFeatureDepthAtCentroidInRadius(detectedFeature: any DetectedFeatureProtocol, radius: CGFloat = 5) throws -> Float {
+        let featureContourDetails = detectedFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
         
         var pointDeltas: [CGPoint] = []
@@ -153,8 +153,8 @@ struct DepthMapProcessor {
         return averageDepth
     }
     
-    func getFeatureDepthsAtBounds(accessibilityFeature: AccessibilityFeature) throws -> [Float] {
-        let featureContourDetails = accessibilityFeature.detectedAccessibilityFeature.contourDetails
+    func getFeatureDepthsAtBounds(detectedFeature: any DetectedFeatureProtocol) throws -> [Float] {
+        let featureContourDetails = detectedFeature.contourDetails
         let normalizedPoints: [SIMD2<Float>] = featureContourDetails.normalizedPoints
         
         let featureBoundPoints: [CGPoint] = normalizedPoints.map { point in

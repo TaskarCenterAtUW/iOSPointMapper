@@ -131,7 +131,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     /**
      Updates the camera image, and recreates the overlay image.
      */
-    func updateFeatureClass(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> [AccessibilityFeature] {
+    func updateFeatureClass(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> [EditableAccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
@@ -191,7 +191,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     
     func updateFeature(
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        accessibilityFeatures: [AccessibilityFeature],
+        accessibilityFeatures: [EditableAccessibilityFeature],
         isSelected: Bool
     ) throws {
         guard isConfigured else {
@@ -327,7 +327,7 @@ extension AnnotationImageManager {
     private func getAccessibilityFeatures(
         segmentationLabelImage: CIImage,
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [AccessibilityFeature] {
+    ) throws -> [EditableAccessibilityFeature] {
         guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline,
               let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.segmentationNotConfigured
@@ -341,21 +341,20 @@ extension AnnotationImageManager {
             orientation: imageOrientation
         )
         let accessibilityFeatures = detectedFeatures.map { detectedFeature in
-            return AccessibilityFeature(
-                accessibilityFeatureClass: detectedFeature.accessibilityFeatureClass,
+            return EditableAccessibilityFeature(
                 detectedAccessibilityFeature: detectedFeature
             )
         }
         return accessibilityFeatures
     }
     
-    private func getFeaturesOverlayOutputImageWithSource(accessibilityFeatures: [AccessibilityFeature])
+    private func getFeaturesOverlayOutputImageWithSource(accessibilityFeatures: [EditableAccessibilityFeature])
     throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
         guard let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.captureDataNotAvailable
         }
         guard let raterizedFeaturesImage = ContourFeatureRasterizer.rasterizeFeatures(
-            accessibilityFeatures: accessibilityFeatures, size: captureImageData.originalSize,
+            detectedFeatures: accessibilityFeatures, size: captureImageData.originalSize,
             polygonConfig: RasterizeConfig(draw: true, color: nil, width: 5),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             centroidConfig: RasterizeConfig(draw: true, color: nil, width: 10)
@@ -371,7 +370,7 @@ extension AnnotationImageManager {
     
     private func updateFeaturesOverlayOutputImageWithSource(
         sourceCGImage: CGImage,
-        accessibilityFeatures: [AccessibilityFeature],
+        accessibilityFeatures: [EditableAccessibilityFeature],
         isSelected: Bool
     ) throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
         guard let captureImageData = self.captureImageData else {
@@ -381,7 +380,7 @@ extension AnnotationImageManager {
         let color: UIColor? = isSelected ? UIColor.white : nil
         guard let updatedRasterizedFeaturesImage = ContourFeatureRasterizer.updateRasterizedFeatures(
             baseImage: sourceCGImage,
-            accessibilityFeatures: accessibilityFeatures, size: size,
+            detectedFeature: accessibilityFeatures, size: size,
             polygonConfig: RasterizeConfig(draw: true, color: color, width: 5),
             boundsConfig: RasterizeConfig(draw: false, color: color, width: 0),
             centroidConfig: RasterizeConfig(draw: true, color: color, width: 10)

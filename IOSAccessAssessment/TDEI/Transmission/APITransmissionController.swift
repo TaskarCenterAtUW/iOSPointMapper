@@ -16,31 +16,24 @@ class APITransmissionController: ObservableObject {
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        classAnnotationOption: AnnotationOption,
-        accessibilityFeatures: [AccessibilityFeature],
+        accessibilityFeatures: [any AccessibilityFeatureProtocol],
         accessToken: String
     ) async throws -> UploadedElements {
         try await uploadCaptureNode(
             workspaceId: workspaceId, changesetId: changesetId,
-            accessibilityFeatureClass: accessibilityFeatureClass, classAnnotationOption: classAnnotationOption,
+            accessibilityFeatureClass: accessibilityFeatureClass,
             accessToken: accessToken
         )
-        guard classAnnotationOption != .classOption(.discard) else { return UploadedElements(nodes: [:], ways: [:]) }
-        let featuresToUpload = accessibilityFeatures.filter { feature in
-            feature.selectedAnnotationOption != .individualOption(.discard) &&
-            feature.accessibilityFeatureClass == accessibilityFeatureClass
-        }
-        guard !featuresToUpload.isEmpty else { return UploadedElements(nodes: [:], ways: [:]) }
         if accessibilityFeatureClass.isWay {
             return try await uploadWay(
                 workspaceId: workspaceId, changesetId: changesetId,
-                accessibilityFeatures: featuresToUpload,
+                accessibilityFeatures: accessibilityFeatures,
                 accessToken: accessToken
             )
         } else {
             return try await uploadNodes(
                 workspaceId: workspaceId, changesetId: changesetId,
-                accessibilityFeatures: featuresToUpload,
+                accessibilityFeatures: accessibilityFeatures,
                 accessToken: accessToken
             )
         }
@@ -50,7 +43,6 @@ class APITransmissionController: ObservableObject {
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        classAnnotationOption: AnnotationOption,
         accessToken: String
     ) async throws {
         
@@ -59,7 +51,7 @@ class APITransmissionController: ObservableObject {
     func uploadNodes(
         workspaceId: String,
         changesetId: String,
-        accessibilityFeatures: [AccessibilityFeature],
+        accessibilityFeatures: [any AccessibilityFeatureProtocol],
         accessToken: String
     ) async throws -> UploadedElements {
         var id: Int = 0
@@ -79,7 +71,7 @@ class APITransmissionController: ObservableObject {
     func uploadWay(
         workspaceId: String,
         changesetId: String,
-        accessibilityFeatures: [AccessibilityFeature],
+        accessibilityFeatures: [any AccessibilityFeatureProtocol],
         accessToken: String
     ) async throws -> UploadedElements {
         guard let firstFeature = accessibilityFeatures.first else {
@@ -113,14 +105,14 @@ class APITransmissionController: ObservableObject {
         )
     }
     
-    private func featureToNode(_ feature: AccessibilityFeature, id: String, version: String) -> OSMNode? {
+    private func featureToNode(_ feature: any AccessibilityFeatureProtocol, id: String, version: String) -> OSMNode? {
         guard let featureLocation = feature.location else {
             return nil
         }
         var nodeTags: [String: String] = [:]
         /// TODO: Use the correct API schema tag keys
         nodeTags[APIConstants.TagKeys.classKey] = feature.accessibilityFeatureClass.name
-        feature.calculatedAttributeValues.forEach { attributeKeyValuePair in
+        feature.attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
             let attributeTagKey = attributeKey.osmTagKey
             let attributeValue = attributeKeyValuePair.value

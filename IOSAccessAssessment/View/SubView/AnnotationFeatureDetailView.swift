@@ -50,7 +50,7 @@ struct AnnotationFeatureDetailView: View {
     class StatusViewModel: ObservableObject {
         @Published var attributeStatusMap: [AccessibilityFeatureAttribute: AttributeErrorStatus] = [:]
         
-        func configure(accessibilityFeature: AccessibilityFeature) {
+        func configure(accessibilityFeature: EditableAccessibilityFeature) {
             let attributes = accessibilityFeature.accessibilityFeatureClass.attributes
             var attributeStatusMap: [AccessibilityFeatureAttribute: AttributeErrorStatus] = [:]
             attributes.forEach {
@@ -72,7 +72,7 @@ struct AnnotationFeatureDetailView: View {
         }
     }
     
-    var accessibilityFeature: AccessibilityFeature
+    var accessibilityFeature: EditableAccessibilityFeature
     let title: String
     
     @StateObject private var statusViewModel = AnnotationFeatureDetailView.StatusViewModel()
@@ -191,7 +191,7 @@ struct AnnotationFeatureDetailView: View {
                 attribute.displayName,
                 value: Binding(
                     get: {
-                        guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
+                        guard let attributeValue = accessibilityFeature.attributeValues[attribute],
                               let attributeValue,
                               let attributeBindableValue = attributeValue.toDouble() else {
                             return 0.0
@@ -222,7 +222,7 @@ struct AnnotationFeatureDetailView: View {
         Toggle(
             isOn: Binding(
                 get: {
-                    guard let attributeValue = accessibilityFeature.finalAttributeValues[attribute],
+                    guard let attributeValue = accessibilityFeature.attributeValues[attribute],
                           let attributeValue,
                           let attributeBindableValue = attributeValue.toBool() else {
                         return false
