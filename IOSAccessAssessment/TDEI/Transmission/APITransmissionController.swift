@@ -9,6 +9,14 @@ import SwiftUI
 import CoreLocation
 
 enum APITransmissionError: Error, LocalizedError {
+    case featureClassNotWay(AccessibilityFeatureClass)
+    
+    var errorDescription: String? {
+        switch self {
+        case .featureClassNotWay(let featureClass):
+            return "Feature class is not a way: \(featureClass.name)"
+        }
+    }
 }
 
 class APITransmissionController: ObservableObject {
@@ -17,23 +25,29 @@ class APITransmissionController: ObservableObject {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         accessToken: String
     ) async throws -> UploadedElements {
         try await uploadCaptureNode(
             workspaceId: workspaceId, changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
+            mappingData: mappingData,
             accessToken: accessToken
         )
         if accessibilityFeatureClass.isWay {
             return try await uploadWay(
                 workspaceId: workspaceId, changesetId: changesetId,
+                accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
+                mappingData: mappingData,
                 accessToken: accessToken
             )
         } else {
             return try await uploadNodes(
                 workspaceId: workspaceId, changesetId: changesetId,
+                accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
+                mappingData: mappingData,
                 accessToken: accessToken
             )
         }
@@ -43,15 +57,18 @@ class APITransmissionController: ObservableObject {
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
+        mappingData: MappingData,
         accessToken: String
     ) async throws {
         
     }
     
-    func uploadNodes(
+    private func uploadNodes(
         workspaceId: String,
         changesetId: String,
+        accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         accessToken: String
     ) async throws -> UploadedElements {
         var id: Int = 0
@@ -68,12 +85,17 @@ class APITransmissionController: ObservableObject {
         )
     }
     
-    func uploadWay(
+    private func uploadWay(
         workspaceId: String,
         changesetId: String,
+        accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         accessToken: String
     ) async throws -> UploadedElements {
+        guard accessibilityFeatureClass.isWay else {
+            throw APITransmissionError.featureClassNotWay(accessibilityFeatureClass)
+        }
         guard let firstFeature = accessibilityFeatures.first else {
             return UploadedElements(nodes: [:], ways: [:])
         }
@@ -87,17 +109,26 @@ class APITransmissionController: ObservableObject {
         guard featureNodes.count >= 1, let firstNode = featureNodes.first else {
             return UploadedElements(nodes: [:], ways: [:])
         }
-        guard let featureWay = featureToWay(
+        
+        /// Check if there is an active way feature to append nodes to
+        var featureWay: OSMWay
+        var wayOperations: [ChangesetDiffOperation] = []
+        wayOperations.append(.create(firstNode))
+        if let activeWay = mappingData.activeWays[accessibilityFeatureClass] {
+            featureWay = activeWay
+            wayOperations.append(.modify(featureWay))
+        } else if let newWay = featureToWay(
             firstFeature.accessibilityFeatureClass,
             featureNodes: [firstNode],
             id: String(id),
             version: String(version)
-        ) else {
+        ) {
+            featureWay = newWay
+            wayOperations.append(.create(featureWay))
+        } else {
             return UploadedElements(nodes: [:], ways: [:])
         }
-        var wayOperations: [ChangesetDiffOperation] = []
-        wayOperations.append(.create(firstNode))
-        wayOperations.append(.create(featureWay))
+        
         return try await ChangesetService.shared.performUploadAsync(
             workspaceId: workspaceId, changesetId: changesetId,
             operations: wayOperations,
