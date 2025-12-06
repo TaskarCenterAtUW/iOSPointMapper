@@ -19,6 +19,31 @@ enum APITransmissionError: Error, LocalizedError {
     }
 }
 
+struct APITransmissionResults: @unchecked Sendable {
+    let nodeData: MappingNodeData?
+    let wayData: MappingWayData?
+    
+    let failedFeatureUploads: Int
+    let totalFeatureUploads: Int
+    
+    init(
+        nodeData: MappingNodeData? = nil, wayData: MappingWayData? = nil,
+        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0
+    ) {
+        self.nodeData = nodeData
+        self.wayData = wayData
+        self.failedFeatureUploads = failedFeatureUploads
+        self.totalFeatureUploads = totalFeatureUploads
+    }
+    
+    init(failedFeatureUploads: Int, totalFeatureUploads: Int) {
+        self.nodeData = nil
+        self.wayData = nil
+        self.failedFeatureUploads = failedFeatureUploads
+        self.totalFeatureUploads = totalFeatureUploads
+    }
+}
+
 class APITransmissionController: ObservableObject {
     func uploadFeatures(
         workspaceId: String,
@@ -27,17 +52,15 @@ class APITransmissionController: ObservableObject {
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
         mappingData: MappingData,
         accessToken: String
-    ) async throws -> (nodeData: MappingNodeData?, wayData: MappingWayData?) {
+    ) async throws -> APITransmissionResults {
         try await uploadCaptureNode(
             workspaceId: workspaceId, changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
             mappingData: mappingData,
             accessToken: accessToken
         )
-        var nodeData: MappingNodeData? = nil
-        var wayData: MappingWayData? = nil
         if accessibilityFeatureClass.isWay {
-            wayData = try await uploadWay(
+            return try await uploadWay(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
@@ -45,7 +68,7 @@ class APITransmissionController: ObservableObject {
                 accessToken: accessToken
             )
         } else {
-            nodeData = try await uploadNodes(
+            return try await uploadNodes(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
@@ -53,7 +76,6 @@ class APITransmissionController: ObservableObject {
                 accessToken: accessToken
             )
         }
-        return (nodeData, wayData)
     }
     
     func uploadCaptureNode(
@@ -73,7 +95,9 @@ class APITransmissionController: ObservableObject {
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
         mappingData: MappingData,
         accessToken: String
-    ) async throws -> MappingNodeData? {
+    ) async throws -> APITransmissionResults {
+        let totalFeatures = accessibilityFeatures.count
+        
         var id: Int = 0
         let version: Int = 1
         var featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
@@ -89,8 +113,9 @@ class APITransmissionController: ObservableObject {
         }
         let nodeOperations: [ChangesetDiffOperation] = featureOSMIdToNodeMap.values.map { .create($0) }
         guard !nodeOperations.isEmpty else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
+        
         let uploadedElements = try await ChangesetService.shared.performUploadAsync(
             workspaceId: workspaceId, changesetId: changesetId,
             operations: nodeOperations,
@@ -102,9 +127,14 @@ class APITransmissionController: ObservableObject {
             featureOSMIdToNodeMap: featureOSMIdToNodeMap
         )
         guard !uploadedAccessibilityFeatures.isEmpty else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
-        return MappingNodeData(nodes: uploadedAccessibilityFeatures)
+        
+        let failedUploads = totalFeatures - uploadedAccessibilityFeatures.count
+        let nodeData = MappingNodeData(nodes: uploadedAccessibilityFeatures)
+        return APITransmissionResults(
+            nodeData: nodeData, failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
+        )
     }
     
     private func uploadWay(
@@ -114,13 +144,15 @@ class APITransmissionController: ObservableObject {
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
         mappingData: MappingData,
         accessToken: String
-    ) async throws -> MappingWayData? {
+    ) async throws -> APITransmissionResults {
         guard accessibilityFeatureClass.isWay else {
             throw APITransmissionError.featureClassNotWay(accessibilityFeatureClass)
         }
         guard let firstFeature = accessibilityFeatures.first else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: 0, totalFeatureUploads: 0)
         }
+        let totalFeatures = 1
+        
         var id: Int = 0
         let version: Int = 1
         var featureOSMIdToFeaturePair: (String, any AccessibilityFeatureProtocol)?
@@ -137,7 +169,7 @@ class APITransmissionController: ObservableObject {
         }
         guard let featureOSMIdToFeaturePair = featureOSMIdToFeaturePair,
               let featureOSMIdToNodePair = featureOSMIdToNodePair else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         let featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [
             featureOSMIdToFeaturePair.0: featureOSMIdToFeaturePair.1
@@ -166,7 +198,7 @@ class APITransmissionController: ObservableObject {
             featureWay = newWay
             wayOperations.append(.create(featureWay))
         } else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         
         let uploadedElements = try await ChangesetService.shared.performUploadAsync(
@@ -175,7 +207,7 @@ class APITransmissionController: ObservableObject {
             accessToken: accessToken
         )
         guard let uploadedWayData = uploadedElements.ways.first?.value else {
-            return nil
+            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         let uploadedAccessibilityFeatures = getUploadedAccessibilityFeaturesFromUploadedNodes(
             uploadedElements: uploadedElements,
@@ -188,7 +220,12 @@ class APITransmissionController: ObservableObject {
             id: uploadedWayData.newId, version: uploadedWayData.newVersion,
             tags: featureWay.tags, nodeRefs: uploadedNodeRefs
         )
-        return MappingWayData(way: uploadedWay, nodes: uploadedAccessibilityFeatures)
+        
+        let failedUploads = totalFeatures - uploadedAccessibilityFeatures.count
+        let wayData = MappingWayData(way: uploadedWay, nodes: uploadedAccessibilityFeatures)
+        return APITransmissionResults(
+            wayData: wayData, failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
+        )
     }
     
     private func featureToNode(_ feature: any AccessibilityFeatureProtocol, id: String, version: String) -> OSMNode? {

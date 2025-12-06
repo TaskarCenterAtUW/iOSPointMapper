@@ -32,6 +32,10 @@ enum AnnotationViewConstants {
         static let managerStatusAlertDismissButtonKey = "OK"
         static let managerStatusAlertMessageDismissScreenSuffixKey = "Press OK to close this screen."
         static let managerStatusAlertMessageDismissAlertSuffixKey = "Press OK to dismiss this alert."
+        static let apiTransmissionStatusAlertTitleKey = "Upload Error"
+        static let apiTransmissionStatusAlertDismissButtonKey = "OK"
+        static let apiTransmissionStatusAlertGenericMessageKey = "Failed to upload features. Press OK to dismiss this alert."
+        static let apiTransmissionStatusAlertMessageSuffixKey = " feature(s) failed to upload. Press OK to dismiss this alert."
     }
     
     enum Images {
@@ -51,6 +55,7 @@ enum AnnotationViewError: Error, LocalizedError {
     case authenticationError
     case workspaceConfigurationFailed
     case attributeEstimationFailed(Error)
+    case uploadFailed
     
     var errorDescription: String? {
         switch self {
@@ -68,6 +73,8 @@ enum AnnotationViewError: Error, LocalizedError {
             return "Workspace configuration failed. Please check your workspace settings."
         case .attributeEstimationFailed(let error):
             return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
+        case .uploadFailed:
+            return "Failed to upload annotations."
         }
     }
 }
@@ -130,7 +137,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     }
 }
 
-class AnnotationImageManagerStatusViewModel: ObservableObject {
+class AnnotationViewStatusViewModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
     @Published var shouldDismiss: Bool = true
@@ -159,6 +166,17 @@ class APITransmissionStatusViewModel: ObservableObject {
         self.isFailed = isFailed
         self.errorMessage = errorMessage
     }
+    
+    func update(apiTransmissionResults: APITransmissionResults) {
+        let failedFeatureUploads = apiTransmissionResults.failedFeatureUploads
+        if failedFeatureUploads == 0 {
+            self.isFailed = false
+            self.errorMessage = ""
+        } else {
+            self.isFailed = true
+            self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiTransmissionStatusAlertMessageSuffixKey)"
+        }
+    }
 }
 
 struct AnnotationView: View {
@@ -177,7 +195,7 @@ struct AnnotationView: View {
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
-    @State private var managerStatusViewModel = AnnotationImageManagerStatusViewModel()
+    @State private var managerStatusViewModel = AnnotationViewStatusViewModel()
     @State private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
@@ -441,8 +459,7 @@ struct AnnotationView: View {
                 isFailed: true, error: AnnotationViewError.attributeEstimationFailed(error), shouldDismiss: false
             )
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true, error: error)
+            managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
         }
     }
     
@@ -469,15 +486,23 @@ struct AnnotationView: View {
                 isSelected: isSelected
             )
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true, error: error, shouldDismiss: false)
+            managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
         }
     }
     
     private func confirmAnnotation() {
         Task {
+            var uploadAnnotationFailedStatus: Bool = false
+            var apiTransmissionResults: APITransmissionResults? = nil
             do {
-                try await uploadAnnotations()
+                apiTransmissionResults = try await uploadAnnotations()
+                if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
+                    uploadAnnotationFailedStatus = true
+                }
+            } catch {
+                uploadAnnotationFailedStatus = true
+            }
+            do {
                 if isCurrentIndexLast() {
                     self.dismiss()
                     return
@@ -491,11 +516,22 @@ struct AnnotationView: View {
                 try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
             } catch {
                 managerStatusViewModel.update(isFailed: true, error: error)
+                return
+            }
+            if uploadAnnotationFailedStatus {
+                if let apiTransmissionResults {
+                    apiTransmissionStatusViewModel.update(apiTransmissionResults: apiTransmissionResults)
+                } else {
+                    apiTransmissionStatusViewModel.update(
+                        isFailed: true,
+                        errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
+                    )
+                }
             }
         }
     }
     
-    private func uploadAnnotations() async throws {
+    private func uploadAnnotations() async throws -> APITransmissionResults? {
         guard let workspaceId = workspaceViewModel.workspaceId,
               let changesetId = workspaceViewModel.changesetId else {
             throw AnnotationViewError.workspaceConfigurationFailed
@@ -507,16 +543,16 @@ struct AnnotationView: View {
             throw AnnotationViewError.classIndexOutofBounds
         }
         guard featureClassSelectionViewModel.selectedAnnotationOption != .classOption(.discard) else {
-            return
+            return nil
         }
         let featuresToUpload: [any AccessibilityFeatureProtocol] = featureSelectionViewModel.instances.filter { feature in
             feature.selectedAnnotationOption != .individualOption(.discard) &&
             feature.accessibilityFeatureClass == accessibilityFeatureClass
         }
         guard !featuresToUpload.isEmpty else {
-            return
+            return nil
         }
-        let uploadedElements = try await apiTransmissionController.uploadFeatures(
+        let apiTransmissionResults = try await apiTransmissionController.uploadFeatures(
             workspaceId: workspaceId,
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
@@ -525,8 +561,8 @@ struct AnnotationView: View {
             accessToken: accessToken
         )
         if accessibilityFeatureClass.isWay {
-            guard let wayData = uploadedElements.wayData else {
-                return
+            guard let wayData = apiTransmissionResults.wayData else {
+                throw AnnotationViewError.uploadFailed
             }
             try sharedAppData.mappingData.appendWay(
                 accessibilityFeatureClass: accessibilityFeatureClass,
@@ -534,8 +570,8 @@ struct AnnotationView: View {
                 nodes: wayData.nodes
             )
         } else {
-            guard let nodeData = uploadedElements.nodeData else {
-                return
+            guard let nodeData = apiTransmissionResults.nodeData else {
+                throw AnnotationViewError.uploadFailed
             }
             sharedAppData.mappingData.appendNodes(
                 accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
@@ -543,6 +579,6 @@ struct AnnotationView: View {
         }
         print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
+        return apiTransmissionResults
     }
-
 }
