@@ -56,6 +56,7 @@ enum AnnotationViewError: Error, LocalizedError {
     case workspaceConfigurationFailed
     case attributeEstimationFailed(Error)
     case uploadFailed
+    case apiTransmissionFailed(APITransmissionResults)
     
     var errorDescription: String? {
         switch self {
@@ -75,6 +76,8 @@ enum AnnotationViewError: Error, LocalizedError {
             return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
         case .uploadFailed:
             return "Failed to upload annotations."
+        case .apiTransmissionFailed(let results):
+            return "API Transmission failed with \(results.failedFeatureUploads) failed uploads."
         }
     }
 }
@@ -191,7 +194,7 @@ struct AnnotationView: View {
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
-    var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
+    @StateObject var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
@@ -272,6 +275,11 @@ struct AnnotationView: View {
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 apiTransmissionStatusViewModel.update(isFailed: false, errorMessage: "")
+                do {
+                    try moveToNextClass()
+                } catch {
+                    managerStatusViewModel.update(isFailed: true, error: error)
+                }
             }
         }, message: {
             Text(apiTransmissionStatusViewModel.errorMessage)
@@ -492,43 +500,41 @@ struct AnnotationView: View {
     
     private func confirmAnnotation() {
         Task {
-            var uploadAnnotationFailedStatus: Bool = false
-            var apiTransmissionResults: APITransmissionResults? = nil
             do {
-                apiTransmissionResults = try await uploadAnnotations()
+                let apiTransmissionResults = try await uploadAnnotations()
                 if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
-                    uploadAnnotationFailedStatus = true
+                    throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
                 }
+            } catch AnnotationViewError.apiTransmissionFailed(let results) {
+                apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
+                return
             } catch {
-                uploadAnnotationFailedStatus = true
-            }
-            do {
-                if isCurrentIndexLast() {
-                    self.dismiss()
-                    return
-                }
-                /// Move to next class
-                guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                      let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
-                    throw AnnotationViewError.invalidCaptureDataRecord
-                }
-                let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-                try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
-            } catch {
-                managerStatusViewModel.update(isFailed: true, error: error)
+                apiTransmissionStatusViewModel.update(
+                    isFailed: true,
+                    errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
+                )
                 return
             }
-            if uploadAnnotationFailedStatus {
-                if let apiTransmissionResults {
-                    apiTransmissionStatusViewModel.update(apiTransmissionResults: apiTransmissionResults)
-                } else {
-                    apiTransmissionStatusViewModel.update(
-                        isFailed: true,
-                        errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
-                    )
-                }
+            do {
+                try moveToNextClass()
+            } catch {
+                managerStatusViewModel.update(isFailed: true, error: error)
             }
         }
+    }
+    
+    private func moveToNextClass() throws {
+        if isCurrentIndexLast() {
+            self.dismiss()
+            return
+        }
+        /// Move to next class
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+            throw AnnotationViewError.invalidCaptureDataRecord
+        }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
     }
     
     private func uploadAnnotations() async throws -> APITransmissionResults? {

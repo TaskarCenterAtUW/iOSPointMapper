@@ -9,15 +9,18 @@ import SwiftUI
 import CoreLocation
 
 enum AttributeEstimationPipelineError: Error, LocalizedError {
-    case configurationError
+    case configurationError(String)
+    case missingCaptureData
     case missingDepthImage
     case invalidAttributeData
     case attributeAssignmentError
     
     var errorDescription: String? {
         switch self {
-        case .configurationError:
-            return NSLocalizedString("Error occurred during pipeline configuration.", comment: "")
+        case .configurationError(let missingDetail):
+            return NSLocalizedString("Error occurred during pipeline configuration. Details: \(missingDetail)", comment: "")
+        case .missingCaptureData:
+            return NSLocalizedString("Captured data is missing for processing.", comment: "")
         case .missingDepthImage:
             return NSLocalizedString("Depth image is missing from the capture data.", comment: "")
         case .invalidAttributeData:
@@ -32,6 +35,13 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
 class AttributeEstimationPipeline: ObservableObject {
+    enum Constants {
+        enum Texts {
+            static let depthMapProcessorKey = "Depth Map Processor"
+            static let localizationProcessorKey = "Localization Processor"
+        }
+    }
+    
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
     var captureImageData: (any CaptureImageDataProtocol)?
@@ -55,10 +65,14 @@ class AttributeEstimationPipeline: ObservableObject {
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        guard let depthMapProcessor = self.depthMapProcessor,
-              let localizationProcessor = self.localizationProcessor,
-              let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.configurationError
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
         let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
@@ -113,10 +127,14 @@ extension AttributeEstimationPipeline {
     private func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let depthMapProcessor = self.depthMapProcessor,
-              let localizationProcessor = self.localizationProcessor,
-              let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.configurationError
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
         }
         let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
@@ -146,10 +164,14 @@ extension AttributeEstimationPipeline {
     private func calculateRunningSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let depthMapProcessor = self.depthMapProcessor,
-              let localizationProcessor = self.localizationProcessor,
-              let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.configurationError
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
         }
         let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
@@ -181,10 +203,14 @@ extension AttributeEstimationPipeline {
     private func calculateCrossSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let depthMapProcessor = self.depthMapProcessor,
-              let localizationProcessor = self.localizationProcessor,
-              let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.configurationError
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
         }
         let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
