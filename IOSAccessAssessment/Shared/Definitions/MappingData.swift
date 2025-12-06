@@ -10,6 +10,7 @@ import Foundation
 enum MappingDataError: Error, LocalizedError {
     case accessibilityFeatureClassNotWay(AccessibilityFeatureClass)
     case noActiveWayForFeatureClass(AccessibilityFeatureClass)
+    case accessibilityFeatureNodeNotPresent(AccessibilityFeatureClass)
     
     var errorDescription: String? {
         switch self {
@@ -17,40 +18,60 @@ enum MappingDataError: Error, LocalizedError {
             return "Feature class is not a way: \(accessibilityFeatureClass.name)"
         case .noActiveWayForFeatureClass(let accessibilityFeatureClass):
             return "No active way found for feature class: \(accessibilityFeatureClass.name)"
+        case .accessibilityFeatureNodeNotPresent(let accessibilityFeatureClass):
+            return "No accessibility feature node present for feature class: \(accessibilityFeatureClass.name)"
         }
     }
 }
 
-struct MappingNodeData: Sendable {
+final class MappingNodeData {
     var nodes: [MappedAccessibilityFeature] = []
     
-    mutating func append(_ featureNode: MappedAccessibilityFeature) {
+    init(nodes: [MappedAccessibilityFeature] = []) {
+        self.nodes = nodes
+    }
+    
+    func append(_ featureNode: MappedAccessibilityFeature) {
         nodes.append(featureNode)
     }
     
-    mutating func append(contentsOf featureNodes: [MappedAccessibilityFeature]) {
+    func append(contentsOf featureNodes: [MappedAccessibilityFeature]) {
         nodes.append(contentsOf: featureNodes)
     }
 }
 
-struct MappingWayData: Sendable {
-    let way: OSMWay
+final class MappingWayData {
+    var way: OSMWay
     var nodes: [MappedAccessibilityFeature]
     
-    mutating func appendNode(_ featureNode: MappedAccessibilityFeature) {
-        nodes.append(featureNode)
+    init(way: OSMWay, nodes: [MappedAccessibilityFeature] = []) {
+        self.way = way
+        self.nodes = nodes
     }
     
-    mutating func appendNodes(contentsOf featureNodes: [MappedAccessibilityFeature]) {
+    func appendNode(_ featureNode: MappedAccessibilityFeature) {
+        let nodeId = featureNode.osmNode.id
+        self.way.nodeRefs.append(nodeId)
+        self.nodes.append(featureNode)
+    }
+    
+    func appendNodes(contentsOf featureNodes: [MappedAccessibilityFeature]) {
+        let nodeIds = featureNodes.map { $0.osmNode.id }
+        self.way.nodeRefs.append(contentsOf: nodeIds)
         nodes.append(contentsOf: featureNodes)
     }
     
-    mutating func appendWayData(_ wayData: MappingWayData) {
-        nodes.append(contentsOf: wayData.nodes)
+    func appendWayData(_ wayData: MappingWayData) {
+        appendNodes(contentsOf: wayData.nodes)
+    }
+    
+    func update(way: OSMWay, nodes: [MappedAccessibilityFeature]) {
+        self.way = way
+        self.appendNodes(contentsOf: nodes)
     }
 }
 
-class MappingData {
+class MappingData: CustomStringConvertible {
     var featureNodeMap: [AccessibilityFeatureClass: MappingNodeData] = [:]
     
     var featureWayMap: [AccessibilityFeatureClass: [MappingWayData]] = [:]
@@ -60,15 +81,19 @@ class MappingData {
     init() { }
     
     func appendNode(accessibilityFeatureClass: AccessibilityFeatureClass, node: MappedAccessibilityFeature) {
-        featureNodeMap[accessibilityFeatureClass, default: MappingNodeData()].append(node)
+        let existingNodeData = featureNodeMap[accessibilityFeatureClass, default: MappingNodeData()]
+        existingNodeData.append(node)
+        featureNodeMap[accessibilityFeatureClass] = existingNodeData
     }
     
     func appendNodes(accessibilityFeatureClass: AccessibilityFeatureClass, nodes: [MappedAccessibilityFeature]) {
-        featureNodeMap[accessibilityFeatureClass, default: MappingNodeData()].append(contentsOf: nodes)
+        let existingNodeData = featureNodeMap[accessibilityFeatureClass, default: MappingNodeData()]
+        existingNodeData.append(contentsOf: nodes)
+        featureNodeMap[accessibilityFeatureClass] = existingNodeData
     }
     
     func appendNodeData(accessibilityFeatureClass: AccessibilityFeatureClass, nodeData: MappingNodeData) {
-        featureNodeMap[accessibilityFeatureClass, default: MappingNodeData()].append(contentsOf: nodeData.nodes)
+        appendNodes(accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes)
     }
     
     func getActiveFeatureWayData(accessibilityFeatureClass: AccessibilityFeatureClass) -> MappingWayData? {
@@ -82,16 +107,16 @@ class MappingData {
             throw MappingDataError.accessibilityFeatureClassNotWay(accessibilityFeatureClass)
         }
         let wayDataIndex = findWayDataIndex(accessibilityFeatureClass: accessibilityFeatureClass, osmWay: osmWay)
-        if var existingWayDataList = featureWayMap[accessibilityFeatureClass],
+        if let existingWayDataList = featureWayMap[accessibilityFeatureClass],
            let wayDataIndex = wayDataIndex,
            wayDataIndex < existingWayDataList.count {
-            var existingWayData = existingWayDataList[wayDataIndex]
-            existingWayData.appendNodes(contentsOf: nodes)
-            existingWayDataList[wayDataIndex] = existingWayData
-            featureWayMap[accessibilityFeatureClass] = existingWayDataList
+            // Update existing way data
+            existingWayDataList[wayDataIndex].update(way: osmWay, nodes: nodes)
+            activeFeatureWays[accessibilityFeatureClass] = existingWayDataList[wayDataIndex]
         } else {
             let wayData = MappingWayData(way: osmWay, nodes: nodes)
             featureWayMap[accessibilityFeatureClass, default: []].append(wayData)
+            activeFeatureWays[accessibilityFeatureClass] = wayData
         }
     }
     
@@ -117,5 +142,22 @@ class MappingData {
             return nil
         }
         return wayDataList.firstIndex(where: { $0.way.id == osmWay.id })
+    }
+    
+    var description: String {
+        var desc = "MappingData:\n"
+        desc += "Feature Nodes:\n"
+        featureNodeMap.forEach { (featureClass, nodeData) in
+            desc += "- \(featureClass.name): \(nodeData.nodes.count) nodes\n"
+            desc += "  Nodes IDs: \(nodeData.nodes.map { $0.osmNode.id })\n"
+        }
+        desc += "Feature Ways:\n"
+        featureWayMap.forEach { (featureClass, wayDataList) in
+            desc += "- \(featureClass.name): \(wayDataList.count) ways\n"
+            for (index, wayData) in wayDataList.enumerated() {
+                desc += "  Way \(index + 1) ID: \(wayData.way.id), Nodes IDs: \(wayData.nodes.map { $0.osmNode.id })\n"
+            }
+        }
+        return desc
     }
 }

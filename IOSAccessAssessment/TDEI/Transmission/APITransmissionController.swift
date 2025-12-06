@@ -129,7 +129,7 @@ class APITransmissionController: ObservableObject {
             id -= 1
             let osmId = String(id)
             let osmVersion = String(version)
-            let node = featureToNode(feature, id: String(id), version: String(version))
+            let node = featureToNode(feature, id: osmId, version: osmVersion)
             guard let node else { continue }
             featureOSMIdToFeaturePair = (osmId, feature)
             featureOSMIdToNodePair = (osmId, node)
@@ -148,10 +148,14 @@ class APITransmissionController: ObservableObject {
         
         /// Check if there is an active way feature to append nodes to
         var featureWay: OSMWay
+        var featureWayCurrentNodeRefs: [String] = []
         var wayOperations: [ChangesetDiffOperation] = []
         wayOperations.append(.create(featureOSMIdToNodePair.1))
+        id -= 1
         if let activeWayData = mappingData.getActiveFeatureWayData(accessibilityFeatureClass: accessibilityFeatureClass) {
             featureWay = activeWayData.way
+            featureWayCurrentNodeRefs = featureWay.nodeRefs
+            featureWay.nodeRefs.append(featureOSMIdToNodePair.1.id)
             wayOperations.append(.modify(featureWay))
         } else if let newWay = featureToWay(
             firstFeature.accessibilityFeatureClass,
@@ -173,14 +177,16 @@ class APITransmissionController: ObservableObject {
         guard let uploadedWayData = uploadedElements.ways.first?.value else {
             return nil
         }
-        let uploadedWay = OSMWay(
-            id: uploadedWayData.newId, version: uploadedWayData.newVersion,
-            tags: featureWay.tags, nodeRefs: featureWay.nodeRefs
-        )
         let uploadedAccessibilityFeatures = getUploadedAccessibilityFeaturesFromUploadedNodes(
             uploadedElements: uploadedElements,
             featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
             featureOSMIdToNodeMap: featureOSMIdToNodeMap
+        )
+        var uploadedNodeRefs: [String] = featureWayCurrentNodeRefs
+        uploadedNodeRefs.append(contentsOf: uploadedAccessibilityFeatures.map { $0.osmNode.id })
+        let uploadedWay = OSMWay(
+            id: uploadedWayData.newId, version: uploadedWayData.newVersion,
+            tags: featureWay.tags, nodeRefs: uploadedNodeRefs
         )
         return MappingWayData(way: uploadedWay, nodes: uploadedAccessibilityFeatures)
     }
@@ -243,7 +249,7 @@ class APITransmissionController: ObservableObject {
             }) else {
                 return nil
             }
-            let matchedOSMId = matchedOSMIdFeaturePair.key
+//            let matchedOSMId = matchedOSMIdFeaturePair.key
             let matchedFeature = matchedOSMIdFeaturePair.value
             guard let matchedOSMNode = featureOSMIdToNodeMap[uploadedNodeOSMOldId] else {
                 return nil

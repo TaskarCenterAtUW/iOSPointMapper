@@ -18,8 +18,8 @@ struct MeshHelpers {
         originalSize: CGSize
     ) -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
         var trianglePoints: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] = []
-        let originalWidth = Float(originalSize.width)
-        let originalHeight = Float(originalSize.height)
+//        let originalWidth = Float(originalSize.width)
+//        let originalHeight = Float(originalSize.height)
         for meshPolygon in meshPolygons {
             let (v0, v1, v2) = (meshPolygon.v0, meshPolygon.v1, meshPolygon.v2)
             let worldPoints = [v0, v1, v2].map {

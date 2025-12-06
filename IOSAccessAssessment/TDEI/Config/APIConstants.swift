@@ -14,7 +14,6 @@ struct APIConstants {
         static let tdeiCoreRefreshAuthUrl = "https://tdei-gateway-stage.azurewebsites.net/api/v1/refresh-token"
         static let workspacesAPIBaseUrl = "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
         static let workspacesOSMBaseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
-        static let workspaceId = "288"
     }
     
     enum ElementKeys {

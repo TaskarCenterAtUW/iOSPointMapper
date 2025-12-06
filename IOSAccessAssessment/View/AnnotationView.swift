@@ -541,6 +541,7 @@ struct AnnotationView: View {
                 accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
             )
         }
+        print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
     }
 

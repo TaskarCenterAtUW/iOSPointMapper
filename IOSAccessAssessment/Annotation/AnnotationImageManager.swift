@@ -115,7 +115,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func setupAlignedSegmentationLabelImages(
         captureDataHistory: [CaptureImageData]
     ) {
-        guard let captureImageData = self.captureImageData,
+        guard let _ = self.captureImageData,
               var annotationImageResults = self.annotationImageResults else {
             return
         }

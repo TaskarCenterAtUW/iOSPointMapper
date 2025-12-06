@@ -116,7 +116,7 @@ class ChangesetService {
             \(deleteXML.isEmpty ? "" : "<delete>\n\(deleteXML)</delete>")
         </osmChange>
         """
-        print("XML Content: ", osmChangeXML)
+        print("Printing Mapping Data\nXML Content: ", osmChangeXML)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -138,6 +138,9 @@ class ChangesetService {
 
             let parser = ChangesetXMLParser()
             parser.parse(data: data)
+            print("Printing Mapping Data")
+            print("Parsed Nodes: ", parser.nodesWithAttributes)
+            print("Parsed Ways: ", parser.waysWithAttributes)
 
             completion(.success(UploadedOSMResponseElements(
                 nodes: parser.nodesWithAttributes, ways: parser.waysWithAttributes

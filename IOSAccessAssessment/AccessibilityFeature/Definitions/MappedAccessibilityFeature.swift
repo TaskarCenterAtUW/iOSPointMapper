@@ -15,7 +15,7 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
     var location: CLLocationCoordinate2D?
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
-    var osmNode: OSMNode?
+    var osmNode: OSMNode
     
     init (
         id: UUID = UUID(),
@@ -54,6 +54,10 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
             throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)
         }
         attributeValues[attribute] = value
+    }
+    
+    mutating func setOSMNode(_ osmNode: OSMNode) {
+        self.osmNode = osmNode
     }
     
     static func == (lhs: MappedAccessibilityFeature, rhs: MappedAccessibilityFeature) -> Bool {
