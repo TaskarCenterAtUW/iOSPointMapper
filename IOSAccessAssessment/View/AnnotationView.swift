@@ -24,12 +24,18 @@ enum AnnotationViewConstants {
         /// Feature Detail View Text
         static let featureDetailViewTitle = "Feature Details"
         static let featureDetailViewIdKey = "ID"
+        static let featureDetailViewLocationKey = "Location"
         static let featureDetailNotAvailableText = "Not Available"
         
         /// Alert texts
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
-        static let managerStatusAlertMessageSuffixKey = "Press OK to close this screen."
+        static let managerStatusAlertMessageDismissScreenSuffixKey = "Press OK to close this screen."
+        static let managerStatusAlertMessageDismissAlertSuffixKey = "Press OK to dismiss this alert."
+        static let apiTransmissionStatusAlertTitleKey = "Upload Error"
+        static let apiTransmissionStatusAlertDismissButtonKey = "OK"
+        static let apiTransmissionStatusAlertGenericMessageKey = "Failed to upload features. Press OK to dismiss this alert."
+        static let apiTransmissionStatusAlertMessageSuffixKey = " feature(s) failed to upload. Press OK to dismiss this alert."
     }
     
     enum Images {
@@ -46,6 +52,11 @@ enum AnnotationViewError: Error, LocalizedError {
     case instanceIndexOutofBounds
     case invalidCaptureDataRecord
     case managerConfigurationFailed
+    case authenticationError
+    case workspaceConfigurationFailed
+    case attributeEstimationFailed(Error)
+    case uploadFailed
+    case apiTransmissionFailed(APITransmissionResults)
     
     var errorDescription: String? {
         switch self {
@@ -57,6 +68,16 @@ enum AnnotationViewError: Error, LocalizedError {
             return "The Current Capture is invalid."
         case .managerConfigurationFailed:
             return "Annotation Configuration failed"
+        case .authenticationError:
+            return "Authentication error. Please log in again."
+        case .workspaceConfigurationFailed:
+            return "Workspace configuration failed. Please check your workspace settings."
+        case .attributeEstimationFailed(let error):
+            return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
+        case .uploadFailed:
+            return "Failed to upload annotations."
+        case .apiTransmissionFailed(let results):
+            return "API Transmission failed with \(results.failedFeatureUploads) failed uploads."
         }
     }
 }
@@ -64,8 +85,7 @@ enum AnnotationViewError: Error, LocalizedError {
 class AnnotationFeatureClassSelectionViewModel: ObservableObject {
     @Published var currentIndex: Int? = nil
     @Published var currentClass: AccessibilityFeatureClass? = nil
-    @Published var annotationOptions: [AnnotationOptionClass] = AnnotationOptionClass.allCases
-    @Published var selectedAnnotationOption: AnnotationOptionClass = AnnotationOptionClass.default
+    @Published var selectedAnnotationOption: AnnotationOption = .classOption(.default)
     
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
         guard index < classes.count else {
@@ -74,16 +94,18 @@ class AnnotationFeatureClassSelectionViewModel: ObservableObject {
         self.currentIndex = index
         self.currentClass = classes[index]
     }
+    
+    func setOption(option: AnnotationOption) {
+        self.selectedAnnotationOption = option
+    }
 }
 
 class AnnotationFeatureSelectionViewModel: ObservableObject {
-    @Published var instances: [AccessibilityFeature] = []
+    @Published var instances: [EditableAccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
-    @Published var currentFeature: AccessibilityFeature? = nil
-    @Published var annotationOptions: [AnnotationOption] = AnnotationOption.allCases
-    @Published var selectedAnnotationOption: AnnotationOption = AnnotationOption.default
+    @Published var currentFeature: EditableAccessibilityFeature? = nil
     
-    func setInstances(_ instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
         if (currentClass.isWay) {
             try setIndex(index: 0)
@@ -105,24 +127,79 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
         self.currentFeature = instances[index]
     }
     
-    func setCurrent(index: Int?, instances: [AccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setCurrent(index: Int?, instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         try setInstances(instances, currentClass: currentClass)
         try setIndex(index: index)
     }
+    
+    func setOptionOnFeature(option: AnnotationOption) {
+        if let currentFeature = self.currentFeature {
+            objectWillChange.send()
+            currentFeature.setAnnotationOption(option)
+        }
+    }
 }
 
+class AnnotationViewStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    @Published var shouldDismiss: Bool = true
+    
+    func update(isFailed: Bool, errorMessage: String, shouldDismiss: Bool = true) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+        self.shouldDismiss = shouldDismiss
+    }
+    
+    func update(isFailed: Bool, error: Error, shouldDismiss: Bool = true) {
+        self.isFailed = isFailed
+        let dismissKey = shouldDismiss ?
+        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey :
+        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey
+        self.errorMessage = "\(error.localizedDescription) \(dismissKey)"
+        self.shouldDismiss = shouldDismiss
+    }
+}
+
+class APITransmissionStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+    
+    func update(apiTransmissionResults: APITransmissionResults) {
+        let failedFeatureUploads = apiTransmissionResults.failedFeatureUploads
+        if failedFeatureUploads == 0 {
+            self.isFailed = false
+            self.errorMessage = ""
+        } else {
+            self.isFailed = true
+            self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiTransmissionStatusAlertMessageSuffixKey)"
+        }
+    }
+}
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let captureLocation: CLLocationCoordinate2D
     
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
     @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
+    @StateObject var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
     
-    @State private var managerStatusViewModel = ManagerStatusViewModel() // From ARCameraView
+    let apiTransmissionController: APITransmissionController = APITransmissionController()
+    
+    @State private var managerStatusViewModel = AnnotationViewStatusViewModel()
+    @State private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
@@ -186,11 +263,26 @@ struct AnnotationView: View {
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                let shouldDismiss = managerStatusViewModel.shouldDismiss
                 managerStatusViewModel.update(isFailed: false, errorMessage: "")
-                dismiss()
+                if shouldDismiss {
+                    dismiss()
+                }
             }
         }, message: {
             Text(managerStatusViewModel.errorMessage)
+        })
+        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
+            Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+                apiTransmissionStatusViewModel.update(isFailed: false, errorMessage: "")
+                do {
+                    try moveToNextClass()
+                } catch {
+                    managerStatusViewModel.update(isFailed: true, error: error)
+                }
+            }
+        }, message: {
+            Text(apiTransmissionStatusViewModel.errorMessage)
         })
     }
     
@@ -208,23 +300,6 @@ struct AnnotationView: View {
         manager.interfaceOrientation.isLandscape ?
         AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
-    }
-    
-    private func annotationOptionsView() -> some View {
-        VStack(spacing: 10) {
-            ForEach(featureClassSelectionViewModel.annotationOptions, id: \.self) { option in
-                Button(action: {
-                }) {
-                    Text(option.rawValue)
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(featureClassSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
-                        .foregroundStyle(.white)
-                        .cornerRadius(10)
-                }
-            }
-        }
     }
     
     @ViewBuilder
@@ -269,7 +344,7 @@ struct AnnotationView: View {
                 
                 HStack {
                     Spacer()
-                    annotationOptionsView()
+                    annotationOptionsView(currentClass: currentClass)
                     Spacer()
                 }
                 .padding()
@@ -279,6 +354,44 @@ struct AnnotationView: View {
                 }) {
                     Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
                         .padding()
+                }
+            }
+        }
+    }
+    
+    private func annotationOptionsView(currentClass: AccessibilityFeatureClass) -> some View {
+        if let currentFeature = featureSelectionViewModel.currentFeature {
+            let annotationOptions: [AnnotationOption] = AnnotationOptionFeature.allCases.map { .individualOption($0) }
+            return VStack(spacing: 10) {
+                ForEach(annotationOptions, id: \.self) { option in
+                    Button(action: {
+                        featureSelectionViewModel.setOptionOnFeature(option: option)
+                    }) {
+                        Text(option.rawValue)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(currentFeature.selectedAnnotationOption == option ? Color.blue : Color.gray)
+                            .foregroundStyle(.white)
+                            .cornerRadius(10)
+                    }
+                }
+            }
+        } else {
+            let annotationOptions: [AnnotationOption] = AnnotationOptionFeatureClass.allCases.map { .classOption($0) }
+            return VStack(spacing: 10) {
+                ForEach(annotationOptions, id: \.self) { option in
+                    Button(action: {
+                        featureClassSelectionViewModel.setOption(option: option)
+                    }) {
+                        Text(option.rawValue)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(featureClassSelectionViewModel.selectedAnnotationOption == option ? Color.blue : Color.gray)
+                            .foregroundStyle(.white)
+                            .cornerRadius(10)
+                    }
                 }
             }
         }
@@ -304,44 +417,57 @@ struct AnnotationView: View {
     
     private func handleOnAppear() async {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol) else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
+            try attributeEstimationPipeline.configure(
+                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData
+            )
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
-                captureImageData: currentCaptureDataRecord
+                captureImageData: currentCaptureDataRecord,
+                captureMeshData: captureMeshData
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
-            manager.setupAlignedSegmentationLabelImages(
-                captureImageData: currentCaptureDataRecord,
-                captureDataHistory: captureDataHistory
-            )
+            manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)
             try featureClassSelectionViewModel.setCurrent(index: 0, classes: segmentedClasses)
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+            managerStatusViewModel.update(isFailed: true, error: error)
         }
     }
     
     private func handleOnClassChange() {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol),
-                  let currentClass = featureClassSelectionViewModel.currentClass else {
+            guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            let accessibilityFeatures = try manager.update(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData,
-                accessibilityFeatureClass: currentClass
-            )
+            let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
+            var lastEstimationError: Error? = nil
+            accessibilityFeatures.forEach { accessibilityFeature in
+                do {
+                    try attributeEstimationPipeline.processLocationRequest(
+                        deviceLocation: captureLocation,
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try attributeEstimationPipeline.processAttributeRequest(accessibilityFeature: accessibilityFeature)
+                } catch {
+                    lastEstimationError = error
+                }
+            }
+            featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
-        } catch {
+            if let lastEstimationError {
+                throw AnnotationViewError.attributeEstimationFailed(lastEstimationError)
+            }
+        } catch AnnotationViewError.attributeEstimationFailed(let error) {
             managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+                isFailed: true, error: AnnotationViewError.attributeEstimationFailed(error), shouldDismiss: false
+            )
+        } catch {
+            managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
         }
     }
     
@@ -349,28 +475,116 @@ struct AnnotationView: View {
         do {
             try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
         } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+            managerStatusViewModel.update(isFailed: true, error: error)
+        }
+        do {
+            guard let currentClass = featureClassSelectionViewModel.currentClass else {
+                throw AnnotationViewError.invalidCaptureDataRecord
+            }
+            var accessibilityFeatures: [EditableAccessibilityFeature]
+            if let currentFeature = featureSelectionViewModel.currentFeature {
+                accessibilityFeatures = [currentFeature]
+            } else {
+                accessibilityFeatures = featureSelectionViewModel.instances
+            }
+            let isSelected = featureSelectionViewModel.currentFeature != nil
+            try manager.updateFeature(
+                accessibilityFeatureClass: currentClass,
+                accessibilityFeatures: accessibilityFeatures,
+                isSelected: isSelected
+            )
+        } catch {
+            managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
         }
     }
     
     private func confirmAnnotation() {
+        Task {
+            do {
+                let apiTransmissionResults = try await uploadAnnotations()
+                if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
+                    throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
+                }
+            } catch AnnotationViewError.apiTransmissionFailed(let results) {
+                apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
+                return
+            } catch {
+                apiTransmissionStatusViewModel.update(
+                    isFailed: true,
+                    errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
+                )
+                return
+            }
+            do {
+                try moveToNextClass()
+            } catch {
+                managerStatusViewModel.update(isFailed: true, error: error)
+            }
+        }
+    }
+    
+    private func moveToNextClass() throws {
         if isCurrentIndexLast() {
             self.dismiss()
             return
         }
-        do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
-                throw AnnotationViewError.invalidCaptureDataRecord
-            }
-            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
-            try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
-        } catch {
-            managerStatusViewModel.update(
-                isFailed: true,
-                errorMessage: "\(error.localizedDescription) \(AnnotationViewConstants.Texts.managerStatusAlertMessageSuffixKey)")
+        /// Move to next class
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
+              let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
+            throw AnnotationViewError.invalidCaptureDataRecord
         }
+        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
+    }
+    
+    private func uploadAnnotations() async throws -> APITransmissionResults? {
+        guard let workspaceId = workspaceViewModel.workspaceId,
+              let changesetId = workspaceViewModel.changesetId else {
+            throw AnnotationViewError.workspaceConfigurationFailed
+        }
+        guard let accessToken = userStateViewModel.getAccessToken() else {
+            throw AnnotationViewError.authenticationError
+        }
+        guard let accessibilityFeatureClass = featureClassSelectionViewModel.currentClass else {
+            throw AnnotationViewError.classIndexOutofBounds
+        }
+        guard featureClassSelectionViewModel.selectedAnnotationOption != .classOption(.discard) else {
+            return nil
+        }
+        let featuresToUpload: [any AccessibilityFeatureProtocol] = featureSelectionViewModel.instances.filter { feature in
+            feature.selectedAnnotationOption != .individualOption(.discard) &&
+            feature.accessibilityFeatureClass == accessibilityFeatureClass
+        }
+        guard !featuresToUpload.isEmpty else {
+            return nil
+        }
+        let apiTransmissionResults = try await apiTransmissionController.uploadFeatures(
+            workspaceId: workspaceId,
+            changesetId: changesetId,
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            accessibilityFeatures: featureSelectionViewModel.instances,
+            mappingData: sharedAppData.mappingData,
+            accessToken: accessToken
+        )
+        if accessibilityFeatureClass.isWay {
+            guard let wayData = apiTransmissionResults.wayData else {
+                throw AnnotationViewError.uploadFailed
+            }
+            try sharedAppData.mappingData.appendWay(
+                accessibilityFeatureClass: accessibilityFeatureClass,
+                osmWay: wayData.way,
+                nodes: wayData.nodes
+            )
+        } else {
+            guard let nodeData = apiTransmissionResults.nodeData else {
+                throw AnnotationViewError.uploadFailed
+            }
+            sharedAppData.mappingData.appendNodes(
+                accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
+            )
+        }
+        print("Mapping Data: \(sharedAppData.mappingData)")
+        sharedAppData.isUploadReady = true
+        return apiTransmissionResults
     }
 }

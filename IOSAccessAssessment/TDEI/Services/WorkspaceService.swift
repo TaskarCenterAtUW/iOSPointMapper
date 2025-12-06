@@ -59,12 +59,11 @@ class WorkspaceService {
     static let shared = WorkspaceService()
     private init() {}
     
-    private let accessToken = KeychainService().getValue(for: .accessToken)
-//    public var workspaces: [Workspace] = []
-    
-    func fetchWorkspaces(location: CLLocationCoordinate2D?, radius: Int = 2000) async throws -> [Workspace] {
-        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl),
-              let accessToken
+    func fetchWorkspaces(
+        location: CLLocationCoordinate2D?, radius: Int = 2000,
+        accessToken: String
+    ) async throws -> [Workspace] {
+        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl)
         else {
             throw APIError.invalidURL
         }

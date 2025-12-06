@@ -54,6 +54,7 @@ struct AnnotationImageResults {
     
     var alignedSegmentationLabalImages: [CIImage]?
     var processedSegmentationLabelImage: CIImage? = nil
+    var featuresSourceCGImage: CGImage? = nil
     
     var cameraOutputImage: CIImage? = nil
     var segmentationOverlayOutputImage: CIImage? = nil
@@ -65,10 +66,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     private var segmentationAnnotationPipeline: SegmentationAnnotationPipeline? = nil
     private var grayscaleToColorFilter: GrayscaleToColorFilter? = nil
     
+    private var captureImageData: (any CaptureImageDataProtocol)? = nil
+    private var captureMeshData: (any CaptureMeshDataProtocol)? = nil
+    
     weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
-    private let cIContext = CIContext(options: nil)
+    private let context = CIContext(options: nil)
     
     @Published var isConfigured: Bool = false
     
@@ -77,14 +81,15 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationAnnotationPipeline: SegmentationAnnotationPipeline,
-        captureImageData: (any CaptureImageDataProtocol)
+        captureImageData: (any CaptureImageDataProtocol),
+        captureMeshData: (any CaptureMeshDataProtocol)
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationAnnotationPipeline = segmentationAnnotationPipeline
+        self.captureImageData = captureImageData
+        self.captureMeshData = captureMeshData
         
-        let cameraOutputImage = try getCameraOutputImage(
-            captureImageData: captureImageData
-        )
+        let cameraOutputImage = try getCameraOutputImage()
         let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
             cameraImage: captureImageData.cameraImage,
             segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
@@ -108,16 +113,13 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         MARK: Does not throw errors, since this is not critical to the annotation image processing.
      */
     func setupAlignedSegmentationLabelImages(
-        captureImageData: (any CaptureImageDataProtocol),
         captureDataHistory: [CaptureImageData]
     ) {
-        guard var annotationImageResults = self.annotationImageResults else {
+        guard let _ = self.captureImageData,
+              var annotationImageResults = self.annotationImageResults else {
             return
         }
-        let alignedSegmentationLabelImages = getAlignedCaptureDataHistory(
-            captureImageData: captureImageData,
-            captureDataHistory: captureDataHistory
-        )
+        let alignedSegmentationLabelImages = getAlignedCaptureDataHistory(captureDataHistory: captureDataHistory)
         annotationImageResults.alignedSegmentationLabalImages = alignedSegmentationLabelImages
         self.annotationImageResults = annotationImageResults
     }
@@ -129,15 +131,12 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     /**
      Updates the camera image, and recreates the overlay image.
      */
-    func update(
-        captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol),
-        accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [AccessibilityFeature] {
+    func updateFeatureClass(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> [EditableAccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
-        guard var annotationImageResults = self.annotationImageResults,
+        guard let captureImageData = self.captureImageData,
+              var annotationImageResults = self.annotationImageResults,
               let cameraOutputImage = annotationImageResults.cameraOutputImage else {
             throw AnnotationImageManagerError.imageResultCacheFailed
         }
@@ -151,12 +150,15 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
 //            polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
 //            accessibilityFeatureClass: accessibilityFeatureClass
 //        )
-        let processedSegmentationLabelImage = getProcessedSegmentationLabelImage(
-            captureImageData: captureImageData,
-            accessibilityFeatureClass: accessibilityFeatureClass
-        )
+        var processedSegmentationLabelImage: CIImage
+        do {
+            processedSegmentationLabelImage = try getProcessedSegmentationLabelImage(
+                accessibilityFeatureClass: accessibilityFeatureClass
+            )
+        } catch {
+            processedSegmentationLabelImage = captureImageData.captureImageDataResults.segmentationLabelImage
+        }
         let segmentationOverlayOutputImage = try getSegmentationOverlayOutputImage(
-            captureImageData: captureImageData,
             segmentationLabelImage: processedSegmentationLabelImage,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
@@ -164,12 +166,14 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             segmentationLabelImage: processedSegmentationLabelImage,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
-        let featuresOverlayOutputImage = try getFeaturesOverlayOutputImage(
-            captureImageData: captureImageData,
+        let featuresOverlayResults = try getFeaturesOverlayOutputImageWithSource(
             accessibilityFeatures: accessibilityFeatures
         )
+        let featuresSourceCGImage = featuresOverlayResults.sourceCGImage
+        let featuresOverlayOutputImage = featuresOverlayResults.overlayImage
         annotationImageResults.processedSegmentationLabelImage = processedSegmentationLabelImage
         annotationImageResults.segmentationOverlayOutputImage = segmentationOverlayOutputImage
+        annotationImageResults.featuresSourceCGImage = featuresSourceCGImage
         annotationImageResults.featuresOverlayOutputImage = featuresOverlayOutputImage
         self.annotationImageResults = annotationImageResults
         Task {
@@ -184,15 +188,50 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         }
         return accessibilityFeatures
     }
+    
+    func updateFeature(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        accessibilityFeatures: [EditableAccessibilityFeature],
+        isSelected: Bool
+    ) throws {
+        guard isConfigured else {
+            throw AnnotationImageManagerError.notConfigured
+        }
+        guard var annotationImageResults = self.annotationImageResults,
+              let cameraOutputImage = annotationImageResults.cameraOutputImage,
+              let segmentationOverlayOutputImage = annotationImageResults.segmentationOverlayOutputImage,
+              let featuresSourceCGImage = annotationImageResults.featuresSourceCGImage else {
+            throw AnnotationImageManagerError.imageResultCacheFailed
+        }
+        let updatedFeaturesOverlayResults = try updateFeaturesOverlayOutputImageWithSource(
+            sourceCGImage: featuresSourceCGImage,
+            accessibilityFeatures: accessibilityFeatures,
+            isSelected: isSelected
+        )
+        annotationImageResults.featuresSourceCGImage = updatedFeaturesOverlayResults.sourceCGImage
+        annotationImageResults.featuresOverlayOutputImage = updatedFeaturesOverlayResults.overlayImage
+        self.annotationImageResults = annotationImageResults
+        Task {
+            await MainActor.run {
+                self.outputConsumer?.annotationOutputImage(
+                    self,
+                    image: cameraOutputImage,
+                    overlayImage: segmentationOverlayOutputImage,
+                    overlay2Image: updatedFeaturesOverlayResults.overlayImage
+                )
+            }
+        }
+    }
 }
 
 /**
     Extension to handle camera image processing: orientation and cropping.
  */
 extension AnnotationImageManager {
-    private func getCameraOutputImage(
-        captureImageData: (any CaptureImageDataProtocol)
-    ) throws -> CIImage {
+    private func getCameraOutputImage() throws -> CIImage {
+        guard let captureImageData = self.captureImageData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
         let cameraImage = captureImageData.cameraImage
         let interfaceOrientation = captureImageData.interfaceOrientation
 //        let originalSize = captureImageData.originalSize
@@ -204,7 +243,7 @@ extension AnnotationImageManager {
         let orientedImage = cameraImage.oriented(imageOrientation)
         let cameraOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let cameraCgImage = cIContext.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
+        guard let cameraCgImage = context.createCGImage(cameraOutputImage, from: cameraOutputImage.extent) else {
             throw AnnotationImageManagerError.cameraImageProcessingFailed
         }
         return CIImage(cgImage: cameraCgImage)
@@ -219,12 +258,10 @@ extension AnnotationImageManager {
         Aligns the segmentation label images from the capture data history to the current capture data.
         MARK: Does not throw errors, instead returns empty array on failure, since this is not critical to the annotation image processing.
      */
-    private func getAlignedCaptureDataHistory(
-        captureImageData: (any CaptureImageDataProtocol),
-        captureDataHistory: [CaptureImageData]
-    ) -> [CIImage] {
+    private func getAlignedCaptureDataHistory(captureDataHistory: [CaptureImageData]) -> [CIImage] {
         do {
-            guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
+            guard let captureImageData = self.captureImageData,
+                  let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
                 throw AnnotationImageManagerError.segmentationNotConfigured
             }
             let currentCaptureData = CaptureImageData(captureImageData)
@@ -242,29 +279,23 @@ extension AnnotationImageManager {
     }
     
     private func getProcessedSegmentationLabelImage(
-        captureImageData: (any CaptureImageDataProtocol),
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) -> CIImage {
-        do {
-            guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
-                throw AnnotationImageManagerError.segmentationNotConfigured
-            }
-            let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
-                accessibilityFeatureClass: accessibilityFeatureClass
-            )
-            return processedSegmentationLabelImage
-        } catch {
-            print("Error processing segmentation label image: \(error.localizedDescription)")
-            return captureImageData.captureImageDataResults.segmentationLabelImage
+    ) throws -> CIImage {
+        guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
+            throw AnnotationImageManagerError.segmentationNotConfigured
         }
+        let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
+            accessibilityFeatureClass: accessibilityFeatureClass
+        )
+        return processedSegmentationLabelImage
     }
     
     private func getSegmentationOverlayOutputImage(
-        captureImageData: (any CaptureImageDataProtocol),
         segmentationLabelImage: CIImage,
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> CIImage {
-        guard let grayscaleToColorFilter = self.grayscaleToColorFilter else {
+        guard let captureImageData = self.captureImageData,
+              let grayscaleToColorFilter = self.grayscaleToColorFilter else {
             throw AnnotationImageManagerError.notConfigured
         }
         let segmentationColorImage = try grayscaleToColorFilter.apply(
@@ -282,7 +313,7 @@ extension AnnotationImageManager {
         let orientedImage = segmentationColorImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.segmentationImageRasterizationFailed
         }
         return CIImage(cgImage: overlayCgImage)
@@ -296,49 +327,91 @@ extension AnnotationImageManager {
     private func getAccessibilityFeatures(
         segmentationLabelImage: CIImage,
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [AccessibilityFeature] {
-        guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
+    ) throws -> [EditableAccessibilityFeature] {
+        guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline,
+              let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.segmentationNotConfigured
         }
+        let imageOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: captureImageData.interfaceOrientation
+        )
         let detectedFeatures = try segmentationAnnotationPipeline.processContourRequest(
             segmentationLabelImage: segmentationLabelImage,
-            accessibilityFeatureClass: accessibilityFeatureClass
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            orientation: imageOrientation
         )
         let accessibilityFeatures = detectedFeatures.map { detectedFeature in
-            return AccessibilityFeature(
-                accessibilityFeatureClass: detectedFeature.accessibilityFeatureClass,
+            return EditableAccessibilityFeature(
                 detectedAccessibilityFeature: detectedFeature
             )
         }
         return accessibilityFeatures
     }
     
-    private func getFeaturesOverlayOutputImage(
-        captureImageData: (any CaptureImageDataProtocol),
-        accessibilityFeatures: [AccessibilityFeature]
-    ) throws -> CIImage {
-        guard let raterizedDetectedFeaturesImage = ContourFeatureRasterizer.rasterizeFeatures(
-            accessibilityFeatures: accessibilityFeatures, size: captureImageData.originalSize,
+    private func getFeaturesOverlayOutputImageWithSource(accessibilityFeatures: [EditableAccessibilityFeature])
+    throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
+        guard let captureImageData = self.captureImageData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
+        guard let raterizedFeaturesImage = ContourFeatureRasterizer.rasterizeFeatures(
+            detectedFeatures: accessibilityFeatures, size: captureImageData.originalSize,
             polygonConfig: RasterizeConfig(draw: true, color: nil, width: 5),
             boundsConfig: RasterizeConfig(draw: false, color: nil, width: 0),
             centroidConfig: RasterizeConfig(draw: true, color: nil, width: 10)
         ) else {
             throw AnnotationImageManagerError.featureRasterizationFailed
         }
-        let rasterizedDetectedFeaturesCIImage = CIImage(cgImage: raterizedDetectedFeaturesImage)
-        let interfaceOrientation = captureImageData.interfaceOrientation
+        let overlayImage = try createFeaturesOverlayFromSource(
+            raterizedFeaturesImage: raterizedFeaturesImage,
+            interfaceOrientation: captureImageData.interfaceOrientation
+        )
+        return (sourceCGImage: raterizedFeaturesImage, overlayImage: overlayImage)
+    }
+    
+    private func updateFeaturesOverlayOutputImageWithSource(
+        sourceCGImage: CGImage,
+        accessibilityFeatures: [EditableAccessibilityFeature],
+        isSelected: Bool
+    ) throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
+        guard let captureImageData = self.captureImageData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
+        let size = CGSize(width: sourceCGImage.width, height: sourceCGImage.height)
+        let color: UIColor? = isSelected ? UIColor.white : nil
+        guard let updatedRasterizedFeaturesImage = ContourFeatureRasterizer.updateRasterizedFeatures(
+            baseImage: sourceCGImage,
+            detectedFeature: accessibilityFeatures, size: size,
+            polygonConfig: RasterizeConfig(draw: true, color: color, width: 5),
+            boundsConfig: RasterizeConfig(draw: false, color: color, width: 0),
+            centroidConfig: RasterizeConfig(draw: true, color: color, width: 10)
+        ) else {
+            throw AnnotationImageManagerError.featureRasterizationFailed
+        }
+        let overlayImage = try createFeaturesOverlayFromSource(
+            raterizedFeaturesImage: updatedRasterizedFeaturesImage,
+            interfaceOrientation: captureImageData.interfaceOrientation
+        )
+        return (sourceCGImage: updatedRasterizedFeaturesImage, overlayImage: overlayImage)
+    }
+    
+    private func createFeaturesOverlayFromSource(
+        raterizedFeaturesImage: CGImage,
+        interfaceOrientation: UIInterfaceOrientation
+    ) throws -> CIImage {
+        let raterizedFeaturesCIImage = CIImage(cgImage: raterizedFeaturesImage)
         let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
         
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )
-        let orientedImage = rasterizedDetectedFeaturesCIImage.oriented(imageOrientation)
+        let orientedImage = raterizedFeaturesCIImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.segmentationImageRasterizationFailed
         }
-        return CIImage(cgImage: overlayCgImage)
+        let overlayImage = CIImage(cgImage: overlayCgImage)
+        return overlayImage
     }
 }
 
@@ -348,12 +421,12 @@ extension AnnotationImageManager {
  */
 extension AnnotationImageManager {
     private func getMeshOverlayOutputImage(
-        captureMeshData: (any CaptureMeshDataProtocol),
         polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)],
         size: CGSize,
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> CIImage {
-        guard let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
+        guard let captureMeshData = self.captureMeshData,
+              let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
             polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: size,
             boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
         ) else {
@@ -370,7 +443,7 @@ extension AnnotationImageManager {
         let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
-        guard let overlayCgImage = cIContext.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
             throw AnnotationImageManagerError.meshRasterizationFailed
         }
         return CIImage(cgImage: overlayCgImage)
@@ -379,11 +452,12 @@ extension AnnotationImageManager {
     /**
      Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
      */
-    private func getPolygonsNormalizedCoordinates(
-        captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol),
-        accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
+    private func getPolygonsNormalizedCoordinates(accessibilityFeatureClass: AccessibilityFeatureClass)
+    throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
+        guard let captureImageData = self.captureImageData,
+              let captureMeshData = self.captureMeshData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
         let meshPolygons = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
             capturedMeshSnapshot: captureMeshData.captureMeshDataResults.segmentedMesh,
             accessibilityFeatureClass: accessibilityFeatureClass

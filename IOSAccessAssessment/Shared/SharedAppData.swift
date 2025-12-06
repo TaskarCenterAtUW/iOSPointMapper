@@ -20,6 +20,8 @@ final class SharedAppData: ObservableObject {
     var captureDataQueue: SafeDeque<CaptureImageData>
     var captureDataCapacity: Int
     
+    var mappingData: MappingData = MappingData()
+    
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
         self.captureDataQueue = SafeDeque<CaptureImageData>(capacity: captureDataCapacity)

@@ -34,7 +34,7 @@ struct ContourFeatureRasterizer {
     }
     
     static func rasterizeFeatures(
-        accessibilityFeatures: [AccessibilityFeature], size: CGSize,
+        detectedFeatures: [any DetectedFeatureProtocol], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         centroidConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0)
@@ -43,8 +43,8 @@ struct ContourFeatureRasterizer {
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
-        for feature in accessibilityFeatures {
-            let featureContourDetails = feature.detectedAccessibilityFeature.contourDetails
+        for feature in detectedFeatures {
+            let featureContourDetails = feature.contourDetails
             let featureColor: UIColor = UIColor(ciColor: feature.accessibilityFeatureClass.color)
             /// First, draw the contour
             if polygonConfig.draw {
@@ -89,13 +89,13 @@ struct ContourFeatureRasterizer {
         return cgImage
     }
     
-    static func updateRasterizedImage(
+    static func updateRasterizedFeatures(
         baseImage: CGImage,
-        accessibilityFeatures: [AccessibilityFeature], size: CGSize,
+        detectedFeature: [any DetectedFeatureProtocol], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         centroidConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0)
-    ) -> CGImage {
+    ) -> CGImage? {
         let baseUIImage = UIImage(cgImage: baseImage)
         
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
@@ -103,8 +103,8 @@ struct ContourFeatureRasterizer {
         
         baseUIImage.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
         
-        for feature in accessibilityFeatures {
-            let featureContourDetails = feature.detectedAccessibilityFeature.contourDetails
+        for feature in detectedFeature {
+            let featureContourDetails = feature.contourDetails
             let featureColor: UIColor = UIColor(ciColor: feature.accessibilityFeatureClass.color)
             /// First, draw the contour
             if polygonConfig.draw {
@@ -146,9 +146,6 @@ struct ContourFeatureRasterizer {
         let cgImage = UIGraphicsGetImageFromCurrentImageContext()?.cgImage
         UIGraphicsEndImageContext()
         
-        if let cgImage = cgImage {
-            return cgImage
-        }
-        return baseImage
+        return cgImage
     }
 }

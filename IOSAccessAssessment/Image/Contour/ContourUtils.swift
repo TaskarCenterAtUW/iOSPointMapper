@@ -147,9 +147,15 @@ extension ContourUtils {
         return getTrapezoid(normalizedPoints: points, x_delta: x_delta, y_delta: y_delta)
     }
     static func getTrapezoid(
-        normalizedPoints points: [simd_float2], x_delta: Float = 0.1, y_delta: Float = 0.1
+        normalizedPoints points: [simd_float2], x_delta: Float = 0.1, y_delta: Float = 0.1,
+        isFlipped: Bool = false
     ) -> [SIMD2<Float>]? {
         guard !points.isEmpty else { return nil }
+        var points = points
+        if isFlipped {
+            /// Flip x and y
+            points = points.map { SIMD2<Float>($0.y, $0.x) }
+        }
         let sortedByYPoints = points.sorted(by: { $0.y < $1.y })
         
         func intersectsAtY(p1: SIMD2<Float>, p2: SIMD2<Float>, y0: Float) -> SIMD2<Float>? {
@@ -229,12 +235,13 @@ extension ContourUtils {
             let lowerLeftX = lowerLeftX, let lowerRightX = lowerRightX,
             let upperLeftX = upperLeftX, let upperRightX = upperRightX
             {
-                return [
+                let trapezoidPoints = [
                     SIMD2<Float>(lowerLeftX, sortedByYPoints[lowY].y),
                     SIMD2<Float>(upperLeftX, sortedByYPoints[highY].y),
                     SIMD2<Float>(upperRightX, sortedByYPoints[highY].y),
                     SIMD2<Float>(lowerRightX, sortedByYPoints[lowY].y)
                 ]
+                return isFlipped ? trapezoidPoints.map { SIMD2<Float>($0.y, $0.x) } : trapezoidPoints
             }
             
             if !lowerLineFound{

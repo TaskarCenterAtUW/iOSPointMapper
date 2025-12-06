@@ -5,30 +5,27 @@
 //  Created by Himanshu on 5/25/25.
 //
 
-enum AnnotationOption: String, CaseIterable {
-    case agree = "I agree with this object annotation"
-    case discard = "I wish to discard this object annotation"
+protocol AnnotationOptionProtocol: RawRepresentable, CaseIterable, Hashable where RawValue == String {}
+
+enum AnnotationOptionFeature: String, CaseIterable, Hashable, AnnotationOptionProtocol {
+    case agree = "I agree with this feature annotation"
+    case discard = "I wish to discard this feature annotation"
     
-    static let `default` = AnnotationOption.agree
+    static let `default` = AnnotationOptionFeature.agree
 }
 
-enum AnnotationOptionClass: String, CaseIterable {
+enum AnnotationOptionFeatureClass: String, CaseIterable, Hashable, AnnotationOptionProtocol {
     case agree = "I agree with this class annotation"
     case missingInstances = "Annotation is missing some instances"
 //    case misidentified = "The class annotation is misidentified"
     case discard = "I wish to discard this class annotation"
     
-    static let `default` = AnnotationOptionClass.agree
+    static let `default` = AnnotationOptionFeatureClass.agree
 }
 
-protocol AnnotationOptionProtocol: RawRepresentable, CaseIterable, Hashable where RawValue == String {}
-
-extension AnnotationOptionClass: AnnotationOptionProtocol {}
-extension AnnotationOption: AnnotationOptionProtocol {}
-
-enum AnnotationOptionParent: Hashable {
-    case individualOption(AnnotationOption)
-    case classOption(AnnotationOptionClass)
+enum AnnotationOption: Hashable {
+    case individualOption(AnnotationOptionFeature)
+    case classOption(AnnotationOptionFeatureClass)
     
     var rawValue: String {
         switch self {

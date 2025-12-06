@@ -88,6 +88,23 @@ enum SetupViewConstants {
     }
 }
 
+enum SetupViewError: Error, LocalizedError {
+    case noWorkspaceId
+    case changesetOpenFailed
+    case authenticationError
+    
+    var errorDescription: String? {
+        switch self {
+        case .noWorkspaceId:
+            return "Workspace ID is missing."
+        case .changesetOpenFailed:
+            return "Failed to open changeset."
+        case .authenticationError:
+            return "Authentication error. Please log in again."
+        }
+    }
+}
+
 struct ChangesetInfoTip: Tip {
     
     var title: Text {
@@ -185,13 +202,11 @@ struct SetupView: View {
     }
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
-//    @EnvironmentObject var userState: UserStateViewModel
-//    @State private var showLogoutConfirmation = false
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
     
     @StateObject private var sharedAppData: SharedAppData = SharedAppData()
     @StateObject private var sharedAppContext: SharedAppContext = SharedAppContext()
     @StateObject private var segmentationPipeline: SegmentationARPipeline = SegmentationARPipeline()
-    @StateObject private var depthModel: DepthModel = DepthModel()
     
     @StateObject private var changesetOpenViewModel = ChangeSetOpenViewModel()
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
@@ -347,7 +362,9 @@ struct SetupView: View {
                 }
             }
             .onAppear {
-                if !changesetOpenViewModel.isChangesetOpened {
+                if let _ = workspaceViewModel.changesetId {
+                    changesetOpenViewModel.isChangesetOpened = true
+                } else {
                     openChangeset()
                 }
                 if !modelInitializationViewModel.areModelsInitialized {
@@ -369,30 +386,26 @@ struct SetupView: View {
         .environmentObject(self.sharedAppData)
         .environmentObject(self.sharedAppContext)
         .environmentObject(self.segmentationPipeline)
-        .environmentObject(self.depthModel)
     }
     
     private func openChangeset() {
-        guard let workspaceId = workspaceViewModel.workspaceId else {
-            DispatchQueue.main.async {
-                changesetOpenViewModel.update(
-                    isChangesetOpened: false, showRetryAlert: true,
-                    retryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(SetupViewConstants.Texts.workspaceIdMissingMessageText)")
-            }
-            return
-        }
-        ChangesetService.shared.openChangeset(workspaceId: workspaceId) { result in
-            switch result {
-            case .success(let changesetId):
-                print("Opened changeset with ID: \(changesetId)")
-                DispatchQueue.main.async {
-                    changesetOpenViewModel.isChangesetOpened = true
-                    
-                    // Open a dataset encoder for the changeset
-                    sharedAppData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: changesetId)
+        Task {
+            do {
+                guard let workspaceId = workspaceViewModel.workspaceId else {
+                    throw SetupViewError.noWorkspaceId
                 }
-            case .failure(let error):
-                DispatchQueue.main.async {
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw SetupViewError.authenticationError
+                }
+                
+                let openedChangesetId = try await ChangesetService.shared.openChangesetAsync(
+                    workspaceId: workspaceId, accessToken: accessToken
+                )
+                workspaceViewModel.updateChangeset(id: openedChangesetId)
+                changesetOpenViewModel.isChangesetOpened = true
+                sharedAppData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: openedChangesetId)
+            } catch {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     changesetOpenViewModel.update(
                         isChangesetOpened: false, showRetryAlert: true,
                         retryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)")
@@ -402,18 +415,23 @@ struct SetupView: View {
     }
     
     private func closeChangeset() {
-        ChangesetService.shared.closeChangeset { result in
-            switch result {
-            case .success:
-                print("Changeset closed successfully.")
-                DispatchQueue.main.async {
-                    sharedAppData.refreshData()
-                    sharedAppData.currentDatasetEncoder?.save()
-                    
-                    openChangeset()
+        Task {
+            do {
+                guard let changesetId = workspaceViewModel.changesetId else {
+                    throw SetupViewError.changesetOpenFailed
                 }
-            case .failure(let error):
-                DispatchQueue.main.async {
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw SetupViewError.authenticationError
+                }
+                
+                try await ChangesetService.shared.closeChangesetAsync(
+                    changesetId: changesetId, accessToken: accessToken
+                )
+                sharedAppData.refreshData()
+                sharedAppData.currentDatasetEncoder?.save()
+                openChangeset()
+            } catch {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     changeSetCloseViewModel.update(
                         showRetryAlert: true,
                         retryMessage: "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)")
@@ -428,7 +446,7 @@ struct SetupView: View {
             modelInitializationViewModel.update(areModelsInitialized: true, showRetryAlert: false, retryMessage: "")
         } catch {
             /// Sleep for a short duration to avoid rapid retry loops
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 modelInitializationViewModel.update(
                     areModelsInitialized: false, showRetryAlert: true,
                     retryMessage: "\(SetupViewConstants.Texts.modelInitializationRetryMessageText) \nError: \(error.localizedDescription)")
@@ -442,7 +460,7 @@ struct SetupView: View {
             sharedAppContextInitializationViewModel.update(isContextConfigured: true, showRetryAlert: false, retryMessage: "")
         } catch {
             /// Sleep for a short duration to avoid rapid retry loops
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 sharedAppContextInitializationViewModel.update(
                     isContextConfigured: false, showRetryAlert: true,
                     retryMessage: "\(SetupViewConstants.Texts.sharedAppContextInitializationRetryMessageText) \nError: \(error.localizedDescription)")

@@ -135,10 +135,10 @@ class DatasetEncoder {
             self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
         
-        // TODO: Add error handling for each encoder
+        /// TODO: Add error handling for each encoder
         
-        // Add a capture point to the TDEI workspaces
-        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
+        /// Add a capture point to the TDEI workspaces
+//        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
@@ -165,26 +165,26 @@ class DatasetEncoder {
 //        self.headingEncoder.done()
     }
     
-    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, frameId: UUID) {
-        guard let nodeLatitude = location?.latitude,
-              let nodeLongitude = location?.longitude
-        else { return }
-        
-        var tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
-        tags[APIConstants.TagKeys.captureIdKey] = frameId.uuidString
-        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
-        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
-        
-        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
-        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
-        
-        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
-            switch result {
-            case .success(_):
-                print("Changes uploaded successfully.")
-            case .failure(let error):
-                print("Failed to upload changes: \(error.localizedDescription)")
-            }
-        }
-    }
+//    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, frameId: UUID) {
+//        guard let nodeLatitude = location?.latitude,
+//              let nodeLongitude = location?.longitude
+//        else { return }
+//        
+//        var tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
+//        tags[APIConstants.TagKeys.captureIdKey] = frameId.uuidString
+//        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
+//        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
+//        
+//        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
+//        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
+//        
+//        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
+//            switch result {
+//            case .success(_):
+//                print("Changes uploaded successfully.")
+//            case .failure(let error):
+//                print("Failed to upload changes: \(error.localizedDescription)")
+//            }
+//        }
+//    }
 }
