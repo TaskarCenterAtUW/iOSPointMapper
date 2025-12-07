@@ -12,9 +12,9 @@ enum SetupViewConstants {
     enum Texts {
         static let setupViewTitle = "Setup"
         static let uploadChangesetTitle = "Upload Changeset"
-        static let selectClassesText = "Select Classes to Identify"
+        static let selectClassesText = "Select Feature Types to Map"
         
-        // Alerts
+        /// Alerts
         static let changesetOpeningErrorTitle = "Changeset failed to open. Please retry."
         static let changesetOpeningRetryText = "Retry"
         static let changesetOpeningRetryMessageText = "Failed to open changeset."
@@ -35,12 +35,12 @@ enum SetupViewConstants {
         
         static let nextButton = "Next"
         
-        // ChangesetInfoTip
+        /// ChangesetInfoTip
         static let changesetInfoTipTitle = "Upload Changeset"
         static let changesetInfoTipMessage = "Upload your collected data as a changeset to the workspace."
         static let changesetInfoTipLearnMoreButtonTitle = "Learn More"
         
-        // ChangesetInfoLearnMoreSheetView
+        /// ChangesetInfoLearnMoreSheetView
         static let changesetInfoLearnMoreSheetTitle = "About Changesets"
         static let changesetInfoLearnMoreSheetMessage = """
         A changeset is a collection of changes made to the workspace. It allows you to group related modifications together for easier management and tracking.
@@ -48,19 +48,19 @@ enum SetupViewConstants {
         Click the Upload Changeset button to upload your collected data as a changeset to the workspace.
         """
         
-        // SelectClassesInfoTip
-        static let selectClassesInfoTipTitle = "Select Classes"
-        static let selectClassesInfoTipMessage = "Please select the type of environment objects that you want the application to map during the mapping session."
+        /// SelectClassesInfoTip
+        static let selectClassesInfoTipTitle = "Select Feature Types"
+        static let selectClassesInfoTipMessage = "Please select the type of environment features that you want the application to map during the mapping session."
         static let selectClassesInfoTipLearnMoreButtonTitle = "Learn More"
         
-        // SelectClassesInfoLearnMoreSheetView
-        static let selectClassesInfoLearnMoreSheetTitle = "About Class Selection"
+        /// SelectClassesInfoLearnMoreSheetView
+        static let selectClassesInfoLearnMoreSheetTitle = "About Feature Types"
         static let selectClassesInfoLearnMoreSheetMessage = """
-        Each class represents a specific type of object or feature in the environment, such as sidewalks, buildings, traffic signs, etc.
+        Each feature type represents a specific type of feature in the environment, such as sidewalks, buildings, traffic signs, etc.
         
-        Selecting specific classes helps the application focus on mapping the objects that are most relevant to your needs. 
+        Selecting specific feature types helps the application focus on mapping the objects that are most relevant to your needs. 
         
-        Please select the classes you want to identify during the mapping session from the list provided.
+        Please select the feature types you want to identify during the mapping session from the list provided.
         """
     }
     
@@ -69,7 +69,7 @@ enum SetupViewConstants {
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
         static let uploadIcon = "arrow.up"
         
-        // ChangesetInfoTip
+        /// InfoTip
         static let infoIcon = "info.circle"
     }
     
@@ -481,7 +481,7 @@ struct ChangesetLearnMoreSheetView: View {
 //                .frame(width: 160)
 //                .foregroundStyle(.accentColor)
             Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetTitle)
-                .font(.title)
+                .font(.headline)
             Text(SetupViewConstants.Texts.changesetInfoLearnMoreSheetMessage)
             .foregroundStyle(.secondary)
             Button("Dismiss") {
@@ -504,7 +504,7 @@ struct SelectClassesLearnMoreSheetView: View {
             //                .frame(width: 160)
             //                .foregroundStyle(.accentColor)
             Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetTitle)
-                .font(.title)
+                .font(.headline)
             Text(SetupViewConstants.Texts.selectClassesInfoLearnMoreSheetMessage)
                 .foregroundStyle(.secondary)
             Button("Dismiss") {
