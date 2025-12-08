@@ -12,6 +12,7 @@ import simd
 enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed
     case pixelBufferPoolCreationFailed
+    case pixelBufferCreationFailed
     case cameraImageRenderingFailed
     case segmentationNotConfigured
     case segmentationMeshNotConfigured
@@ -33,6 +34,8 @@ enum ARCameraManagerError: Error, LocalizedError {
             return "AR session configuration failed."
         case .pixelBufferPoolCreationFailed:
             return "Failed to create pixel buffer pool."
+        case .pixelBufferCreationFailed:
+            return "Failed to create pixel buffer."
         case .cameraImageRenderingFailed:
             return "Failed to render camera image."
         case .segmentationNotConfigured:
@@ -385,10 +388,14 @@ extension ARCameraManager {
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
-        segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
-        segmentationImage = try self.backCIImageWithPixelBuffer(
-            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool,
-            colorSpace: segmentationMaskColorSpace,
+        let segmentationPixelBuffer = try self.createPixelBufferFromPool(pixelBufferPool: segmentationPixelBufferPool)
+        CenterCropTransformUtils.revertCenterCropAspectFit(
+            segmentationImage, from: originalSize,
+            to: segmentationPixelBuffer,
+            context: rawContext, colorSpace: segmentationMaskColorSpace
+        )
+        segmentationImage = CIImage(
+            cvPixelBuffer: segmentationPixelBuffer, options: [.colorSpace: segmentationMaskColorSpace ?? NSNull()]
         )
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
@@ -640,6 +647,23 @@ extension ARCameraManager {
         let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
         let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
         return backedImage
+    }
+    
+    /**
+    Create a pixel buffer from the provided pixel buffer pool.
+     */
+    private func createPixelBufferFromPool(
+        pixelBufferPool: CVPixelBufferPool
+    ) throws -> CVPixelBuffer {
+        var pixelBufferOut: CVPixelBuffer?
+        let status3 = CVPixelBufferPoolCreatePixelBuffer(
+            nil, pixelBufferPool, &pixelBufferOut
+        )
+        guard status3 == kCVReturnSuccess,
+              let pixelBuffer = pixelBufferOut else {
+            throw ARCameraManagerError.pixelBufferCreationFailed
+        }
+        return pixelBuffer
     }
     
     /**
