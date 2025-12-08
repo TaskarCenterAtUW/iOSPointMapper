@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 import CoreLocation
 import simd
 
@@ -13,7 +14,7 @@ enum AnnotationViewConstants {
     enum Texts {
         static let annotationViewTitle = "Annotation"
         
-        static let currentClassPrefixText = "Selected class: "
+        static let currentClassPrefixText = "Selected class"
         static let finishText = "Finish"
         static let nextText = "Next"
         
@@ -36,6 +37,23 @@ enum AnnotationViewConstants {
         static let apiTransmissionStatusAlertDismissButtonKey = "OK"
         static let apiTransmissionStatusAlertGenericMessageKey = "Failed to upload features. Press OK to dismiss this alert."
         static let apiTransmissionStatusAlertMessageSuffixKey = " feature(s) failed to upload. Press OK to dismiss this alert."
+        
+        /// SelectObjectInfoTip
+        static let selectFeatureInfoTipTitle = "Select a Feature"
+        static let selectFeatureInfoTipMessage = "Please select the individual feature that you want to annotate"
+        static let selectFeatureInfoTipLearnMoreButtonTitle = "Learn More"
+        
+        /// SelectObjectInfoLearnMoreSheetView
+        static let selectFeatureInfoLearnMoreSheetTitle = "Annotating an Individual Feature"
+        static let selectFeatureInfoLearnMoreSheetMessage = """
+        For each type of accessibility feature, the app can identify multiple feature instances within the same image. 
+        
+        **Select All**: Default option. You can annotate all features of a particular type together.
+        
+        **Individual**: You can select a particular feature from the dropdown menu if you wish to provide specific annotations for an individual feature.
+        
+        **Ellipsis [...]**: For each feature, you can also view its details by tapping the ellipsis button next to the dropdown menu.
+        """
     }
     
     enum Images {
@@ -79,6 +97,27 @@ enum AnnotationViewError: Error, LocalizedError {
         case .apiTransmissionFailed(let results):
             return "API Transmission failed with \(results.failedFeatureUploads) failed uploads."
         }
+    }
+}
+
+struct SelectFeatureInfoTip: Tip {
+    
+    var title: Text {
+        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipTitle)
+    }
+    var message: Text? {
+        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: AnnotationViewConstants.Images.infoIcon)
+            .resizable()
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle,
+            title: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle
+        )
     }
 }
 
@@ -206,6 +245,9 @@ struct AnnotationView: View {
     @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewModel()
     @State private var isShowingAnnotationFeatureDetailView: Bool = false
     
+//    var selectFeatureInfoTip = SelectFeatureInfoTip()
+    @State private var showSelectFeatureLearnMoreSheet = false
+    
     var body: some View {
         VStack {
             HStack {
@@ -260,6 +302,10 @@ struct AnnotationView: View {
                 Text(AnnotationViewConstants.Texts.featureDetailNotAvailableText)
                     .presentationDetents([.medium, .large])
             }
+        }
+        .sheet(isPresented: $showSelectFeatureLearnMoreSheet) {
+            SelectFeatureLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
         }
         .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -339,6 +385,19 @@ struct AnnotationView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 30)
+                .overlay(
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            showSelectFeatureLearnMoreSheet = true
+                        }) {
+                            Image(systemName: AnnotationViewConstants.Images.infoIcon)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                        }
+                        .padding(.trailing, 10)
+                    }
+                )
                 
                 ProgressBar(value: 0)
                 
@@ -586,5 +645,28 @@ struct AnnotationView: View {
         print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
         return apiTransmissionResults
+    }
+}
+
+struct SelectFeatureLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            //            Image(systemName: "number")
+            //                .resizable()
+            //                .scaledToFit()
+            //                .frame(width: 160)
+            //                .foregroundStyle(.accentColor)
+            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetTitle)
+                .font(.headline)
+            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetMessage)
+                .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }
