@@ -45,7 +45,7 @@ struct ProfileView: View {
     var body: some View {
         VStack {
             Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
-//                .padding()
+                .padding(.top, 20)
                 .padding(.bottom, 40)
             
             HStack {

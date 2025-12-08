@@ -34,11 +34,23 @@ enum ARCameraViewConstants {
         /// Invalid Content View
         static let invalidContentViewTitle = "Invalid Capture"
         static let invalidContentViewMessage = "The captured data is invalid. Please try again."
+        
+        /// ARCameraLearnMoreSheetView
+        static let arCameraLearnMoreSheetTitle = "About Capture"
+        static let arCameraLearnMoreSheetMessage = """
+        Use this screen to capture accessibility features in your environment. 
+        
+        Point your device's camera at the area you want to capture, and press the Camera Button to take a snapshot.
+        
+        After capturing, you will be prompted to annotate the detected features.
+        """
     }
     
     enum Images {
         static let cameraIcon = "camera.circle.fill"
         
+        /// InfoTio
+        static let infoIcon = "info.circle"
     }
     
     enum Colors {
@@ -87,6 +99,8 @@ struct ARCameraView: View {
     var locationManager: LocationManager = LocationManager()
     @State private var captureLocation: CLLocationCoordinate2D?
     
+    @State private var showARCameraLearnMoreSheet = false
+    
     @State private var showAnnotationView = false
     
     var body: some View {
@@ -119,6 +133,15 @@ struct ARCameraView: View {
             }
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
+        .navigationBarItems(trailing:
+            Button(action: {
+                showARCameraLearnMoreSheet = true
+            }) {
+                Image(systemName: ARCameraViewConstants.Images.infoIcon)
+                    .resizable()
+                    .frame(width: 20, height: 20)
+            }
+        )
         .onAppear {
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
@@ -162,6 +185,10 @@ struct ARCameraView: View {
                     managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
                 }
             }
+        }
+        .sheet(isPresented: $showARCameraLearnMoreSheet) {
+            ARCameraLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
         }
     }
     
@@ -213,5 +240,28 @@ struct ARCameraView: View {
             try await Task.sleep(for: .seconds(2))
             cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
         }
+    }
+}
+
+struct ARCameraLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+//            Image(systemName: "number")
+//                .resizable()
+//                .scaledToFit()
+//                .frame(width: 160)
+//                .foregroundStyle(.accentColor)
+            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetTitle)
+                .font(.headline)
+            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetMessage)
+            .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }

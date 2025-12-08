@@ -250,7 +250,7 @@ struct WorkspaceSelectionLearnMoreSheetView: View {
 //                .frame(width: 160)
 //                .foregroundStyle(.accentColor)
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetTitle)
-                .font(.title)
+                .font(.headline)
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetMessage)
             .foregroundStyle(.secondary)
             Button("Dismiss") {
