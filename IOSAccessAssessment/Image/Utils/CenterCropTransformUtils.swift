@@ -95,7 +95,7 @@ struct CenterCropTransformUtils {
             transform = CGAffineTransform(scaleX: scale, y: scale)
                 .translatedBy(x: 0, y: yOffset / scale)
         }
-        let transformedImage = image.transformed(by: transform)
+        let transformedImage = image.samplingNearest().transformed(by: transform)
         let canvas = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
         let background = CIImage(color: .clear).cropped(to: canvas)
         let composed = transformedImage.composited(over: background)
@@ -132,7 +132,7 @@ struct CenterCropTransformUtils {
             transform = CGAffineTransform(scaleX: scale, y: scale)
                 .translatedBy(x: 0, y: yOffset / scale)
         }
-        let transformedImage = image.transformed(by: transform)
+        let transformedImage = image.samplingNearest().transformed(by: transform)
         let canvas = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
         context.render(transformedImage, to: pixelBuffer, bounds: canvas, colorSpace: colorSpace)
     }
