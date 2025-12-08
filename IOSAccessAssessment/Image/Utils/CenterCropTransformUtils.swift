@@ -69,6 +69,9 @@ struct CenterCropTransformUtils {
      This reverse function attempts to revert the effect of `centerCropAspectFit`.
         It takes the cropped and resized image, the target size it was resized to, and the original size before resizing and cropping.
         It calculates the necessary scaling and translation to restore the image to its original aspect ratio and size.
+     
+     - WARNING:
+     Do not use this function for images without color space or with alpha channels, as it may produce incorrect results.
      */
     static func revertCenterCropAspectFit(
         _ image: CIImage, from originalSize: CGSize
@@ -97,6 +100,41 @@ struct CenterCropTransformUtils {
         let background = CIImage(color: .clear).cropped(to: canvas)
         let composed = transformedImage.composited(over: background)
         return composed
+    }
+    
+    /**
+     This reverse function attempts to revert the effect of `centerCropAspectFit`.
+        It takes the cropped and resized image, the target size it was resized to, and the original size before resizing and cropping.
+        It calculates the necessary scaling and translation to restore the image to its original aspect ratio and size.
+        It renders the final image on a provided pixel buffer
+     */
+    static func revertCenterCropAspectFit(
+        _ image: CIImage, from originalSize: CGSize,
+        to pixelBuffer: CVPixelBuffer,
+        context: CIContext, colorSpace: CGColorSpace? = nil
+    ) {
+        let sourceAspect = image.extent.width / image.extent.height
+        let destAspect = originalSize.width / originalSize.height
+        
+        var transform: CGAffineTransform = .identity
+        var newWidth: CGFloat = originalSize.width
+        var newHeight: CGFloat = originalSize.height
+        if sourceAspect < destAspect {
+            let scale = originalSize.height / image.extent.height
+            newWidth = originalSize.width
+            let xOffset = (newWidth - image.extent.width * scale) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: xOffset / scale, y: 0)
+        } else {
+            let scale = originalSize.width / image.extent.width
+            newHeight = originalSize.height
+            let yOffset = (newHeight - image.extent.height * scale) / 2
+            transform = CGAffineTransform(scaleX: scale, y: scale)
+                .translatedBy(x: 0, y: yOffset / scale)
+        }
+        let transformedImage = image.transformed(by: transform)
+        let canvas = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+        context.render(transformedImage, to: pixelBuffer, bounds: canvas, colorSpace: colorSpace)
     }
     
     /**
