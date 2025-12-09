@@ -7,7 +7,7 @@
 import Foundation
 import CoreLocation
 
-struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatureProtocol {
+struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, CustomStringConvertible {
     let id: UUID
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
@@ -15,18 +15,18 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
     var location: CLLocationCoordinate2D?
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
-    var osmNode: OSMNode
+    var oswElement: any OSWElement
     
     init (
         id: UUID = UUID(),
         accessibilityFeature: (any AccessibilityFeatureProtocol),
-        osmNode: OSMNode
+        oswElement: any OSWElement
     ) {
         self.id = id
         self.accessibilityFeatureClass = accessibilityFeature.accessibilityFeatureClass
         self.location = accessibilityFeature.location
         self.attributeValues = accessibilityFeature.attributeValues
-        self.osmNode = osmNode
+        self.oswElement = oswElement
     }
     
     init(
@@ -34,13 +34,13 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
         accessibilityFeatureClass: AccessibilityFeatureClass,
         location: CLLocationCoordinate2D?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:],
-        osmNode: OSMNode
+        oswElement: any OSWElement
     ) {
         self.id = id
         self.accessibilityFeatureClass = accessibilityFeatureClass
         self.location = location
         self.attributeValues = attributeValues
-        self.osmNode = osmNode
+        self.oswElement = oswElement
     }
     
     mutating func setLocation(_ location: CLLocationCoordinate2D?) {
@@ -56,11 +56,15 @@ struct MappedAccessibilityFeature: Identifiable, Equatable, AccessibilityFeature
         attributeValues[attribute] = value
     }
     
-    mutating func setOSMNode(_ osmNode: OSMNode) {
-        self.osmNode = osmNode
+    mutating func setOSWElement(_ oswElement: any OSWElement) {
+        self.oswElement = oswElement
     }
     
     static func == (lhs: MappedAccessibilityFeature, rhs: MappedAccessibilityFeature) -> Bool {
         return lhs.id == rhs.id
+    }
+    
+    var description: String {
+        return "MappedAccessibilityFeature(id: \(id), class: \(accessibilityFeatureClass), location: \(String(describing: location)), attributes: \(attributeValues), oswElement: \(oswElement))"
     }
 }

@@ -230,7 +230,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         /// TODO: Handle way features differently if needed, and improve the relevant trapezoid-creation logic.
         let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.area > $1.contourDetails.area}).first
         guard let largestFeature = largestFeature,
-              accessibilityFeatureClass.isWay else {
+              accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk else {
             self.isProcessing = false
             return detectedFeatures
         }

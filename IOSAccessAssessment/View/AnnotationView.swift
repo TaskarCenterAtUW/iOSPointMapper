@@ -146,7 +146,8 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     
     func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
-        if (currentClass.isWay) {
+        /// If the class is sidewalk, we always select the first instance, as there should be only one sidewalk instance.
+        if (currentClass.oswPolicy.oswElementClass == .Sidewalk) {
             try setIndex(index: 0)
         } else {
             try setIndex(index: nil)
@@ -366,7 +367,7 @@ struct AnnotationView: View {
                     CustomPicker (
                         label: AnnotationViewConstants.Texts.selectObjectText,
                         selection: $featureSelectionViewModel.currentIndex,
-                        isContainsAll: !currentClass.isWay
+                        isContainsAll: currentClass.oswPolicy.oswElementClass != .Sidewalk
                     ) {
                         ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                             Text("\(currentClass.name.capitalized): \(featureIndex)")
@@ -625,23 +626,10 @@ struct AnnotationView: View {
             mappingData: sharedAppData.mappingData,
             accessToken: accessToken
         )
-        if accessibilityFeatureClass.isWay {
-            guard let wayData = apiTransmissionResults.wayData else {
-                throw AnnotationViewError.uploadFailed
-            }
-            try sharedAppData.mappingData.appendWay(
-                accessibilityFeatureClass: accessibilityFeatureClass,
-                osmWay: wayData.way,
-                nodes: wayData.nodes
-            )
-        } else {
-            guard let nodeData = apiTransmissionResults.nodeData else {
-                throw AnnotationViewError.uploadFailed
-            }
-            sharedAppData.mappingData.appendNodes(
-                accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
-            )
+        guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
+            throw AnnotationViewError.uploadFailed
         }
+        sharedAppData.mappingData.appendFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
         return apiTransmissionResults

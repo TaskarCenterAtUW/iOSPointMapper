@@ -15,18 +15,14 @@ extension AccessibilityFeatureConfig {
             AccessibilityFeatureClass(
                 id: "road", name: "Road", grayscaleValue: 0.0 / 255.0, labelValue: 0,
                 color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
-                isWay: true,
-                bounds: DimensionBasedMaskBounds(
-                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
-                )
+                bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5),
+                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk), // Temporarily set for testing
             ),
             AccessibilityFeatureClass(
                 id: "sidewalk", name: "Sidewalk", grayscaleValue: 1.0 / 255.0, labelValue: 1,
                 color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
-                isWay: true,
-                bounds: DimensionBasedMaskBounds(
-                minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
-                )
+                bounds: DimensionBasedMaskBounds(minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5),
+                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk), // Temporarily set for testing
             ),
             AccessibilityFeatureClass(
                 id: "building", name: "Building", grayscaleValue: 2.0 / 255.0, labelValue: 2,

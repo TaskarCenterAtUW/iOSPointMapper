@@ -6,9 +6,9 @@
 //
 
 struct OSWPolicy: Sendable, Codable, Equatable, Hashable {
-    let oswElement: OSWElement
+    let oswElementClass: OSWElementClass
 }
 
 extension OSWPolicy {
-    static let `default` = OSWPolicy(oswElement: .BareNode)
+    static let `default` = OSWPolicy(oswElementClass: .BareNode)
 }

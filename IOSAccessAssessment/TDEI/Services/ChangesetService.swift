@@ -13,9 +13,9 @@ struct UploadedOSMResponseElements: Sendable {
 }
 
 enum ChangesetDiffOperation {
-    case create(any OSMElement)
-    case modify(any OSMElement)
-    case delete(any OSMElement)
+    case create(any OSWElement)
+    case modify(any OSWElement)
+    case delete(any OSWElement)
 }
 
 enum ChangesetServiceError: Error, LocalizedError {
