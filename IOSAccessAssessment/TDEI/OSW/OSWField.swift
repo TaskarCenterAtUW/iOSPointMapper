@@ -15,6 +15,10 @@ enum OSWField: CaseIterable, Sendable {
     case width
     case barrier
     case highway
+    case footway
+    case traffic_sign
+    case traffic_signals
+    case man_made
     case building
     /**
         A custom field with a user-defined name.
@@ -104,14 +108,39 @@ enum OSWField: CaseIterable, Sendable {
                 valueType: .enumeration(options: [
                     "footway", "pedestrian", "steps", "living_street", 
                     "primary", "secondary", "tertiary", "residential",
-                    "service", "unclassified", "trunk", "street_lamp"
+                    "service", "unclassified", "trunk", "street_lamp",
+                    "traffic_signals"
                 ])
+            )
+        case .footway:
+            return Metadata(
+                description: "Footway",
+                osmTagKey: "footway",
+                valueType: .enumeration(options: ["sidewalk", "crossing", "traffic_island"])
             )
         case .building:
             return Metadata(
                 description: "This field is used to mark a given entity as a building",
                 osmTagKey: "building",
                 valueType: .enumeration(options: ["yes"])
+            )
+        case .traffic_sign:
+            return Metadata(
+                description: "Traffic Sign",
+                osmTagKey: "traffic_sign",
+                valueType: .enumeration(options: ["yes"])
+            )
+        case .traffic_signals:
+            return Metadata(
+                description: "Traffic Signals",
+                osmTagKey: "traffic_signals",
+                valueType: .enumeration(options: ["signal"])
+            )
+        case .man_made:
+            return Metadata(
+                description: "Man Made",
+                osmTagKey: "man_made",
+                valueType: .enumeration(options: ["utility_pole"])
             )
         case .custom(let fieldName, let osmTagKey):
             return Metadata(
@@ -125,5 +154,9 @@ enum OSWField: CaseIterable, Sendable {
 extension OSWField {
     var description: String {
         return metadata.description
+    }
+    
+    var osmTagKey: String {
+        return metadata.osmTagKey
     }
 }

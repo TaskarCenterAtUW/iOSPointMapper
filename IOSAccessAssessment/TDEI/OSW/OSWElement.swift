@@ -7,12 +7,47 @@
 
 enum OSWElement: String, CaseIterable, Hashable, Sendable {
     case BareNode
+    case Footway
+    case Sidewalk
+    case Building
+    /**
+     - WARNING:
+        This is a temporary definition for Pole. It is not directly supported by OSW schema.
+     */
+    case Pole
+    /**
+     - WARNING:
+        This is a temporary definition for Traffic Light. It is not directly supported by OSW schema.
+     */
+    case TrafficLight
+    /**
+     - WARNING:
+        This is a temporary definition for Traffic Sign. It is not directly supported by OSW schema.
+     */
+    case TrafficSign
+    
+    struct IdentifyingField: Sendable {
+        let field: OSWField
+        let value: String
+    }
     
     struct Metadata: Sendable {
         let description: String
         let parent: OSWElement?
         let geometry: OSWGeometry
-        let identifyingFields: [String: String] = [:]
+        let identifyingFields: [IdentifyingField]
+        
+        init(
+            description: String,
+            parent: OSWElement? = nil,
+            geometry: OSWGeometry,
+            identifyingFields: [IdentifyingField] = []
+        ) {
+            self.description = description
+            self.parent = parent
+            self.geometry = geometry
+            self.identifyingFields = identifyingFields
+        }
     }
     
     var metadata: Metadata {
@@ -22,6 +57,62 @@ enum OSWElement: String, CaseIterable, Hashable, Sendable {
                 description: "A special case of an abstract Node.",
                 parent: nil,
                 geometry: .point
+            )
+        case .Footway:
+            return Metadata(
+                description: "The centerline of a dedicated pedestrian path that does not fall into any other subcategories.",
+                parent: nil,
+                geometry: .linestring,
+                identifyingFields: [
+                    IdentifyingField(field: .highway, value: "footway")
+                ]
+            )
+        case .Sidewalk:
+            return Metadata(
+                description: "The centerline of a sidewalk, a designated pedestrian path to the side of a street.",
+                parent: .Footway,
+                geometry: .linestring,
+                identifyingFields: [
+                    IdentifyingField(field: .highway, value: "footway"),
+                    IdentifyingField(field: .footway, value: "sidewalk")
+                ]
+            )
+        case .Building:
+            return Metadata(
+                description: "This field is used to mark a given entity as a building",
+                parent: nil,
+                geometry: .polygon,
+                identifyingFields: [
+                    IdentifyingField(field: .building, value: "yes")
+                ]
+            )
+        case .Pole:
+            return Metadata(
+                description: "Pole",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .man_made, value: "utility_pole")
+                ]
+             )
+        case .TrafficLight:
+            return Metadata(
+                description: "Traffic Light",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .highway, value: "traffic_signals"),
+                    IdentifyingField(field: .traffic_signals, value: "signal")
+                ]
+            )
+        case .TrafficSign:
+            return Metadata(
+                description: "Traffic Sign",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .traffic_sign, value: "yes")
+                ]
             )
         }
     }
@@ -37,5 +128,13 @@ extension OSWElement {
     
     var parent: OSWElement? {
         return metadata.parent
+    }
+    
+    var oswIdentifyingFieldTags: [String: String] {
+        return metadata.identifyingFields.map { identifyingField in
+            return (identifyingField.field.osmTagKey, identifyingField.value)
+        }.reduce(into: [:]) { partialResult, keyValuePair in
+            partialResult[keyValuePair.0] = keyValuePair.1
+        }
     }
 }
