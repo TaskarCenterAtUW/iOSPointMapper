@@ -25,8 +25,6 @@ struct OSWPolygon: OSWElement {
     let version: String
     let oswElementClass: OSWElementClass
     
-    var latitude: CLLocationDegrees
-    var longitude: CLLocationDegrees
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     
     var members: [any OSWElement]
@@ -82,5 +80,10 @@ struct OSWPolygon: OSWElement {
         return """
         <relation id="\(id)" version="\(version)" changeset="\(changesetId)"/>
         """
+    }
+    
+    var description: String {
+        let membersString = members.map { $0.description }.joined(separator: ", ")
+        return "OSWPolygon(id: \(id), version: \(version), class: \(oswElementClass), members: [\(membersString)])"
     }
 }

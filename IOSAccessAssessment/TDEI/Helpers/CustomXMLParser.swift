@@ -13,6 +13,7 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
     
     var nodesWithAttributes: [String: OSMResponseNode] = [:]
     var waysWithAttributes: [String: OSMResponseWay] = [:]
+    var relationsWithAttributes: [String: OSMResponseRelation] = [:]
 
     func parse(data: Data) {
         let parser = XMLParser(data: data)
@@ -43,6 +44,16 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
                 return
             }
             waysWithAttributes[oldId] = OSMResponseWay(
+                oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
+            )
+        }
+        if currentElement == "relation" {
+            guard let oldId = attributeDict[APIConstants.AttributeKeys.oldId],
+                  let newId = attributeDict[APIConstants.AttributeKeys.newId],
+                  let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
+                return
+            }
+            relationsWithAttributes[oldId] = OSMResponseRelation(
                 oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
             )
         }

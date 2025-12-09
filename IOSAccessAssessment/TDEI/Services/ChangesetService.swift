@@ -10,6 +10,7 @@ import Foundation
 struct UploadedOSMResponseElements: Sendable {
     let nodes: [String: OSMResponseNode]
     let ways: [String: OSMResponseWay]
+    let relations: [String: OSMResponseRelation]
 }
 
 enum ChangesetDiffOperation {
@@ -143,7 +144,9 @@ class ChangesetService {
             print("Parsed Ways: ", parser.waysWithAttributes)
 
             completion(.success(UploadedOSMResponseElements(
-                nodes: parser.nodesWithAttributes, ways: parser.waysWithAttributes
+                nodes: parser.nodesWithAttributes,
+                ways: parser.waysWithAttributes,
+                relations: parser.relationsWithAttributes
             )))
         }.resume()
     }

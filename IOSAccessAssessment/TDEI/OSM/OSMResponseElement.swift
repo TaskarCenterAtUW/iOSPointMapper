@@ -43,3 +43,19 @@ struct OSMResponseWay: OSMResponseElement {
     }
 }
 
+struct OSMResponseRelation: OSMResponseElement {
+    let oldId: String
+    let newId: String
+    let newVersion: String
+    
+    let attributeDict: [String: String]
+    
+    init(oldId: String, newId: String, newVersion: String, attributeDict: [String: String] = [:]) {
+        self.oldId = oldId
+        self.newId = newId
+        self.newVersion = newVersion
+        self.attributeDict = attributeDict
+    }
+}
+
+

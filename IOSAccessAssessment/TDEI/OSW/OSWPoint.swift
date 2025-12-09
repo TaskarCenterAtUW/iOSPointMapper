@@ -59,4 +59,8 @@ struct OSWPoint: OSWElement {
         <node id="\(id)" version="\(version)" changeset="\(changesetId)" lat="\(latitude)" lon="\(longitude)"/>
         """
     }
+    
+    var description: String {
+        return "OSWPoint(id: \(id), version: \(version), latitude: \(latitude), longitude: \(longitude))"
+    }
 }

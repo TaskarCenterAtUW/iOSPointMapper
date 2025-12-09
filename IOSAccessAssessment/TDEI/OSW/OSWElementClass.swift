@@ -130,6 +130,10 @@ extension OSWElementClass {
         return metadata.parent
     }
     
+    var geometry: OSWGeometry {
+        return metadata.geometry
+    }
+    
     var identifyingFieldTags: [String: String] {
         return metadata.identifyingFields.map { identifyingField in
             return (identifyingField.field.osmTagKey, identifyingField.value)

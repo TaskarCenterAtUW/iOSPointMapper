@@ -15,11 +15,22 @@ struct OSWLineString: OSWElement {
     let version: String
     let oswElementClass: OSWElementClass
     
-    var latitude: CLLocationDegrees
-    var longitude: CLLocationDegrees
-    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
-    var nodes: [OSWPoint]
+    var points: [OSWPoint]
+    
+    init(
+        id: String, version: String,
+        oswElementClass: OSWElementClass,
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        points: [OSWPoint]
+    ) {
+        self.id = id
+        self.version = version
+        self.oswElementClass = oswElementClass
+        self.attributeValues = attributeValues
+        self.points = points
+    }
     
     var tags: [String: String] {
         let identifyingFieldTags = oswElementClass.identifyingFieldTags
@@ -40,8 +51,8 @@ struct OSWLineString: OSWElement {
     
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let refsXML = nodes.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = nodes.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
+        let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
+        let nodesXML = points.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
         let wayXML = """
         <way id="\(id)" changeset="\(changesetId)">
             \(tagsXML)
@@ -57,8 +68,8 @@ struct OSWLineString: OSWElement {
      */
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let refsXML = nodes.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = nodes.map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
+        let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
+        let nodesXML = points.map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
         let wayXML = """
         <way id="\(id)" version="\(version)" changeset="\(changesetId)">
             \(tagsXML)
@@ -76,5 +87,10 @@ struct OSWLineString: OSWElement {
         return """
         <way id="\(id)" version="\(version)" changeset="\(changesetId)"/>
         """
+    }
+    
+    var description: String {
+        let nodesString = points.map { $0.description }.joined(separator: ", ")
+        return "OSWLineString(id: \(id), version: \(version), nodes: [\(nodesString)])"
     }
 }
