@@ -46,7 +46,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         let osmTagKey: String
     }
     
-    var metadata: Metadata {
+    private var metadata: Metadata {
         switch self {
         case .width:
             return Metadata(
@@ -58,7 +58,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
             return Metadata(
                 id: 20, name: "Running Slope", unit: UnitAngle.degrees,
                 valueType: .angle(Measurement(value: 0, unit: .degrees)),
-                osmTagKey: "running_slope"
+                osmTagKey: "incline"
             )
         case .crossSlope:
             return Metadata(
@@ -70,7 +70,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
                 valueType: .flag(false),
-                osmTagKey: "surface_integrity"
+                osmTagKey: "surface"
             )
         }
     }

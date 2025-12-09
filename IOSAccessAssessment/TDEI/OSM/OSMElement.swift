@@ -13,20 +13,3 @@ protocol OSMElement: Sendable, Equatable {
     func toOSMModifyXML(changesetId: String) -> String
     func toOSMDeleteXML(changesetId: String) -> String
 }
-
-enum OSMEntityType: String, Sendable, Codable, Equatable, Hashable, CaseIterable {
-    case node
-    case edge
-    case zone
-    
-    var description: String {
-        switch self {
-        case .node:
-            return "Node"
-        case .edge:
-            return "Edge"
-        case .zone:
-            return "Zone"
-        }
-    }
-}
