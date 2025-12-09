@@ -37,8 +37,13 @@
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
 		A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */; };
 		A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */; };
-		A32943482EE7C0DD00C4C1BC /* OSWElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943472EE7C0D800C4C1BC /* OSWElement.swift */; };
+		A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943472EE7C0D800C4C1BC /* OSWElementClass.swift */; };
 		A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329434B2EE7CFE600C4C1BC /* OSWField.swift */; };
+		A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329434F2EE80EC200C4C1BC /* OSMRelation.swift */; };
+		A32943532EE814A700C4C1BC /* OSWElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943522EE814A700C4C1BC /* OSWElement.swift */; };
+		A32943552EE8186E00C4C1BC /* OSWPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943542EE8186C00C4C1BC /* OSWPoint.swift */; };
+		A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943562EE81BF700C4C1BC /* OSWLineString.swift */; };
+		A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943582EE8204400C4C1BC /* OSWPolygon.swift */; };
 		A337CF692EDFC9F20032EE51 /* ChangesetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
@@ -199,8 +204,13 @@
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
 		A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolicy.swift; sourceTree = "<group>"; };
 		A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWGeometry.swift; sourceTree = "<group>"; };
-		A32943472EE7C0D800C4C1BC /* OSWElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElement.swift; sourceTree = "<group>"; };
+		A32943472EE7C0D800C4C1BC /* OSWElementClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElementClass.swift; sourceTree = "<group>"; };
 		A329434B2EE7CFE600C4C1BC /* OSWField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWField.swift; sourceTree = "<group>"; };
+		A329434F2EE80EC200C4C1BC /* OSMRelation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMRelation.swift; sourceTree = "<group>"; };
+		A32943522EE814A700C4C1BC /* OSWElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElement.swift; sourceTree = "<group>"; };
+		A32943542EE8186C00C4C1BC /* OSWPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPoint.swift; sourceTree = "<group>"; };
+		A32943562EE81BF700C4C1BC /* OSWLineString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWLineString.swift; sourceTree = "<group>"; };
+		A32943582EE8204400C4C1BC /* OSWPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolygon.swift; sourceTree = "<group>"; };
 		A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetViewModel.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
@@ -624,6 +634,7 @@
 				A35E05192EDFB015003C26CF /* OSMPayload.swift */,
 				A35E051B2EDFB093003C26CF /* OSMNode.swift */,
 				A35E051D2EDFB099003C26CF /* OSMWay.swift */,
+				A329434F2EE80EC200C4C1BC /* OSMRelation.swift */,
 			);
 			path = OSM;
 			sourceTree = "<group>";
@@ -727,7 +738,11 @@
 			children = (
 				A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */,
 				A329434B2EE7CFE600C4C1BC /* OSWField.swift */,
-				A32943472EE7C0D800C4C1BC /* OSWElement.swift */,
+				A32943472EE7C0D800C4C1BC /* OSWElementClass.swift */,
+				A32943522EE814A700C4C1BC /* OSWElement.swift */,
+				A32943542EE8186C00C4C1BC /* OSWPoint.swift */,
+				A32943562EE81BF700C4C1BC /* OSWLineString.swift */,
+				A32943582EE8204400C4C1BC /* OSWPolygon.swift */,
 			);
 			path = OSW;
 			sourceTree = "<group>";
@@ -1040,6 +1055,7 @@
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */,
+				A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
 				A35547C82EC1B0DB00F43AFD /* MappingData.swift in Sources */,
@@ -1055,6 +1071,7 @@
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtils.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
 				A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */,
+				A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthEncoder.swift in Sources */,
 				A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */,
@@ -1096,6 +1113,7 @@
 				A3FE16652E18C54000DAE5BE /* CameraTransformEncoder.swift in Sources */,
 				A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
+				A32943552EE8186E00C4C1BC /* OSWPoint.swift in Sources */,
 				A37E721D2ED99C0A00CFE4EF /* ContourFeatureRasterizer.swift in Sources */,
 				A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
@@ -1103,9 +1121,11 @@
 				A337CF692EDFC9F20032EE51 /* ChangesetViewModel.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				A3A45F0C2EE7A4F40029F5AE /* ContourDetectionPolicy.swift in Sources */,
+				A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
+				A32943532EE814A700C4C1BC /* OSWElement.swift in Sources */,
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
-				A32943482EE7C0DD00C4C1BC /* OSWElement.swift in Sources */,
+				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MeshBufferUtils.swift in Sources */,
 				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */,
