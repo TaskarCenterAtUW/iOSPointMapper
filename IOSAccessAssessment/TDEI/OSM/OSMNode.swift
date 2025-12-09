@@ -32,7 +32,7 @@ struct OSMNode: OSMElement {
     func toOSMModifyXML(changesetId: String) -> String {
         let tagElements = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
         return """
-        <node id="\(id)" changeset="\(changesetId)" version="\(version)">
+        <node id="\(id)" changeset="\(changesetId)" version="\(version)" lat="\(latitude)" lon="\(longitude)">
             \(tagElements)
         </node>
         """
@@ -40,7 +40,7 @@ struct OSMNode: OSMElement {
     
     func toOSMDeleteXML(changesetId: String) -> String {
         return """
-        <node id="\(id)" changeset="\(changesetId)" version="\(version)"/>
+        <node id="\(id)" version="\(version)" changeset="\(changesetId)" lat="\(latitude)" lon="\(longitude)"/>
         """
     }
 }
