@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum OSWField: CaseIterable, Sendable {
+enum OSWField: Sendable, Codable, Hashable {
     case description
     case name
     case incline
@@ -24,12 +24,6 @@ enum OSWField: CaseIterable, Sendable {
         A custom field with a user-defined name.
      */
     case custom(String, String)
-    
-    static var allCases: [OSWField] {
-        return [
-            /// TODO: Add all predefined cases here
-        ]
-    }
     
     /**
      Defines the type of value associated with an OSWField.
@@ -148,6 +142,26 @@ enum OSWField: CaseIterable, Sendable {
                 osmTagKey: osmTagKey
             )
         }
+    }
+}
+
+extension OSWField: CaseIterable {
+    static var allCases: [OSWField] {
+        return [
+            .description,
+            .name,
+            .incline,
+            .length,
+            .width,
+            .barrier,
+            .highway,
+            .footway,
+            .building,
+            .traffic_sign,
+            .traffic_signals,
+            .man_made,
+            .custom("Custom Field", "custom_tag")
+        ]
     }
 }
 

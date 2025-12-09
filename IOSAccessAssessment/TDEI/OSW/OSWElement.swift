@@ -5,7 +5,7 @@
 //  Created by Himanshu on 12/8/25.
 //
 
-enum OSWElement: String, CaseIterable, Hashable, Sendable {
+enum OSWElement: String, CaseIterable, Hashable, Sendable, Codable {
     case BareNode
     case Footway
     case Sidewalk

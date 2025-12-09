@@ -39,13 +39,19 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
     let unionOfMasksPolicy: UnionOfMasksPolicy
     /// Properties related to mesh post-processing
     let meshInstancePolicy: MeshInstancePolicy
-    
+    /// Attributes associated with the accessibility feature class
     let attributes: Set<AccessibilityFeatureAttribute>
+    
+    /**
+     Mapping-related constants
+     */
+    let oswPolicy: OSWPolicy
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
          isWay: Bool = false, bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
-         attributes: Set<AccessibilityFeatureAttribute> = []
+         attributes: Set<AccessibilityFeatureAttribute> = [],
+         oswPolicy: OSWPolicy = .default
     ) {
         self.id = id
         self.name = name
@@ -58,6 +64,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable {
         self.meshClassification = meshClassification
         self.meshInstancePolicy = meshInstancePolicy
         self.attributes = attributes
+        self.oswPolicy = oswPolicy
     }
     
     static func < (lhs: AccessibilityFeatureClass, rhs: AccessibilityFeatureClass) -> Bool {
