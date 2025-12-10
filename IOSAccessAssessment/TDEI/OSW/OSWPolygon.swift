@@ -65,10 +65,12 @@ struct OSWPolygon: OSWElement {
         let membersXML = members.map {
             $0.element.toOSMCreateXML(changesetId: changesetId)
         }.joined(separator: "\n")
+        let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
         return """
+        \(membersXML)
         <relation id="\(id)" changeset="\(changesetId)">
-            \(membersXML)
             \(tagsXML)
+            \(memberRefsXML)
         </relation>
         """
     }
@@ -85,10 +87,12 @@ struct OSWPolygon: OSWElement {
         let membersXML = members.map {
             $0.element.toOSMModifyXML(changesetId: changesetId)
         }.joined(separator: "\n")
+        let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
         return """
+        \(membersXML)
         <relation id="\(id)" version="\(version)" changeset="\(changesetId)">
-            \(membersXML)
             \(tagsXML)
+            \(memberRefsXML)
         </relation>
         """
     }

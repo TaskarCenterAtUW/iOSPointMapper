@@ -53,13 +53,13 @@ struct OSWLineString: OSWElement {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
         let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
         let nodesXML = points.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
-        let wayXML = """
+        return """
+        \(nodesXML)
         <way id="\(id)" changeset="\(changesetId)">
             \(tagsXML)
             \(refsXML)
         </way>
         """
-        return nodesXML + "\n" + wayXML
     }
     
     /**
@@ -70,13 +70,13 @@ struct OSWLineString: OSWElement {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
         let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
         let nodesXML = points.map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
-        let wayXML = """
-        <way id="\(id)" version="\(version)" changeset="\(changesetId)">
+        return """
+        \(nodesXML)
+        <way id="\(id)" changeset="\(changesetId)">
             \(tagsXML)
             \(refsXML)
         </way>
         """
-        return nodesXML + "\n" + wayXML
     }
     
     /**

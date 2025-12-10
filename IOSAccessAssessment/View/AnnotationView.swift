@@ -213,8 +213,8 @@ class APITransmissionStatusViewModel: ObservableObject {
     func update(apiTransmissionResults: APITransmissionResults) {
         let failedFeatureUploads = apiTransmissionResults.failedFeatureUploads
         if failedFeatureUploads == 0 {
-            self.isFailed = false
-            self.errorMessage = ""
+            self.isFailed = true
+            self.errorMessage = "Unknown Error Occurred."
         } else {
             self.isFailed = true
             self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiTransmissionStatusAlertMessageSuffixKey)"

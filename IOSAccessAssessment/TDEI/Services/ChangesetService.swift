@@ -11,6 +11,20 @@ struct UploadedOSMResponseElements: Sendable {
     let nodes: [String: OSMResponseNode]
     let ways: [String: OSMResponseWay]
     let relations: [String: OSMResponseRelation]
+    
+    var oldToNewIdMap: [String: String] {
+        let nodeMap = nodes.reduce(into: [String: String]()) { dict, pair in
+            dict[pair.value.oldId] = pair.value.newId
+        }
+        let wayMap = ways.reduce(into: [String: String]()) { dict, pair in
+            dict[pair.value.oldId] = pair.value.newId
+        }
+        let relationMap = relations.reduce(into: [String: String]()) { dict, pair in
+            dict[pair.value.oldId] = pair.value.newId
+        }
+        return nodeMap.merging(wayMap) { _, new in new }
+            .merging(relationMap) { _, new in new }
+    }
 }
 
 enum ChangesetDiffOperation {
@@ -142,6 +156,7 @@ class ChangesetService {
             print("Printing Mapping Data")
             print("Parsed Nodes: ", parser.nodesWithAttributes)
             print("Parsed Ways: ", parser.waysWithAttributes)
+            print("Parsed Relations: ", parser.relationsWithAttributes)
 
             completion(.success(UploadedOSMResponseElements(
                 nodes: parser.nodesWithAttributes,
