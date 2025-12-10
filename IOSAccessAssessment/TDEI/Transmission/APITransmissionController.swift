@@ -164,50 +164,6 @@ class APITransmissionController: ObservableObject {
         )
     }
     
-    private func featureToPoint(
-        _ feature: any AccessibilityFeatureProtocol
-    ) -> OSWPoint? {
-        guard let featureLocation = feature.location else {
-            return nil
-        }
-        let oswPoint = OSWPoint(
-            id: String(idGenerator.nextId()),
-            version: "1",
-            oswElementClass: feature.accessibilityFeatureClass.oswPolicy.oswElementClass,
-            latitude: featureLocation.latitude,
-            longitude: featureLocation.longitude,
-            attributeValues: feature.attributeValues
-        )
-        return oswPoint
-    }
-    
-    private func getMappedAccessibilityFeatureFromUploadedElements(
-        uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
-        featureOSMIdToPointMap: [String: OSWPoint]
-    ) -> [MappedAccessibilityFeature] {
-        let accessibilityFeatures: [MappedAccessibilityFeature] = uploadedElements.nodes.compactMap { uploadedNode in
-            let uploadedNodeData = uploadedNode.value
-            let uploadedNodeOSMOldId = uploadedNodeData.oldId
-            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedNodeOSMOldId],
-                  let matchedOSWPoint = featureOSMIdToPointMap[uploadedNodeOSMOldId] else {
-                return nil
-            }
-            let oswPoint = OSWPoint(
-                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
-                oswElementClass: matchedOSWPoint.oswElementClass,
-                latitude: matchedOSWPoint.latitude, longitude: matchedOSWPoint.longitude,
-                attributeValues: matchedOSWPoint.attributeValues
-            )
-            return MappedAccessibilityFeature(
-                id: matchedFeature.id,
-                accessibilityFeature: matchedFeature,
-                oswElement: oswPoint
-            )
-        }
-        return accessibilityFeatures
-    }
-    
     private func uploadLineString(
         workspaceId: String,
         changesetId: String,
@@ -265,81 +221,6 @@ class APITransmissionController: ObservableObject {
         )
     }
     
-    private func featureToLineString(
-        _ feature: any AccessibilityFeatureProtocol,
-    ) -> OSWLineString? {
-        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        guard oswElementClass.geometry == .linestring else {
-            return nil
-        }
-//        var oswPointIds: [String] = []
-        var oswPoints: [OSWPoint] = []
-        [feature.location].forEach { location in
-            guard let location else { return }
-            let oswPointId = String(idGenerator.nextId())
-//            oswPointIds.append(oswPointId)
-            let point = OSWPoint(
-                id: oswPointId, version: "1",
-                oswElementClass: oswElementClass,
-                latitude: location.latitude, longitude: location.longitude,
-                attributeValues: [:]
-            )
-            oswPoints.append(point)
-        }
-        let oswLineString = OSWLineString(
-            id: String(idGenerator.nextId()),
-            version: "1",
-            oswElementClass: oswElementClass,
-            attributeValues: feature.attributeValues,
-            points: oswPoints
-        )
-        return oswLineString
-    }
-    
-    private func getMappedAccessibilityFeatureFromUploadedElements(
-        uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
-        featureOSMIdToLineStringMap: [String: OSWLineString]
-    ) -> [MappedAccessibilityFeature] {
-        let accessibilityFeatures: [MappedAccessibilityFeature] = uploadedElements.ways.compactMap { uploadedWay in
-            let uploadedWayData = uploadedWay.value
-            let uploadedWayOSMOldId = uploadedWayData.oldId
-            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedWayOSMOldId],
-                  let matchedOSWLineString = featureOSMIdToLineStringMap[uploadedWayOSMOldId] else {
-                return nil
-            }
-            /// First, map the nodes to the points
-            let oswPoints: [OSWPoint] = uploadedElements.nodes.compactMap { uploadedNode in
-                let uploadedNodeData = uploadedNode.value
-                let uploadedNodeOSMOldId = uploadedNodeData.oldId
-                guard let matchedOSWPoint = matchedOSWLineString.points.first(where: { point in
-                    point.id == uploadedNodeOSMOldId
-                }) else {
-                    return nil
-                }
-                return OSWPoint(
-                    id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
-                    oswElementClass: matchedOSWPoint.oswElementClass,
-                    latitude: matchedOSWPoint.latitude, longitude: matchedOSWPoint.longitude,
-                    attributeValues: matchedOSWPoint.attributeValues
-                )
-            }
-            /// Lastly, create the linestring
-            let oswLineString = OSWLineString(
-                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
-                oswElementClass: matchedOSWLineString.oswElementClass,
-                attributeValues: matchedOSWLineString.attributeValues,
-                points: oswPoints
-            )
-            return MappedAccessibilityFeature(
-                id: matchedFeature.id,
-                accessibilityFeature: matchedFeature,
-                oswElement: oswLineString
-            )
-        }
-        return accessibilityFeatures
-    }
-    
     private func uploadPolygon(
         workspaceId: String,
         changesetId: String,
@@ -390,9 +271,51 @@ class APITransmissionController: ObservableObject {
         )
     }
     
-    private func featureToPolygon(
-        _ feature: any AccessibilityFeatureProtocol,
-    ) -> OSWPolygon? {
+    private func featureToPoint(_ feature: any AccessibilityFeatureProtocol) -> OSWPoint? {
+        guard let featureLocation = feature.location else {
+            return nil
+        }
+        let oswPoint = OSWPoint(
+            id: String(idGenerator.nextId()),
+            version: "1",
+            oswElementClass: feature.accessibilityFeatureClass.oswPolicy.oswElementClass,
+            latitude: featureLocation.latitude,
+            longitude: featureLocation.longitude,
+            attributeValues: feature.attributeValues
+        )
+        return oswPoint
+    }
+    
+    private func featureToLineString(_ feature: any AccessibilityFeatureProtocol) -> OSWLineString? {
+        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        guard oswElementClass.geometry == .linestring else {
+            return nil
+        }
+//        var oswPointIds: [String] = []
+        var oswPoints: [OSWPoint] = []
+        [feature.location].forEach { location in
+            guard let location else { return }
+            let oswPointId = String(idGenerator.nextId())
+//            oswPointIds.append(oswPointId)
+            let point = OSWPoint(
+                id: oswPointId, version: "1",
+                oswElementClass: oswElementClass,
+                latitude: location.latitude, longitude: location.longitude,
+                attributeValues: [:]
+            )
+            oswPoints.append(point)
+        }
+        let oswLineString = OSWLineString(
+            id: String(idGenerator.nextId()),
+            version: "1",
+            oswElementClass: oswElementClass,
+            attributeValues: feature.attributeValues,
+            points: oswPoints
+        )
+        return oswLineString
+    }
+    
+    private func featureToPolygon(_ feature: any AccessibilityFeatureProtocol) -> OSWPolygon? {
         let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .polygon else {
             return nil
@@ -418,6 +341,179 @@ class APITransmissionController: ObservableObject {
             members: oswPoints
         )
         return oswPolygon
+    }
+    
+    private func getUploadedOSWPoints(
+        from uploadedElements: UploadedOSMResponseElements,
+        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
+        featureOSMIdToOriginalPointMap: [String: OSWPoint]
+    ) -> [OSWPoint] {
+        let oswPoints: [OSWPoint] = uploadedElements.nodes.compactMap { uploadedNode in
+            let uploadedNodeData = uploadedNode.value
+            let uploadedNodeOSMOldId = uploadedNodeData.oldId
+            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedNodeOSMOldId],
+                  let matchedOriginalOSWPoint = featureOSMIdToOriginalPointMap[uploadedNodeOSMOldId] else {
+                return nil
+            }
+            return OSWPoint(
+                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                oswElementClass: matchedOriginalOSWPoint.oswElementClass,
+                latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
+                attributeValues: matchedOriginalOSWPoint.attributeValues
+            )
+        }
+        return oswPoints
+    }
+    
+    private func getUploadedOSWLineStrings(
+        from uploadedElements: UploadedOSMResponseElements,
+        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
+        featureOSMIdToOriginalLineStringMap: [String: OSWLineString]
+    ) -> [OSWLineString] {
+        let oswLineStrings: [OSWLineString] = uploadedElements.ways.compactMap { uploadedWay in
+            let uploadedWayData = uploadedWay.value
+            let uploadedWayOSMOldId = uploadedWayData.oldId
+            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedWayOSMOldId],
+                  let matchedOriginalOSWLineString = featureOSMIdToOriginalLineStringMap[uploadedWayOSMOldId] else {
+                return nil
+            }
+            /// First, map the nodes to the points
+            let featureOSMIdToOriginalPointMap = matchedOriginalOSWLineString.points.map {
+                ($0.id, $0)
+            }
+            let oswPoints: [OSWPoint] = getUploadedOSWPoints(
+                from: uploadedElements,
+                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
+                featureOSMIdToOriginalPointMap: Dictionary(uniqueKeysWithValues: featureOSMIdToOriginalPointMap)
+            )
+            /// Lastly, create the linestring
+            return OSWLineString(
+                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
+                oswElementClass: matchedOriginalOSWLineString.oswElementClass,
+                attributeValues: matchedOriginalOSWLineString.attributeValues,
+                points: oswPoints
+            )
+        }
+        return oswLineStrings
+    }
+    
+    private func getUploadedPolygons(
+        from uploadedElements: UploadedOSMResponseElements,
+        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
+        featureOSMIdToOriginalPolygonMap: [String: OSWPolygon]
+    ) -> [OSWPolygon] {
+        let oswPolygons: [OSWPolygon] = uploadedElements.relations.compactMap { uploadedRelation -> OSWPolygon? in
+            let uploadedRelationData = uploadedRelation.value
+            let uploadedRelationOSMOldId = uploadedRelationData.oldId
+            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedRelationOSMOldId],
+                  let matchedOriginalOSWPolygon = featureOSMIdToOriginalPolygonMap[uploadedRelationOSMOldId] else {
+                return nil
+            }
+            /// First, map the nodes to the points
+            let featureOSMIdToOriginalPointMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWPoint? in
+                guard let point = member as? OSWPoint else { return nil }
+                return point
+            }.reduce(into: [:]) { result, entry in
+                result[entry.id] = entry
+            }
+            let oswPoints: [OSWPoint] = getUploadedOSWPoints(
+                from: uploadedElements,
+                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
+                featureOSMIdToOriginalPointMap: featureOSMIdToOriginalPointMap
+            )
+            /// Second, map the ways to the linestrings
+            let featureOSMIdToOriginalLineStringMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWLineString? in
+                guard let lineString = member as? OSWLineString else { return nil }
+                return lineString
+            }.reduce(into: [:]) { result, entry in
+                result[entry.id] = entry
+            }
+            let oswLineStrings: [OSWLineString] = getUploadedOSWLineStrings(
+                from: uploadedElements,
+                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
+                featureOSMIdToOriginalLineStringMap: featureOSMIdToOriginalLineStringMap
+            )
+            /// Lastly, create the polygon
+            let oswMembers: [any OSWElement] = oswPoints + oswLineStrings
+            return OSWPolygon(
+                id: uploadedRelationData.newId, version: uploadedRelationData.newVersion,
+                oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
+                attributeValues: matchedOriginalOSWPolygon.attributeValues,
+                members: oswMembers
+            )
+        }
+        return oswPolygons
+    }
+
+    private func getMappedAccessibilityFeatureFromUploadedElements(
+        uploadedElements: UploadedOSMResponseElements,
+        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
+        featureOSMIdToPointMap: [String: OSWPoint]
+    ) -> [MappedAccessibilityFeature] {
+        let accessibilityFeatures: [MappedAccessibilityFeature] = uploadedElements.nodes.compactMap { uploadedNode in
+            let uploadedNodeData = uploadedNode.value
+            let uploadedNodeOSMOldId = uploadedNodeData.oldId
+            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedNodeOSMOldId],
+                  let matchedOSWPoint = featureOSMIdToPointMap[uploadedNodeOSMOldId] else {
+                return nil
+            }
+            let oswPoint = OSWPoint(
+                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                oswElementClass: matchedOSWPoint.oswElementClass,
+                latitude: matchedOSWPoint.latitude, longitude: matchedOSWPoint.longitude,
+                attributeValues: matchedOSWPoint.attributeValues
+            )
+            return MappedAccessibilityFeature(
+                id: matchedFeature.id,
+                accessibilityFeature: matchedFeature,
+                oswElement: oswPoint
+            )
+        }
+        return accessibilityFeatures
+    }
+    
+    private func getMappedAccessibilityFeatureFromUploadedElements(
+        uploadedElements: UploadedOSMResponseElements,
+        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
+        featureOSMIdToLineStringMap: [String: OSWLineString]
+    ) -> [MappedAccessibilityFeature] {
+        let accessibilityFeatures: [MappedAccessibilityFeature] = uploadedElements.ways.compactMap { uploadedWay in
+            let uploadedWayData = uploadedWay.value
+            let uploadedWayOSMOldId = uploadedWayData.oldId
+            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedWayOSMOldId],
+                  let matchedOSWLineString = featureOSMIdToLineStringMap[uploadedWayOSMOldId] else {
+                return nil
+            }
+            /// First, map the nodes to the points
+            let oswPoints: [OSWPoint] = uploadedElements.nodes.compactMap { uploadedNode in
+                let uploadedNodeData = uploadedNode.value
+                let uploadedNodeOSMOldId = uploadedNodeData.oldId
+                guard let matchedOSWPoint = matchedOSWLineString.points.first(where: { point in
+                    point.id == uploadedNodeOSMOldId
+                }) else {
+                    return nil
+                }
+                return OSWPoint(
+                    id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                    oswElementClass: matchedOSWPoint.oswElementClass,
+                    latitude: matchedOSWPoint.latitude, longitude: matchedOSWPoint.longitude,
+                    attributeValues: matchedOSWPoint.attributeValues
+                )
+            }
+            /// Lastly, create the linestring
+            let oswLineString = OSWLineString(
+                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
+                oswElementClass: matchedOSWLineString.oswElementClass,
+                attributeValues: matchedOSWLineString.attributeValues,
+                points: oswPoints
+            )
+            return MappedAccessibilityFeature(
+                id: matchedFeature.id,
+                accessibilityFeature: matchedFeature,
+                oswElement: oswLineString
+            )
+        }
+        return accessibilityFeatures
     }
     
     /**
