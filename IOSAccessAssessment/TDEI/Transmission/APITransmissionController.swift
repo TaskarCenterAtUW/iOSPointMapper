@@ -271,12 +271,16 @@ class APITransmissionController: ObservableObject {
             )
             oswPoints.append(point)
         }
+        let oswMembers = oswPoints.map {
+            /// TODO: Add the exact role of the member
+            return OSWRelationMember(element: $0)
+        }
         let oswPolygon = OSWPolygon(
             id: String(idGenerator.nextId()),
             version: "1",
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
-            members: oswPoints
+            members: oswMembers
         )
         return oswPolygon
     }
@@ -349,7 +353,8 @@ class APITransmissionController: ObservableObject {
             }
             /// First, map the nodes to the points
             let featureOSMIdToOriginalPointMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWPoint? in
-                guard let point = member as? OSWPoint else { return nil }
+                let element = member.element
+                guard let point = element as? OSWPoint else { return nil }
                 return point
             }.reduce(into: [:]) { result, entry in
                 result[entry.id] = entry
@@ -361,7 +366,8 @@ class APITransmissionController: ObservableObject {
             )
             /// Second, map the ways to the linestrings
             let featureOSMIdToOriginalLineStringMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWLineString? in
-                guard let lineString = member as? OSWLineString else { return nil }
+                let element = member.element
+                guard let lineString = element as? OSWLineString else { return nil }
                 return lineString
             }.reduce(into: [:]) { result, entry in
                 result[entry.id] = entry
@@ -372,7 +378,10 @@ class APITransmissionController: ObservableObject {
                 featureOSMIdToOriginalLineStringMap: featureOSMIdToOriginalLineStringMap
             )
             /// Lastly, create the polygon
-            let oswMembers: [any OSWElement] = oswPoints + oswLineStrings
+            let oswElements: [any OSWElement] = oswPoints + oswLineStrings
+            let oswMembers: [OSWRelationMember] = oswElements.map {
+                OSWRelationMember(element: $0)
+            }
             return OSWPolygon(
                 id: uploadedRelationData.newId, version: uploadedRelationData.newVersion,
                 oswElementClass: matchedOriginalOSWPolygon.oswElementClass,

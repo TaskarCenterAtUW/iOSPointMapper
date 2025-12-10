@@ -10,11 +10,20 @@ import CoreLocation
 
 struct OSWRelationMember: Sendable {
     let element: any OSWElement
-    let ref: String
     let role: String
     
+    init(element: any OSWElement, role: String) {
+        self.element = element
+        self.role = role
+    }
+    
+    init(element: any OSWElement) {
+        self.element = element
+        self.role = "placeholder"
+    }
+    
     var toXML: String {
-        return "<member type=\"\(element.elementOSMString)\" ref=\"\(ref)\" role=\"\(role)\" />"
+        return "<member type=\"\(element.elementOSMString)\" ref=\"\(element.id)\" role=\"\(role)\" />"
     }
 }
 
@@ -27,7 +36,8 @@ struct OSWPolygon: OSWElement {
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     
-    var members: [any OSWElement]
+    /// TODO: Add the proper support for member (specifically roles).
+    var members: [OSWRelationMember]
     
     var tags: [String: String] {
         let identifyingFieldTags = oswElementClass.identifyingFieldTags
@@ -46,9 +56,15 @@ struct OSWPolygon: OSWElement {
         return tags
     }
     
+    /**
+     - TODO:
+     Depending on the type of polygon, add the polygon type tag (e.g. "type"="multipolygon") if required.
+     */
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = members.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
+        let membersXML = members.map {
+            $0.element.toOSMCreateXML(changesetId: changesetId)
+        }.joined(separator: "\n")
         return """
         <relation id="\(id)" changeset="\(changesetId)">
             \(membersXML)
@@ -60,10 +76,15 @@ struct OSWPolygon: OSWElement {
     /**
      - WARNING:
      Currently, this xml includes ALL the members for modification. This is not optimal as only the members that have changed should be included.
+     
+     - TODO:
+     Depending on the type of polygon, add the polygon type tag (e.g. "type"="multipolygon") if required.
      */
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = members.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
+        let membersXML = members.map {
+            $0.element.toOSMModifyXML(changesetId: changesetId)
+        }.joined(separator: "\n")
         return """
         <relation id="\(id)" version="\(version)" changeset="\(changesetId)">
             \(membersXML)
@@ -83,7 +104,9 @@ struct OSWPolygon: OSWElement {
     }
     
     var description: String {
-        let membersString = members.map { $0.description }.joined(separator: ", ")
+        let membersString = members.map {
+            $0.element.description
+        }.joined(separator: ", ")
         return "OSWPolygon(id: \(id), version: \(version), class: \(oswElementClass), members: [\(membersString)])"
     }
 }

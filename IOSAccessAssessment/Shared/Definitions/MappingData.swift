@@ -27,21 +27,23 @@ enum MappingDataError: Error, LocalizedError {
 class MappingData: CustomStringConvertible {
     var featureMap: [AccessibilityFeatureClass: [MappedAccessibilityFeature]] = [:]
     
-    /// Ways that are currently being processed/constructed. Only one active way per feature class at a time.
-    var activeFeatureWays: [AccessibilityFeatureClass: MappedAccessibilityFeature] = [:]
-    
-    /// Relations that are currently being processed/constructed. Only one active relation per feature class at a time.
-    var activeFeatureRelations: [AccessibilityFeatureClass: MappedAccessibilityFeature] = [:]
+    /// Ways that are currently being processed/constructed. Only one active feature per feature class at a time.
+    var activeFeatureMap: [AccessibilityFeatureClass: MappedAccessibilityFeature] = [:]
     
     init() { }
     
-    func getActiveFeatureWayData(accessibilityFeatureClass: AccessibilityFeatureClass) -> MappedAccessibilityFeature? {
-        return activeFeatureWays[accessibilityFeatureClass]
+    func getActiveFeature(accessibilityFeatureClass: AccessibilityFeatureClass) -> MappedAccessibilityFeature? {
+        return activeFeatureMap[accessibilityFeatureClass]
     }
     
+    /**
+    Appends features to the mapping data for a specific feature class.
+     */
     func appendFeatures(_ features: [MappedAccessibilityFeature], for featureClass: AccessibilityFeatureClass) {
         let existingFeatures = featureMap[featureClass, default: []]
         featureMap[featureClass] = existingFeatures + features
+        guard let activeFeature = features.last else { return }
+        activeFeatureMap[featureClass] = activeFeature
     }
     
     var description: String {
