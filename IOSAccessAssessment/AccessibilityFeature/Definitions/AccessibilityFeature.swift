@@ -18,15 +18,32 @@ enum AccessibilityFeatureError: Error, LocalizedError {
     }
 }
 
+struct LocationDetails {
+    var coordinates: [[CLLocationCoordinate2D]]
+    
+    init(coordinate: CLLocationCoordinate2D) {
+        self.coordinates = [[coordinate]]
+    }
+    
+    init(coordinates: [CLLocationCoordinate2D]) {
+        self.coordinates = [coordinates]
+    }
+    
+    init(coordinates: [[CLLocationCoordinate2D]]) {
+        self.coordinates = coordinates
+    }
+}
+
 protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
     var id: UUID { get }
     
     var accessibilityFeatureClass: AccessibilityFeatureClass { get }
     
-    var location: CLLocationCoordinate2D? { get set }
+    var locationDetails: LocationDetails? { get set }
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     
-    mutating func setLocation(_ location: CLLocationCoordinate2D?)
+    mutating func setLocationDetails(coordinates: [[CLLocationCoordinate2D]])
+    
     mutating func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute

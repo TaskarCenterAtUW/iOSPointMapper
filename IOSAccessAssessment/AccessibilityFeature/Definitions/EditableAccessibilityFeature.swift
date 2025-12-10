@@ -16,7 +16,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
-    var location: CLLocationCoordinate2D?
+    var locationDetails: LocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     
@@ -28,7 +28,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.accessibilityFeatureClass = detectedAccessibilityFeature.accessibilityFeatureClass
         self.contourDetails = detectedAccessibilityFeature.contourDetails
         
-        self.location = nil
+        self.locationDetails = nil
         calculatedAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
             return (attribute, nil)
         })
@@ -41,22 +41,44 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
-        location: CLLocationCoordinate2D?,
+        coordinates: [[CLLocationCoordinate2D]]?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     ) {
         self.id = id
         self.contourDetails = contourDetails
         self.accessibilityFeatureClass = accessibilityFeatureClass
-        self.location = location
         self.attributeValues = attributeValues
+        
+        guard let coordinates else { return }
+        self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
+            from: coordinates, for: accessibilityFeatureClass
+        )
+    }
+    
+    static func getLocationDetails(
+        from coordinates: [[CLLocationCoordinate2D]], for accessibilityFeatureClass: AccessibilityFeatureClass
+    ) -> LocationDetails? {
+        let oswElementClass = accessibilityFeatureClass.oswPolicy.oswElementClass
+        switch(oswElementClass.geometry) {
+        case .point:
+            guard let firstCoordinate = coordinates.first?.first else { return nil }
+            return LocationDetails(coordinates: [[firstCoordinate]])
+        case .linestring:
+            guard let firstLineCoordinates = coordinates.first else { return nil }
+            return LocationDetails(coordinates: [firstLineCoordinates])
+        case .polygon:
+            return LocationDetails(coordinates: coordinates)
+        }
     }
     
     func setAnnotationOption(_ option: AnnotationOption) {
         self.selectedAnnotationOption = option
     }
     
-    func setLocation(_ location: CLLocationCoordinate2D?) {
-        self.location = location
+    func setLocationDetails(coordinates: [[CLLocationCoordinate2D]]) {
+        self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
+            from: coordinates, for: accessibilityFeatureClass
+        )
     }
     
     func setAttributeValue(
