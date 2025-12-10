@@ -19,7 +19,7 @@ struct OSWRelationMember: Sendable {
     
     init(element: any OSWElement) {
         self.element = element
-        self.role = "placeholder"
+        self.role = "outer"
     }
     
     var toXML: String {

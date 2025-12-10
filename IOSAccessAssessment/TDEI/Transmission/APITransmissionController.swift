@@ -158,7 +158,6 @@ class APITransmissionController: ObservableObject {
             }
             uploadedOSWElements = getUploadedOSWPoints(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMOldIdToFeatureMap,
                 featureOSMIdToOriginalPointMap: featureToOriginalPointMap
             )
         case .linestring:
@@ -170,7 +169,6 @@ class APITransmissionController: ObservableObject {
             }
             uploadedOSWElements = getUploadedOSWLineStrings(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMOldIdToFeatureMap,
                 featureOSMIdToOriginalLineStringMap: featureToOriginalLineStringMap
             )
         case .polygon:
@@ -182,7 +180,6 @@ class APITransmissionController: ObservableObject {
             }
             uploadedOSWElements = getUploadedPolygons(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMOldIdToFeatureMap,
                 featureOSMIdToOriginalPolygonMap: featureToOriginalPolygonMap
             )
         }
@@ -292,14 +289,12 @@ class APITransmissionController: ObservableObject {
     
     private func getUploadedOSWPoints(
         from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
         featureOSMIdToOriginalPointMap: [String: OSWPoint]
     ) -> [OSWPoint] {
         let oswPoints: [OSWPoint] = uploadedElements.nodes.compactMap { uploadedNode in
             let uploadedNodeData = uploadedNode.value
             let uploadedNodeOSMOldId = uploadedNodeData.oldId
-            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedNodeOSMOldId],
-                  let matchedOriginalOSWPoint = featureOSMIdToOriginalPointMap[uploadedNodeOSMOldId] else {
+            guard let matchedOriginalOSWPoint = featureOSMIdToOriginalPointMap[uploadedNodeOSMOldId] else {
                 return nil
             }
             return OSWPoint(
@@ -314,14 +309,12 @@ class APITransmissionController: ObservableObject {
     
     private func getUploadedOSWLineStrings(
         from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
         featureOSMIdToOriginalLineStringMap: [String: OSWLineString]
     ) -> [OSWLineString] {
         let oswLineStrings: [OSWLineString] = uploadedElements.ways.compactMap { uploadedWay in
             let uploadedWayData = uploadedWay.value
             let uploadedWayOSMOldId = uploadedWayData.oldId
-            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedWayOSMOldId],
-                  let matchedOriginalOSWLineString = featureOSMIdToOriginalLineStringMap[uploadedWayOSMOldId] else {
+            guard let matchedOriginalOSWLineString = featureOSMIdToOriginalLineStringMap[uploadedWayOSMOldId] else {
                 return nil
             }
             /// First, map the nodes to the points
@@ -330,7 +323,6 @@ class APITransmissionController: ObservableObject {
             }
             let oswPoints: [OSWPoint] = getUploadedOSWPoints(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
                 featureOSMIdToOriginalPointMap: Dictionary(uniqueKeysWithValues: featureOSMIdToOriginalPointMap)
             )
             /// Lastly, create the linestring
@@ -346,14 +338,12 @@ class APITransmissionController: ObservableObject {
     
     private func getUploadedPolygons(
         from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToFeatureMap: [String: any AccessibilityFeatureProtocol],
         featureOSMIdToOriginalPolygonMap: [String: OSWPolygon]
     ) -> [OSWPolygon] {
         let oswPolygons: [OSWPolygon] = uploadedElements.relations.compactMap { uploadedRelation -> OSWPolygon? in
             let uploadedRelationData = uploadedRelation.value
             let uploadedRelationOSMOldId = uploadedRelationData.oldId
-            guard let matchedFeature = featureOSMIdToFeatureMap[uploadedRelationOSMOldId],
-                  let matchedOriginalOSWPolygon = featureOSMIdToOriginalPolygonMap[uploadedRelationOSMOldId] else {
+            guard let matchedOriginalOSWPolygon = featureOSMIdToOriginalPolygonMap[uploadedRelationOSMOldId] else {
                 return nil
             }
             /// First, map the nodes to the points
@@ -366,7 +356,6 @@ class APITransmissionController: ObservableObject {
             }
             let oswPoints: [OSWPoint] = getUploadedOSWPoints(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
                 featureOSMIdToOriginalPointMap: featureOSMIdToOriginalPointMap
             )
             /// Second, map the ways to the linestrings
@@ -379,7 +368,6 @@ class APITransmissionController: ObservableObject {
             }
             let oswLineStrings: [OSWLineString] = getUploadedOSWLineStrings(
                 from: uploadedElements,
-                featureOSMIdToFeatureMap: featureOSMIdToFeatureMap,
                 featureOSMIdToOriginalLineStringMap: featureOSMIdToOriginalLineStringMap
             )
             /// Lastly, create the polygon
