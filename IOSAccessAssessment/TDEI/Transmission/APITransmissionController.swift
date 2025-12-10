@@ -212,7 +212,7 @@ class APITransmissionController: ObservableObject {
     }
     
     private func featureToPoint(_ feature: any AccessibilityFeatureProtocol) -> OSWPoint? {
-        guard let featureLocation = feature.location else {
+        guard let featureLocation = feature.getLastLocationCoordinate() else {
             return nil
         }
         let oswPoint = OSWPoint(
@@ -233,8 +233,10 @@ class APITransmissionController: ObservableObject {
         }
 //        var oswPointIds: [String] = []
         var oswPoints: [OSWPoint] = []
-        [feature.location].forEach { location in
-            guard let location else { return }
+        guard let featureLocations: [CLLocationCoordinate2D] = feature.locationDetails?.coordinates.first else {
+            return nil
+        }
+        featureLocations.forEach { location in
             let oswPointId = String(idGenerator.nextId())
 //            oswPointIds.append(oswPointId)
             let point = OSWPoint(
@@ -261,19 +263,46 @@ class APITransmissionController: ObservableObject {
             return nil
         }
         
-        var oswPoints: [any OSWElement] = []
-        [feature.location].forEach { location in
-            guard let location else { return }
-            let oswPointId = String(idGenerator.nextId())
-            let point = OSWPoint(
-                id: oswPointId, version: "1",
-                oswElementClass: oswElementClass,
-                latitude: location.latitude, longitude: location.longitude,
-                attributeValues: [:]
-            )
-            oswPoints.append(point)
+        var oswElements: [any OSWElement] = []
+        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
+              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
+            return nil
         }
-        let oswMembers = oswPoints.map {
+        featureLocationArrays.forEach { locationArray in
+            guard !locationArray.isEmpty else { return }
+            if locationArray.count == 1 {
+                guard let location = locationArray.first else { return }
+                let oswPointId = String(idGenerator.nextId())
+                let point = OSWPoint(
+                    id: oswPointId, version: "1",
+                    oswElementClass: oswElementClass,
+                    latitude: location.latitude, longitude: location.longitude,
+                    attributeValues: [:]
+                )
+                oswElements.append(point)
+            } else {
+                var oswPoints: [OSWPoint] = []
+                locationArray.forEach { location in
+                    let oswPointId = String(idGenerator.nextId())
+                    let point = OSWPoint(
+                        id: oswPointId, version: "1",
+                        oswElementClass: oswElementClass,
+                        latitude: location.latitude, longitude: location.longitude,
+                        attributeValues: [:]
+                    )
+                    oswPoints.append(point)
+                }
+                let oswLineString = OSWLineString(
+                    id: String(idGenerator.nextId()),
+                    version: "1",
+                    oswElementClass: oswElementClass,
+                    attributeValues: [:],
+                    points: oswPoints
+                )
+                oswElements.append(oswLineString)
+            }
+        }
+        let oswMembers = oswElements.map {
             /// TODO: Add the exact role of the member
             return OSWRelationMember(element: $0)
         }

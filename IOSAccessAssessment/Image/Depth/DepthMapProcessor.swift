@@ -166,4 +166,15 @@ struct DepthMapProcessor {
         let depths = try getDepthsAtPoints(points: featureBoundPoints)
         return depths
     }
+    
+    func getFeatureDepthsAtNormalizedPoints(_ points: [SIMD2<Float>]) throws -> [Float] {
+        let featurePoints: [CGPoint] = points.map { point in
+            CGPoint(
+                x: CGFloat(point.x * Float(depthWidth)),
+                y: CGFloat((1 - point.y) * Float(depthHeight))
+            )
+        }
+        let depths = try getDepthsAtPoints(points: featurePoints)
+        return depths
+    }
 }

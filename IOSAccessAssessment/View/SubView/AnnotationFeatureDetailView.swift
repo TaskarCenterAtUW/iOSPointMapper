@@ -101,7 +101,7 @@ struct AnnotationFeatureDetailView: View {
                 /**
                  Location Section
                  */
-                if let featureLocation = accessibilityFeature.location {
+                if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
                     Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
                         HStack {
                             Spacer()

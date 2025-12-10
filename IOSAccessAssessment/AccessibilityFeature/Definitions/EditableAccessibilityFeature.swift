@@ -75,6 +75,12 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.selectedAnnotationOption = option
     }
     
+    func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
+        guard let locationDetails else { return nil }
+        guard let lastCoordinate = locationDetails.coordinates.last?.last else { return nil }
+        return lastCoordinate
+    }
+    
     func setLocationDetails(coordinates: [[CLLocationCoordinate2D]]) {
         self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
             from: coordinates, for: accessibilityFeatureClass

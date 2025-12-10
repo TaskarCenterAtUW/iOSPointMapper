@@ -62,6 +62,12 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         }
     }
     
+    func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
+        guard let locationDetails else { return nil }
+        guard let lastCoordinate = locationDetails.coordinates.last?.last else { return nil }
+        return lastCoordinate
+    }
+    
     mutating func setLocationDetails(coordinates: [[CLLocationCoordinate2D]]) {
         self.locationDetails = MappedAccessibilityFeature.getLocationDetails(
             from: coordinates, for: accessibilityFeatureClass
