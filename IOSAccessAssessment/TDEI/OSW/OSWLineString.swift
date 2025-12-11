@@ -34,7 +34,7 @@ struct OSWLineString: OSWElement {
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
-        if oswElementClass.geometry == .point {
+        if oswElementClass.geometry == .linestring {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
         var attributeTags: [String: String] = [:]

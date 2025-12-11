@@ -192,7 +192,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func updateFeature(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [EditableAccessibilityFeature],
-        isSelected: Bool
+        featureSelectedStatus: [UUID: Bool]
     ) throws {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
@@ -206,7 +206,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         let updatedFeaturesOverlayResults = try updateFeaturesOverlayOutputImageWithSource(
             sourceCGImage: featuresSourceCGImage,
             accessibilityFeatures: accessibilityFeatures,
-            isSelected: isSelected
+            featureSelectedStatus: featureSelectedStatus
         )
         annotationImageResults.featuresSourceCGImage = updatedFeaturesOverlayResults.sourceCGImage
         annotationImageResults.featuresOverlayOutputImage = updatedFeaturesOverlayResults.overlayImage
@@ -371,27 +371,44 @@ extension AnnotationImageManager {
     private func updateFeaturesOverlayOutputImageWithSource(
         sourceCGImage: CGImage,
         accessibilityFeatures: [EditableAccessibilityFeature],
-        isSelected: Bool
+        featureSelectedStatus: [UUID: Bool]
     ) throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
         guard let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.captureDataNotAvailable
         }
         let size = CGSize(width: sourceCGImage.width, height: sourceCGImage.height)
-        let color: UIColor? = isSelected ? UIColor.white : nil
-        guard let updatedRasterizedFeaturesImage = ContourFeatureRasterizer.updateRasterizedFeatures(
+        
+        let isNotSelectedColor: UIColor? = nil
+        let notSelectedFeatures = accessibilityFeatures.filter { feature in
+            return !(featureSelectedStatus[feature.id] ?? false)
+        }
+        guard let updatedImageWithNotSelectedFeatures = ContourFeatureRasterizer.updateRasterizedFeatures(
             baseImage: sourceCGImage,
-            detectedFeature: accessibilityFeatures, size: size,
-            polygonConfig: RasterizeConfig(draw: true, color: color, width: 5),
-            boundsConfig: RasterizeConfig(draw: false, color: color, width: 0),
-            centroidConfig: RasterizeConfig(draw: true, color: color, width: 10)
+            detectedFeature: notSelectedFeatures, size: size,
+            polygonConfig: RasterizeConfig(draw: true, color: isNotSelectedColor, width: 5),
+            boundsConfig: RasterizeConfig(draw: false, color: isNotSelectedColor, width: 0),
+            centroidConfig: RasterizeConfig(draw: true, color: isNotSelectedColor, width: 10)
+        ) else {
+            throw AnnotationImageManagerError.featureRasterizationFailed
+        }
+        let isSelectedColor: UIColor? = .white
+        let selectedFeatures = accessibilityFeatures.filter { feature in
+            return featureSelectedStatus[feature.id] ?? false
+        }
+        guard let updatedImageWithSelectedFeatures = ContourFeatureRasterizer.updateRasterizedFeatures(
+            baseImage: updatedImageWithNotSelectedFeatures,
+            detectedFeature: selectedFeatures, size: size,
+            polygonConfig: RasterizeConfig(draw: true, color: isSelectedColor, width: 5),
+            boundsConfig: RasterizeConfig(draw: false, color: isSelectedColor, width: 0),
+            centroidConfig: RasterizeConfig(draw: true, color: isSelectedColor, width: 10)
         ) else {
             throw AnnotationImageManagerError.featureRasterizationFailed
         }
         let overlayImage = try createFeaturesOverlayFromSource(
-            raterizedFeaturesImage: updatedRasterizedFeaturesImage,
+            raterizedFeaturesImage: updatedImageWithSelectedFeatures,
             interfaceOrientation: captureImageData.interfaceOrientation
         )
-        return (sourceCGImage: updatedRasterizedFeaturesImage, overlayImage: overlayImage)
+        return (sourceCGImage: updatedImageWithSelectedFeatures, overlayImage: overlayImage)
     }
     
     private func createFeaturesOverlayFromSource(

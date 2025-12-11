@@ -288,7 +288,7 @@ struct AnnotationView: View {
         /// To use the instance directly would require AccessibilityFeature to conform to Hashable, which is possible, by just using id.
         /// But while rendering the picker, we would need to create a new Array of enumerated instances, which would be less efficient.
         .onChange(of: featureSelectionViewModel.currentIndex) { oldIndex, newIndex in
-            handleOnInstanceChange()
+            handleOnInstanceChange(oldIndex: oldIndex, newIndex: newIndex)
         }
         .sheet(isPresented: $isShowingAnnotationFeatureDetailView) {
             if let currentFeature = featureSelectionViewModel.currentFeature,
@@ -531,7 +531,7 @@ struct AnnotationView: View {
         }
     }
     
-    private func handleOnInstanceChange() {
+    private func handleOnInstanceChange(oldIndex: Int?, newIndex: Int?) {
         do {
             try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
         } catch {
@@ -542,16 +542,27 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             var accessibilityFeatures: [EditableAccessibilityFeature]
+            var featureSelectedStatus: [UUID: Bool] = [:]
             if let currentFeature = featureSelectionViewModel.currentFeature {
                 accessibilityFeatures = [currentFeature]
+                featureSelectedStatus[currentFeature.id] = true /// Selected and highlighted
+                if let oldIndex = oldIndex, oldIndex != featureSelectionViewModel.currentIndex,
+                   oldIndex >= 0, oldIndex < featureSelectionViewModel.instances.count {
+                    let oldFeature = featureSelectionViewModel.instances[oldIndex]
+                    accessibilityFeatures.append(oldFeature)
+                    featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
+                }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
+                featureSelectedStatus = featureSelectionViewModel.instances.reduce(into: [:]) { dict, feature in
+                    dict[feature.id] = false /// Selected, but not highlighted
+                }
             }
-            let isSelected = featureSelectionViewModel.currentFeature != nil
+//            let isSelected = featureSelectionViewModel.currentFeature != nil
             try manager.updateFeature(
                 accessibilityFeatureClass: currentClass,
                 accessibilityFeatures: accessibilityFeatures,
-                isSelected: isSelected
+                featureSelectedStatus: featureSelectedStatus
             )
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
@@ -622,7 +633,7 @@ struct AnnotationView: View {
             workspaceId: workspaceId,
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
-            accessibilityFeatures: featureSelectionViewModel.instances,
+            accessibilityFeatures: featuresToUpload,
             mappingData: sharedAppData.mappingData,
             accessToken: accessToken
         )

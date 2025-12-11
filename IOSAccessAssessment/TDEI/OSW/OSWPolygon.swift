@@ -41,7 +41,7 @@ struct OSWPolygon: OSWElement {
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
-        if oswElementClass.geometry == .point {
+        if oswElementClass.geometry == .polygon {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
         var attributeTags: [String: String] = [:]

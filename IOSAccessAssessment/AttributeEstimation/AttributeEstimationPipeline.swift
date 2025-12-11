@@ -216,7 +216,7 @@ extension AttributeEstimationPipeline {
             x: (leftMostPoint.x + rightMostPoint.x) / 2,
             y: (leftMostPoint.y + rightMostPoint.y) / 2
         )
-        let points = [leftMostPoint, centerPoint, rightMostPoint, leftMostPoint] /// Closing the polygon
+        let points = [leftMostPoint, centerPoint, rightMostPoint] /// Closing the polygon
         let pointDepthValues = try depthMapProcessor.getFeatureDepthsAtNormalizedPoints(points)
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
