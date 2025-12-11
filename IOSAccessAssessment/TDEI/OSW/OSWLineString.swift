@@ -33,7 +33,10 @@ struct OSWLineString: OSWElement {
     }
     
     var tags: [String: String] {
-        let identifyingFieldTags = oswElementClass.identifyingFieldTags
+        var identifyingFieldTags: [String: String] = [:]
+        if oswElementClass.geometry == .point {
+            identifyingFieldTags = oswElementClass.identifyingFieldTags
+        }
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
@@ -90,7 +93,11 @@ struct OSWLineString: OSWElement {
     }
     
     var description: String {
-        let nodesString = points.map { $0.description }.joined(separator: ", ")
+        let nodesString = points.map { $0.shortDescription }.joined(separator: ", ")
         return "OSWLineString(id: \(id), version: \(version), nodes: [\(nodesString)])"
+    }
+    
+    var shortDescription: String {
+        return "OSWLineString(id: \(id))"
     }
 }

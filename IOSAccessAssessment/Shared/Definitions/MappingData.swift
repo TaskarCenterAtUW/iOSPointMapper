@@ -25,31 +25,50 @@ enum MappingDataError: Error, LocalizedError {
 }
 
 class MappingData: CustomStringConvertible {
-    var featureMap: [AccessibilityFeatureClass: [MappedAccessibilityFeature]] = [:]
+    var featuresMap: [AccessibilityFeatureClass: [MappedAccessibilityFeature]] = [:]
+    var featureIdToIndexDictMap: [AccessibilityFeatureClass: [UUID: Int]] = [:]
     
     /// Ways that are currently being processed/constructed. Only one active feature per feature class at a time.
-    var activeFeatureMap: [AccessibilityFeatureClass: MappedAccessibilityFeature] = [:]
+    var activeFeatureIdMap: [AccessibilityFeatureClass: UUID] = [:]
     
     init() { }
     
     func getActiveFeature(accessibilityFeatureClass: AccessibilityFeatureClass) -> MappedAccessibilityFeature? {
-        return activeFeatureMap[accessibilityFeatureClass]
+        let activeFeatureId = activeFeatureIdMap[accessibilityFeatureClass]
+        guard let activeFeatureId else { return nil }
+        guard let featureIdToIndexDict = featureIdToIndexDictMap[accessibilityFeatureClass],
+              let featureIndex = featureIdToIndexDict[activeFeatureId],
+              let features = featuresMap[accessibilityFeatureClass], featureIndex < features.count else {
+            return nil
+        }
+        return features[featureIndex]
     }
     
     /**
-    Appends features to the mapping data for a specific feature class.
+     Updates features in the mapping data for a specific feature class.
      */
-    func appendFeatures(_ features: [MappedAccessibilityFeature], for featureClass: AccessibilityFeatureClass) {
-        let existingFeatures = featureMap[featureClass, default: []]
-        featureMap[featureClass] = existingFeatures + features
-        guard let activeFeature = features.last else { return }
-        activeFeatureMap[featureClass] = activeFeature
+    func updateFeatures(_ features: [MappedAccessibilityFeature], for featureClass: AccessibilityFeatureClass) {
+        var existingFeatures = featuresMap[featureClass, default: []]
+        var featureIdToIndexDict = featureIdToIndexDictMap[featureClass, default: [:]]
+        features.forEach { feature in
+            if let index = featureIdToIndexDict[feature.id] {
+                // Update existing feature
+                existingFeatures[index] = feature
+            } else {
+                // Append new feature
+                existingFeatures.append(feature)
+                featureIdToIndexDict[feature.id] = existingFeatures.count - 1
+            }
+            activeFeatureIdMap[featureClass] = feature.id
+        }
+        featuresMap[featureClass] = existingFeatures
+        featureIdToIndexDictMap[featureClass] = featureIdToIndexDict
     }
     
     var description: String {
         var desc = "MappingData:\n"
         desc += "Feature Nodes:\n"
-        featureMap.forEach { (featureClass, featureData) in
+        featuresMap.forEach { (featureClass, featureData) in
             return featureData.forEach { feature in
                 desc += feature.oswElement.description + "\n"
             }

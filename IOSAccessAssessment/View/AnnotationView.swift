@@ -629,7 +629,7 @@ struct AnnotationView: View {
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
             throw AnnotationViewError.uploadFailed
         }
-        sharedAppData.mappingData.appendFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
+        sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
         return apiTransmissionResults

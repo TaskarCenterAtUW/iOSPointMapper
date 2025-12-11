@@ -40,7 +40,10 @@ struct OSWPolygon: OSWElement {
     var members: [OSWRelationMember]
     
     var tags: [String: String] {
-        let identifyingFieldTags = oswElementClass.identifyingFieldTags
+        var identifyingFieldTags: [String: String] = [:]
+        if oswElementClass.geometry == .point {
+            identifyingFieldTags = oswElementClass.identifyingFieldTags
+        }
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
@@ -109,8 +112,12 @@ struct OSWPolygon: OSWElement {
     
     var description: String {
         let membersString = members.map {
-            $0.element.description
+            $0.element.shortDescription
         }.joined(separator: ", ")
         return "OSWPolygon(id: \(id), version: \(version), class: \(oswElementClass), members: [\(membersString)])"
+    }
+    
+    var shortDescription: String {
+        return "OSWPolygon(id: \(id))"
     }
 }

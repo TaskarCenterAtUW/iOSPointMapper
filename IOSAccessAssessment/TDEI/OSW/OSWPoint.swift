@@ -20,7 +20,10 @@ struct OSWPoint: OSWElement {
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     
     var tags: [String: String] {
-        let identifyingFieldTags = oswElementClass.identifyingFieldTags
+        var identifyingFieldTags: [String: String] = [:]
+        if oswElementClass.geometry == .point {
+            identifyingFieldTags = oswElementClass.identifyingFieldTags
+        }
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
@@ -62,5 +65,9 @@ struct OSWPoint: OSWElement {
     
     var description: String {
         return "OSWPoint(id: \(id), version: \(version), latitude: \(latitude), longitude: \(longitude))"
+    }
+    
+    var shortDescription: String {
+        return "OSWPoint(id: \(id))"
     }
 }

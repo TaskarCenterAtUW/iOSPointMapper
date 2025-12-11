@@ -83,7 +83,9 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 parent: nil,
                 geometry: .polygon,
                 identifyingFields: [
-                    IdentifyingField(field: .building, value: "yes")
+                    IdentifyingField(field: .building, value: "yes"),
+                    /// Temporary hard-coding to ensure correct polygon geometry. Should later be inferred from mapped data.
+                    IdentifyingField(field: .custom("Type", "type"), value: "multipolygon")
                 ]
             )
         case .Pole:

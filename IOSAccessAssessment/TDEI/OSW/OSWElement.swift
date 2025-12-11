@@ -19,4 +19,6 @@ protocol OSWElement: Sendable, CustomStringConvertible {
     func toOSMCreateXML(changesetId: String) -> String
     func toOSMModifyXML(changesetId: String) -> String
     func toOSMDeleteXML(changesetId: String) -> String
+    
+    var shortDescription: String { get }
 }
