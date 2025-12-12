@@ -30,6 +30,7 @@ struct APITransmissionResults: @unchecked Sendable {
     
     init(
         accessibilityFeatures: [MappedAccessibilityFeature],
+        activeFeatures: [MappedAccessibilityFeature]? = nil,
         failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0
     ) {
         self.accessibilityFeatures = accessibilityFeatures
@@ -252,7 +253,7 @@ extension APITransmissionController {
         var uploadOperations: [ChangesetDiffOperation] = featureOSMOldIdToOSWElementMap.values.map { .create($0) }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
         if accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
-           let existingMappedFeature = mappingData.getActiveFeature(accessibilityFeatureClass: accessibilityFeatureClass) {
+           let existingMappedFeature = mappingData.featuresMap[accessibilityFeatureClass]?.last {
             let existingOSWElement = existingMappedFeature.oswElement
             if var existingOSWLineString = existingOSWElement as? OSWLineString,
                let newOSWLineString = featureOSMOldIdToOSWElementMap.first?.value as? OSWLineString,
