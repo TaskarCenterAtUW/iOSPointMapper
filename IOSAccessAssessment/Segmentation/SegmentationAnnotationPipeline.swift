@@ -227,10 +227,10 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         var detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
             from: segmentationLabelImage
         )
-        /// TODO: Handle way features differently if needed, and improve the relevant trapezoid-creation logic.
+        /// TODO: Handle sidewalk feature differently if needed, and improve the relevant trapezoid-creation logic.
         let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.area > $1.contourDetails.area}).first
         guard let largestFeature = largestFeature,
-              accessibilityFeatureClass.isWay else {
+              accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk else {
             self.isProcessing = false
             return detectedFeatures
         }

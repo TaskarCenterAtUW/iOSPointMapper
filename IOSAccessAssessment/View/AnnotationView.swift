@@ -146,7 +146,8 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     
     func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
-        if (currentClass.isWay) {
+        /// If the class is sidewalk, we always select the first instance, as there should be only one sidewalk instance.
+        if (currentClass.oswPolicy.oswElementClass == .Sidewalk) {
             try setIndex(index: 0)
         } else {
             try setIndex(index: nil)
@@ -212,8 +213,8 @@ class APITransmissionStatusViewModel: ObservableObject {
     func update(apiTransmissionResults: APITransmissionResults) {
         let failedFeatureUploads = apiTransmissionResults.failedFeatureUploads
         if failedFeatureUploads == 0 {
-            self.isFailed = false
-            self.errorMessage = ""
+            self.isFailed = true
+            self.errorMessage = "Unknown Error Occurred."
         } else {
             self.isFailed = true
             self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiTransmissionStatusAlertMessageSuffixKey)"
@@ -287,7 +288,7 @@ struct AnnotationView: View {
         /// To use the instance directly would require AccessibilityFeature to conform to Hashable, which is possible, by just using id.
         /// But while rendering the picker, we would need to create a new Array of enumerated instances, which would be less efficient.
         .onChange(of: featureSelectionViewModel.currentIndex) { oldIndex, newIndex in
-            handleOnInstanceChange()
+            handleOnInstanceChange(oldIndex: oldIndex, newIndex: newIndex)
         }
         .sheet(isPresented: $isShowingAnnotationFeatureDetailView) {
             if let currentFeature = featureSelectionViewModel.currentFeature,
@@ -366,7 +367,7 @@ struct AnnotationView: View {
                     CustomPicker (
                         label: AnnotationViewConstants.Texts.selectObjectText,
                         selection: $featureSelectionViewModel.currentIndex,
-                        isContainsAll: !currentClass.isWay
+                        isContainsAll: currentClass.oswPolicy.oswElementClass != .Sidewalk
                     ) {
                         ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                             Text("\(currentClass.name.capitalized): \(featureIndex)")
@@ -530,7 +531,7 @@ struct AnnotationView: View {
         }
     }
     
-    private func handleOnInstanceChange() {
+    private func handleOnInstanceChange(oldIndex: Int?, newIndex: Int?) {
         do {
             try featureSelectionViewModel.setIndex(index: featureSelectionViewModel.currentIndex)
         } catch {
@@ -541,16 +542,27 @@ struct AnnotationView: View {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             var accessibilityFeatures: [EditableAccessibilityFeature]
+            var featureSelectedStatus: [UUID: Bool] = [:]
             if let currentFeature = featureSelectionViewModel.currentFeature {
                 accessibilityFeatures = [currentFeature]
+                featureSelectedStatus[currentFeature.id] = true /// Selected and highlighted
+                if let oldIndex = oldIndex, oldIndex != featureSelectionViewModel.currentIndex,
+                   oldIndex >= 0, oldIndex < featureSelectionViewModel.instances.count {
+                    let oldFeature = featureSelectionViewModel.instances[oldIndex]
+                    accessibilityFeatures.append(oldFeature)
+                    featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
+                }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
+                featureSelectedStatus = featureSelectionViewModel.instances.reduce(into: [:]) { dict, feature in
+                    dict[feature.id] = false /// Selected, but not highlighted
+                }
             }
-            let isSelected = featureSelectionViewModel.currentFeature != nil
+//            let isSelected = featureSelectionViewModel.currentFeature != nil
             try manager.updateFeature(
                 accessibilityFeatureClass: currentClass,
                 accessibilityFeatures: accessibilityFeatures,
-                isSelected: isSelected
+                featureSelectedStatus: featureSelectedStatus
             )
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
@@ -621,27 +633,14 @@ struct AnnotationView: View {
             workspaceId: workspaceId,
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
-            accessibilityFeatures: featureSelectionViewModel.instances,
+            accessibilityFeatures: featuresToUpload,
             mappingData: sharedAppData.mappingData,
             accessToken: accessToken
         )
-        if accessibilityFeatureClass.isWay {
-            guard let wayData = apiTransmissionResults.wayData else {
-                throw AnnotationViewError.uploadFailed
-            }
-            try sharedAppData.mappingData.appendWay(
-                accessibilityFeatureClass: accessibilityFeatureClass,
-                osmWay: wayData.way,
-                nodes: wayData.nodes
-            )
-        } else {
-            guard let nodeData = apiTransmissionResults.nodeData else {
-                throw AnnotationViewError.uploadFailed
-            }
-            sharedAppData.mappingData.appendNodes(
-                accessibilityFeatureClass: accessibilityFeatureClass, nodes: nodeData.nodes
-            )
+        guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
+            throw AnnotationViewError.uploadFailed
         }
+        sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
         sharedAppData.isUploadReady = true
         return apiTransmissionResults
