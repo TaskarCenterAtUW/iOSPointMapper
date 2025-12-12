@@ -17,12 +17,19 @@ enum WorkspaceSelectionViewConstants {
         static let primaryWorkspaces: String = "Primary Workspaces"
         static let allWorkspaces: String = "All Workspaces"
         
-        // WorkspaceInfoTip
+        /// Workspace Fetch Status Alert
+        static let workspaceFetchStatusAlertTitleKey: String = "Workspace Load Error"
+        static let workspaceFetchStatusAlertDismissButtonKey: String = "Dismiss"
+        static let workspaceFetchStatusAlertRetryButtonKey: String = "Retry"
+        static let workspaceFetchStatusAlertLogoutButtonKey: String = "Log out"
+        static let workspaceFetchStatusAlertMessageKey: String = "There was an error loading workspaces:\n%@\nPlease try again.\nIf the problem persists, please relogin.\n"
+        
+        /// WorkspaceInfoTip
         static let workspaceInfoTipTitle: String = "Workspace"
         static let workspaceInfoTipMessage: String = "A working space where one can edit and contribute to OpenSidewalk (OSW) data"
         static let workspaceInfoTipLearnMoreButtonTitle: String = "Learn More"
         
-        // WorkspaceSelectionLearnMoreSheetView
+        /// WorkspaceSelectionLearnMoreSheetView
         static let workspaceSelectionLearnMoreSheetTitle: String = "Workspace"
         static let workspaceSelectionLearnMoreSheetMessage: String = """
             A working space where one can edit and contribute to OpenSidewalk (OSW) data such as sidewalks, intersections, curbs etc.
@@ -81,11 +88,24 @@ struct WorkspaceInfoTip: Tip {
     }
 }
 
+class WorkspaceFetchStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 struct WorkspaceSelectionView: View {
     @EnvironmentObject var userStateViewModel: UserStateViewModel
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @State var workspaces: [Workspace] = []
     @State var primaryWorkspaces: [Workspace] = []
+    
+    @StateObject private var workspaceFetchStatusViewModel = WorkspaceFetchStatusViewModel()
+    @EnvironmentObject var userState: UserStateViewModel
     
     var infoTip = WorkspaceInfoTip()
     @State private var showLearnMoreSheet = false
@@ -186,6 +206,26 @@ struct WorkspaceSelectionView: View {
             WorkspaceSelectionLearnMoreSheetView()
                 .presentationDetents([.medium, .large])
         }
+        .alert(WorkspaceSelectionViewConstants.Texts.workspaceFetchStatusAlertTitleKey, isPresented: $workspaceFetchStatusViewModel.isFailed, actions: {
+            Button(WorkspaceSelectionViewConstants.Texts.workspaceFetchStatusAlertDismissButtonKey) {
+                workspaceFetchStatusViewModel.update(isFailed: false, errorMessage: "")
+            }
+            Button(WorkspaceSelectionViewConstants.Texts.workspaceFetchStatusAlertRetryButtonKey, role: .cancel) {
+                workspaceFetchStatusViewModel.update(isFailed: false, errorMessage: "")
+                Task {
+                    await loadWorkspaces()
+                }
+            }
+            Button(WorkspaceSelectionViewConstants.Texts.workspaceFetchStatusAlertLogoutButtonKey, role: .destructive) {
+                workspaceFetchStatusViewModel.update(isFailed: false, errorMessage: "")
+                userState.logout()
+            }
+        }, message: {
+            Text(String(
+                format: NSLocalizedString(WorkspaceSelectionViewConstants.Texts.workspaceFetchStatusAlertMessageKey, comment: ""),
+                workspaceFetchStatusViewModel.errorMessage
+            ))
+        })
 //        .environment(\.colorScheme, .dark)
     }
     
@@ -208,9 +248,9 @@ struct WorkspaceSelectionView: View {
             self.workspaces = workspaces
             self.primaryWorkspaces = primaryWorkspaces
         } catch {
-            print("Error loading workspaces: \(error.localizedDescription)")
             self.workspaces = []
             self.primaryWorkspaces = []
+            workspaceFetchStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
         }
     }
 }
