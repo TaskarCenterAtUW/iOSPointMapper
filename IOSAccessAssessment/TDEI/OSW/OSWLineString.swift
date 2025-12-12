@@ -75,7 +75,7 @@ struct OSWLineString: OSWElement {
         let nodesXML = points.map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
         return """
         \(nodesXML)
-        <way id="\(id)" changeset="\(changesetId)">
+        <way id="\(id)" version="\(version)" changeset="\(changesetId)">
             \(tagsXML)
             \(refsXML)
         </way>
