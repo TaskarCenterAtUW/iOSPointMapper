@@ -42,7 +42,7 @@ enum ARCameraViewConstants {
         
         Point your device's camera at the area you want to capture, and press the Camera Button to take a snapshot.
         
-        After capturing, you will be prompted to annotate the detected features.
+        After capturing, you will be prompted to validate the annotated features.
         """
     }
     
@@ -118,14 +118,32 @@ struct ARCameraView: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                         
-                        Button {
-                            cameraCapture()
-                        } label: {
-                            Image(systemName: ARCameraViewConstants.Images.cameraIcon)
-                                .resizable()
-                                .frame(width: 60, height: 60)
+                        HStack {
+                            Spacer()
+                            Button {
+                                cameraCapture()
+                            } label: {
+                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                    .resizable()
+                                    .frame(width: 60, height: 60)
+                            }
+                            .padding(.bottom, 20)
+                            Spacer()
                         }
-                        .padding(.bottom, 20)
+                        .overlay(
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    showARCameraLearnMoreSheet = true
+                                }) {
+                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
+                                        .resizable()
+                                        .frame(width: 20, height: 20)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
+                            }
+                        )
                     }
                 }
             } else {
@@ -133,15 +151,6 @@ struct ARCameraView: View {
             }
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
-        .navigationBarItems(trailing:
-            Button(action: {
-                showARCameraLearnMoreSheet = true
-            }) {
-                Image(systemName: ARCameraViewConstants.Images.infoIcon)
-                    .resizable()
-                    .frame(width: 20, height: 20)
-            }
-        )
         .onAppear {
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
@@ -197,6 +206,13 @@ struct ARCameraView: View {
         manager.interfaceOrientation.isLandscape ?
         AnyLayout(HStackLayout())(content) :
         AnyLayout(VStackLayout())(content)
+    }
+    
+    @ViewBuilder
+    private func reverseOrientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        manager.interfaceOrientation.isLandscape ?
+        AnyLayout(VStackLayout())(content) :
+        AnyLayout(HStackLayout())(content)
     }
     
     private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
