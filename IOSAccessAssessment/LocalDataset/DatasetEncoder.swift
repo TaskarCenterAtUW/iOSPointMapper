@@ -129,8 +129,8 @@ class DatasetEncoder {
         let frameNumber: UUID = frameId
         
         try self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
-        if let depthImage = depthImage {
-            try self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
+        if let depthImage = depthImage, let depthBuffer = depthImage.pixelBuffer {
+            try self.depthEncoder.encodeFrame(frame: depthBuffer, frameNumber: frameNumber)
         }
         try self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
         if let confidenceImage = confidenceImage {
