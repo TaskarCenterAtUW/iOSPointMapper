@@ -9,36 +9,35 @@ import Foundation
 import CoreImage
 import UIKit
 
-class SegmentationEncoder {
-    enum Status {
-        case ok
-        case fileCreationError
-    }
-    private let baseDirectory: URL
-    public var status: Status = Status.ok
+enum SegmentationEncoderError: Error, LocalizedError {
+    case invalidImageData
+    case writeFailed(String)
     
-    init(outDirectory: URL) {
-        self.baseDirectory = outDirectory
-        do {
-            try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
-        } catch let error {
-            print("Could not create folder. \(error.localizedDescription)")
-            status = Status.fileCreationError
+    var errorDescription: String? {
+        switch self {
+        case .invalidImageData:
+            return "The image data is invalid."
+        case .writeFailed(let message):
+            return "Failed to write image data: \(message)"
         }
     }
+}
+
+class SegmentationEncoder {
+    private let baseDirectory: URL
     
-    func save(ciImage: CIImage, frameNumber: UUID) {
+    init(outDirectory: URL) throws {
+        self.baseDirectory = outDirectory
+        try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
+    }
+    
+    func save(ciImage: CIImage, frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
         let image = UIImage(ciImage: ciImage)
         guard let data = image.pngData() else {
-            print("Could not convert CIImage to PNG data for frame \(frameNumber).")
-            return
+            throw SegmentationEncoderError.invalidImageData
         }
         let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
-        do {
-            try data.write(to: path)
-        } catch let error {
-            print("Could not save depth image \(frameNumber). \(error.localizedDescription)")
-        }
+        try data.write(to: path)
     }
 }

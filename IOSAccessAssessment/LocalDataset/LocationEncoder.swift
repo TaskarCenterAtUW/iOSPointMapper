@@ -29,19 +29,14 @@ class LocationEncoder {
     let path: URL
     let fileHandle: FileHandle
 
-    init(url: URL) {
+    init(url: URL) throws {
         self.path = url
         FileManager.default.createFile(atPath: self.path.absoluteString,  contents:Data("".utf8), attributes: nil)
-        do {
-            try "".write(to: self.path, atomically: true, encoding: .utf8)
-            self.fileHandle = try FileHandle(forWritingTo: self.path)
-            let heading: String = "timestamp, frame, latitude, longitude\n"
+        try "".write(to: self.path, atomically: true, encoding: .utf8)
+        self.fileHandle = try FileHandle(forWritingTo: self.path)
+        let heading: String = "timestamp, frame, latitude, longitude\n"
 //            , altitude, horizontal_accuracy, vertical_accuracy, speed, course, floor_level\n"
-            self.fileHandle.write(heading.data(using: .utf8)!)
-        } catch let error {
-            print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open location file for writing.")
-        }
+        self.fileHandle.write(heading.data(using: .utf8)!)
     }
 
     func add(locationData: LocationData, frameNumber: UUID) {
@@ -51,12 +46,8 @@ class LocationEncoder {
         self.fileHandle.write(line.data(using: .utf8)!)
     }
 
-    func done() {
-        do {
-            try self.fileHandle.close()
-        } catch let error {
-            print("Closing location \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
-        }
+    func done() throws {
+        try self.fileHandle.close()
     }
 }
 
@@ -64,19 +55,14 @@ class HeadingEncoder {
     let path: URL
     let fileHandle: FileHandle
 
-    init(url: URL) {
+    init(url: URL) throws {
         self.path = url
         FileManager.default.createFile(atPath: self.path.absoluteString,  contents:Data("".utf8), attributes: nil)
-        do {
-            try "".write(to: self.path, atomically: true, encoding: .utf8)
-            self.fileHandle = try FileHandle(forWritingTo: self.path)
-            let heading: String = "timestamp, frame, magnetic_heading, true_heading\n"
+        try "".write(to: self.path, atomically: true, encoding: .utf8)
+        self.fileHandle = try FileHandle(forWritingTo: self.path)
+        let heading: String = "timestamp, frame, magnetic_heading, true_heading\n"
 //            , heading_accuracy\n"
-            self.fileHandle.write(heading.data(using: .utf8)!)
-        } catch let error {
-            print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open heading file for writing.")
-        }
+        self.fileHandle.write(heading.data(using: .utf8)!)
     }
 
     func add(headingData: HeadingData, frameNumber: UUID) {
@@ -86,11 +72,7 @@ class HeadingEncoder {
         self.fileHandle.write(line.data(using: .utf8)!)
     }
 
-    func done() {
-        do {
-            try self.fileHandle.close()
-        } catch let error {
-            print("Closing heading \(self.path.absoluteString) file handle failed. \(error.localizedDescription)")
-        }
+    func done() throws {
+        try self.fileHandle.close()
     }
 }

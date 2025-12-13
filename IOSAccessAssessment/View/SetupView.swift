@@ -304,7 +304,11 @@ struct SetupView: View {
                                         Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
                                             .resizable()
                                             .frame(width: 20, height: 20)
-                                            .foregroundStyle(Color.primary)
+                                            .foregroundStyle(
+                                                self.selectedClasses.contains(accessibilityFeatureClass)
+                                                ? SetupViewConstants.Colors.selectedClass
+                                                : SetupViewConstants.Colors.unselectedClass
+                                            )
                                     )
                             }
                         }

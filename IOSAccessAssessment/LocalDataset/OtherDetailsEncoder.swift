@@ -16,24 +16,14 @@ struct OtherDetailsData {
 }
 
 class OtherDetailsEncoder {
-    enum Status {
-        case ok
-        case fileCreationError
-    }
     private let path: URL
     let fileHandle: FileHandle
-    public var status: Status = Status.ok
     
-    init(url: URL) {
+    init(url: URL) throws {
         self.path = url
-        do {
-            try "".write(to: self.path, atomically: true, encoding: .utf8)
-            self.fileHandle = try FileHandle(forWritingTo: self.path)
-            self.fileHandle.write("timestamp, frame, deviceOrientation, originalWidth, originalHeight\n".data(using: .utf8)!)
-        } catch let error {
-            print("Can't create file \(self.path.absoluteString). \(error.localizedDescription)")
-            preconditionFailure("Can't open camera transform file for writing.")
-        }
+        try "".write(to: self.path, atomically: true, encoding: .utf8)
+        self.fileHandle = try FileHandle(forWritingTo: self.path)
+        self.fileHandle.write("timestamp, frame, deviceOrientation, originalWidth, originalHeight\n".data(using: .utf8)!)
     }
     
     func add(otherDetails: OtherDetailsData, frameNumber: UUID) {
@@ -46,11 +36,7 @@ class OtherDetailsEncoder {
         self.fileHandle.write(line.data(using: .utf8)!)
     }
     
-    func done() {
-        do {
-            try self.fileHandle.close()
-        } catch let error {
-            print("Can't close camera transform file \(self.path.absoluteString). \(error.localizedDescription)")
-        }
+    func done() throws {
+        try self.fileHandle.close()
     }
 }
