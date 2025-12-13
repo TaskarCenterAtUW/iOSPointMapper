@@ -10,12 +10,6 @@ import ARKit
 import CryptoKit
 import CoreLocation
 
-enum DatasetEncoderStatus {
-    case allGood
-    case videoEncodingError
-    case directoryCreationError
-}
-
 /**
     Encoder for saving dataset frames and metadata.
  
@@ -48,7 +42,6 @@ class DatasetEncoder {
 //    private let headingEncoder: HeadingEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
     
-    public var status = DatasetEncoderStatus.allGood
     public var capturedFrameIds: Set<UUID> = []
     
     init(workspaceId: String, changesetId: String) throws {

@@ -94,6 +94,8 @@ enum SetupViewError: Error, LocalizedError {
     case noWorkspaceId
     case changesetOpenFailed
     case authenticationError
+    case currentDatasetInitializationFailed
+    case currentDatasetSaveFailed
     
     var errorDescription: String? {
         switch self {
@@ -103,6 +105,10 @@ enum SetupViewError: Error, LocalizedError {
             return "Failed to open changeset."
         case .authenticationError:
             return "Authentication error. Please log in again."
+        case .currentDatasetInitializationFailed:
+            return "Failed to initialize local dataset."
+        case .currentDatasetSaveFailed:
+            return "Failed to save local dataset."
         }
     }
 }
@@ -197,6 +203,16 @@ class SharedAppContextInitializationViewModel: ObservableObject {
     }
 }
 
+class CurrentDatasetStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 struct SetupView: View {
     @State private var selectedClasses = Set<AccessibilityFeatureClass>()
     private var isSelectionEmpty: Bool {
@@ -214,6 +230,7 @@ struct SetupView: View {
     @StateObject private var changeSetCloseViewModel = ChangeSetCloseViewModel()
     @StateObject private var modelInitializationViewModel = ModelInitializationViewModel()
     @StateObject private var sharedAppContextInitializationViewModel = SharedAppContextInitializationViewModel()
+    @StateObject private var currentDatasetStatusViewModel = CurrentDatasetStatusViewModel()
     
     var changesetInfoTip = ChangesetInfoTip()
     @State private var showChangesetLearnMoreSheet = false
@@ -256,6 +273,10 @@ struct SetupView: View {
                     if action.id == SetupViewConstants.Identifiers.changesetInfoTipLearnMoreActionId {
                         showChangesetLearnMoreSheet = true
                     }
+                }
+                if currentDatasetStatusViewModel.isFailed {
+                    Text(currentDatasetStatusViewModel.errorMessage)
+                        .foregroundStyle(.red)
                 }
                 
                 Divider()
@@ -422,7 +443,9 @@ struct SetupView: View {
                 )
                 workspaceViewModel.updateChangeset(id: openedChangesetId)
                 changesetOpenViewModel.isChangesetOpened = true
-                sharedAppData.currentDatasetEncoder = DatasetEncoder(workspaceId: workspaceId, changesetId: openedChangesetId)
+                try initializeCurrentDataset(workspaceId: workspaceId, changeSetId: openedChangesetId)
+            } catch SetupViewError.currentDatasetInitializationFailed {
+                setCurrentDatasetStatusErrorHint(SetupViewError.currentDatasetInitializationFailed.localizedDescription)
             } catch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     changesetOpenViewModel.update(
@@ -430,6 +453,17 @@ struct SetupView: View {
                         retryMessage: "\(SetupViewConstants.Texts.changesetOpeningRetryMessageText) \nError: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+    
+    private func initializeCurrentDataset(workspaceId: String, changeSetId: String) throws {
+        do {
+            sharedAppData.currentDatasetEncoder = try DatasetEncoder(
+                workspaceId: workspaceId, changesetId: changeSetId
+            )
+        } catch {
+            /// Handle this in the main catch block
+            throw SetupViewError.currentDatasetInitializationFailed
         }
     }
     
@@ -447,8 +481,10 @@ struct SetupView: View {
                     changesetId: changesetId, accessToken: accessToken
                 )
                 sharedAppData.refreshData()
-                sharedAppData.currentDatasetEncoder?.save()
                 openChangeset()
+                try saveCurrentDataset()
+            } catch SetupViewError.currentDatasetSaveFailed {
+                setCurrentDatasetStatusErrorHint(SetupViewError.currentDatasetSaveFailed.localizedDescription)
             } catch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     changeSetCloseViewModel.update(
@@ -456,6 +492,18 @@ struct SetupView: View {
                         retryMessage: "\(SetupViewConstants.Texts.changesetClosingRetryMessageText) \nError: \(error.localizedDescription)")
                 }
             }
+        }
+    }
+    
+    private func saveCurrentDataset() throws {
+        do {
+            guard let currentDatasetEncoder = sharedAppData.currentDatasetEncoder else {
+                throw SetupViewError.currentDatasetSaveFailed
+            }
+            try currentDatasetEncoder.save()
+        } catch {
+            /// Handle this in the main catch block
+            throw SetupViewError.currentDatasetSaveFailed
         }
     }
     
@@ -484,6 +532,15 @@ struct SetupView: View {
                     isContextConfigured: false, showRetryAlert: true,
                     retryMessage: "\(SetupViewConstants.Texts.sharedAppContextInitializationRetryMessageText) \nError: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    /// Set text for 2 seconds, and then fall back to placeholder
+    private func setCurrentDatasetStatusErrorHint(_ text: String) {
+        currentDatasetStatusViewModel.update(isFailed: true, errorMessage: text)
+        Task {
+            try await Task.sleep(for: .seconds(2))
+            currentDatasetStatusViewModel.update(isFailed: false, errorMessage: "")
         }
     }
 }
