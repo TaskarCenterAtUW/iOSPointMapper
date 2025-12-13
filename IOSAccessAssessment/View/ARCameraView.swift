@@ -118,7 +118,7 @@ struct ARCameraView: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                         
-                        HStack {
+                        reverseOrientationStack {
                             Spacer()
                             Button {
                                 cameraCapture()
@@ -131,7 +131,7 @@ struct ARCameraView: View {
                             Spacer()
                         }
                         .overlay(
-                            HStack {
+                            reverseOrientationStack {
                                 Spacer()
                                 Button(action: {
                                     showARCameraLearnMoreSheet = true
