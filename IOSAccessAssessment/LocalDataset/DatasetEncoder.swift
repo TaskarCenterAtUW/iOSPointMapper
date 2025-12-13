@@ -86,9 +86,33 @@ class DatasetEncoder {
         return directory
     }
     
+    public func addCaptureData(
+        captureImageData: any CaptureImageDataProtocol,
+        location: CLLocation?
+    ) throws {
+        let frameId: UUID = UUID()
+        let otherDetailsData = OtherDetailsData(
+            timestamp: captureImageData.timestamp,
+            deviceOrientation: captureImageData.interfaceOrientation,
+            originalSize: captureImageData.originalSize
+        )
+        try self.addData(
+            frameId: frameId,
+            cameraImage: captureImageData.cameraImage,
+            depthImage: captureImageData.depthImage,
+            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            location: location,
+//            heading: captureImageData.heading,
+            otherDetails: otherDetailsData,
+            timestamp: captureImageData.timestamp
+        )
+    }
+    
     public func addData(
         frameId: UUID,
-        cameraImage: CIImage, depthImage: CIImage,
+        cameraImage: CIImage, depthImage: CIImage?,
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         location: CLLocation?,
@@ -108,7 +132,9 @@ class DatasetEncoder {
 //        let trueHeading = heading?.trueHeading ?? 0.0
         
         try self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
-        try self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
+        if let depthImage = depthImage {
+            try self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
+        }
         try self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
 //        self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
         self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)

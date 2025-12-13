@@ -11,7 +11,7 @@ import ARKit
 
 struct OtherDetailsData {
     let timestamp: TimeInterval
-    let deviceOrientation: UIDeviceOrientation
+    let deviceOrientation: UIInterfaceOrientation
     let originalSize: CGSize
 }
 

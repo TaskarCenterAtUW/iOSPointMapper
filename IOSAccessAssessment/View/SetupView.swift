@@ -274,10 +274,10 @@ struct SetupView: View {
                         showChangesetLearnMoreSheet = true
                     }
                 }
-                if currentDatasetStatusViewModel.isFailed {
-                    Text(currentDatasetStatusViewModel.errorMessage)
-                        .foregroundStyle(.red)
-                }
+//                if currentDatasetStatusViewModel.isFailed {
+//                    Text(currentDatasetStatusViewModel.errorMessage)
+//                        .foregroundStyle(.red)
+//                }
                 
                 Divider()
                 
@@ -537,6 +537,7 @@ struct SetupView: View {
     
     /// Set text for 2 seconds, and then fall back to placeholder
     private func setCurrentDatasetStatusErrorHint(_ text: String) {
+        print("CurrentDatasetStatus Error: \(text)")
         currentDatasetStatusViewModel.update(isFailed: true, errorMessage: text)
         Task {
             try await Task.sleep(for: .seconds(2))
