@@ -125,7 +125,11 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     }
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
-        self.interfaceOrientation = orientation
+        Task {
+            await MainActor.run {
+                self.interfaceOrientation = orientation
+            }
+        }
     }
     
     /**
