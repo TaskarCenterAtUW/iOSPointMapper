@@ -8,11 +8,36 @@
 import SwiftUI
 import TipKit
 
+enum AppConstants {
+    enum Texts {
+        /// Errors
+        static let refreshTokenFailedMessageKey = "Failed to Refresh Token."
+        
+        /// Login Status Alert
+        static let loginStatusAlertTitleKey = "Login Error"
+        static let loginStatusAlertDismissButtonKey = "OK"
+        static let loginStatusAlertLogoutButtonKey = "Log out"
+        static let loginStatusAlertMessageKey = "There was an error during login:\n%@\n Please try logging in again."
+    }
+}
+
+class LoginStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 @main
 struct IOSAccessAssessmentApp: App {
     @StateObject private var userState = UserStateViewModel()
     @StateObject private var workspaceViewModel = WorkspaceViewModel()
     private let authService = AuthService()
+    
+    @StateObject private var loginStatusViewModel = LoginStatusViewModel()
     
     init() {
         do {
@@ -32,6 +57,16 @@ struct IOSAccessAssessmentApp: App {
                     .onAppear {
                         callRefreshToken()
                     }
+                    .alert(AppConstants.Texts.loginStatusAlertTitleKey, isPresented: $loginStatusViewModel.isFailed, actions: {
+                        Button(AppConstants.Texts.loginStatusAlertDismissButtonKey, role: .cancel) {
+                            loginStatusViewModel.update(isFailed: false, errorMessage: "")
+                            userState.logout()
+                        }
+                    }, message: {
+                        Text(String(format: NSLocalizedString(AppConstants.Texts.loginStatusAlertMessageKey, comment: ""),
+                            loginStatusViewModel.errorMessage
+                        ))
+                    })
                 }
                 else {
                     WorkspaceSelectionView()
@@ -40,20 +75,27 @@ struct IOSAccessAssessmentApp: App {
                     .onAppear {
                         callRefreshToken()
                     }
+                    .alert(AppConstants.Texts.loginStatusAlertTitleKey, isPresented: $loginStatusViewModel.isFailed, actions: {
+                        Button(AppConstants.Texts.loginStatusAlertDismissButtonKey, role: .cancel) {
+                            loginStatusViewModel.update(isFailed: false, errorMessage: "")
+                            userState.logout()
+                        }
+                    }, message: {
+                        Text(String(format: NSLocalizedString(AppConstants.Texts.loginStatusAlertMessageKey, comment: ""),
+                            loginStatusViewModel.errorMessage
+                        ))
+                    })
                 }
             } else {
                 LoginView()
                     .environmentObject(userState)
             }
         }
-        .onChange(of: workspaceViewModel.isWorkspaceSelected) { newValue, oldValue in
-            print("Workspace selection changed: \(newValue)") // Debugging line
-        }
     }
     
     private func setupTips() throws {
         // Purge all TipKit-related data.
-        try Tips.resetDatastore()
+//        try Tips.resetDatastore()
         
         // Configure and load all tips in the app.
         try Tips.configure()
@@ -66,7 +108,9 @@ struct IOSAccessAssessmentApp: App {
             case .success(_):
                 print("Refresh token successful")
             case .failure(let authError):
-                print("Refresh token failed: \(authError.localizedDescription)")
+                DispatchQueue.main.async {
+                    loginStatusViewModel.update(isFailed: true, errorMessage: AppConstants.Texts.refreshTokenFailedMessageKey)
+                }
             }
         }
     }

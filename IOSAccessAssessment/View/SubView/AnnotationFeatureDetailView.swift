@@ -182,7 +182,7 @@ struct AnnotationFeatureDetailView: View {
                         attributeStatus.errorMessage,
                         systemImage: AnnotationFeatureDetailView.Constants.Images.statusAlertImageNameKey
                     )
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
                         .font(.caption)
                     Spacer()
                 }
