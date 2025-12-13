@@ -10,11 +10,14 @@ import TipKit
 
 enum AppConstants {
     enum Texts {
+        /// Errors
+        static let refreshTokenFailedMessageKey = "Failed to Refresh Token."
+        
         /// Login Status Alert
         static let loginStatusAlertTitleKey = "Login Error"
         static let loginStatusAlertDismissButtonKey = "OK"
         static let loginStatusAlertLogoutButtonKey = "Log out"
-        static let loginStatusAlertMessageKey = "There was an error during login.\nPlease try logging in again."
+        static let loginStatusAlertMessageKey = "There was an error during login:\n%@\n Please try logging in again."
     }
 }
 
@@ -60,7 +63,9 @@ struct IOSAccessAssessmentApp: App {
                             userState.logout()
                         }
                     }, message: {
-                        Text(AppConstants.Texts.loginStatusAlertMessageKey)
+                        Text(String(format: NSLocalizedString(AppConstants.Texts.loginStatusAlertMessageKey, comment: ""),
+                            loginStatusViewModel.errorMessage
+                        ))
                     })
                 }
                 else {
@@ -76,7 +81,9 @@ struct IOSAccessAssessmentApp: App {
                             userState.logout()
                         }
                     }, message: {
-                        Text(AppConstants.Texts.loginStatusAlertMessageKey)
+                        Text(String(format: NSLocalizedString(AppConstants.Texts.loginStatusAlertMessageKey, comment: ""),
+                            loginStatusViewModel.errorMessage
+                        ))
                     })
                 }
             } else {
@@ -102,7 +109,7 @@ struct IOSAccessAssessmentApp: App {
                 print("Refresh token successful")
             case .failure(let authError):
                 DispatchQueue.main.async {
-                    loginStatusViewModel.update(isFailed: true, errorMessage: authError.localizedDescription)
+                    loginStatusViewModel.update(isFailed: true, errorMessage: AppConstants.Texts.refreshTokenFailedMessageKey)
                 }
             }
         }
