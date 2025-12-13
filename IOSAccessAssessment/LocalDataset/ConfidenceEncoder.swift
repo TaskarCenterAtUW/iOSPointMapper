@@ -29,16 +29,12 @@ class ConfidenceEncoder {
         try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
 
-    func encodeFrame(frame: CVPixelBuffer, frameNumber: UUID) throws {
+    func save(ciImage: CIImage, frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
-        let image = CIImage(cvPixelBuffer: frame)
-        guard (CVPixelBufferGetPixelFormatType(frame) == kCVPixelFormatType_OneComponent8) else {
-            throw ConfidenceEncoderError.frameDataTypeMismatch
-        }
         let framePath = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
 
         if let colorSpace = CGColorSpace(name: CGColorSpace.extendedGray) {
-            try self.ciContext.writePNGRepresentation(of: image, to: framePath, format: CIFormat.L8, colorSpace: colorSpace)
+            try self.ciContext.writePNGRepresentation(of: ciImage, to: framePath, format: CIFormat.L8, colorSpace: colorSpace)
         }
     }
 }

@@ -26,7 +26,7 @@ class DatasetEncoder {
     public let rgbFilePath: URL // Relative to app document directory.
     public let depthFilePath: URL // Relative to app document directory.
     public let segmentationFilePath: URL // Relative to app document directory.
-//    public let confidenceFilePath: URL // Relative to app document directory.
+    public let confidenceFilePath: URL // Relative to app document directory.
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
@@ -36,7 +36,7 @@ class DatasetEncoder {
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
     private let segmentationEncoder: SegmentationEncoder
-//    private let confidenceEncoder: ConfidenceEncoder
+    private let confidenceEncoder: ConfidenceEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
@@ -55,7 +55,7 @@ class DatasetEncoder {
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
-//        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
+        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
@@ -65,7 +65,7 @@ class DatasetEncoder {
         self.rgbEncoder = try RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = try DepthEncoder(outDirectory: self.depthFilePath)
         self.segmentationEncoder = try SegmentationEncoder(outDirectory: self.segmentationFilePath)
-//        self.confidenceEncoder = ConfidenceEncoder(outDirectory: self.confidenceFilePath)
+        self.confidenceEncoder = try ConfidenceEncoder(outDirectory: self.confidenceFilePath)
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
@@ -88,18 +88,18 @@ class DatasetEncoder {
     
     public func addCaptureData(
         captureImageData: any CaptureImageDataProtocol,
-        location: CLLocation?
+        location: CLLocationCoordinate2D?
     ) throws {
-        let frameId: UUID = UUID()
         let otherDetailsData = OtherDetailsData(
             timestamp: captureImageData.timestamp,
             deviceOrientation: captureImageData.interfaceOrientation,
             originalSize: captureImageData.originalSize
         )
         try self.addData(
-            frameId: frameId,
+            frameId: captureImageData.id,
             cameraImage: captureImageData.cameraImage,
             depthImage: captureImageData.depthImage,
+            confidenceImage: captureImageData.confidenceImage,
             segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
@@ -112,10 +112,11 @@ class DatasetEncoder {
     
     public func addData(
         frameId: UUID,
-        cameraImage: CIImage, depthImage: CIImage?,
+        cameraImage: CIImage,
+        depthImage: CIImage?, confidenceImage: CIImage?,
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        location: CLLocation?,
+        location: CLLocationCoordinate2D?,
 //        heading: CLHeading?,
         otherDetails: OtherDetailsData?,
         timestamp: TimeInterval = Date().timeIntervalSince1970
@@ -126,24 +127,28 @@ class DatasetEncoder {
         }
         
         let frameNumber: UUID = frameId
-        let latitude = location?.coordinate.latitude ?? 0.0
-        let longitude = location?.coordinate.longitude ?? 0.0
-//        let magneticHeading = heading?.magneticHeading ?? 0.0
-//        let trueHeading = heading?.trueHeading ?? 0.0
         
         try self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
         if let depthImage = depthImage {
             try self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
         }
         try self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
-//        self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
+        if let confidenceImage = confidenceImage {
+            try self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
+        }
         self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
         self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
         
-        let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
-//        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
-        self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
-//        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        if let location = location {
+            let latitude = location.latitude
+            let longitude = location.longitude
+    //        let magneticHeading = heading?.magneticHeading ?? 0.0
+    //        let trueHeading = heading?.trueHeading ?? 0.0
+            let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
+    //        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
+            self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+    //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        }
         
         if let otherDetailsData = otherDetails {
             self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
