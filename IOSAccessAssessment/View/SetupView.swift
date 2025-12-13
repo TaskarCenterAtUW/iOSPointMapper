@@ -68,6 +68,8 @@ enum SetupViewConstants {
         static let profileIcon = "person.crop.circle"
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
         static let uploadIcon = "arrow.up"
+        static let classSelectionColorHintIcon = "circle.fill"
+        static let classSelectionColorHintBorderIcon = "circle"
         
         /// InfoTip
         static let infoIcon = "info.circle"
@@ -286,12 +288,25 @@ struct SetupView: View {
                                 self.selectedClasses.insert(accessibilityFeatureClass)
                             }
                         }) {
-                            Text(accessibilityFeatureClass.name)
-                                .foregroundStyle(
-                                    self.selectedClasses.contains(accessibilityFeatureClass)
-                                    ? SetupViewConstants.Colors.selectedClass
-                                    : SetupViewConstants.Colors.unselectedClass
-                                )
+                            HStack {
+                                Text(accessibilityFeatureClass.name)
+                                    .foregroundStyle(
+                                        self.selectedClasses.contains(accessibilityFeatureClass)
+                                        ? SetupViewConstants.Colors.selectedClass
+                                        : SetupViewConstants.Colors.unselectedClass
+                                    )
+                                Spacer()
+                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
+                                    .overlay(
+                                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+                                            .resizable()
+                                            .frame(width: 20, height: 20)
+                                            .foregroundStyle(Color.primary)
+                                    )
+                            }
                         }
                     }
                 }
