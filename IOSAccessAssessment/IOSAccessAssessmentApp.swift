@@ -107,7 +107,7 @@ struct IOSAccessAssessmentApp: App {
             switch result {
             case .success(_):
                 print("Refresh token successful")
-            case .failure(let authError):
+            case .failure(_):
                 DispatchQueue.main.async {
                     loginStatusViewModel.update(isFailed: true, errorMessage: AppConstants.Texts.refreshTokenFailedMessageKey)
                 }

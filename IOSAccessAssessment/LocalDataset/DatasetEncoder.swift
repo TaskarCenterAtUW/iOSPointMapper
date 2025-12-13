@@ -10,12 +10,6 @@ import ARKit
 import CryptoKit
 import CoreLocation
 
-enum DatasetEncoderStatus {
-    case allGood
-    case videoEncodingError
-    case directoryCreationError
-}
-
 /**
     Encoder for saving dataset frames and metadata.
  
@@ -32,7 +26,7 @@ class DatasetEncoder {
     public let rgbFilePath: URL // Relative to app document directory.
     public let depthFilePath: URL // Relative to app document directory.
     public let segmentationFilePath: URL // Relative to app document directory.
-//    public let confidenceFilePath: URL // Relative to app document directory.
+    public let confidenceFilePath: URL // Relative to app document directory.
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
@@ -42,45 +36,43 @@ class DatasetEncoder {
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
     private let segmentationEncoder: SegmentationEncoder
-//    private let confidenceEncoder: ConfidenceEncoder
+    private let confidenceEncoder: ConfidenceEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
     
-    public var status = DatasetEncoderStatus.allGood
     public var capturedFrameIds: Set<UUID> = []
     
-    init(workspaceId: String, changesetId: String) {
+    init(workspaceId: String, changesetId: String) throws {
         self.workspaceId = workspaceId
         
-        self.datasetDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         // Create workspace Directory if it doesn't exist
-        self.workspaceDirectory = DatasetEncoder.createDirectory(id: workspaceId)
+        self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId)
         // if workspace directory exists, create dataset directory inside it
-        datasetDirectory = DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
+        datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
-//        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
+        self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         
-        self.rgbEncoder = RGBEncoder(outDirectory: self.rgbFilePath)
-        self.depthEncoder = DepthEncoder(outDirectory: self.depthFilePath)
-        self.segmentationEncoder = SegmentationEncoder(outDirectory: self.segmentationFilePath)
-//        self.confidenceEncoder = ConfidenceEncoder(outDirectory: self.confidenceFilePath)
-        self.cameraTransformEncoder = CameraTransformEncoder(url: self.cameraTransformPath)
-        self.locationEncoder = LocationEncoder(url: self.locationPath)
+        self.rgbEncoder = try RGBEncoder(outDirectory: self.rgbFilePath)
+        self.depthEncoder = try DepthEncoder(outDirectory: self.depthFilePath)
+        self.segmentationEncoder = try SegmentationEncoder(outDirectory: self.segmentationFilePath)
+        self.confidenceEncoder = try ConfidenceEncoder(outDirectory: self.confidenceFilePath)
+        self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
+        self.locationEncoder = try LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
-        self.otherDetailsEncoder = OtherDetailsEncoder(url: self.otherDetailsPath)
+        self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
     }
     
-    static private func createDirectory(id: String, relativeTo: URL? = nil) -> URL {
+    static private func createDirectory(id: String, relativeTo: URL? = nil) throws -> URL {
         var relativeTo = relativeTo
         if relativeTo == nil {
             relativeTo = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first!
@@ -90,46 +82,73 @@ class DatasetEncoder {
             // Return existing directory if it already exists
             return directory
         }
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-        } catch let error as NSError {
-            print("Error creating directory. \(error), \(error.userInfo)")
-        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
         return directory
+    }
+    
+    public func addCaptureData(
+        captureImageData: any CaptureImageDataProtocol,
+        location: CLLocationCoordinate2D?
+    ) throws {
+        let otherDetailsData = OtherDetailsData(
+            timestamp: captureImageData.timestamp,
+            deviceOrientation: captureImageData.interfaceOrientation,
+            originalSize: captureImageData.originalSize
+        )
+        try self.addData(
+            frameId: captureImageData.id,
+            cameraImage: captureImageData.cameraImage,
+            depthImage: captureImageData.depthImage,
+            confidenceImage: captureImageData.confidenceImage,
+            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            location: location,
+//            heading: captureImageData.heading,
+            otherDetails: otherDetailsData,
+            timestamp: captureImageData.timestamp
+        )
     }
     
     public func addData(
         frameId: UUID,
-        cameraImage: CIImage, depthImage: CIImage,
+        cameraImage: CIImage,
+        depthImage: CIImage?, confidenceImage: CIImage?,
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        location: CLLocation?,
+        location: CLLocationCoordinate2D?,
 //        heading: CLHeading?,
         otherDetails: OtherDetailsData?,
         timestamp: TimeInterval = Date().timeIntervalSince1970
-    ) {
+    ) throws {
         if (self.capturedFrameIds.contains(frameId)) {
             print("Frame with ID \(frameId) already exists. Skipping.")
             return
         }
         
         let frameNumber: UUID = frameId
-        let latitude = location?.coordinate.latitude ?? 0.0
-        let longitude = location?.coordinate.longitude ?? 0.0
-//        let magneticHeading = heading?.magneticHeading ?? 0.0
-//        let trueHeading = heading?.trueHeading ?? 0.0
         
-        self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
-        self.depthEncoder.save(ciImage: depthImage, frameNumber: frameNumber)
-        self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
-//        self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
+        try self.rgbEncoder.save(ciImage: cameraImage, frameNumber: frameNumber)
+        if let depthImage = depthImage, let depthBuffer = depthImage.pixelBuffer {
+            try self.depthEncoder.encodeFrame(frame: depthBuffer, frameNumber: frameNumber)
+        }
+        try self.segmentationEncoder.save(ciImage: segmentationLabelImage, frameNumber: frameNumber)
+        if let confidenceImage = confidenceImage {
+            try self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
+        }
         self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
         self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
         
-        let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
-//        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
-        self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
-//        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        if let location = location {
+            let latitude = location.latitude
+            let longitude = location.longitude
+    //        let magneticHeading = heading?.magneticHeading ?? 0.0
+    //        let trueHeading = heading?.trueHeading ?? 0.0
+            let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
+    //        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
+            self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+    //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        }
         
         if let otherDetailsData = otherDetails {
             self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
@@ -159,9 +178,9 @@ class DatasetEncoder {
         }
     }
     
-    func save() {
-        self.cameraTransformEncoder.done()
-        self.locationEncoder.done()
+    func save() throws {
+        try self.cameraTransformEncoder.done()
+        try self.locationEncoder.done()
 //        self.headingEncoder.done()
     }
     

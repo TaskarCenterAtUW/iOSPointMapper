@@ -9,37 +9,36 @@ import Foundation
 import CoreImage
 import UIKit
 
-class RGBEncoder {
-    enum Status {
-        case ok
-        case fileCreationError
-    }
-    private let baseDirectory: URL
-    public var status: Status = Status.ok
-
-    init(outDirectory: URL) {
-        self.baseDirectory = outDirectory
-        do {
-            try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
-        } catch let error {
-            print("Could not create folder. \(error.localizedDescription)")
-            status = Status.fileCreationError
+enum RGBEncoderError: Error, LocalizedError {
+    case invalidImageData
+    case writeFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidImageData:
+            return "The image data is invalid."
+        case .writeFailed(let message):
+            return "Failed to write image data: \(message)"
         }
     }
+}
 
-    func save(ciImage: CIImage, frameNumber: UUID) {
+class RGBEncoder {
+    private let baseDirectory: URL
+
+    init(outDirectory: URL) throws {
+        self.baseDirectory = outDirectory
+        try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
+    }
+    
+    func save(ciImage: CIImage, frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
         let image = UIImage(ciImage: ciImage)
         guard let data = image.pngData() else {
-            print("Could not convert CIImage to PNG data for frame \(frameNumber).")
-            return
+            throw RGBEncoderError.invalidImageData
         }
         let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
-        do {
-            try data.write(to: path)
-        } catch let error {
-            print("Could not save depth image \(frameNumber). \(error.localizedDescription)")
-        }
+        try data.write(to: path)
     }
     
 //    private func convert(frame: CVPixelBuffer) -> PngEncoder {

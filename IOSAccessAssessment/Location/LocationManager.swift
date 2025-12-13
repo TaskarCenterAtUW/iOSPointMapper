@@ -44,7 +44,7 @@ class LocationManager {
         locationManager.startUpdatingHeading()
     }
     
-    private func getLocation() throws -> CLLocation {
+    func getLocation() throws -> CLLocation {
         guard let location = locationManager.location,
         location.horizontalAccuracy > 0, location.verticalAccuracy > 0 else {
             throw LocationManagerError.locationUnavailable

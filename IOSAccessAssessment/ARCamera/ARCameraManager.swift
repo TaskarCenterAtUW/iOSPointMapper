@@ -263,7 +263,11 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
-        self.interfaceOrientation = orientation
+        Task {
+            await MainActor.run {
+                self.interfaceOrientation = orientation
+            }
+        }
     }
     
     func setFrameRate(_ frameRate: Int) {

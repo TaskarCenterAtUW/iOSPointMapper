@@ -68,6 +68,8 @@
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
+		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
+		A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E392EED60F300B07B77 /* lodepng.cpp */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
 		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
 		A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */; };
@@ -235,6 +237,10 @@
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMResponseElement.swift; sourceTree = "<group>"; };
+		A37E3E382EED60F300B07B77 /* lodepng.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
+		A37E3E392EED60F300B07B77 /* lodepng.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lodepng.cpp; sourceTree = "<group>"; };
+		A37E3E3A2EED60F300B07B77 /* PngEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngEncoder.h; sourceTree = "<group>"; };
+		A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngEncoder.mm; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
 		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
 		A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshHelpers.swift; sourceTree = "<group>"; };
@@ -448,6 +454,7 @@
 		A305B05A2E1887AE00ECCF9B /* LocalDataset */ = {
 			isa = PBXGroup;
 			children = (
+				A37E3E352EED60C100B07B77 /* CHelpers */,
 				A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */,
 				A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */,
 				A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */,
@@ -645,6 +652,17 @@
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A37E3E352EED60C100B07B77 /* CHelpers */ = {
+			isa = PBXGroup;
+			children = (
+				A37E3E382EED60F300B07B77 /* lodepng.h */,
+				A37E3E392EED60F300B07B77 /* lodepng.cpp */,
+				A37E3E3A2EED60F300B07B77 /* PngEncoder.h */,
+				A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */,
+			);
+			path = CHelpers;
 			sourceTree = "<group>";
 		};
 		A37E720A2ED571A800CFE4EF /* Definitions */ = {
@@ -1051,6 +1069,8 @@
 				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */,
+				A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */,
+				A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */,
 				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,

@@ -9,49 +9,66 @@ import Foundation
 import CoreImage
 import UIKit
 
-class DepthEncoder {
-    enum Status {
-        case ok
-        case fileCreationError
-    }
-    private let baseDirectory: URL
-    public var status: Status = Status.ok
-
-    init(outDirectory: URL) {
-        self.baseDirectory = outDirectory
-        do {
-            try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
-        } catch let error {
-            print("Could not create folder. \(error.localizedDescription)")
-            status = Status.fileCreationError
+enum DepthEncoderError: Error, LocalizedError {
+    case invalidImageData
+    case writeFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidImageData:
+            return "The image data is invalid."
+        case .writeFailed(let message):
+            return "Failed to write image data: \(message)"
         }
     }
+}
 
-    func save(ciImage: CIImage, frameNumber: UUID) {
+class DepthEncoder {
+    private let baseDirectory: URL
+
+    init(outDirectory: URL) throws {
+        self.baseDirectory = outDirectory
+        try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
+    }
+
+    /// TODO: Replace this logic with a function that uses PngEncoder
+    func save(ciImage: CIImage, frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
         let image = UIImage(ciImage: ciImage)
         guard let data = image.pngData() else {
-            print("Could not convert CIImage to PNG data for frame \(frameNumber).")
-            return
+            throw DepthEncoderError.invalidImageData
         }
         let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
-        do {
-            try data.write(to: path)
-        } catch let error {
-            print("Could not save depth image \(frameNumber). \(error.localizedDescription)")
-        }
+        try data.write(to: path)
     }
     
-//    private func convert(frame: CVPixelBuffer) -> PngEncoder {
-//        assert(CVPixelBufferGetPixelFormatType(frame) == kCVPixelFormatType_DepthFloat32)
-//        let height = CVPixelBufferGetHeight(frame)
-//        let width = CVPixelBufferGetWidth(frame)
-//        CVPixelBufferLockBaseAddress(frame, CVPixelBufferLockFlags.readOnly)
-//        let inBase = CVPixelBufferGetBaseAddress(frame)
-//        let inPixelData = inBase!.assumingMemoryBound(to: Float32.self)
-//        
-//        let out = PngEncoder.init(depth: inPixelData, width: Int32(width), height: Int32(height))!
-//        CVPixelBufferUnlockBaseAddress(frame, CVPixelBufferLockFlags(rawValue: 0))
-//        return out
-//    }
+    func encodeFrame(frame: CVPixelBuffer, frameNumber: UUID) throws {
+        let filename = String(frameNumber.uuidString)
+        let encoder = try self.convert(frame: frame)
+        guard let data = encoder.fileContents() else {
+            throw DepthEncoderError.invalidImageData
+        }
+        let framePath = self.baseDirectory.absoluteURL.appendingPathComponent(
+            filename, isDirectory: false
+        ).appendingPathExtension("png")
+        try data.write(to: framePath)
+    }
+    
+    private func convert(frame: CVPixelBuffer) throws -> PngEncoder {
+        guard CVPixelBufferGetPixelFormatType(frame) == kCVPixelFormatType_DepthFloat32 else {
+            throw DepthEncoderError.invalidImageData
+        }
+        let height = CVPixelBufferGetHeight(frame)
+        let width = CVPixelBufferGetWidth(frame)
+        CVPixelBufferLockBaseAddress(frame, CVPixelBufferLockFlags.readOnly)
+        guard let inBase = CVPixelBufferGetBaseAddress(frame) else {
+            throw DepthEncoderError.invalidImageData
+        }
+        let inPixelData = inBase.assumingMemoryBound(to: Float32.self)
+        guard let out = PngEncoder.init(depth: inPixelData, width: Int32(width), height: Int32(height)) else {
+            throw DepthEncoderError.invalidImageData
+        }
+        CVPixelBufferUnlockBaseAddress(frame, CVPixelBufferLockFlags(rawValue: 0))
+        return out
+    }
 }
