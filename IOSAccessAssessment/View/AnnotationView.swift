@@ -576,20 +576,16 @@ struct AnnotationView: View {
                 if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
                     throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
                 }
+                try moveToNextClass()
+            } catch AnnotationViewError.classIndexOutofBounds {
+                managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
             } catch AnnotationViewError.apiTransmissionFailed(let results) {
                 apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
-                return
             } catch {
                 apiTransmissionStatusViewModel.update(
                     isFailed: true,
                     errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
                 )
-                return
-            }
-            do {
-                try moveToNextClass()
-            } catch {
-                managerStatusViewModel.update(isFailed: true, error: error)
             }
         }
     }

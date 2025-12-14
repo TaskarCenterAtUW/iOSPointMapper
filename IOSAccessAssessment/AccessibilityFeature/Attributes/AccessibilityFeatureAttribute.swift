@@ -130,6 +130,8 @@ extension AccessibilityFeatureAttribute {
             return true
         case (.surfaceIntegrity, .flag):
             return true
+        case (.lidarDepth, .length):
+            return true
         default:
             return false
         }
@@ -199,6 +201,8 @@ extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.surfaceIntegrity, .flag(let flag)):
             return flag ? "yes" : "no"
+        case (.lidarDepth, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
         default:
             return nil
         }
