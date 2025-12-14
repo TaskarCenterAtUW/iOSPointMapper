@@ -41,12 +41,17 @@ protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
     
     var locationDetails: LocationDetails? { get set }
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     
     func getLastLocationCoordinate() -> CLLocationCoordinate2D?
     
     mutating func setLocationDetails(coordinates: [[CLLocationCoordinate2D]])
     
     mutating func setAttributeValue(
+        _ value: AccessibilityFeatureAttribute.Value,
+        for attribute: AccessibilityFeatureAttribute
+    ) throws
+    mutating func setExperimentalAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute
     ) throws

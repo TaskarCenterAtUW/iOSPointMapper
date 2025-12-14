@@ -33,7 +33,7 @@ struct APIConstants {
         /// Tags used for post-hoc analysis
         static let captureLatitudeKey = "\(appTagPrefix):captureLatitude"
         static let captureLongitudeKey = "\(appTagPrefix):captureLongitude"
-        static let depthKey = "\(appTagPrefix):depth"
+        static let lidarDepthKey = "\(appTagPrefix):lidarDepth"
     }
     
     enum OtherConstants {
