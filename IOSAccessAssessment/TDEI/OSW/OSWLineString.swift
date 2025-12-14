@@ -24,13 +24,15 @@ struct OSWLineString: OSWElement {
         id: String, version: String,
         oswElementClass: OSWElementClass,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
-        points: [OSWPoint]
+        points: [OSWPoint],
+        additionalTags: [String : String] = [:]
     ) {
         self.id = id
         self.version = version
         self.oswElementClass = oswElementClass
         self.attributeValues = attributeValues
         self.points = points
+        self.additionalTags = additionalTags
     }
     
     var tags: [String: String] {
