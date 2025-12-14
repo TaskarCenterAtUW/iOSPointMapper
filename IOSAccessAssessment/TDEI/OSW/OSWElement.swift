@@ -16,6 +16,7 @@ protocol OSWElement: Sendable, CustomStringConvertible {
     var oswElementClass: OSWElementClass { get }
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get }
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get }
     var additionalTags: [String: String] { get }
     
     func toOSMCreateXML(changesetId: String) -> String

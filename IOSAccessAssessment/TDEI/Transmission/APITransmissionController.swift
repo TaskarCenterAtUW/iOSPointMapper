@@ -161,6 +161,7 @@ class APITransmissionController: ObservableObject {
             oswElementClass: .AppAnchorNode,
             latitude: captureLocation.latitude, longitude: captureLocation.longitude,
             attributeValues: [:],
+            experimentalAttributeValues: [:],
             additionalTags: additionalTags
         )
         let uploadOperation: ChangesetDiffOperation = .create(capturePoint)
@@ -272,6 +273,7 @@ extension APITransmissionController {
             latitude: featureLocation.latitude,
             longitude: featureLocation.longitude,
             attributeValues: feature.attributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
             additionalTags: additonalTags
         )
         return oswPoint
@@ -292,6 +294,7 @@ extension APITransmissionController {
                 oswElementClass: matchedOriginalOSWPoint.oswElementClass,
                 latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
                 attributeValues: matchedOriginalOSWPoint.attributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
                 additionalTags: matchedOriginalOSWPoint.additionalTags
             )
         }
@@ -413,7 +416,8 @@ extension APITransmissionController {
                 id: oswPointId, version: "1",
                 oswElementClass: oswElementClass,
                 latitude: location.latitude, longitude: location.longitude,
-                attributeValues: [:]
+                attributeValues: [:],
+                experimentalAttributeValues: [:],
             )
             oswPoints.append(point)
         }
@@ -422,6 +426,7 @@ extension APITransmissionController {
             version: "1",
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
             points: oswPoints,
             additionalTags: additonalTags
         )
@@ -451,6 +456,7 @@ extension APITransmissionController {
                 id: uploadedWayData.newId, version: uploadedWayData.newVersion,
                 oswElementClass: matchedOriginalOSWLineString.oswElementClass,
                 attributeValues: matchedOriginalOSWLineString.attributeValues,
+                experimentalAttributeValues: matchedOriginalOSWLineString.experimentalAttributeValues,
                 points: oswPoints,
                 additionalTags: matchedOriginalOSWLineString.additionalTags
             )
@@ -554,7 +560,8 @@ extension APITransmissionController {
                     id: oswPointId, version: "1",
                     oswElementClass: oswElementClass,
                     latitude: location.latitude, longitude: location.longitude,
-                    attributeValues: [:]
+                    attributeValues: [:],
+                    experimentalAttributeValues: [:]
                 )
                 oswPoints.append(point)
             }
@@ -566,6 +573,7 @@ extension APITransmissionController {
                     version: "1",
                     oswElementClass: oswElementClass,
                     attributeValues: [:],
+                    experimentalAttributeValues: [:],
                     points: oswPoints
                 )
                 oswElements.append(oswLineString)
@@ -580,6 +588,7 @@ extension APITransmissionController {
             version: "1",
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
             additionalTags: additonalTags,
             members: oswMembers
         )
@@ -629,6 +638,7 @@ extension APITransmissionController {
                 id: uploadedRelationData.newId, version: uploadedRelationData.newVersion,
                 oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
                 attributeValues: matchedOriginalOSWPolygon.attributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPolygon.experimentalAttributeValues,
                 additionalTags: matchedOriginalOSWPolygon.additionalTags,
                 members: oswMembers,
             )

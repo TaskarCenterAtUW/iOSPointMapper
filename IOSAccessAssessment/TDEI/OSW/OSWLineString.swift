@@ -15,7 +15,8 @@ struct OSWLineString: OSWElement {
     let version: String
     let oswElementClass: OSWElementClass
     
-    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     var additionalTags: [String : String] = [:]
     
     var points: [OSWPoint]
@@ -24,6 +25,7 @@ struct OSWLineString: OSWElement {
         id: String, version: String,
         oswElementClass: OSWElementClass,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?],
         points: [OSWPoint],
         additionalTags: [String : String] = [:]
     ) {
@@ -31,6 +33,7 @@ struct OSWLineString: OSWElement {
         self.version = version
         self.oswElementClass = oswElementClass
         self.attributeValues = attributeValues
+        self.experimentalAttributeValues = experimentalAttributeValues
         self.points = points
         self.additionalTags = additionalTags
     }
@@ -40,6 +43,21 @@ struct OSWLineString: OSWElement {
         if oswElementClass.geometry == .linestring {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
+        let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
+        let experimentalAttributeTags = getTagsFromAttributeValues(attributeValues: experimentalAttributeValues)
+        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
+            return new
+        }.merging(experimentalAttributeTags) { _, new in
+            return new
+        }.merging(additionalTags) { _, new in
+            return new
+        }
+        return tags
+    }
+    
+    private func getTagsFromAttributeValues(
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    ) -> [String: String] {
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
@@ -49,12 +67,7 @@ struct OSWLineString: OSWElement {
             guard let attributeTagValue else { return }
             attributeTags[attributeTagKey] = attributeTagValue
         }
-        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
-            return new
-        }.merging(additionalTags) { _, new in
-            return new
-        }
-        return tags
+        return attributeTags
     }
     
     func toOSMCreateXML(changesetId: String) -> String {
