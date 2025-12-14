@@ -29,7 +29,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
      - WARNING:
         This is a definition for an analysis-oriented node. It is not directly supported by OSW schema.
      */
-    case AppNode
+    case AppAnchorNode
     
     struct IdentifyingField: Sendable {
         let field: OSWField
@@ -121,7 +121,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                     IdentifyingField(field: .traffic_sign, value: "yes")
                 ]
             )
-        case .AppNode:
+        case .AppAnchorNode:
             return Metadata(
                 description: "A point used for iOSPointMapper-specific analysis and mapping purposes.",
                 parent: nil,

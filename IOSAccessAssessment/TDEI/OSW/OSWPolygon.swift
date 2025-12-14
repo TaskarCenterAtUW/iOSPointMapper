@@ -35,6 +35,7 @@ struct OSWPolygon: OSWElement {
     let oswElementClass: OSWElementClass
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var additionalTags: [String : String] = [:]
     
     /// TODO: Add the proper support for member (specifically roles).
     var members: [OSWRelationMember]
@@ -54,6 +55,8 @@ struct OSWPolygon: OSWElement {
             attributeTags[attributeTagKey] = attributeTagValue
         }
         let tags = identifyingFieldTags.merging(attributeTags) { _, new in
+            return new
+        }.merging(additionalTags) { _, new in
             return new
         }
         return tags

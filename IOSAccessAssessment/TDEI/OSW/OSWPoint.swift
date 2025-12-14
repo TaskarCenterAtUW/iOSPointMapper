@@ -17,7 +17,9 @@ struct OSWPoint: OSWElement {
     
     var latitude: CLLocationDegrees
     var longitude: CLLocationDegrees
+    
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var additionalTags: [String : String] = [:]
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
@@ -34,6 +36,8 @@ struct OSWPoint: OSWElement {
             attributeTags[attributeTagKey] = attributeTagValue
         }
         let tags = identifyingFieldTags.merging(attributeTags) { _, new in
+            return new
+        }.merging(additionalTags) { _, new in
             return new
         }
         return tags

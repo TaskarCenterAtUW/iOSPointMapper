@@ -27,13 +27,13 @@ struct APIConstants {
     enum TagKeys {
         static let appTagPrefix = "ios.pointmapper"
         /// Tags used to track capture-specific information
-        static let sessionIdKey = "ios.pointmapper:sessionId"
-        static let captureIdKey = "ios.pointmapper:captureId"
+        static let sessionIdKey = "\(appTagPrefix):sessionId"
+        static let captureIdKey = "\(appTagPrefix):captureId"
         
         /// Tags used for post-hoc analysis
-        static let captureLatitudeKey = "ios.pointmapper:captureLatitude"
-        static let captureLongitudeKey = "ios.pointmapper:captureLongitude"
-        static let depthKey = "ios.pointmapper:depth"
+        static let captureLatitudeKey = "\(appTagPrefix):captureLatitude"
+        static let captureLongitudeKey = "\(appTagPrefix):captureLongitude"
+        static let depthKey = "\(appTagPrefix):depth"
     }
     
     enum OtherConstants {

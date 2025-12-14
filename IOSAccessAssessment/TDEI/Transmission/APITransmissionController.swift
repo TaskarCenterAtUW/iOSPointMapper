@@ -28,20 +28,33 @@ struct APITransmissionResults: @unchecked Sendable {
     let failedFeatureUploads: Int
     let totalFeatureUploads: Int
     
+    let isFailedCaptureUpload: Bool
+    
     init(
         accessibilityFeatures: [MappedAccessibilityFeature],
         activeFeatures: [MappedAccessibilityFeature]? = nil,
-        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0
+        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0,
+        isFailedCaptureUpload: Bool = false
     ) {
         self.accessibilityFeatures = accessibilityFeatures
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
+        self.isFailedCaptureUpload = isFailedCaptureUpload
     }
     
     init(failedFeatureUploads: Int, totalFeatureUploads: Int) {
         self.accessibilityFeatures = nil
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
+        self.isFailedCaptureUpload = false
+    }
+    
+    /// Clone method for overwriting isFailedCaptureUpload
+    init(from other: APITransmissionResults, isFailedCaptureUpload: Bool) {
+        self.accessibilityFeatures = other.accessibilityFeatures
+        self.failedFeatureUploads = other.failedFeatureUploads
+        self.totalFeatureUploads = other.totalFeatureUploads
+        self.isFailedCaptureUpload = isFailedCaptureUpload
     }
 }
 
@@ -61,25 +74,39 @@ class IntIdGenerator {
 
 class APITransmissionController: ObservableObject {
     private var idGenerator: IntIdGenerator = IntIdGenerator()
+    public var capturedFrameIds: Set<UUID> = []
     
     func uploadFeatures(
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws -> APITransmissionResults {
         idGenerator = IntIdGenerator()
-        try await uploadCaptureNode(
-            workspaceId: workspaceId, changesetId: changesetId,
-            accessibilityFeatureClass: accessibilityFeatureClass,
-            mappingData: mappingData,
-            accessToken: accessToken
-        )
+        var isFailedCaptureUpload = false
+        if !capturedFrameIds.contains(captureData.id) {
+            do {
+                try await uploadCapturePoint(
+                    workspaceId: workspaceId, changesetId: changesetId,
+                    accessibilityFeatureClass: accessibilityFeatureClass,
+                    captureData: captureData,
+                    captureLocation: captureLocation,
+                    mappingData: mappingData,
+                    accessToken: accessToken
+                )
+            } catch {
+                /// Leave it up to the caller to handle the failed capture upload
+                isFailedCaptureUpload = true
+            }
+        }
+        var apiTransmissionResults: APITransmissionResults
         switch accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
         case .point:
-            return try await uploadPoints(
+            apiTransmissionResults = try await uploadPoints(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
@@ -87,7 +114,7 @@ class APITransmissionController: ObservableObject {
                 accessToken: accessToken
             )
         case .linestring:
-            return try await uploadLineStrings(
+            apiTransmissionResults = try await uploadLineStrings(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
@@ -95,7 +122,7 @@ class APITransmissionController: ObservableObject {
                 accessToken: accessToken
             )
         case .polygon:
-            return try await uploadPolygons(
+            apiTransmissionResults = try await uploadPolygons(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
@@ -103,16 +130,40 @@ class APITransmissionController: ObservableObject {
                 accessToken: accessToken
             )
         }
+        return APITransmissionResults(
+            from: apiTransmissionResults,
+            isFailedCaptureUpload: isFailedCaptureUpload
+        )
     }
     
-    func uploadCaptureNode(
+    func uploadCapturePoint(
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws {
-        
+        let additionalTags: [String: String] = [
+            APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
+            APIConstants.TagKeys.captureLatitudeKey: String(captureLocation.latitude),
+            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude)
+        ]
+        let capturePoint: OSWPoint = OSWPoint(
+            id: String(idGenerator.nextId()), version: "1",
+            oswElementClass: .AppAnchorNode,
+            latitude: captureLocation.latitude, longitude: captureLocation.longitude,
+            attributeValues: [:],
+            additionalTags: additionalTags
+        )
+        let uploadOperation: ChangesetDiffOperation = .create(capturePoint)
+        _ = try await ChangesetService.shared.performUploadAsync(
+            workspaceId: workspaceId, changesetId: changesetId,
+            operations: [uploadOperation],
+            accessToken: accessToken
+        )
+        capturedFrameIds.insert(captureData.id)
     }
 }
 
@@ -528,5 +579,18 @@ extension APITransmissionController {
             members: oswMembers
         )
         return oswPolygon
+    }
+}
+
+/**
+ Additional helper methods
+ */
+extension APITransmissionController {
+    private func getAdditionalTags(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        captureData: any CaptureImageDataProtocol,
+        mappingData: MappingData,
+    ) -> [String: String] {
+        return [:]
     }
 }

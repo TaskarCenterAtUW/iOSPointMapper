@@ -16,6 +16,7 @@ struct OSWLineString: OSWElement {
     let oswElementClass: OSWElementClass
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    var additionalTags: [String : String] = [:]
     
     var points: [OSWPoint]
     
@@ -47,6 +48,8 @@ struct OSWLineString: OSWElement {
             attributeTags[attributeTagKey] = attributeTagValue
         }
         let tags = identifyingFieldTags.merging(attributeTags) { _, new in
+            return new
+        }.merging(additionalTags) { _, new in
             return new
         }
         return tags

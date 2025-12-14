@@ -609,6 +609,9 @@ struct AnnotationView: View {
     }
     
     private func uploadAnnotations() async throws -> APITransmissionResults? {
+        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
+            throw AnnotationViewError.invalidCaptureDataRecord
+        }
         guard let workspaceId = workspaceViewModel.workspaceId,
               let changesetId = workspaceViewModel.changesetId else {
             throw AnnotationViewError.workspaceConfigurationFailed
@@ -634,6 +637,8 @@ struct AnnotationView: View {
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
             accessibilityFeatures: featuresToUpload,
+            captureData: currentCaptureDataRecord,
+            captureLocation: captureLocation,
             mappingData: sharedAppData.mappingData,
             accessToken: accessToken
         )
