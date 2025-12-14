@@ -31,6 +31,11 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     }
 }
 
+struct LocationRequestResult: Sendable {
+    let coordinates: [[CLLocationCoordinate2D]]
+    let lidarDepth: Float
+}
+
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
@@ -65,26 +70,36 @@ class AttributeEstimationPipeline: ObservableObject {
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        var coordinates: [[CLLocationCoordinate2D]] = []
+        var locationRequestResult: LocationRequestResult
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         switch(oswElementClass) {
         case .Sidewalk:
-            coordinates = try self.calculateLocationForLineString(
+            locationRequestResult = try self.calculateLocationForLineString(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
         case .Building:
-            coordinates = try self.calculateLocationForPolygon(
+            locationRequestResult = try self.calculateLocationForPolygon(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
         default:
-            coordinates = try self.calculateLocationForPoint(
+            locationRequestResult = try self.calculateLocationForPoint(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
         }
-        accessibilityFeature.setLocationDetails(coordinates: coordinates)
+        accessibilityFeature.setLocationDetails(coordinates: locationRequestResult.coordinates)
+        /// Set Lidar Depth as experimental attribute
+        if let lidarDepthAttributeValue = AccessibilityFeatureAttribute.lidarDepth.valueFromDouble(
+            Double(locationRequestResult.lidarDepth)
+        ) {
+            do {
+                try accessibilityFeature.setExperimentalAttributeValue(lidarDepthAttributeValue, for: .lidarDepth)
+            } catch {
+                print("Error setting lidar depth attribute for feature \(accessibilityFeature.id): \(error.localizedDescription)")
+            }
+        }
     }
     
     func processAttributeRequest(
@@ -124,7 +139,7 @@ extension AttributeEstimationPipeline {
     private func calculateLocationForPoint(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
-    ) throws -> [[CLLocationCoordinate2D]] {
+    ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
         }
@@ -146,13 +161,14 @@ extension AttributeEstimationPipeline {
             cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
             deviceLocation: deviceLocation
         )
-        return [[locationCoordinate]]
+        let coordinates: [[CLLocationCoordinate2D]] = [[locationCoordinate]]
+        return LocationRequestResult(coordinates: coordinates, lidarDepth: featureDepthValue)
     }
     
     private func calculateLocationForLineString(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
-    ) throws -> [[CLLocationCoordinate2D]] {
+    ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
         }
@@ -189,13 +205,15 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        return [locationCoordinates]
+        let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
+        return LocationRequestResult(coordinates: coordinates, lidarDepth: lidarDepth)
     }
     
     private func calculateLocationForPolygon(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
-    ) throws -> [[CLLocationCoordinate2D]] {
+    ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
         }
@@ -230,7 +248,9 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        return [locationCoordinates]
+        let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
+        return LocationRequestResult(coordinates: coordinates, lidarDepth: lidarDepth)
     }
 }
 

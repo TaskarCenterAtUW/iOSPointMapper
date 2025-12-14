@@ -25,6 +25,11 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
         This is a temporary definition for Traffic Sign. It is not directly supported by OSW schema.
      */
     case TrafficSign
+    /**
+     - WARNING:
+        This is a definition for an analysis-oriented node. It is not directly supported by OSW schema.
+     */
+    case AppAnchorNode
     
     struct IdentifyingField: Sendable {
         let field: OSWField
@@ -114,6 +119,16 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 geometry: .point,
                 identifyingFields: [
                     IdentifyingField(field: .traffic_sign, value: "yes")
+                ]
+            )
+        case .AppAnchorNode:
+            return Metadata(
+                description: "A point used for iOSPointMapper-specific analysis and mapping purposes.",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .custom("AppAnchor", "\(APIConstants.TagKeys.appTagPrefix):anchor"), value: "yes"),
+                    IdentifyingField(field: .source, value: "survey")
                 ]
             )
         }

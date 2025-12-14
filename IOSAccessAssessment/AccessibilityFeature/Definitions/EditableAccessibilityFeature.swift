@@ -19,6 +19,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     var locationDetails: LocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:]
     
     init(
         id: UUID = UUID(),
@@ -35,6 +36,9 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         attributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
             return (attribute, nil)
         })
+        experimentalAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.experimentalAttributes.map { attribute in
+            return (attribute, nil)
+        })
     }
     
     init(
@@ -42,12 +46,16 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
         coordinates: [[CLLocationCoordinate2D]]?,
-        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+        calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     ) {
         self.id = id
         self.contourDetails = contourDetails
         self.accessibilityFeatureClass = accessibilityFeatureClass
+        self.calculatedAttributeValues = calculatedAttributeValues
         self.attributeValues = attributeValues
+        self.experimentalAttributeValues = experimentalAttributeValues
         
         guard let coordinates else { return }
         self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
@@ -106,6 +114,16 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         for attribute: AccessibilityFeatureAttribute
     ) throws {
         try setAttributeValue(value, for: attribute, isCalculated: false)
+    }
+    
+    func setExperimentalAttributeValue(
+        _ value: AccessibilityFeatureAttribute.Value,
+        for attribute: AccessibilityFeatureAttribute
+    ) throws {
+        guard attribute.isCompatible(with: value) else {
+            throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)
+        }
+        experimentalAttributeValues[attribute] = value
     }
     
     static func == (lhs: EditableAccessibilityFeature, rhs: EditableAccessibilityFeature) -> Bool {

@@ -20,6 +20,7 @@ enum OSWField: Sendable, Codable, Hashable {
     case traffic_signals
     case man_made
     case building
+    case source
     /**
         A custom field with a user-defined name.
      */
@@ -135,6 +136,12 @@ enum OSWField: Sendable, Codable, Hashable {
                 description: "Man Made",
                 osmTagKey: "man_made",
                 valueType: .enumeration(options: ["utility_pole"])
+            )
+        case .source:
+            return Metadata(
+                description: "Source of the data",
+                osmTagKey: "source",
+                valueType: .enumeration(options: ["survey", "Mapillary"])
             )
         case .custom(let fieldName, let osmTagKey):
             return Metadata(

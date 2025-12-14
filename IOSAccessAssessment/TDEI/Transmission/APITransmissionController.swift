@@ -28,20 +28,33 @@ struct APITransmissionResults: @unchecked Sendable {
     let failedFeatureUploads: Int
     let totalFeatureUploads: Int
     
+    let isFailedCaptureUpload: Bool
+    
     init(
         accessibilityFeatures: [MappedAccessibilityFeature],
         activeFeatures: [MappedAccessibilityFeature]? = nil,
-        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0
+        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0,
+        isFailedCaptureUpload: Bool = false
     ) {
         self.accessibilityFeatures = accessibilityFeatures
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
+        self.isFailedCaptureUpload = isFailedCaptureUpload
     }
     
     init(failedFeatureUploads: Int, totalFeatureUploads: Int) {
         self.accessibilityFeatures = nil
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
+        self.isFailedCaptureUpload = false
+    }
+    
+    /// Clone method for overwriting isFailedCaptureUpload
+    init(from other: APITransmissionResults, isFailedCaptureUpload: Bool) {
+        self.accessibilityFeatures = other.accessibilityFeatures
+        self.failedFeatureUploads = other.failedFeatureUploads
+        self.totalFeatureUploads = other.totalFeatureUploads
+        self.isFailedCaptureUpload = isFailedCaptureUpload
     }
 }
 
@@ -61,58 +74,116 @@ class IntIdGenerator {
 
 class APITransmissionController: ObservableObject {
     private var idGenerator: IntIdGenerator = IntIdGenerator()
+    public var capturedFrameIds: Set<UUID> = []
     
     func uploadFeatures(
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws -> APITransmissionResults {
         idGenerator = IntIdGenerator()
-        try await uploadCaptureNode(
-            workspaceId: workspaceId, changesetId: changesetId,
-            accessibilityFeatureClass: accessibilityFeatureClass,
-            mappingData: mappingData,
-            accessToken: accessToken
-        )
+        var isFailedCaptureUpload = false
+        if !capturedFrameIds.contains(captureData.id) {
+            do {
+                try await uploadCapturePoint(
+                    workspaceId: workspaceId, changesetId: changesetId,
+                    accessibilityFeatureClass: accessibilityFeatureClass,
+                    captureData: captureData,
+                    captureLocation: captureLocation,
+                    mappingData: mappingData,
+                    accessToken: accessToken
+                )
+            } catch {
+                /// Leave it up to the caller to handle the failed capture upload
+                isFailedCaptureUpload = true
+            }
+        }
+        var apiTransmissionResults: APITransmissionResults
         switch accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
         case .point:
-            return try await uploadPoints(
+            apiTransmissionResults = try await uploadPoints(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
+                captureData: captureData,
+                captureLocation: captureLocation,
                 mappingData: mappingData,
                 accessToken: accessToken
             )
         case .linestring:
-            return try await uploadLineStrings(
+            apiTransmissionResults = try await uploadLineStrings(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
+                captureData: captureData,
+                captureLocation: captureLocation,
                 mappingData: mappingData,
                 accessToken: accessToken
             )
         case .polygon:
-            return try await uploadPolygons(
+            apiTransmissionResults = try await uploadPolygons(
                 workspaceId: workspaceId, changesetId: changesetId,
                 accessibilityFeatureClass: accessibilityFeatureClass,
                 accessibilityFeatures: accessibilityFeatures,
+                captureData: captureData,
+                captureLocation: captureLocation,
                 mappingData: mappingData,
                 accessToken: accessToken
             )
         }
+        return APITransmissionResults(
+            from: apiTransmissionResults,
+            isFailedCaptureUpload: isFailedCaptureUpload
+        )
     }
     
-    func uploadCaptureNode(
+    func uploadCapturePoint(
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws {
-        
+        let additionalTags: [String: String] = [
+            APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
+            APIConstants.TagKeys.captureLatitudeKey: String(captureLocation.latitude),
+            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude)
+        ]
+        let capturePoint: OSWPoint = OSWPoint(
+            id: String(idGenerator.nextId()), version: "1",
+            oswElementClass: .AppAnchorNode,
+            latitude: captureLocation.latitude, longitude: captureLocation.longitude,
+            attributeValues: [:],
+            experimentalAttributeValues: [:],
+            additionalTags: additionalTags
+        )
+        let uploadOperation: ChangesetDiffOperation = .create(capturePoint)
+        _ = try await ChangesetService.shared.performUploadAsync(
+            workspaceId: workspaceId, changesetId: changesetId,
+            operations: [uploadOperation],
+            accessToken: accessToken
+        )
+        capturedFrameIds.insert(captureData.id)
+    }
+    
+    private func getAdditionalTags(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
+        mappingData: MappingData,
+    ) -> [String: String] {
+        return [
+            APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
+            APIConstants.TagKeys.captureLatitudeKey: String(captureLocation.latitude),
+            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude)
+        ]
     }
 }
 
@@ -125,6 +196,8 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws -> APITransmissionResults {
@@ -133,8 +206,13 @@ extension APITransmissionController {
         /// Map Accessibility Features to OSW Elements
         var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
         var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+        let additionalTags: [String: String] = getAdditionalTags(
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            captureData: captureData, captureLocation: captureLocation,
+            mappingData: mappingData
+        )
         for feature in accessibilityFeatures {
-            let oswElement = featureToPoint(feature)
+            let oswElement = featureToPoint(feature, additonalTags: additionalTags)
             guard let oswElement else { continue }
             let osmOldId = oswElement.id
             featureOSMOldIdToFeatureMap[osmOldId] = feature
@@ -181,7 +259,10 @@ extension APITransmissionController {
         )
     }
     
-    private func featureToPoint(_ feature: any AccessibilityFeatureProtocol) -> OSWPoint? {
+    private func featureToPoint(
+        _ feature: any AccessibilityFeatureProtocol,
+        additonalTags: [String: String] = [:]
+    ) -> OSWPoint? {
         guard let featureLocation = feature.getLastLocationCoordinate() else {
             return nil
         }
@@ -191,7 +272,9 @@ extension APITransmissionController {
             oswElementClass: feature.accessibilityFeatureClass.oswPolicy.oswElementClass,
             latitude: featureLocation.latitude,
             longitude: featureLocation.longitude,
-            attributeValues: feature.attributeValues
+            attributeValues: feature.attributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
+            additionalTags: additonalTags
         )
         return oswPoint
     }
@@ -210,7 +293,9 @@ extension APITransmissionController {
                 id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
                 oswElementClass: matchedOriginalOSWPoint.oswElementClass,
                 latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
-                attributeValues: matchedOriginalOSWPoint.attributeValues
+                attributeValues: matchedOriginalOSWPoint.attributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
+                additionalTags: matchedOriginalOSWPoint.additionalTags
             )
         }
         return oswPoints
@@ -226,6 +311,8 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws -> APITransmissionResults {
@@ -242,8 +329,13 @@ extension APITransmissionController {
         /// Map Accessibility Features to OSW Elements
         var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
         var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+        let additionalTags: [String: String] = getAdditionalTags(
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            captureData: captureData, captureLocation: captureLocation,
+            mappingData: mappingData
+        )
         for feature in accessibilityFeatures {
-            let oswElement = featureToLineString(feature)
+            let oswElement = featureToLineString(feature, additonalTags: additionalTags)
             guard let oswElement else { continue }
             let osmOldId = oswElement.id
             featureOSMOldIdToFeatureMap[osmOldId] = feature
@@ -304,7 +396,10 @@ extension APITransmissionController {
         )
     }
     
-    private func featureToLineString(_ feature: any AccessibilityFeatureProtocol) -> OSWLineString? {
+    private func featureToLineString(
+        _ feature: any AccessibilityFeatureProtocol,
+        additonalTags: [String: String] = [:]
+    ) -> OSWLineString? {
         let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .linestring else {
             return nil
@@ -321,7 +416,8 @@ extension APITransmissionController {
                 id: oswPointId, version: "1",
                 oswElementClass: oswElementClass,
                 latitude: location.latitude, longitude: location.longitude,
-                attributeValues: [:]
+                attributeValues: [:],
+                experimentalAttributeValues: [:],
             )
             oswPoints.append(point)
         }
@@ -330,7 +426,9 @@ extension APITransmissionController {
             version: "1",
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
-            points: oswPoints
+            experimentalAttributeValues: feature.experimentalAttributeValues,
+            points: oswPoints,
+            additionalTags: additonalTags
         )
         return oswLineString
     }
@@ -358,7 +456,9 @@ extension APITransmissionController {
                 id: uploadedWayData.newId, version: uploadedWayData.newVersion,
                 oswElementClass: matchedOriginalOSWLineString.oswElementClass,
                 attributeValues: matchedOriginalOSWLineString.attributeValues,
-                points: oswPoints
+                experimentalAttributeValues: matchedOriginalOSWLineString.experimentalAttributeValues,
+                points: oswPoints,
+                additionalTags: matchedOriginalOSWLineString.additionalTags
             )
         }
         return oswLineStrings
@@ -374,6 +474,8 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        captureData: any CaptureImageDataProtocol,
+        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
     ) async throws -> APITransmissionResults {
@@ -382,8 +484,13 @@ extension APITransmissionController {
         /// Map Accessibility Features to OSW Elements
         var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
         var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+        let additionalTags: [String: String] = getAdditionalTags(
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            captureData: captureData, captureLocation: captureLocation,
+            mappingData: mappingData
+        )
         for feature in accessibilityFeatures {
-            let oswElement = featureToPolygon(feature)
+            let oswElement = featureToPolygon(feature, additonalTags: additionalTags)
             guard let oswElement else { continue }
             let osmOldId = oswElement.id
             featureOSMOldIdToFeatureMap[osmOldId] = feature
@@ -430,6 +537,64 @@ extension APITransmissionController {
         )
     }
     
+    private func featureToPolygon(
+        _ feature: any AccessibilityFeatureProtocol,
+        additonalTags: [String: String] = [:]
+    ) -> OSWPolygon? {
+        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        guard oswElementClass.geometry == .polygon else {
+            return nil
+        }
+        
+        var oswElements: [any OSWElement] = []
+        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
+              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
+            return nil
+        }
+        featureLocationArrays.forEach { locationArray in
+            guard !locationArray.isEmpty else { return }
+            var oswPoints: [OSWPoint] = []
+            locationArray.forEach { location in
+                let oswPointId = String(idGenerator.nextId())
+                let point = OSWPoint(
+                    id: oswPointId, version: "1",
+                    oswElementClass: oswElementClass,
+                    latitude: location.latitude, longitude: location.longitude,
+                    attributeValues: [:],
+                    experimentalAttributeValues: [:]
+                )
+                oswPoints.append(point)
+            }
+            if locationArray.count <= 2 {
+                oswElements.append(contentsOf: oswPoints)
+            } else {
+                let oswLineString = OSWLineString(
+                    id: String(idGenerator.nextId()),
+                    version: "1",
+                    oswElementClass: oswElementClass,
+                    attributeValues: [:],
+                    experimentalAttributeValues: [:],
+                    points: oswPoints
+                )
+                oswElements.append(oswLineString)
+            }
+        }
+        let oswMembers = oswElements.map {
+            /// TODO: Add the exact role of the member
+            return OSWRelationMember(element: $0)
+        }
+        let oswPolygon = OSWPolygon(
+            id: String(idGenerator.nextId()),
+            version: "1",
+            oswElementClass: oswElementClass,
+            attributeValues: feature.attributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
+            additionalTags: additonalTags,
+            members: oswMembers
+        )
+        return oswPolygon
+    }
+    
     private func getUploadedPolygons(
         from uploadedElements: UploadedOSMResponseElements,
         featureOSMIdToOriginalPolygonMap: [String: OSWPolygon]
@@ -473,60 +638,11 @@ extension APITransmissionController {
                 id: uploadedRelationData.newId, version: uploadedRelationData.newVersion,
                 oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
                 attributeValues: matchedOriginalOSWPolygon.attributeValues,
-                members: oswMembers
+                experimentalAttributeValues: matchedOriginalOSWPolygon.experimentalAttributeValues,
+                additionalTags: matchedOriginalOSWPolygon.additionalTags,
+                members: oswMembers,
             )
         }
         return oswPolygons
-    }
-    
-    private func featureToPolygon(_ feature: any AccessibilityFeatureProtocol) -> OSWPolygon? {
-        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        guard oswElementClass.geometry == .polygon else {
-            return nil
-        }
-        
-        var oswElements: [any OSWElement] = []
-        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
-              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
-            return nil
-        }
-        featureLocationArrays.forEach { locationArray in
-            guard !locationArray.isEmpty else { return }
-            var oswPoints: [OSWPoint] = []
-            locationArray.forEach { location in
-                let oswPointId = String(idGenerator.nextId())
-                let point = OSWPoint(
-                    id: oswPointId, version: "1",
-                    oswElementClass: oswElementClass,
-                    latitude: location.latitude, longitude: location.longitude,
-                    attributeValues: [:]
-                )
-                oswPoints.append(point)
-            }
-            if locationArray.count <= 2 {
-                oswElements.append(contentsOf: oswPoints)
-            } else {
-                let oswLineString = OSWLineString(
-                    id: String(idGenerator.nextId()),
-                    version: "1",
-                    oswElementClass: oswElementClass,
-                    attributeValues: [:],
-                    points: oswPoints
-                )
-                oswElements.append(oswLineString)
-            }
-        }
-        let oswMembers = oswElements.map {
-            /// TODO: Add the exact role of the member
-            return OSWRelationMember(element: $0)
-        }
-        let oswPolygon = OSWPolygon(
-            id: String(idGenerator.nextId()),
-            version: "1",
-            oswElementClass: oswElementClass,
-            attributeValues: feature.attributeValues,
-            members: oswMembers
-        )
-        return oswPolygon
     }
 }

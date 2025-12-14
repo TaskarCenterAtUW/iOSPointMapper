@@ -39,6 +39,8 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
     let meshInstancePolicy: MeshInstancePolicy
     /// Attributes associated with the accessibility feature class
     let attributes: Set<AccessibilityFeatureAttribute>
+    /// Experimental attributes associated with the accessibility feature class
+    let experimentalAttributes: Set<AccessibilityFeatureAttribute>
     
     /**
      Mapping-related constants
@@ -49,6 +51,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
          bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
          attributes: Set<AccessibilityFeatureAttribute> = [],
+         experimentalAttributes: Set<AccessibilityFeatureAttribute> = [.lidarDepth],
          oswPolicy: OSWPolicy = .default
     ) {
         self.id = id
@@ -61,6 +64,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
         self.meshClassification = meshClassification
         self.meshInstancePolicy = meshInstancePolicy
         self.attributes = attributes
+        self.experimentalAttributes = experimentalAttributes
         self.oswPolicy = oswPolicy
     }
     

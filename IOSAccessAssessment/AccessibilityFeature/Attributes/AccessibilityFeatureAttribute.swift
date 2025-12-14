@@ -17,6 +17,11 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     case runningSlope
     case crossSlope
     case surfaceIntegrity
+    /**
+     - NOTE:
+     Experimental attributes
+     */
+    case lidarDepth
     
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
@@ -72,6 +77,12 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
                 valueType: .flag(false),
                 osmTagKey: "surface"
             )
+        case .lidarDepth:
+            return Metadata(
+                id: 50, name: "LiDAR Depth", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: APIConstants.TagKeys.lidarDepthKey
+            )
         }
     }
     
@@ -119,6 +130,8 @@ extension AccessibilityFeatureAttribute {
             return true
         case (.surfaceIntegrity, .flag):
             return true
+        case (.lidarDepth, .length):
+            return true
         default:
             return false
         }
@@ -161,6 +174,8 @@ extension AccessibilityFeatureAttribute {
             return .angle(Measurement(value: value, unit: .degrees))
         case .surfaceIntegrity:
             return nil // Surface Integrity does not have a double representation
+        case .lidarDepth:
+            return .length(Measurement(value: value, unit: .meters))
         }
     }
     
@@ -186,6 +201,8 @@ extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.surfaceIntegrity, .flag(let flag)):
             return flag ? "yes" : "no"
+        case (.lidarDepth, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
         default:
             return nil
         }

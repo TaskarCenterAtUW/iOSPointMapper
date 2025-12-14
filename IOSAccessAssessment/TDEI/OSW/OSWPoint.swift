@@ -17,13 +17,31 @@ struct OSWPoint: OSWElement {
     
     var latitude: CLLocationDegrees
     var longitude: CLLocationDegrees
+    
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
+    var additionalTags: [String : String] = [:]
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .point {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
+        let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
+        let experimentalAttributeTags = getTagsFromAttributeValues(attributeValues: experimentalAttributeValues)
+        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
+            return new
+        }.merging(experimentalAttributeTags) { _, new in
+            return new
+        }.merging(additionalTags) { _, new in
+            return new
+        }
+        return tags
+    }
+    
+    private func getTagsFromAttributeValues(
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    ) -> [String: String] {
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
@@ -33,10 +51,7 @@ struct OSWPoint: OSWElement {
             guard let attributeTagValue else { return }
             attributeTags[attributeTagKey] = attributeTagValue
         }
-        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
-            return new
-        }
-        return tags
+        return attributeTags
     }
     
     func toOSMCreateXML(changesetId: String) -> String {

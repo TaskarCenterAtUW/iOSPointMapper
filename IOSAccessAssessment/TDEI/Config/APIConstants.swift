@@ -16,11 +16,6 @@ struct APIConstants {
         static let workspacesOSMBaseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
     }
     
-    enum ElementKeys {
-        static let node = "node"
-        static let way = "way"
-    }
-    
     enum AttributeKeys {
         static let id = "id"
         static let oldId = "old_id"
@@ -30,28 +25,18 @@ struct APIConstants {
     }
     
     enum TagKeys {
-        static let sessionIdKey = "demo:sessionId"
-        static let captureIdKey = "demo:captureId"
-        static let classKey = "demo:class"
-        static let widthKey = "demo:width"
-        static let depthKey = "demo:depth"
-        static let breakageKey = "demo:breakage"
-        static let slopeKey = "demo:slope"
-        static let crossSlopeKey = "demo:crossSlope"
+        static let appTagPrefix = "ios.pointmapper"
+        /// Tags used to track capture-specific information
+        static let sessionIdKey = "\(appTagPrefix):sessionId"
+        static let captureIdKey = "\(appTagPrefix):captureId"
         
-        static let calculatedWidthKey = "demo:calculatedWidth"
-        static let calculatedBreakageKey = "demo:calculatedBreakage"
-        static let calculatedSlopeKey = "demo:calculatedSlope"
-        static let calculatedCrossSlopeKey = "demo:calculatedCrossSlope"
-        
-        static let captureLatitudeKey = "demo:captureLatitude"
-        static let captureLongitudeKey = "demo:captureLongitude"
-        static let amenityKey = "amenity"
+        /// Tags used for post-hoc analysis
+        static let captureLatitudeKey = "\(appTagPrefix):captureLatitude"
+        static let captureLongitudeKey = "\(appTagPrefix):captureLongitude"
+        static let lidarDepthKey = "\(appTagPrefix):lidarDepth"
     }
     
     enum OtherConstants {
         static let classLabelPlaceholder = "Unknown"
-        
-        static let capturePointAmenity = "hospital" // Tempoary value for demo purposes
     }
 }

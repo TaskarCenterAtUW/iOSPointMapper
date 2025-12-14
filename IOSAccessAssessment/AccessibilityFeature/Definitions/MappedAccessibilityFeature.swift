@@ -14,6 +14,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     
     var locationDetails: LocationDetails?
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     
     var oswElement: any OSWElement
     
@@ -26,6 +27,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         self.accessibilityFeatureClass = accessibilityFeature.accessibilityFeatureClass
         self.locationDetails = accessibilityFeature.locationDetails
         self.attributeValues = accessibilityFeature.attributeValues
+        self.experimentalAttributeValues = accessibilityFeature.experimentalAttributeValues
         self.oswElement = oswElement
     }
     
@@ -34,11 +36,13 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         accessibilityFeatureClass: AccessibilityFeatureClass,
         coordinates: [[CLLocationCoordinate2D]]?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:],
+        experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:],
         oswElement: any OSWElement
     ) {
         self.id = id
         self.accessibilityFeatureClass = accessibilityFeatureClass
         self.attributeValues = attributeValues
+        self.experimentalAttributeValues = experimentalAttributeValues
         self.oswElement = oswElement
         guard let coordinates else { return }
         self.locationDetails = MappedAccessibilityFeature.getLocationDetails(
@@ -81,6 +85,15 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
             throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)
         }
         attributeValues[attribute] = value
+    }
+    
+    mutating func setExperimentalAttributeValue(
+        _ value: AccessibilityFeatureAttribute.Value, for attribute: AccessibilityFeatureAttribute
+    ) throws {
+        guard attribute.isCompatible(with: value) else {
+            throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)
+        }
+        experimentalAttributeValues[attribute] = value
     }
     
     mutating func setOSWElement(_ oswElement: any OSWElement) {
