@@ -51,7 +51,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
          bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
          attributes: Set<AccessibilityFeatureAttribute> = [],
-         experimentalAttributes: Set<AccessibilityFeatureAttribute> = [.lidarDepth],
+         experimentalAttributes: Set<AccessibilityFeatureAttribute> = [.lidarDepth, .latitudeDelta, .longitudeDelta],
          oswPolicy: OSWPolicy = .default
     ) {
         self.id = id

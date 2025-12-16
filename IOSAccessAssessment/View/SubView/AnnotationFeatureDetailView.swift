@@ -166,6 +166,18 @@ struct AnnotationFeatureDetailView: View {
                         numberTextView(attribute: .lidarDepth)
                     }
                 }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.experimentalAttributes.contains(.latitudeDelta)) {
+                    Section(header: Text(AccessibilityFeatureAttribute.latitudeDelta.displayName)) {
+                        numberTextView(attribute: .latitudeDelta)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.experimentalAttributes.contains(.longitudeDelta)) {
+                    Section(header: Text(AccessibilityFeatureAttribute.longitudeDelta.displayName)) {
+                        numberTextView(attribute: .longitudeDelta)
+                    }
+                }
             }
         }
         .onAppear {
