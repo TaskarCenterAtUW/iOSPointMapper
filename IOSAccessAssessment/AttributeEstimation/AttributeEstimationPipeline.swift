@@ -222,7 +222,7 @@ extension AttributeEstimationPipeline {
             x: (trapezoidBoundPoints[1].x + trapezoidBoundPoints[2].x) / 2,
             y: (trapezoidBoundPoints[1].y + trapezoidBoundPoints[2].y) / 2
         )
-        let points = [bottomCenter, topCenter]
+        let points = [topCenter, bottomCenter] /// Flipped because of image coordinate system
         let pointDepthValues = try depthMapProcessor.getFeatureDepthsAtNormalizedPoints(points)
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
