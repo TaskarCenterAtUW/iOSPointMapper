@@ -27,6 +27,11 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
     case TrafficSign
     /**
      - WARNING:
+        This is a temporary definition for Vegetation. It is not directly supported by OSW schema.
+     */
+    case Vegetation
+    /**
+     - WARNING:
         This is a definition for an analysis-oriented node. It is not directly supported by OSW schema.
      */
     case AppAnchorNode
@@ -119,6 +124,15 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 geometry: .point,
                 identifyingFields: [
                     IdentifyingField(field: .traffic_sign, value: "yes")
+                ]
+            )
+        case .Vegetation:
+            return Metadata(
+                description: "Vegetation",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .natural, value: "tree")
                 ]
             )
         case .AppAnchorNode:

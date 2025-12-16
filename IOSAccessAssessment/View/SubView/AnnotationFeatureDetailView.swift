@@ -160,6 +160,12 @@ struct AnnotationFeatureDetailView: View {
                             .focused($focusedField, equals: .surfaceIntegrity)
                     }
                 }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.experimentalAttributes.contains(.lidarDepth)) {
+                    Section(header: Text(AccessibilityFeatureAttribute.lidarDepth.displayName)) {
+                        numberTextView(attribute: .lidarDepth)
+                    }
+                }
             }
         }
         .onAppear {
@@ -214,6 +220,34 @@ struct AnnotationFeatureDetailView: View {
             )
             .textFieldStyle(.roundedBorder)
             .keyboardType(.decimalPad)
+        }
+    }
+    
+    @ViewBuilder
+    private func numberTextView(attribute: AccessibilityFeatureAttribute) -> some View {
+        let attributeStatus = statusViewModel.attributeStatusMap[attribute] ?? .init(isError: false, errorMessage: "")
+        let valueToDisplay: String = {
+            guard let attributeValue = accessibilityFeature.experimentalAttributeValues[attribute],
+                  let attributeValue,
+                  let attributeBindableValue = attributeValue.toDouble() else {
+                return "N/A"
+            }
+            return String(attributeBindableValue)
+        }()
+        VStack {
+            if (attributeStatus.isError) {
+                /// A red colored error message
+                HStack {
+                    Label(
+                        attributeStatus.errorMessage,
+                        systemImage: AnnotationFeatureDetailView.Constants.Images.statusAlertImageNameKey
+                    )
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                    Spacer()
+                }
+            }
+            Text(valueToDisplay)
         }
     }
     

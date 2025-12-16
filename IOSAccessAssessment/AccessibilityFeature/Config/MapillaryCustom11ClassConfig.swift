@@ -51,7 +51,8 @@ extension AccessibilityFeatureConfig {
             
             AccessibilityFeatureClass(
                 id: "vegetation", name: "Vegetation", grayscaleValue: 6.0 / 255.0, labelValue: 6,
-                color: CIColor(red: 0.420, green: 0.557, blue: 0.137)
+                color: CIColor(red: 0.420, green: 0.557, blue: 0.137),
+                oswPolicy: OSWPolicy(oswElementClass: .Vegetation)
             ),
             
             AccessibilityFeatureClass(

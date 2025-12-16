@@ -97,9 +97,6 @@ struct DepthMapProcessor {
         let featureContourDetails = detectedFeature.contourDetails
         let featureCentroid = featureContourDetails.centroid
         
-        /**
-         TODO: Check if the y-axis needs to be flipped based on coordinate systems
-         */
         let featureCentroidPoint: CGPoint = CGPoint(
             x: featureCentroid.x * CGFloat(depthWidth),
             y: (1 - featureCentroid.y) * CGFloat(depthHeight)
@@ -134,9 +131,7 @@ struct DepthMapProcessor {
                 }
             }
         }
-        /**
-         TODO: Check if the y-axis needs to be flipped based on coordinate systems
-        */
+        
         let featureCentroidRadiusPoints: [CGPoint] = pointDeltas.map { delta in
             CGPoint(
                 x: featureCentroid.x * CGFloat(depthWidth) + delta.x,
