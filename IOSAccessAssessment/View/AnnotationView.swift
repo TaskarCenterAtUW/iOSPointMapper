@@ -477,19 +477,23 @@ struct AnnotationView: View {
     
     private func handleOnAppear() async {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
-                  let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol) else {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord
+            /// TODO: MESH PROCESSING: Enable mesh data processing
+//                    , let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol)
+            else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
             let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
             try attributeEstimationPipeline.configure(
-                captureImageData: currentCaptureDataRecord, captureMeshData: captureMeshData
+                captureImageData: currentCaptureDataRecord
+                /// TODO: MESH PROCESSING: Enable mesh data processing
+                ///, captureMeshData: captureMeshData
             )
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
                 captureImageData: currentCaptureDataRecord,
-                captureMeshData: captureMeshData
+//                captureMeshData: captureMeshData
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
             manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)

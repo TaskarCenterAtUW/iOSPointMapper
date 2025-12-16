@@ -53,9 +53,10 @@ class AttributeEstimationPipeline: ObservableObject {
     var captureImageData: (any CaptureImageDataProtocol)?
     var captureMeshData: (any CaptureMeshDataProtocol)?
     
+    /// TODO: MESH PROCESSING: Add mesh data processing components when needed.
     func configure(
         captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol)
+//        captureMeshData: (any CaptureMeshDataProtocol)
     ) throws {
         let captureImageDataConcrete = CaptureImageData(captureImageData)
         guard let depthImage = captureImageDataConcrete.depthImage else {
@@ -64,7 +65,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.depthMapProcessor = try DepthMapProcessor(depthImage: depthImage)
         self.localizationProcessor = LocalizationProcessor()
         self.captureImageData = captureImageData
-        self.captureMeshData = captureMeshData
+//        self.captureMeshData = captureMeshData
     }
     
     func processLocationRequest(
