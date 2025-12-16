@@ -184,7 +184,10 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> CIImage {
+    func processUnionOfMasksRequest(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        orientation: CGImagePropertyOrientation = .up
+    ) throws -> CIImage {
         if self.isProcessing {
             throw SegmentationAnnotationPipelineError.isProcessingTrue
         }
@@ -195,12 +198,19 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         }
         
         let targetValue = accessibilityFeatureClass.labelValue
-        let bounds: DimensionBasedMaskBounds? = accessibilityFeatureClass.bounds
+        let bounds: CGRect? = accessibilityFeatureClass.bounds
         let unionOfMasksPolicy = accessibilityFeatureClass.unionOfMasksPolicy
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if let bounds = bounds, let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter {
             do {
-                unionImage = try dimensionBasedMaskFilter.apply(to: unionImage, bounds: bounds)
+                print("Current bounds: \(bounds)")
+                print("Bounds: \(bounds.minX), \(bounds.minY), \(bounds.maxX), \(bounds.maxY)")
+                let transform = orientation.getNormalizedToUpTransform()
+                print("Transform for orientation \(orientation): \(transform)")
+                let boundsTransformed = bounds.applying(transform)
+                print("Applying dimension based mask filter with bounds: \(boundsTransformed)")
+                print("Bounds: \(boundsTransformed.minX), \(boundsTransformed.minY), \(boundsTransformed.maxX), \(boundsTransformed.maxY)")
+                unionImage = try dimensionBasedMaskFilter.apply(to: unionImage, bounds: boundsTransformed)
             } catch {
                 print("Error applying dimension based mask filter: \(error)")
             }

@@ -47,6 +47,7 @@ struct DimensionBasedMaskFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
+    private let outputColorSpace = CGColorSpaceCreateDeviceRGB()
 
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -66,7 +67,7 @@ struct DimensionBasedMaskFilter {
         self.pipeline = pipeline
     }
 
-    func apply(to inputImage: CIImage, bounds: DimensionBasedMaskBounds) throws -> CIImage {
+    func apply(to inputImage: CIImage, bounds: CGRect) throws -> CIImage {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
@@ -82,10 +83,10 @@ struct DimensionBasedMaskFilter {
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw DimensionBasedMaskFilterError.textureCreationFailed
         }
-        var minXLocal = bounds.minX
-        var maxXLocal = bounds.maxX
-        var minYLocal = bounds.minY
-        var maxYLocal = bounds.maxY
+        var boundsParams = BoundsParams(
+            minX: Float(bounds.minX), minY: Float(bounds.minY),
+            maxX: Float(bounds.maxX), maxY: Float(bounds.maxY)
+        )
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw DimensionBasedMaskFilterError.metalPipelineCreationError
@@ -94,10 +95,7 @@ struct DimensionBasedMaskFilter {
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
-        commandEncoder.setBytes(&minXLocal, length: MemoryLayout<Float>.size, index: 0)
-        commandEncoder.setBytes(&maxXLocal, length: MemoryLayout<Float>.size, index: 1)
-        commandEncoder.setBytes(&minYLocal, length: MemoryLayout<Float>.size, index: 2)
-        commandEncoder.setBytes(&maxYLocal, length: MemoryLayout<Float>.size, index: 3)
+        commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.size, index: 0)
         
 //        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
@@ -111,7 +109,7 @@ struct DimensionBasedMaskFilter {
         commandBuffer.waitUntilCompleted()
 
         guard let resultCIImage = CIImage(
-            mtlTexture: outputTexture, options: [.colorSpace: NSNull()]
+            mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace]
         ) else {
             throw DimensionBasedMaskFilterError.outputImageCreationFailed
         }

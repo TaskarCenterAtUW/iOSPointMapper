@@ -32,7 +32,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
      Post-Processing related constants.
      */
     /// Optional bounds for the segmentation class. Is kept optional to prevent unnecessary dimension based masking.
-    let bounds: DimensionBasedMaskBounds?
+    let bounds: CGRect?
     /// Properties for union of masks
     let unionOfMasksPolicy: UnionOfMasksPolicy
     /// Properties related to mesh post-processing
@@ -48,7 +48,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
     let oswPolicy: OSWPolicy
     
     init(id: String, name: String, grayscaleValue: Float, labelValue: UInt8, color: CIColor,
-         bounds: DimensionBasedMaskBounds? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
+         bounds: CGRect? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
          meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
          attributes: Set<AccessibilityFeatureAttribute> = [],
          experimentalAttributes: Set<AccessibilityFeatureAttribute> = [],

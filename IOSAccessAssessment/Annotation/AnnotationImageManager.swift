@@ -286,11 +286,18 @@ extension AnnotationImageManager {
     private func getProcessedSegmentationLabelImage(
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> CIImage {
+        guard let captureImageData = self.captureImageData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
         guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
             throw AnnotationImageManagerError.segmentationNotConfigured
         }
+        let imageOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: captureImageData.interfaceOrientation
+        )
         let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
-            accessibilityFeatureClass: accessibilityFeatureClass
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            orientation: imageOrientation
         )
         return processedSegmentationLabelImage
     }
