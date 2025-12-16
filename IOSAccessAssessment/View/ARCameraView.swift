@@ -225,8 +225,10 @@ struct ARCameraView: View {
         Task {
             do {
                 let captureData = try await manager.performFinalSessionUpdateIfPossible()
-                if (captureData.captureImageDataResults.segmentedClasses.isEmpty) ||
-                    (captureData.captureMeshDataResults.segmentedMesh.totalVertexCount == 0) {
+                if (captureData.captureImageDataResults.segmentedClasses.isEmpty)
+                /// TODO: MESH PROCESSING: Re-enable check for vertex count when segmentation mesh generation is stable
+//                    || (captureData.captureMeshDataResults.segmentedMesh.totalVertexCount == 0)
+                {
                     throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                 }
                 captureLocation = try locationManager.getLocationCoordinate()

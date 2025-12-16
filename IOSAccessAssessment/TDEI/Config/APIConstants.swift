@@ -34,6 +34,8 @@ struct APIConstants {
         static let captureLatitudeKey = "\(appTagPrefix):captureLatitude"
         static let captureLongitudeKey = "\(appTagPrefix):captureLongitude"
         static let lidarDepthKey = "\(appTagPrefix):lidarDepth"
+        static let latitudeDeltaKey = "\(appTagPrefix):latitudeDelta"
+        static let longitudeDeltaKey = "\(appTagPrefix):longitudeDelta"
     }
     
     enum OtherConstants {

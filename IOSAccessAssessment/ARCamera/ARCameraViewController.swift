@@ -251,7 +251,8 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     
     func applyDebugIfNeeded() {
         arView.environment.sceneUnderstanding.options.insert(.occlusion)
-        arView.debugOptions.insert(.showSceneUnderstanding)
+        /// TODO: MESH PROCESSING: Use the mesh processing visualization
+//        arView.debugOptions.insert(.showSceneUnderstanding)
     }
     
     override func viewWillAppear(_ animated: Bool) {

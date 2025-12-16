@@ -66,6 +66,24 @@ struct LocalizationProcessor {
         )
     }
     
+    /**
+        Calculate the latitude and longitude deltas of an object at a given point with depth in the image.
+     
+        - NOTE: This method is primarily for testing and debugging purposes.
+     */
+    func calculateDelta(
+        point: CGPoint, depth: Float, imageSize: CGSize,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3
+    ) -> SIMD2<Float> {
+        let delta = getDeltaFromPoint(
+            point: point, depth: depth, imageSize: imageSize,
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics
+        )
+        return SIMD2<Float>(delta.z, delta.x)
+    }
+    
     func calculateLocation(
         latitudeDelta: Float, longitudeDelta: Float,
         deviceLocation: CLLocationCoordinate2D

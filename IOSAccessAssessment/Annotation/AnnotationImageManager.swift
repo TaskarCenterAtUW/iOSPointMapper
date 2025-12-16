@@ -79,15 +79,16 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     // Latest processed results
     var annotationImageResults: AnnotationImageResults?
     
+    /// TODO: MESH PROCESSING: Integrate mesh data processing in the annotation image manager.
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationAnnotationPipeline: SegmentationAnnotationPipeline,
         captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol)
+//        captureMeshData: (any CaptureMeshDataProtocol)
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationAnnotationPipeline = segmentationAnnotationPipeline
         self.captureImageData = captureImageData
-        self.captureMeshData = captureMeshData
+//        self.captureMeshData = captureMeshData
         
         let cameraOutputImage = try getCameraOutputImage()
         let annotationImageResults: AnnotationImageResults = AnnotationImageResults(
@@ -285,11 +286,18 @@ extension AnnotationImageManager {
     private func getProcessedSegmentationLabelImage(
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> CIImage {
+        guard let captureImageData = self.captureImageData else {
+            throw AnnotationImageManagerError.captureDataNotAvailable
+        }
         guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline else {
             throw AnnotationImageManagerError.segmentationNotConfigured
         }
+        let imageOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: captureImageData.interfaceOrientation
+        )
         let processedSegmentationLabelImage = try segmentationAnnotationPipeline.processUnionOfMasksRequest(
-            accessibilityFeatureClass: accessibilityFeatureClass
+            accessibilityFeatureClass: accessibilityFeatureClass,
+            orientation: imageOrientation
         )
         return processedSegmentationLabelImage
     }
@@ -439,72 +447,74 @@ extension AnnotationImageManager {
 /**
     Extension to handle mesh vertex processing and projection.
     Also handles rasterized mesh image orientation and cropping.
+ 
+    TODO: MESH PROCESSING: Integrate mesh data processing in the annotation image manager.
  */
-extension AnnotationImageManager {
-    private func getMeshOverlayOutputImage(
-        polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)],
-        size: CGSize,
-        accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> CIImage {
-        guard let captureMeshData = self.captureMeshData,
-              let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
-            polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: size,
-            boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
-        ) else {
-            throw AnnotationImageManagerError.meshRasterizationFailed
-        }
-        
-        let rasterizedMeshCIImage = CIImage(cgImage: rasterizedMeshImage)
-        let interfaceOrientation = captureMeshData.interfaceOrientation
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
-        
-        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
-            currentInterfaceOrientation: interfaceOrientation
-        )
-        let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
-        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
-        
-        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
-            throw AnnotationImageManagerError.meshRasterizationFailed
-        }
-        return CIImage(cgImage: overlayCgImage)
-    }
-    
-    /**
-     Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
-     */
-    private func getPolygonsNormalizedCoordinates(accessibilityFeatureClass: AccessibilityFeatureClass)
-    throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
-        guard let captureImageData = self.captureImageData,
-              let captureMeshData = self.captureMeshData else {
-            throw AnnotationImageManagerError.captureDataNotAvailable
-        }
-        let meshPolygons = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
-            capturedMeshSnapshot: captureMeshData.captureMeshDataResults.segmentedMesh,
-            accessibilityFeatureClass: accessibilityFeatureClass
-        )
-        
-        let cameraTransform = captureImageData.cameraTransform
-        let viewMatrix = cameraTransform.inverse // world -> camera
-        let cameraIntrinsics = captureImageData.cameraIntrinsics
-        let originalSize = captureImageData.originalSize
-        let polygonsCoordinates = MeshHelpers.getPolygonsCoordinates(
-            meshPolygons: meshPolygons,
-            viewMatrix: viewMatrix,
-            cameraIntrinsics: cameraIntrinsics,
-            originalSize: originalSize
-        )
-        
-        let originalWidth = Float(originalSize.width)
-        let originalHeight = Float(originalSize.height)
-        let polygonsNormalizedCoordinates = polygonsCoordinates.map { (p0, p1, p2) in
-            return (
-                SIMD2<Float>(p0.x / originalWidth, p0.y / originalHeight),
-                SIMD2<Float>(p1.x / originalWidth, p1.y / originalHeight),
-                SIMD2<Float>(p2.x / originalWidth, p2.y / originalHeight)
-            )
-        }
-        
-        return polygonsNormalizedCoordinates
-    }
-}
+//extension AnnotationImageManager {
+//    private func getMeshOverlayOutputImage(
+//        polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)],
+//        size: CGSize,
+//        accessibilityFeatureClass: AccessibilityFeatureClass
+//    ) throws -> CIImage {
+//        guard let captureMeshData = self.captureMeshData,
+//              let rasterizedMeshImage = MeshRasterizer.rasterizeMesh(
+//            polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: size,
+//            boundsConfig: RasterizeConfig(color: UIColor(ciColor: accessibilityFeatureClass.color))
+//        ) else {
+//            throw AnnotationImageManagerError.meshRasterizationFailed
+//        }
+//        
+//        let rasterizedMeshCIImage = CIImage(cgImage: rasterizedMeshImage)
+//        let interfaceOrientation = captureMeshData.interfaceOrientation
+//        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+//        
+//        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+//            currentInterfaceOrientation: interfaceOrientation
+//        )
+//        let orientedImage = rasterizedMeshCIImage.oriented(imageOrientation)
+//        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+//        
+//        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+//            throw AnnotationImageManagerError.meshRasterizationFailed
+//        }
+//        return CIImage(cgImage: overlayCgImage)
+//    }
+//    
+//    /**
+//     Retrieves mesh details (including vertex positions) for the given accessibility feature class, as normalized pixel coordinates.
+//     */
+//    private func getPolygonsNormalizedCoordinates(accessibilityFeatureClass: AccessibilityFeatureClass)
+//    throws -> [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)] {
+//        guard let captureImageData = self.captureImageData,
+//              let captureMeshData = self.captureMeshData else {
+//            throw AnnotationImageManagerError.captureDataNotAvailable
+//        }
+//        let meshPolygons = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
+//            capturedMeshSnapshot: captureMeshData.captureMeshDataResults.segmentedMesh,
+//            accessibilityFeatureClass: accessibilityFeatureClass
+//        )
+//        
+//        let cameraTransform = captureImageData.cameraTransform
+//        let viewMatrix = cameraTransform.inverse // world -> camera
+//        let cameraIntrinsics = captureImageData.cameraIntrinsics
+//        let originalSize = captureImageData.originalSize
+//        let polygonsCoordinates = MeshHelpers.getPolygonsCoordinates(
+//            meshPolygons: meshPolygons,
+//            viewMatrix: viewMatrix,
+//            cameraIntrinsics: cameraIntrinsics,
+//            originalSize: originalSize
+//        )
+//        
+//        let originalWidth = Float(originalSize.width)
+//        let originalHeight = Float(originalSize.height)
+//        let polygonsNormalizedCoordinates = polygonsCoordinates.map { (p0, p1, p2) in
+//            return (
+//                SIMD2<Float>(p0.x / originalWidth, p0.y / originalHeight),
+//                SIMD2<Float>(p1.x / originalWidth, p1.y / originalHeight),
+//                SIMD2<Float>(p2.x / originalWidth, p2.y / originalHeight)
+//            )
+//        }
+//        
+//        return polygonsNormalizedCoordinates
+//    }
+//}

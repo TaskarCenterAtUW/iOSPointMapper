@@ -13,13 +13,16 @@ extension AccessibilityFeatureConfig {
         classes: [
 //            AccessibilityFeatureClass(name: "Road", grayscaleValue: 0.0 / 255.0, labelValue: 0,
 //                              color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
-//                              bounds: DimensionBasedMaskBounds(
-//                              minX: 0.0, maxX: 1.0, minY: 0.1, maxY: 0.5
+//                              bounds: CGRect(
+//                              x: 0.0, y: 0.1, width: 1.0, height: 0.4
 //                              )),
             
             AccessibilityFeatureClass(
                 id: "sidewalk", name: "Sidewalk", grayscaleValue: 1.0 / 255.0, labelValue: 1,
                 color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
+                bounds: CGRect(
+                    x: 0.0, y: 0.5, width: 1.0, height: 0.4
+                ),
                 meshClassification: [.floor],
                 attributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity],
                 oswPolicy: OSWPolicy(oswElementClass: .Sidewalk)
@@ -51,7 +54,8 @@ extension AccessibilityFeatureConfig {
             
             AccessibilityFeatureClass(
                 id: "vegetation", name: "Vegetation", grayscaleValue: 6.0 / 255.0, labelValue: 6,
-                color: CIColor(red: 0.420, green: 0.557, blue: 0.137)
+                color: CIColor(red: 0.420, green: 0.557, blue: 0.137),
+                oswPolicy: OSWPolicy(oswElementClass: .Vegetation)
             ),
             
             AccessibilityFeatureClass(

@@ -86,7 +86,6 @@
 		A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */; };
 		A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A52ECD86260039298C /* AccessibilityFeature.swift */; };
 		A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413AC2ECF94950039298C /* DBSCAN.swift */; };
-		A3A45F082EE7A4C50029F5AE /* DimensionBasedMaskBounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F072EE7A4BD0029F5AE /* DimensionBasedMaskBounds.swift */; };
 		A3A45F0A2EE7A4E10029F5AE /* UnionOfMasksPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */; };
 		A3A45F0C2EE7A4F40029F5AE /* ContourDetectionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F0B2EE7A4F10029F5AE /* ContourDetectionPolicy.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
@@ -257,7 +256,6 @@
 		A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RasterizeConfig.swift; sourceTree = "<group>"; };
 		A3A413A52ECD86260039298C /* AccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeature.swift; sourceTree = "<group>"; };
 		A3A413AC2ECF94950039298C /* DBSCAN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBSCAN.swift; sourceTree = "<group>"; };
-		A3A45F072EE7A4BD0029F5AE /* DimensionBasedMaskBounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskBounds.swift; sourceTree = "<group>"; };
 		A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksPolicy.swift; sourceTree = "<group>"; };
 		A3A45F0B2EE7A4F10029F5AE /* ContourDetectionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourDetectionPolicy.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
@@ -523,7 +521,6 @@
 			isa = PBXGroup;
 			children = (
 				A3A45F0B2EE7A4F10029F5AE /* ContourDetectionPolicy.swift */,
-				A3A45F072EE7A4BD0029F5AE /* DimensionBasedMaskBounds.swift */,
 				A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */,
 				A30801672EC0AE7200B1BA3A /* MeshInstancePolicy.swift */,
 				A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */,
@@ -1060,7 +1057,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */,
-				A3A45F082EE7A4C50029F5AE /* DimensionBasedMaskBounds.swift in Sources */,
 				A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */,
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
 				A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */,

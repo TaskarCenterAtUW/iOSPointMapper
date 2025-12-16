@@ -282,17 +282,18 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         handleSessionFrameUpdate(frame: frame)
     }
     
-    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-        handleSessionMeshUpdate(anchors, updateType: .add)
-    }
-    
-    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
-        handleSessionMeshUpdate(anchors, updateType: .update)
-    }
-    
-    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
-        handleSessionMeshUpdate(anchors, updateType: .remove)
-    }
+    /// TODO: MESH PROCESSING: Use the mesh processing as well in future.
+//    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+//        handleSessionMeshUpdate(anchors, updateType: .add)
+//    }
+//    
+//    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+//        handleSessionMeshUpdate(anchors, updateType: .update)
+//    }
+//    
+//    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+//        handleSessionMeshUpdate(anchors, updateType: .remove)
+//    }
 }
 
 // Functions to handle the image processing pipeline
@@ -694,18 +695,103 @@ extension ARCameraManager {
      Runs the Image Segmentation Pipeline with high priority to ensure that the latest frame.
      TODO: Perform the mesh snapshot processing as well.
      */
+//    @MainActor
+//    func performFinalSessionUpdateIfPossible(
+//    ) async throws -> any (CaptureImageDataProtocol & CaptureMeshDataProtocol) {
+//        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+//              let metalContext = self.metalContext,
+//              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
+//            throw ARCameraManagerError.finalSessionNotConfigured
+//        }
+//        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
+//            throw ARCameraManagerError.finalSessionMeshUnavailable
+//        }
+//        
+//        /// Process the latest camera image with high priority
+//        guard let cameraImage = self.cameraImageResults?.cameraImage,
+//              let depthImage = self.cameraImageResults?.depthImage,
+//              let cameraTransform = self.cameraImageResults?.cameraTransform,
+//              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
+//        else {
+//            throw ARCameraManagerError.cameraImageResultsUnavailable
+//        }
+//        var cameraImageResults = try await self.processCameraImage(
+//            image: cameraImage, interfaceOrientation: self.interfaceOrientation,
+//            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+//            highPriority: true
+//        )
+//        guard cameraImageResults.segmentedClasses.count > 0 else {
+//            throw ARCameraManagerError.finalSessionNoSegmentationClass
+//        }
+//        cameraImageResults.depthImage = depthImage
+//        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
+//        
+//        /// Process the latest mesh anchors
+//        let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+//        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+//            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+//            colorSpace: segmentationMaskColorSpace
+//        )
+//        outputConsumer?.cameraOutputMesh(
+//            self, metalContext: metalContext,
+//            meshGPUSnapshot: meshGPUSnapshot,
+//            for: nil as [ARAnchor]?,
+//            cameraTransform: cameraImageResults.cameraTransform,
+//            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+//            segmentationLabelImage: backedSegmentationLabelImage,
+//            accessibilityFeatureClasses: self.selectedClasses
+//        )
+//        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
+//            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+//        }
+//        guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
+//              cameraMeshOtherDetails.totalVertexCount > 0 else {
+//            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+//        }
+//        let cameraMeshRecords = cameraMeshRecordDetails.records
+//        
+//        let cameraMeshSnapshot: CapturedMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+//            from: cameraMeshRecords,
+//            vertexStride: cameraMeshOtherDetails.vertexStride,
+//            vertexOffset: cameraMeshOtherDetails.vertexOffset,
+//            indexStride: cameraMeshOtherDetails.indexStride,
+//            classificationStride: cameraMeshOtherDetails.classificationStride,
+//            totalVertexCount: cameraMeshOtherDetails.totalVertexCount
+//        )
+//        let captureImageDataResults = CaptureImageDataResults(
+//            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+//            segmentedClasses: cameraImageResults.segmentedClasses,
+//            detectedFeatureMap: cameraImageResults.detectedFeatureMap
+//        )
+//        let captureMeshDataResults = CaptureMeshDataResults(
+//            segmentedMesh: cameraMeshSnapshot
+//        )
+//        
+//        let captureData = CaptureAllData(
+//            id: UUID(),
+//            timestamp: Date().timeIntervalSince1970,
+//            cameraImage: cameraImageResults.cameraImage,
+//            cameraTransform: cameraImageResults.cameraTransform,
+//            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+//            interfaceOrientation: self.interfaceOrientation,
+//            originalSize: cameraImageResults.originalImageSize,
+//            depthImage: cameraImageResults.depthImage,
+//            confidenceImage: cameraImageResults.confidenceImage,
+//            captureImageDataResults: captureImageDataResults,
+//            captureMeshDataResults: captureMeshDataResults
+//        )
+//        return captureData
+//    }
+    
+    /**
+     Perform any final updates to the AR session configuration that will be required by the caller.
+     Method copy that does not perform mesh processing for now.
+     
+     TODO: MESH PROCESSING: Use the mesh processing as well in future.
+     */
     @MainActor
     func performFinalSessionUpdateIfPossible(
-    ) async throws -> any (CaptureImageDataProtocol & CaptureMeshDataProtocol) {
-        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
-              let metalContext = self.metalContext,
-              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
-            throw ARCameraManagerError.finalSessionNotConfigured
-        }
-        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
-            throw ARCameraManagerError.finalSessionMeshUnavailable
-        }
-        
+    ) async throws -> any (CaptureImageDataProtocol) {
         /// Process the latest camera image with high priority
         guard let cameraImage = self.cameraImageResults?.cameraImage,
               let depthImage = self.cameraImageResults?.depthImage,
@@ -727,46 +813,13 @@ extension ARCameraManager {
         
         /// Process the latest mesh anchors
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
-        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
-            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
-            colorSpace: segmentationMaskColorSpace
-        )
-        outputConsumer?.cameraOutputMesh(
-            self, metalContext: metalContext,
-            meshGPUSnapshot: meshGPUSnapshot,
-            for: nil as [ARAnchor]?,
-            cameraTransform: cameraImageResults.cameraTransform,
-            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
-            segmentationLabelImage: backedSegmentationLabelImage,
-            accessibilityFeatureClasses: self.selectedClasses
-        )
-        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
-            throw ARCameraManagerError.finalSessionNoSegmentationMesh
-        }
-        guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
-              cameraMeshOtherDetails.totalVertexCount > 0 else {
-            throw ARCameraManagerError.finalSessionNoSegmentationMesh
-        }
-        let cameraMeshRecords = cameraMeshRecordDetails.records
-        
-        let cameraMeshSnapshot: CapturedMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
-            from: cameraMeshRecords,
-            vertexStride: cameraMeshOtherDetails.vertexStride,
-            vertexOffset: cameraMeshOtherDetails.vertexOffset,
-            indexStride: cameraMeshOtherDetails.indexStride,
-            classificationStride: cameraMeshOtherDetails.classificationStride,
-            totalVertexCount: cameraMeshOtherDetails.totalVertexCount
-        )
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,
             detectedFeatureMap: cameraImageResults.detectedFeatureMap
         )
-        let captureMeshDataResults = CaptureMeshDataResults(
-            segmentedMesh: cameraMeshSnapshot
-        )
         
-        let captureData = CaptureAllData(
+        let captureData = CaptureImageData(
             id: UUID(),
             timestamp: Date().timeIntervalSince1970,
             cameraImage: cameraImageResults.cameraImage,
@@ -776,8 +829,7 @@ extension ARCameraManager {
             originalSize: cameraImageResults.originalImageSize,
             depthImage: cameraImageResults.depthImage,
             confidenceImage: cameraImageResults.confidenceImage,
-            captureImageDataResults: captureImageDataResults,
-            captureMeshDataResults: captureMeshDataResults
+            captureImageDataResults: captureImageDataResults
         )
         return captureData
     }

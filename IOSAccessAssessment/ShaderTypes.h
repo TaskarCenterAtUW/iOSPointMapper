@@ -52,3 +52,10 @@ typedef struct AccessibilityFeatureMeshClassificationParams {
     MTL_UINT8      labelValue;
     MTL_UINT8      padding[3];
 } SegmentationMeshClassificationParams;
+
+typedef struct BoundsParams {
+    float       minX;
+    float       minY;
+    float       maxX;
+    float       maxY;
+} BoundsParams;

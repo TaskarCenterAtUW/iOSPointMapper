@@ -33,6 +33,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
 
 struct LocationRequestResult: Sendable {
     let coordinates: [[CLLocationCoordinate2D]]
+    let locationDelta: SIMD2<Float>
     let lidarDepth: Float
 }
 
@@ -52,9 +53,10 @@ class AttributeEstimationPipeline: ObservableObject {
     var captureImageData: (any CaptureImageDataProtocol)?
     var captureMeshData: (any CaptureMeshDataProtocol)?
     
+    /// TODO: MESH PROCESSING: Add mesh data processing components when needed.
     func configure(
         captureImageData: (any CaptureImageDataProtocol),
-        captureMeshData: (any CaptureMeshDataProtocol)
+//        captureMeshData: (any CaptureMeshDataProtocol)
     ) throws {
         let captureImageDataConcrete = CaptureImageData(captureImageData)
         guard let depthImage = captureImageDataConcrete.depthImage else {
@@ -63,7 +65,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.depthMapProcessor = try DepthMapProcessor(depthImage: depthImage)
         self.localizationProcessor = LocalizationProcessor()
         self.captureImageData = captureImageData
-        self.captureMeshData = captureMeshData
+//        self.captureMeshData = captureMeshData
     }
     
     func processLocationRequest(
@@ -100,6 +102,27 @@ class AttributeEstimationPipeline: ObservableObject {
                 print("Error setting lidar depth attribute for feature \(accessibilityFeature.id): \(error.localizedDescription)")
             }
         }
+        if let latitudeDeltaAttributeValue = AccessibilityFeatureAttribute.latitudeDelta.valueFromDouble(
+            Double(locationRequestResult.locationDelta.x)
+        ) {
+            do {
+                try accessibilityFeature.setExperimentalAttributeValue(latitudeDeltaAttributeValue, for: .latitudeDelta)
+            } catch {
+                print("Error setting latitude delta attribute for feature " +
+                      "\(accessibilityFeature.id): \(error.localizedDescription)")
+            }
+        }
+        if let longitudeDeltaAttributeValue = AccessibilityFeatureAttribute.longitudeDelta.valueFromDouble(
+            Double(locationRequestResult.locationDelta.y)
+        ) {
+            do {
+                try accessibilityFeature.setExperimentalAttributeValue(longitudeDeltaAttributeValue, for: .longitudeDelta)
+            } catch {
+                print("Error setting longitude delta attribute for feature " +
+                      "\(accessibilityFeature.id): \(error.localizedDescription)")
+            }
+        }
+           
     }
     
     func processAttributeRequest(
@@ -154,6 +177,12 @@ extension AttributeEstimationPipeline {
             detectedFeature: accessibilityFeature, radius: 3
         )
         let featureCentroid = accessibilityFeature.contourDetails.centroid
+        let locationDelta = localizationProcessor.calculateDelta(
+            point: featureCentroid, depth: featureDepthValue,
+            imageSize: captureImageDataConcrete.originalSize,
+            cameraTransform: captureImageDataConcrete.cameraTransform,
+            cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
+        )
         let locationCoordinate = localizationProcessor.calculateLocation(
             point: featureCentroid, depth: featureDepthValue,
             imageSize: captureImageDataConcrete.originalSize,
@@ -162,7 +191,9 @@ extension AttributeEstimationPipeline {
             deviceLocation: deviceLocation
         )
         let coordinates: [[CLLocationCoordinate2D]] = [[locationCoordinate]]
-        return LocationRequestResult(coordinates: coordinates, lidarDepth: featureDepthValue)
+        return LocationRequestResult(
+            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: featureDepthValue
+        )
     }
     
     private func calculateLocationForLineString(
@@ -191,10 +222,19 @@ extension AttributeEstimationPipeline {
             x: (trapezoidBoundPoints[1].x + trapezoidBoundPoints[2].x) / 2,
             y: (trapezoidBoundPoints[1].y + trapezoidBoundPoints[2].y) / 2
         )
-        let points = [bottomCenter, topCenter]
+        let points = [topCenter, bottomCenter] /// Flipped because of image coordinate system
         let pointDepthValues = try depthMapProcessor.getFeatureDepthsAtNormalizedPoints(points)
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
+        }
+        /// For debugging
+        let locationDeltas: [SIMD2<Float>] = pointsWithDepth.map { pointWithDepth in
+            return localizationProcessor.calculateDelta(
+                point: pointWithDepth.point, depth: pointWithDepth.depth,
+                imageSize: captureImageDataConcrete.originalSize,
+                cameraTransform: captureImageDataConcrete.cameraTransform,
+                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
+            )
         }
         let locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateLocation(
@@ -206,8 +246,11 @@ extension AttributeEstimationPipeline {
             )
         }
         let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
-        return LocationRequestResult(coordinates: coordinates, lidarDepth: lidarDepth)
+        return LocationRequestResult(
+            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
+        )
     }
     
     private func calculateLocationForPolygon(
@@ -239,6 +282,15 @@ extension AttributeEstimationPipeline {
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
         }
+        /// For debugging
+        let locationDeltas: [SIMD2<Float>] = pointsWithDepth.map { pointWithDepth in
+            return localizationProcessor.calculateDelta(
+                point: pointWithDepth.point, depth: pointWithDepth.depth,
+                imageSize: captureImageDataConcrete.originalSize,
+                cameraTransform: captureImageDataConcrete.cameraTransform,
+                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
+            )
+        }
         let locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateLocation(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
@@ -249,8 +301,11 @@ extension AttributeEstimationPipeline {
             )
         }
         let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
-        return LocationRequestResult(coordinates: coordinates, lidarDepth: lidarDepth)
+        return LocationRequestResult(
+            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
+        )
     }
 }
 

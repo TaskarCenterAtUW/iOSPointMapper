@@ -22,6 +22,8 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
      Experimental attributes
      */
     case lidarDepth
+    case latitudeDelta
+    case longitudeDelta
     
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
@@ -83,6 +85,18 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
                 valueType: .length(Measurement(value: 0, unit: .meters)),
                 osmTagKey: APIConstants.TagKeys.lidarDepthKey
             )
+        case .latitudeDelta:
+            return Metadata(
+                id: 60, name: "Latitude Delta", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: APIConstants.TagKeys.latitudeDeltaKey
+            )
+        case .longitudeDelta:
+            return Metadata(
+                id: 70, name: "Longitude Delta", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: APIConstants.TagKeys.longitudeDeltaKey
+            )
         }
     }
     
@@ -132,6 +146,10 @@ extension AccessibilityFeatureAttribute {
             return true
         case (.lidarDepth, .length):
             return true
+        case (.latitudeDelta, .length):
+            return true
+        case (.longitudeDelta, .length):
+            return true
         default:
             return false
         }
@@ -176,6 +194,10 @@ extension AccessibilityFeatureAttribute {
             return nil // Surface Integrity does not have a double representation
         case .lidarDepth:
             return .length(Measurement(value: value, unit: .meters))
+        case .latitudeDelta:
+            return .length(Measurement(value: value, unit: .meters))
+        case .longitudeDelta:
+            return .length(Measurement(value: value, unit: .meters))
         }
     }
     
@@ -202,6 +224,10 @@ extension AccessibilityFeatureAttribute {
         case (.surfaceIntegrity, .flag(let flag)):
             return flag ? "yes" : "no"
         case (.lidarDepth, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.latitudeDelta, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.longitudeDelta, .length(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         default:
             return nil
