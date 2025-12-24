@@ -49,7 +49,7 @@ enum WorkspaceSelectionViewConstants {
     }
     
     enum Identifiers {
-        static let workspaceInfoTipLearnMoreActionId: String = "learn-more"
+        static let workspaceInfoTipLearnMoreActionId: String = "workspaces-learn-more"
     }
 }
 
@@ -292,7 +292,7 @@ struct WorkspaceSelectionLearnMoreSheetView: View {
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetTitle)
                 .font(.headline)
             Text(WorkspaceSelectionViewConstants.Texts.workspaceSelectionLearnMoreSheetMessage)
-            .foregroundStyle(.secondary)
+                .foregroundStyle(.secondary)
             Button("Dismiss") {
                 dismiss()
             }

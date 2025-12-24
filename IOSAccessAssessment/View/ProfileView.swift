@@ -25,6 +25,14 @@ enum ProfileViewConstants {
         static let advancedSettingsTitle = "Advanced Settings"
         static let enhancedAnalysisLabel = "Enhanced Analysis"
         static let enhancedAnalysisDescription = "Enable enhanced analysis features for better localization and attribute estimations."
+        /// Enhanced Analysis Info Tip
+        static let enhancedAnalysisInfoTipTitle = "Enhanced Analysis"
+        static let enhancedAnalysisInfoTipMessage = """
+            Enhanced analysis uses advanced algorithms to improve the accuracy of localization and attribute estimations for accessibility features.
+            
+            Enabling this feature may increase processing time and battery usage.
+            """
+        static let enhancedAnalysisInfoTipLearnButtonTitle = "Learn More"
         
         /// Log out
         static let logoutButtonText = "Log out"
@@ -35,10 +43,37 @@ enum ProfileViewConstants {
     
     enum Images {
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
+        
+        static let infoIcon: String = "info.circle"
     }
     
     enum Constraints {
         static let profileIconSize: CGFloat = 20
+    }
+    
+    enum Identifiers {
+        static let enhancedAnalysisInfoTipLearnMoreActionId: String = "enhanced-analysis-learn-more"
+    }
+}
+
+struct EnhancedAnalysisInfoTip: Tip {
+    var title: Text {
+        Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipTitle)
+    }
+    var message: Text? {
+        Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: ProfileViewConstants.Images.infoIcon)
+            .resizable()
+//            .frame(width: 30, height: 30)
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId,
+            title: ProfileViewConstants.Texts.enhancedAnalysisInfoTipLearnButtonTitle
+        )
     }
 }
 
@@ -52,81 +87,123 @@ struct ProfileView: View {
     
     var workspaceInfoTip = WorkspaceInfoTip()
     @State private var showWorkspaceLearnMoreSheet = false
+    var enhancedAnalysisInfoTip = EnhancedAnalysisInfoTip()
+    @State private var showEnhancedAnalysisLearnMoreSheet = false
     
     var body: some View {
-        VStack {
-            Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
-                .padding(.top, 20)
-                .padding(.bottom, 40)
-            
-            Divider()
-            
+        ScrollView(.vertical) {
             VStack {
-                HStack {
-                    Text(ProfileViewConstants.Texts.workspaceSettingsTitle)
-                        .font(.headline)
-                    Spacer()
-                }
-                HStack {
+                Text("\(ProfileViewConstants.Texts.usernameLabel)\(username)")
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
+                
+                Divider()
+                
+                VStack {
                     HStack {
-                        Text(ProfileViewConstants.Texts.switchWorkspaceLabel)
-                            .font(.subheadline)
-                        Button(action: {
-                            showWorkspaceLearnMoreSheet = true
-                        }) {
-                            Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                        }
+                        Text(ProfileViewConstants.Texts.workspaceSettingsTitle)
+                            .font(.headline)
                         Spacer()
                     }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        workspaceViewModel.clearWorkspaceSelection()
-                        self.dismiss()
-                    }) {
-                        Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
+                    HStack {
+                        HStack {
+                            Text(ProfileViewConstants.Texts.switchWorkspaceLabel)
+                                .font(.subheadline)
+                            Button(action: {
+                                showWorkspaceLearnMoreSheet = true
+                            }) {
+                                Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            workspaceViewModel.clearWorkspaceSelection()
+                            self.dismiss()
+                        }) {
+                            Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
+                                .foregroundStyle(.white)
+                                .bold()
+                                .padding()
+                        }
+                        .background(Color.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                    .padding(.vertical, 20)
+                    TipView(workspaceInfoTip, arrowEdge: .top) { action in
+                        if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
+                            showWorkspaceLearnMoreSheet = true
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                VStack {
+                    HStack {
+                        Text(ProfileViewConstants.Texts.advancedSettingsTitle)
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        HStack {
+                            Text(ProfileViewConstants.Texts.enhancedAnalysisLabel)
+                                .font(.subheadline)
+                            Button(action: {
+                                showEnhancedAnalysisLearnMoreSheet = true
+                            }) {
+                                Image(systemName: ProfileViewConstants.Images.infoIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        
+                        Toggle(isOn: $userState.isEnhancedAnalysisEnabled) {
+                            Text("")
+                        }
+                        .tint(.blue)
+                    }
+                    .padding(.vertical, 20)
+                    TipView(enhancedAnalysisInfoTip, arrowEdge: .top) { action in
+                        if action.id == ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId {
+                            showEnhancedAnalysisLearnMoreSheet = true
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                Button(action: {
+                    showLogoutConfirmation = true
+                }) {
+                    HStack {
+                        Text(ProfileViewConstants.Texts.logoutButtonText)
                             .foregroundStyle(.white)
                             .bold()
-                            .padding()
+                        Image(systemName: ProfileViewConstants.Images.logoutIcon)
+                            .resizable()
+                            .frame(
+                                width: ProfileViewConstants.Constraints.profileIconSize,
+                                height: ProfileViewConstants.Constraints.profileIconSize
+                            )
+                            .foregroundStyle(.white)
+                            .bold()
                     }
-                    .background(Color.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding()
                 }
-                .padding(.vertical, 20)
-                TipView(workspaceInfoTip, arrowEdge: .top) { action in
-                    if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
-                        showWorkspaceLearnMoreSheet = true
-                    }
-                }
+                .background(Color.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                
+                Spacer()
             }
-            
-            Divider()
-            
-            Button(action: {
-                showLogoutConfirmation = true
-            }) {
-                HStack {
-                    Text(ProfileViewConstants.Texts.logoutButtonText)
-                        .foregroundStyle(.white)
-                        .bold()
-                    Image(systemName: ProfileViewConstants.Images.logoutIcon)
-                        .resizable()
-                        .frame(
-                            width: ProfileViewConstants.Constraints.profileIconSize,
-                            height: ProfileViewConstants.Constraints.profileIconSize
-                        )
-                        .foregroundStyle(.white)
-                        .bold()
-                }
-                .padding()
-            }
-            .background(Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            
-            Spacer()
+            .padding(.horizontal, 10)
         }
         .navigationBarTitle(ProfileViewConstants.Texts.profileTitle, displayMode: .inline)
         .onAppear {
@@ -146,5 +223,32 @@ struct ProfileView: View {
             WorkspaceSelectionLearnMoreSheetView()
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showEnhancedAnalysisLearnMoreSheet) {
+            EnhancedAnalysisLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
+        }
+    }
+}
+
+struct EnhancedAnalysisLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+//            Image(systemName: "number")
+//                .resizable()
+//                .scaledToFit()
+//                .frame(width: 160)
+//                .foregroundStyle(.accentColor)
+            Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipTitle)
+                .font(.headline)
+            Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipMessage)
+                .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
     }
 }
