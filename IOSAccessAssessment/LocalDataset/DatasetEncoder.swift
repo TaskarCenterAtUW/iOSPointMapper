@@ -168,6 +168,10 @@ class DatasetEncoder {
         self.capturedFrameIds.insert(frameNumber)
     }
     
+    public func addFeatures(features: [any AccessibilityFeatureProtocol], frameNumber: UUID, timestamp: TimeInterval) throws {
+        try self.accessibilityFeatureEncoder.update(features: features, frameNumber: frameNumber, timestamp: timestamp)
+    }
+    
     func save() throws {
         try self.cameraTransformEncoder.done()
         try self.locationEncoder.done()

@@ -577,7 +577,7 @@ struct AnnotationView: View {
     private func confirmAnnotation() {
         Task {
             do {
-                let apiTransmissionResults = try await uploadAnnotations()
+                let apiTransmissionResults = try await uploadFeatures()
                 if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
                     throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
                 }
@@ -609,7 +609,7 @@ struct AnnotationView: View {
         try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
     }
     
-    private func uploadAnnotations() async throws -> APITransmissionResults? {
+    private func uploadFeatures() async throws -> APITransmissionResults? {
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
             throw AnnotationViewError.invalidCaptureDataRecord
         }
@@ -648,8 +648,28 @@ struct AnnotationView: View {
         }
         sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
+        
+        var featuresToAddToDataset: [any AccessibilityFeatureProtocol] = featuresToUpload
+        featuresToAddToDataset.append(contentsOf: mappedAccessibilityFeatures)
+        addFeaturesToCurrentDataset(captureImageData: currentCaptureDataRecord, features: featuresToAddToDataset)
+        
         sharedAppData.isUploadReady = true
         return apiTransmissionResults
+    }
+    
+    private func addFeaturesToCurrentDataset(
+        captureImageData: any CaptureImageDataProtocol,
+        features: [any AccessibilityFeatureProtocol]
+    ) {
+        Task {
+            do {
+                try sharedAppData.currentDatasetEncoder?.addFeatures(
+                    features: features, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
+                )
+            } catch {
+                print("Error adding feature data to dataset encoder: \(error)")
+            }
+        }
     }
 }
 

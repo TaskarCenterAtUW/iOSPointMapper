@@ -41,6 +41,10 @@ final class AccessibilityFeatureFileStore {
     func update(features: [any AccessibilityFeatureProtocol]) throws {
         features.forEach { feature in
             guard let index = self.state.accessibilityFeatures.firstIndex(where: { $0.id == feature.id }) else {
+                if let editableFeature = feature as? EditableAccessibilityFeature {
+                    let featureSnapshot = AccessibilityFeatureSnapshot(from: editableFeature)
+                    self.state.accessibilityFeatures.append(featureSnapshot)
+                }
                 return
             }
             var featureSnapshot = self.state.accessibilityFeatures[index]
