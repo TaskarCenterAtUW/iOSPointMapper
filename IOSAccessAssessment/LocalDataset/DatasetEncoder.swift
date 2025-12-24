@@ -27,6 +27,7 @@ class DatasetEncoder {
     public let depthFilePath: URL // Relative to app document directory.
     public let segmentationFilePath: URL // Relative to app document directory.
     public let confidenceFilePath: URL // Relative to app document directory.
+    public let cameraIntrinsicsPath: URL
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
@@ -37,6 +38,7 @@ class DatasetEncoder {
     private let depthEncoder: DepthEncoder
     private let segmentationEncoder: SegmentationEncoder
     private let confidenceEncoder: ConfidenceEncoder
+    private let cameraIntrinsicsEncoder: CameraIntrinsicsEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
@@ -56,6 +58,7 @@ class DatasetEncoder {
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
         self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
+        self.cameraIntrinsicsPath = datasetDirectory.appendingPathComponent("camera_intrinsics.csv", isDirectory: false)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
@@ -66,6 +69,7 @@ class DatasetEncoder {
         self.depthEncoder = try DepthEncoder(outDirectory: self.depthFilePath)
         self.segmentationEncoder = try SegmentationEncoder(outDirectory: self.segmentationFilePath)
         self.confidenceEncoder = try ConfidenceEncoder(outDirectory: self.confidenceFilePath)
+        self.cameraIntrinsicsEncoder = try CameraIntrinsicsEncoder(url: self.cameraIntrinsicsPath)
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
@@ -136,8 +140,9 @@ class DatasetEncoder {
         if let confidenceImage = confidenceImage {
             try self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
         }
-        self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
-        self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
+        try self.cameraIntrinsicsEncoder.add(intrinsics: cameraIntrinsics, timestamp: timestamp, frameNumber: frameNumber)
+        try self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
+//        self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
         
         if let location = location {
             let latitude = location.latitude
@@ -146,37 +151,34 @@ class DatasetEncoder {
     //        let trueHeading = heading?.trueHeading ?? 0.0
             let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
     //        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
-            self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+            try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
     //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         }
         
         if let otherDetailsData = otherDetails {
-            self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
+            try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
         
         /// TODO: Add error handling for each encoder
-        
-        /// Add a capture point to the TDEI workspaces
-//        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
     }
     
-    private func writeIntrinsics(cameraIntrinsics: simd_float3x3) {
-        let rows = cameraIntrinsics.transpose.columns
-        var csv: [String] = []
-        for row in [rows.0, rows.1, rows.2] {
-            let csvLine = "\(row.x), \(row.y), \(row.z)"
-            csv.append(csvLine)
-        }
-        let contents = csv.joined(separator: "\n")
-        do {
-            try contents.write(to: self.cameraMatrixPath, atomically: true, encoding: String.Encoding.utf8)
-        } catch let error {
-            print("Could not write camera matrix. \(error.localizedDescription)")
-        }
-    }
+//    private func writeIntrinsics(cameraIntrinsics: simd_float3x3) {
+//        let rows = cameraIntrinsics.transpose.columns
+//        var csv: [String] = []
+//        for row in [rows.0, rows.1, rows.2] {
+//            let csvLine = "\(row.x), \(row.y), \(row.z)"
+//            csv.append(csvLine)
+//        }
+//        let contents = csv.joined(separator: "\n")
+//        do {
+//            try contents.write(to: self.cameraMatrixPath, atomically: true, encoding: String.Encoding.utf8)
+//        } catch let error {
+//            print("Could not write camera matrix. \(error.localizedDescription)")
+//        }
+//    }
     
     func save() throws {
         try self.cameraTransformEncoder.done()

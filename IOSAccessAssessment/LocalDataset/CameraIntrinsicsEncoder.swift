@@ -8,12 +8,15 @@
 import Foundation
 
 enum CameraIntrinsicsEncoderError: Error, LocalizedError {
-    case unableToCreateFile
+    case fileCreationFailed
+    case dataWriteFailed
     
     var errorDescription: String? {
         switch self {
-        case .unableToCreateFile:
+        case .fileCreationFailed:
             return "Unable to create camera intrinsics file."
+        case .dataWriteFailed:
+            return "Failed to write data to camera intrinsics file."
         }
     }
 }
@@ -27,12 +30,12 @@ class CameraIntrinsicsEncoder {
         try "".write(to: self.path, atomically: true, encoding: .utf8)
         self.fileHandle = try FileHandle(forWritingTo: self.path)
         guard let header = "timestamp, frame, fx, sx, cx, sy, fy, cy, i20, i21, i22\n".data(using: .utf8) else {
-            throw CameraIntrinsicsEncoderError.unableToCreateFile
+            throw CameraIntrinsicsEncoderError.fileCreationFailed
         }
-        self.fileHandle.write(header)
+        try self.fileHandle.write(contentsOf: header)
     }
     
-    func add(intrinsics: simd_float3x3, timestamp: TimeInterval, frameNumber: UUID) {
+    func add(intrinsics: simd_float3x3, timestamp: TimeInterval, frameNumber: UUID) throws {
         let fx = intrinsics[0,0]
         let sx = intrinsics[0,1]
         let cx = intrinsics[0,2]
@@ -45,7 +48,10 @@ class CameraIntrinsicsEncoder {
         
         let frameNumber = String(frameNumber.uuidString)
         let line = "\(timestamp), \(frameNumber), \(fx), \(sx), \(cx), \(sy), \(fy), \(cy), \(i20), \(i21), \(i22)\n"
-        self.fileHandle.write(line.data(using: .utf8)!)
+        guard let lineData = line.data(using: .utf8) else {
+            throw CameraIntrinsicsEncoderError.dataWriteFailed
+        }
+        try self.fileHandle.write(contentsOf: lineData)
     }
     
     func done() throws {

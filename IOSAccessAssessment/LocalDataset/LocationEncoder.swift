@@ -18,11 +18,18 @@ struct LocationData {
 //    let floorLevel: Int
 }
 
-struct HeadingData {
-    let timestamp: TimeInterval
-    let magneticHeading: Double
-    let trueHeading: Double
-//    let headingAccuracy: Double
+enum LocationEncoderError: Error, LocalizedError {
+    case fileCreationFailed
+    case dataWriteFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .fileCreationFailed:
+            return "Unable to create location data file."
+        case .dataWriteFailed:
+            return "Failed to write location data to file."
+        }
+    }
 }
 
 class LocationEncoder {
@@ -34,20 +41,46 @@ class LocationEncoder {
         FileManager.default.createFile(atPath: self.path.absoluteString,  contents:Data("".utf8), attributes: nil)
         try "".write(to: self.path, atomically: true, encoding: .utf8)
         self.fileHandle = try FileHandle(forWritingTo: self.path)
-        let heading: String = "timestamp, frame, latitude, longitude\n"
+        guard let header = "timestamp, frame, latitude, longitude\n".data(using: .utf8) else {
+            throw LocationEncoderError.fileCreationFailed
+        }
 //            , altitude, horizontal_accuracy, vertical_accuracy, speed, course, floor_level\n"
-        self.fileHandle.write(heading.data(using: .utf8)!)
+        try self.fileHandle.write(contentsOf: header)
     }
 
-    func add(locationData: LocationData, frameNumber: UUID) {
+    func add(locationData: LocationData, frameNumber: UUID) throws {
         let frameNumber = String(frameNumber.uuidString)
         let line = "\(locationData.timestamp), \(frameNumber), \(locationData.latitude), \(locationData.longitude)\n"
 //        , \(locationData.altitude), \(locationData.horizontalAccuracy), \(locationData.verticalAccuracy), \(locationData.speed), \(locationData.course), \(locationData.floorLevel)\n"
-        self.fileHandle.write(line.data(using: .utf8)!)
+        guard let lineData = line.data(using: .utf8) else {
+            throw LocationEncoderError.dataWriteFailed
+        }
+        try self.fileHandle.write(contentsOf: lineData)
     }
 
     func done() throws {
         try self.fileHandle.close()
+    }
+}
+
+struct HeadingData {
+    let timestamp: TimeInterval
+    let magneticHeading: Double
+    let trueHeading: Double
+//    let headingAccuracy: Double
+}
+
+enum HeadingEncoderError: Error, LocalizedError {
+    case fileCreationFailed
+    case dataWriteFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .fileCreationFailed:
+            return "Unable to create heading data file."
+        case .dataWriteFailed:
+            return "Failed to write heading data to file."
+        }
     }
 }
 
@@ -60,16 +93,21 @@ class HeadingEncoder {
         FileManager.default.createFile(atPath: self.path.absoluteString,  contents:Data("".utf8), attributes: nil)
         try "".write(to: self.path, atomically: true, encoding: .utf8)
         self.fileHandle = try FileHandle(forWritingTo: self.path)
-        let heading: String = "timestamp, frame, magnetic_heading, true_heading\n"
+        guard let header = "timestamp, frame, magnetic_heading, true_heading\n".data(using: .utf8) else {
+            throw HeadingEncoderError.fileCreationFailed
+        }
 //            , heading_accuracy\n"
-        self.fileHandle.write(heading.data(using: .utf8)!)
+        try self.fileHandle.write(contentsOf: header)
     }
 
-    func add(headingData: HeadingData, frameNumber: UUID) {
+    func add(headingData: HeadingData, frameNumber: UUID) throws {
         let frameNumber = String(frameNumber.uuidString)
         let line = "\(headingData.timestamp), \(frameNumber) \(headingData.magneticHeading), \(headingData.trueHeading)\n"
 //        , \(headingData.headingAccuracy)\n"
-        self.fileHandle.write(line.data(using: .utf8)!)
+        guard let lineData = line.data(using: .utf8) else {
+            throw HeadingEncoderError.dataWriteFailed
+        }
+        try self.fileHandle.write(contentsOf: lineData)
     }
 
     func done() throws {
