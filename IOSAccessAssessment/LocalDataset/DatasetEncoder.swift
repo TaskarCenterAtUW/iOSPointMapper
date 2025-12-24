@@ -23,23 +23,27 @@ class DatasetEncoder {
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
     
-    public let rgbFilePath: URL // Relative to app document directory.
-    public let depthFilePath: URL // Relative to app document directory.
-    public let segmentationFilePath: URL // Relative to app document directory.
-    public let confidenceFilePath: URL // Relative to app document directory.
+    public let rgbFilePath: URL /// Relative to app document directory.
+    public let depthFilePath: URL /// Relative to app document directory.
+    public let segmentationFilePath: URL /// Relative to app document directory.
+    public let confidenceFilePath: URL /// Relative to app document directory.
+    public let cameraIntrinsicsPath: URL
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
 //    public let headingPath: URL
+    public let accessibilityFeaturePath: URL
     public let otherDetailsPath: URL
     
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
     private let segmentationEncoder: SegmentationEncoder
     private let confidenceEncoder: ConfidenceEncoder
+    private let cameraIntrinsicsEncoder: CameraIntrinsicsEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
+    private let accessibilityFeatureEncoder: AccessibilityFeatureEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
     
     public var capturedFrameIds: Set<UUID> = []
@@ -47,28 +51,32 @@ class DatasetEncoder {
     init(workspaceId: String, changesetId: String) throws {
         self.workspaceId = workspaceId
         
-        // Create workspace Directory if it doesn't exist
+        /// Create workspace Directory if it doesn't exist
         self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId)
-        // if workspace directory exists, create dataset directory inside it
+        /// if workspace directory exists, create dataset directory inside it
         datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.segmentationFilePath = datasetDirectory.appendingPathComponent("segmentation", isDirectory: true)
         self.confidenceFilePath = datasetDirectory.appendingPathComponent("confidence", isDirectory: true)
+        self.cameraIntrinsicsPath = datasetDirectory.appendingPathComponent("camera_intrinsics.csv", isDirectory: false)
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
+        self.accessibilityFeaturePath = datasetDirectory.appendingPathComponent("features", isDirectory: true)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         
         self.rgbEncoder = try RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = try DepthEncoder(outDirectory: self.depthFilePath)
         self.segmentationEncoder = try SegmentationEncoder(outDirectory: self.segmentationFilePath)
         self.confidenceEncoder = try ConfidenceEncoder(outDirectory: self.confidenceFilePath)
+        self.cameraIntrinsicsEncoder = try CameraIntrinsicsEncoder(url: self.cameraIntrinsicsPath)
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
+        self.accessibilityFeatureEncoder = try AccessibilityFeatureEncoder(outDirectory: self.accessibilityFeaturePath)
         self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
     }
     
@@ -79,7 +87,7 @@ class DatasetEncoder {
         }
         let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: relativeTo)
         if FileManager.default.fileExists(atPath: directory.path) {
-            // Return existing directory if it already exists
+            /// Return existing directory if it already exists
             return directory
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
@@ -136,8 +144,8 @@ class DatasetEncoder {
         if let confidenceImage = confidenceImage {
             try self.confidenceEncoder.save(ciImage: confidenceImage, frameNumber: frameNumber)
         }
-        self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
-        self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
+        try self.cameraIntrinsicsEncoder.add(intrinsics: cameraIntrinsics, timestamp: timestamp, frameNumber: frameNumber)
+        try self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
         
         if let location = location {
             let latitude = location.latitude
@@ -146,64 +154,28 @@ class DatasetEncoder {
     //        let trueHeading = heading?.trueHeading ?? 0.0
             let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
     //        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
-            self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+            try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
     //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         }
-        
         if let otherDetailsData = otherDetails {
-            self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
+            try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
         
         /// TODO: Add error handling for each encoder
-        
-        /// Add a capture point to the TDEI workspaces
-//        uploadCapturePoint(location: (latitude: latitude, longitude: longitude), frameId: frameId)
         
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
     }
     
-    private func writeIntrinsics(cameraIntrinsics: simd_float3x3) {
-        let rows = cameraIntrinsics.transpose.columns
-        var csv: [String] = []
-        for row in [rows.0, rows.1, rows.2] {
-            let csvLine = "\(row.x), \(row.y), \(row.z)"
-            csv.append(csvLine)
-        }
-        let contents = csv.joined(separator: "\n")
-        do {
-            try contents.write(to: self.cameraMatrixPath, atomically: true, encoding: String.Encoding.utf8)
-        } catch let error {
-            print("Could not write camera matrix. \(error.localizedDescription)")
-        }
+    public func addFeatures(features: [any AccessibilityFeatureProtocol], frameNumber: UUID, timestamp: TimeInterval) throws {
+        try self.accessibilityFeatureEncoder.update(features: features, frameNumber: frameNumber, timestamp: timestamp)
     }
     
     func save() throws {
+        try self.cameraIntrinsicsEncoder.done()
         try self.cameraTransformEncoder.done()
         try self.locationEncoder.done()
 //        self.headingEncoder.done()
+        try self.accessibilityFeatureEncoder.done()
     }
-    
-//    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, frameId: UUID) {
-//        guard let nodeLatitude = location?.latitude,
-//              let nodeLongitude = location?.longitude
-//        else { return }
-//        
-//        var tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
-//        tags[APIConstants.TagKeys.captureIdKey] = frameId.uuidString
-//        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
-//        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
-//        
-//        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
-//        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
-//        
-//        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
-//            switch result {
-//            case .success(_):
-//                print("Changes uploaded successfully.")
-//            case .failure(let error):
-//                print("Failed to upload changes: \(error.localizedDescription)")
-//            }
-//        }
-//    }
 }

@@ -173,26 +173,12 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
-        let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
-            detectedFeature: accessibilityFeature, radius: 3
-        )
-        let featureCentroid = accessibilityFeature.contourDetails.centroid
-        let locationDelta = localizationProcessor.calculateDelta(
-            point: featureCentroid, depth: featureDepthValue,
-            imageSize: captureImageDataConcrete.originalSize,
-            cameraTransform: captureImageDataConcrete.cameraTransform,
-            cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
-        )
-        let locationCoordinate = localizationProcessor.calculateLocation(
-            point: featureCentroid, depth: featureDepthValue,
-            imageSize: captureImageDataConcrete.originalSize,
-            cameraTransform: captureImageDataConcrete.cameraTransform,
-            cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
-            deviceLocation: deviceLocation
-        )
-        let coordinates: [[CLLocationCoordinate2D]] = [[locationCoordinate]]
-        return LocationRequestResult(
-            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: featureDepthValue
+        return try getLocationFromCentroid(
+            depthMapProcessor: depthMapProcessor,
+            localizationProcessor: localizationProcessor,
+            captureImageData: captureImageDataConcrete,
+            deviceLocation: deviceLocation,
+            accessibilityFeature: accessibilityFeature
         )
     }
     
@@ -210,6 +196,95 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
+        do {
+            return try getLocationFromTrapezoid(
+                depthMapProcessor: depthMapProcessor,
+                localizationProcessor: localizationProcessor,
+                captureImageData: captureImageDataConcrete,
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        } catch {
+            return try getLocationFromCentroid(
+                depthMapProcessor: depthMapProcessor,
+                localizationProcessor: localizationProcessor,
+                captureImageData: captureImageDataConcrete,
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        }
+    }
+    
+    private func calculateLocationForPolygon(
+        deviceLocation: CLLocationCoordinate2D,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> LocationRequestResult {
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let captureImageDataConcrete = CaptureImageData(captureImageData)
+        do {
+            return try getLocationFromPolygon(
+                depthMapProcessor: depthMapProcessor,
+                localizationProcessor: localizationProcessor,
+                captureImageData: captureImageDataConcrete,
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        } catch {
+            return try getLocationFromCentroid(
+                depthMapProcessor: depthMapProcessor,
+                localizationProcessor: localizationProcessor,
+                captureImageData: captureImageDataConcrete,
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        }
+    }
+    
+    private func getLocationFromCentroid(
+        depthMapProcessor: DepthMapProcessor,
+        localizationProcessor: LocalizationProcessor,
+        captureImageData: CaptureImageData,
+        deviceLocation: CLLocationCoordinate2D,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> LocationRequestResult {
+        let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
+            detectedFeature: accessibilityFeature, radius: 3
+        )
+        let featureCentroid = accessibilityFeature.contourDetails.centroid
+        let locationDelta = localizationProcessor.calculateDelta(
+            point: featureCentroid, depth: featureDepthValue,
+            imageSize: captureImageData.originalSize,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics
+        )
+        let locationCoordinate = localizationProcessor.calculateLocation(
+            point: featureCentroid, depth: featureDepthValue,
+            imageSize: captureImageData.originalSize,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            deviceLocation: deviceLocation
+        )
+        let coordinates: [[CLLocationCoordinate2D]] = [[locationCoordinate]]
+        return LocationRequestResult(
+            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: featureDepthValue
+        )
+    }
+    
+    private func getLocationFromTrapezoid(
+        depthMapProcessor: DepthMapProcessor,
+        localizationProcessor: LocalizationProcessor,
+        captureImageData: CaptureImageData,
+        deviceLocation: CLLocationCoordinate2D,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> LocationRequestResult {
         let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
         guard trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
@@ -231,17 +306,17 @@ extension AttributeEstimationPipeline {
         let locationDeltas: [SIMD2<Float>] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateDelta(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
-                imageSize: captureImageDataConcrete.originalSize,
-                cameraTransform: captureImageDataConcrete.cameraTransform,
-                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
+                imageSize: captureImageData.originalSize,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics
             )
         }
         let locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateLocation(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
-                imageSize: captureImageDataConcrete.originalSize,
-                cameraTransform: captureImageDataConcrete.cameraTransform,
-                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
+                imageSize: captureImageData.originalSize,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics,
                 deviceLocation: deviceLocation
             )
         }
@@ -253,20 +328,13 @@ extension AttributeEstimationPipeline {
         )
     }
     
-    private func calculateLocationForPolygon(
+    private func getLocationFromPolygon(
+        depthMapProcessor: DepthMapProcessor,
+        localizationProcessor: LocalizationProcessor,
+        captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
-        guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
-        }
-        guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
-        }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        let captureImageDataConcrete = CaptureImageData(captureImageData)
         let polygonPoints = accessibilityFeature.contourDetails.normalizedPoints
         let leftMostPoint = polygonPoints.min { $0.x < $1.x }
         let rightMostPoint = polygonPoints.max { $0.x < $1.x }
@@ -286,17 +354,17 @@ extension AttributeEstimationPipeline {
         let locationDeltas: [SIMD2<Float>] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateDelta(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
-                imageSize: captureImageDataConcrete.originalSize,
-                cameraTransform: captureImageDataConcrete.cameraTransform,
-                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics
+                imageSize: captureImageData.originalSize,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics
             )
         }
         let locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateLocation(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
-                imageSize: captureImageDataConcrete.originalSize,
-                cameraTransform: captureImageDataConcrete.cameraTransform,
-                cameraIntrinsics: captureImageDataConcrete.cameraIntrinsics,
+                imageSize: captureImageData.originalSize,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics,
                 deviceLocation: deviceLocation
             )
         }

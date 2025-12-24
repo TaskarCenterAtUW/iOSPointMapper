@@ -238,8 +238,8 @@ struct AnnotationView: View {
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
-    @State private var managerStatusViewModel = AnnotationViewStatusViewModel()
-    @State private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
+    @StateObject private var managerStatusViewModel = AnnotationViewStatusViewModel()
+    @StateObject private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
@@ -319,7 +319,8 @@ struct AnnotationView: View {
         }, message: {
             Text(managerStatusViewModel.errorMessage)
         })
-        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
+        .alert(AnnotationViewConstants.Texts.apiTransmissionStatusAlertTitleKey,
+               isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 apiTransmissionStatusViewModel.update(isFailed: false, errorMessage: "")
                 do {
@@ -576,7 +577,7 @@ struct AnnotationView: View {
     private func confirmAnnotation() {
         Task {
             do {
-                let apiTransmissionResults = try await uploadAnnotations()
+                let apiTransmissionResults = try await uploadFeatures()
                 if let apiTransmissionResults, apiTransmissionResults.failedFeatureUploads > 0 {
                     throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
                 }
@@ -608,7 +609,7 @@ struct AnnotationView: View {
         try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
     }
     
-    private func uploadAnnotations() async throws -> APITransmissionResults? {
+    private func uploadFeatures() async throws -> APITransmissionResults? {
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
             throw AnnotationViewError.invalidCaptureDataRecord
         }
@@ -643,12 +644,37 @@ struct AnnotationView: View {
             accessToken: accessToken
         )
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
-            throw AnnotationViewError.uploadFailed
+            throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
         }
         sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
+        
+        addFeaturesToCurrentDataset(
+            captureImageData: currentCaptureDataRecord,
+            featuresToUpload: featuresToUpload, mappedAccessibilityFeatures: mappedAccessibilityFeatures
+        )
+        
         sharedAppData.isUploadReady = true
         return apiTransmissionResults
+    }
+    
+    private func addFeaturesToCurrentDataset(
+        captureImageData: any CaptureImageDataProtocol,
+        featuresToUpload: [any AccessibilityFeatureProtocol],
+        mappedAccessibilityFeatures: [any AccessibilityFeatureProtocol]
+    ) {
+        Task {
+            do {
+                try sharedAppData.currentDatasetEncoder?.addFeatures(
+                    features: featuresToUpload, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
+                )
+                try sharedAppData.currentDatasetEncoder?.addFeatures(
+                    features: mappedAccessibilityFeatures, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
+                )
+            } catch {
+                print("Error adding feature data to dataset encoder: \(error)")
+            }
+        }
     }
 }
 

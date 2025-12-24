@@ -256,13 +256,15 @@ struct ARCameraView: View {
         captureImageData: any CaptureImageDataProtocol,
         location: CLLocationCoordinate2D?
     ) {
-        do {
-            try sharedAppData.currentDatasetEncoder?.addCaptureData(
-                captureImageData: captureImageData,
-                location: captureLocation
-            )
-        } catch {
-            print("Error adding capture data to dataset encoder: \(error)")
+        Task {
+            do {
+                try sharedAppData.currentDatasetEncoder?.addCaptureData(
+                    captureImageData: captureImageData,
+                    location: captureLocation
+                )
+            } catch {
+                print("Error adding capture data to dataset encoder: \(error)")
+            }
         }
     }
     
