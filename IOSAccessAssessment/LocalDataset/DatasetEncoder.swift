@@ -176,5 +176,6 @@ class DatasetEncoder {
         try self.cameraTransformEncoder.done()
         try self.locationEncoder.done()
 //        self.headingEncoder.done()
+        try self.accessibilityFeatureEncoder.done()
     }
 }

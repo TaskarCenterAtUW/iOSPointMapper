@@ -27,17 +27,20 @@ final class AccessibilityFeatureFile {
     private var snapshot: AccessibilityFeatureSnapshot
     
     init(url: URL, frameNumber: UUID, timestamp: TimeInterval, feature: EditableAccessibilityFeature) throws {
-        var featureSnapshot = AccessibilityFeatureSnapshot(from: feature)
-        featureSnapshot.update(frame: frameNumber, timestamp: timestamp)
-        
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        let data = try encoder.encode(featureSnapshot)
-        try data.write(to: url)
         self.url = url
-        self.snapshot = featureSnapshot
+        
+        if FileManager.default.fileExists(atPath: url.path) {
+            /// Load existing snapshot
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let featureSnapshot = try decoder.decode(AccessibilityFeatureSnapshot.self, from: data)
+            self.snapshot = featureSnapshot
+        } else {
+            let featureSnapshot = AccessibilityFeatureSnapshot(from: feature)
+            self.snapshot = featureSnapshot
+        }
+        try self.update(frameNumber: frameNumber, timestamp: timestamp, feature: feature)
     }
     
     func update(frameNumber: UUID, timestamp: TimeInterval, feature: any AccessibilityFeatureProtocol) throws {
@@ -122,5 +125,12 @@ class AccessibilityFeatureEncoder {
                 print("Unsupported feature type for creation: \(type(of: feature))")
             }
         }
+    }
+    
+    func done() throws {
+        for (_, featureFile) in fileStore {
+            try featureFile.flush()
+        }
+        self.fileStore.removeAll()
     }
 }
