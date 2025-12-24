@@ -32,6 +32,7 @@ class DatasetEncoder {
     public let cameraTransformPath: URL
     public let locationPath: URL
 //    public let headingPath: URL
+    public let accessibilityFeaturePath: URL
     public let otherDetailsPath: URL
     
     private let rgbEncoder: RGBEncoder
@@ -42,6 +43,7 @@ class DatasetEncoder {
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
 //    private let headingEncoder: HeadingEncoder
+    private let accessibilityFeatureEncoder: AccessibilityFeatureEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
     
     public var capturedFrameIds: Set<UUID> = []
@@ -63,6 +65,7 @@ class DatasetEncoder {
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
+        self.accessibilityFeaturePath = datasetDirectory.appendingPathComponent("features", isDirectory: true)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         
         self.rgbEncoder = try RGBEncoder(outDirectory: self.rgbFilePath)
@@ -73,6 +76,7 @@ class DatasetEncoder {
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
+        self.accessibilityFeatureEncoder = try AccessibilityFeatureEncoder(outDirectory: self.accessibilityFeaturePath)
         self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
     }
     
@@ -153,7 +157,7 @@ class DatasetEncoder {
             try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
     //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         }
-        
+        try self.accessibilityFeatureEncoder.save(frameNumber: frameNumber, timestamp: timestamp)
         if let otherDetailsData = otherDetails {
             try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
