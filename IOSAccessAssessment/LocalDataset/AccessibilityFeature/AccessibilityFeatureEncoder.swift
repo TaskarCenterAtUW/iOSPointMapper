@@ -21,42 +21,33 @@ enum AccessibilityFeatureEncoderError: Error, LocalizedError {
     }
 }
 
-final class AccessibilityFeatureFileStore {
+final class AccessibilityFeatureFile {
     private let url: URL
 
-    private var state: AccessibilityFeatureFile
+    private var snapshot: AccessibilityFeatureSnapshot
+    
+    init(url: URL, frameNumber: UUID, timestamp: TimeInterval, feature: EditableAccessibilityFeature) throws {
+        var featureSnapshot = AccessibilityFeatureSnapshot(from: feature)
+        featureSnapshot.update(frame: frameNumber, timestamp: timestamp)
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
-    init(url: URL) throws {
+        let data = try encoder.encode(featureSnapshot)
+        try data.write(to: url)
         self.url = url
-        let data = try Data(contentsOf: url)
-        self.state = try JSONDecoder().decode(AccessibilityFeatureFile.self, from: data)
+        self.snapshot = featureSnapshot
     }
-
-    func insert(features: [EditableAccessibilityFeature]) throws {
-        let featureSnapshots = features.map { AccessibilityFeatureSnapshot(from: $0) }
-        self.state.accessibilityFeatures.append(contentsOf: featureSnapshots)
-        try self.flush()
-    }
-
-    func update(features: [any AccessibilityFeatureProtocol]) throws {
-        features.forEach { feature in
-            guard let index = self.state.accessibilityFeatures.firstIndex(where: { $0.id == feature.id }) else {
-                if let editableFeature = feature as? EditableAccessibilityFeature {
-                    let featureSnapshot = AccessibilityFeatureSnapshot(from: editableFeature)
-                    self.state.accessibilityFeatures.append(featureSnapshot)
-                }
-                return
-            }
-            var featureSnapshot = self.state.accessibilityFeatures[index]
-            /// Check if feature is EditableAccessibilityFeature or MappedAccessibilityFeature
-            if let editableFeature = feature as? EditableAccessibilityFeature {
-                featureSnapshot.update(from: editableFeature)
-            } else if let mappedFeature = feature as? MappedAccessibilityFeature {
-                featureSnapshot.update(from: mappedFeature)
-            } else {
-                print("Unsupported feature type for update: \(type(of: feature))")
-            }
-            self.state.accessibilityFeatures[index] = featureSnapshot
+    
+    func update(frameNumber: UUID, timestamp: TimeInterval, feature: any AccessibilityFeatureProtocol) throws {
+        self.snapshot.update(frame: frameNumber, timestamp: timestamp)
+        if let editableFeature = feature as? EditableAccessibilityFeature {
+            self.snapshot.update(from: editableFeature)
+        } else if let mappedFeature = feature as? MappedAccessibilityFeature {
+            self.snapshot.update(from: mappedFeature)
+        } else {
+            print("Unsupported feature type for update: \(type(of: feature))")
         }
         try self.flush()
     }
@@ -66,7 +57,7 @@ final class AccessibilityFeatureFileStore {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
-        let data = try encoder.encode(state)
+        let data = try encoder.encode(snapshot)
 
         let tmpURL = url.appendingPathExtension("tmp")
         try data.write(to: tmpURL, options: [.atomic])
@@ -82,45 +73,54 @@ final class AccessibilityFeatureFileStore {
 
 class AccessibilityFeatureEncoder {
     private let baseDirectory: URL
-    private var fileStores: [UUID: AccessibilityFeatureFileStore] = [:]
+    private var fileStore: [UUID: AccessibilityFeatureFile] = [:]
     
     init(outDirectory: URL) throws {
         self.baseDirectory = outDirectory
         try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
     
-    func save(frameNumber: UUID, timestamp: TimeInterval) throws {
-        let frame = String(frameNumber.uuidString)
-        let accessibilityFeatureFile = AccessibilityFeatureFile(
-            frame: frame,
-            timestamp: timestamp,
-            accessibilityFeatures: []
-        )
-        
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        let data = try encoder.encode(accessibilityFeatureFile)
-        let path = self.baseDirectory.absoluteURL
-            .appendingPathComponent(frame, isDirectory: false)
-            .appendingPathExtension("json")
-        try data.write(to: path)
-        let fileStore = try AccessibilityFeatureFileStore(url: path)
-        self.fileStores[frameNumber] = fileStore
-    }
-    
     func insert(features: [EditableAccessibilityFeature], frameNumber: UUID, timestamp: TimeInterval) throws {
-        guard let fileStore = self.fileStores[frameNumber] else {
-            throw AccessibilityFeatureEncoderError.fileCreationFailed
+        try features.forEach { feature in
+            if let featureFile = self.fileStore[feature.id] {
+                /// Update existing file
+                try featureFile.update(frameNumber: frameNumber, timestamp: timestamp, feature: feature)
+            } else {
+                /// Create new file
+                let featureFileURL = self.baseDirectory
+                    .appendingPathComponent(feature.id.uuidString, isDirectory: false)
+                    .appendingPathExtension("json")
+                let newFeatureFile = try AccessibilityFeatureFile(
+                    url: featureFileURL,
+                    frameNumber: frameNumber,
+                    timestamp: timestamp,
+                    feature: feature
+                )
+                self.fileStore[feature.id] = newFeatureFile
+            }
         }
-        try fileStore.insert(features: features)
     }
     
     func update(features: [any AccessibilityFeatureProtocol], frameNumber: UUID, timestamp: TimeInterval) throws {
-        guard let fileStore = self.fileStores[frameNumber] else {
-            throw AccessibilityFeatureEncoderError.fileCreationFailed
+        try features.forEach { feature in
+            if let featureFile = self.fileStore[feature.id] {
+                /// Update existing file
+                try featureFile.update(frameNumber: frameNumber, timestamp: timestamp, feature: feature)
+            } else if let editableFeature = feature as? EditableAccessibilityFeature {
+                /// Create new file for editable feature
+                let featureFileURL = self.baseDirectory
+                    .appendingPathComponent(editableFeature.id.uuidString, isDirectory: false)
+                    .appendingPathExtension("json")
+                let newFeatureFile = try AccessibilityFeatureFile(
+                    url: featureFileURL,
+                    frameNumber: frameNumber,
+                    timestamp: timestamp,
+                    feature: editableFeature
+                )
+                self.fileStore[editableFeature.id] = newFeatureFile
+            } else {
+                print("Unsupported feature type for creation: \(type(of: feature))")
+            }
         }
-        try fileStore.update(features: features)
     }
 }

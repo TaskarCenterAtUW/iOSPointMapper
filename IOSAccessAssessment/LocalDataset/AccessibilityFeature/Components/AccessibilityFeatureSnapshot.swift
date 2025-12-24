@@ -9,6 +9,9 @@ import Foundation
 import CoreLocation
 
 struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
+    var frames: [UUID] = []
+    var timestamp: TimeInterval? /// last updated timestamp
+    
     let id: UUID
     
     let accessibilityFeatureClass: AccessibilityFeatureClassSnapshot
@@ -48,5 +51,10 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
         self.attributeValues = accessibilityFeature.attributeValues
         self.experimentalAttributeValues = accessibilityFeature.experimentalAttributeValues
         self.oswElement = accessibilityFeature.oswElement.id
+    }
+    
+    mutating func update(frame: UUID, timestamp: TimeInterval) {
+        self.frames.append(frame)
+        self.timestamp = timestamp
     }
 }

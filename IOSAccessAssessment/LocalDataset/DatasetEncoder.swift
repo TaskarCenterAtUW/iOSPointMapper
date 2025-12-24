@@ -157,7 +157,6 @@ class DatasetEncoder {
             try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
     //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         }
-        try self.accessibilityFeatureEncoder.save(frameNumber: frameNumber, timestamp: timestamp)
         if let otherDetailsData = otherDetails {
             try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
@@ -173,6 +172,7 @@ class DatasetEncoder {
     }
     
     func save() throws {
+        try self.cameraIntrinsicsEncoder.done()
         try self.cameraTransformEncoder.done()
         try self.locationEncoder.done()
 //        self.headingEncoder.done()
