@@ -238,8 +238,8 @@ struct AnnotationView: View {
     
     let apiTransmissionController: APITransmissionController = APITransmissionController()
     
-    @State private var managerStatusViewModel = AnnotationViewStatusViewModel()
-    @State private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
+    @StateObject private var managerStatusViewModel = AnnotationViewStatusViewModel()
+    @StateObject private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
@@ -319,7 +319,8 @@ struct AnnotationView: View {
         }, message: {
             Text(managerStatusViewModel.errorMessage)
         })
-        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
+        .alert(AnnotationViewConstants.Texts.apiTransmissionStatusAlertTitleKey,
+               isPresented: $apiTransmissionStatusViewModel.isFailed, actions: {
             Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 apiTransmissionStatusViewModel.update(isFailed: false, errorMessage: "")
                 do {
@@ -582,14 +583,20 @@ struct AnnotationView: View {
                 }
                 try moveToNextClass()
             } catch AnnotationViewError.classIndexOutofBounds {
-                managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
+                await MainActor.run {
+                    managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
+                }
             } catch AnnotationViewError.apiTransmissionFailed(let results) {
-                apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
+                await MainActor.run {
+                    apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
+                }
             } catch {
-                apiTransmissionStatusViewModel.update(
-                    isFailed: true,
-                    errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
-                )
+                await MainActor.run {
+                    apiTransmissionStatusViewModel.update(
+                        isFailed: true,
+                        errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
+                    )
+                }
             }
         }
     }
@@ -643,7 +650,7 @@ struct AnnotationView: View {
             accessToken: accessToken
         )
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
-            throw AnnotationViewError.uploadFailed
+            throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
         }
         sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
