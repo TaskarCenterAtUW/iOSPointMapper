@@ -649,9 +649,10 @@ struct AnnotationView: View {
         sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
         print("Mapping Data: \(sharedAppData.mappingData)")
         
-        var featuresToAddToDataset: [any AccessibilityFeatureProtocol] = featuresToUpload
-        featuresToAddToDataset.append(contentsOf: mappedAccessibilityFeatures)
-        addFeaturesToCurrentDataset(captureImageData: currentCaptureDataRecord, features: featuresToAddToDataset)
+        addFeaturesToCurrentDataset(
+            captureImageData: currentCaptureDataRecord,
+            featuresToUpload: featuresToUpload, mappedAccessibilityFeatures: mappedAccessibilityFeatures
+        )
         
         sharedAppData.isUploadReady = true
         return apiTransmissionResults
@@ -659,12 +660,16 @@ struct AnnotationView: View {
     
     private func addFeaturesToCurrentDataset(
         captureImageData: any CaptureImageDataProtocol,
-        features: [any AccessibilityFeatureProtocol]
+        featuresToUpload: [any AccessibilityFeatureProtocol],
+        mappedAccessibilityFeatures: [any AccessibilityFeatureProtocol]
     ) {
         Task {
             do {
                 try sharedAppData.currentDatasetEncoder?.addFeatures(
-                    features: features, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
+                    features: featuresToUpload, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
+                )
+                try sharedAppData.currentDatasetEncoder?.addFeatures(
+                    features: mappedAccessibilityFeatures, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
                 )
             } catch {
                 print("Error adding feature data to dataset encoder: \(error)")

@@ -53,7 +53,10 @@ final class AccessibilityFeatureFileStore {
                 featureSnapshot.update(from: editableFeature)
             } else if let mappedFeature = feature as? MappedAccessibilityFeature {
                 featureSnapshot.update(from: mappedFeature)
+            } else {
+                print("Unsupported feature type for update: \(type(of: feature))")
             }
+            self.state.accessibilityFeatures[index] = featureSnapshot
         }
         try self.flush()
     }
