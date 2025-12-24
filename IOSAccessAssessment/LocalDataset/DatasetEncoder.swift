@@ -183,27 +183,4 @@ class DatasetEncoder {
         try self.locationEncoder.done()
 //        self.headingEncoder.done()
     }
-    
-//    func uploadCapturePoint(location: (latitude: CLLocationDegrees, longitude: CLLocationDegrees)?, frameId: UUID) {
-//        guard let nodeLatitude = location?.latitude,
-//              let nodeLongitude = location?.longitude
-//        else { return }
-//        
-//        var tags: [String: String] = [APIConstants.TagKeys.amenityKey: APIConstants.OtherConstants.capturePointAmenity]
-//        tags[APIConstants.TagKeys.captureIdKey] = frameId.uuidString
-//        tags[APIConstants.TagKeys.captureLatitudeKey] = String(format: "%.7f", nodeLatitude)
-//        tags[APIConstants.TagKeys.captureLongitudeKey] = String(format: "%.7f", nodeLongitude)
-//        
-//        let nodeData = NodeData(latitude: nodeLatitude, longitude: nodeLongitude, tags: tags)
-//        let nodeDataOperations: [ChangesetDiffOperation] = [ChangesetDiffOperation.create(nodeData)]
-//        
-//        ChangesetService.shared.performUpload(workspaceId: workspaceId, operations: nodeDataOperations) { result in
-//            switch result {
-//            case .success(_):
-//                print("Changes uploaded successfully.")
-//            case .failure(let error):
-//                print("Failed to upload changes: \(error.localizedDescription)")
-//            }
-//        }
-//    }
 }

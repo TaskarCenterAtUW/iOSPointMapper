@@ -70,6 +70,7 @@
 		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
 		A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E392EED60F300B07B77 /* lodepng.cpp */; };
+		A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */; };
 		A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */; };
 		A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */; };
 		A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */; };
@@ -240,6 +241,7 @@
 		A37E3E392EED60F300B07B77 /* lodepng.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lodepng.cpp; sourceTree = "<group>"; };
 		A37E3E3A2EED60F300B07B77 /* PngEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngEncoder.h; sourceTree = "<group>"; };
 		A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngEncoder.mm; sourceTree = "<group>"; };
+		A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraIntrinsicsEncoder.swift; sourceTree = "<group>"; };
 		A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppContext.swift; sourceTree = "<group>"; };
 		A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationAnnotationPipeline.swift; sourceTree = "<group>"; };
 		A37E72132ED95C0900CFE4EF /* MeshHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshHelpers.swift; sourceTree = "<group>"; };
@@ -455,6 +457,7 @@
 				A37E3E352EED60C100B07B77 /* CHelpers */,
 				A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */,
 				A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */,
+				A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */,
 				A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */,
 				A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */,
 				A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */,
@@ -1163,6 +1166,7 @@
 				A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */,
 				A37E72162ED95CB400CFE4EF /* MeshGPUDefinitions.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
+				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsEncoder.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedFeature.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
@@ -1364,7 +1368,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1407,7 +1411,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";

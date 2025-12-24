@@ -6,16 +6,17 @@
 //
 
 import Foundation
-import Accelerate
-import ARKit
 
 enum CameraTransformEncoderError: Error, LocalizedError {
     case unableToCreateFile
+    case dataWriteFailed
     
     var errorDescription: String? {
         switch self {
         case .unableToCreateFile:
             return "Unable to create camera transform file."
+        case .dataWriteFailed:
+            return "Failed to write data to camera transform file."
         }
     }
 }
