@@ -10,13 +10,24 @@ import TipKit
 
 enum ProfileViewConstants {
     enum Texts {
+        /// User Details
         static let profileTitle: String = "User Settings"
         static let usernameLabel: String = "Username: "
-        static let switchWorkspaceButtonText = "Switch Workspace"
-        static let logoutButtonText = "Log out"
-        
         static let usernamePlaceholder = "User"
         
+        /// Workspace Settings
+        static let workspaceSettingsTitle = "Workspace Settings"
+        static let switchWorkspaceLabel = "Switch Workspace"
+        static let switchWorkspaceDescription = "Switch to a different workspace to access its resources."
+        static let switchWorkspaceButtonText = "Switch"
+        
+        /// Advanced Settings
+        static let advancedSettingsTitle = "Advanced Settings"
+        static let enhancedAnalysisLabel = "Enhanced Analysis"
+        static let enhancedAnalysisDescription = "Enable enhanced analysis features for better localization and attribute estimations."
+        
+        /// Log out
+        static let logoutButtonText = "Log out"
         static let confirmationDialogTitle = "Are you sure you want to log out?"
         static let confirmationDialogConfirmText = "Log out"
         static let confirmationDialogCancelText = "Cancel"
@@ -48,36 +59,51 @@ struct ProfileView: View {
                 .padding(.top, 20)
                 .padding(.bottom, 40)
             
-            HStack {
-                Spacer()
-                Button(action: {
-                    showWorkspaceLearnMoreSheet = true
-                }) {
-                    Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
-                        .resizable()
-                        .frame(width: 20, height: 20)
+            Divider()
+            
+            VStack {
+                HStack {
+                    Text(ProfileViewConstants.Texts.workspaceSettingsTitle)
+                        .font(.headline)
+                    Spacer()
                 }
-                .padding(.trailing, 5)
+                HStack {
+                    HStack {
+                        Text(ProfileViewConstants.Texts.switchWorkspaceLabel)
+                            .font(.subheadline)
+                        Button(action: {
+                            showWorkspaceLearnMoreSheet = true
+                        }) {
+                            Image(systemName: WorkspaceSelectionViewConstants.Images.infoIcon)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                        }
+                        Spacer()
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        workspaceViewModel.clearWorkspaceSelection()
+                        self.dismiss()
+                    }) {
+                        Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
+                            .foregroundStyle(.white)
+                            .bold()
+                            .padding()
+                    }
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+                .padding(.vertical, 20)
+                TipView(workspaceInfoTip, arrowEdge: .top) { action in
+                    if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
+                        showWorkspaceLearnMoreSheet = true
+                    }
+                }
             }
-            .overlay(
-                Button(action: {
-                    workspaceViewModel.clearWorkspaceSelection()
-                    self.dismiss()
-                }) {
-                    Text(ProfileViewConstants.Texts.switchWorkspaceButtonText)
-                        .foregroundStyle(.white)
-                        .bold()
-                        .padding()
-                }
-                .background(Color.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            )
-            .padding(.vertical, 20)
-            TipView(workspaceInfoTip, arrowEdge: .top) { action in
-                if action.id == WorkspaceSelectionViewConstants.Identifiers.workspaceInfoTipLearnMoreActionId {
-                    showWorkspaceLearnMoreSheet = true
-                }
-            }
+            
+            Divider()
             
             Button(action: {
                 showLogoutConfirmation = true

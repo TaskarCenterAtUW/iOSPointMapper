@@ -95,7 +95,7 @@ struct IOSAccessAssessmentApp: App {
     
     private func setupTips() throws {
         // Purge all TipKit-related data.
-//        try Tips.resetDatastore()
+        try Tips.resetDatastore()
         
         // Configure and load all tips in the app.
         try Tips.configure()
