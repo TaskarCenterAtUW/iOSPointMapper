@@ -583,20 +583,14 @@ struct AnnotationView: View {
                 }
                 try moveToNextClass()
             } catch AnnotationViewError.classIndexOutofBounds {
-                await MainActor.run {
-                    managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
-                }
+                managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
             } catch AnnotationViewError.apiTransmissionFailed(let results) {
-                await MainActor.run {
-                    apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
-                }
+                apiTransmissionStatusViewModel.update(apiTransmissionResults: results)
             } catch {
-                await MainActor.run {
-                    apiTransmissionStatusViewModel.update(
-                        isFailed: true,
-                        errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
-                    )
-                }
+                apiTransmissionStatusViewModel.update(
+                    isFailed: true,
+                    errorMessage: AnnotationViewConstants.Texts.apiTransmissionStatusAlertGenericMessageKey
+                )
             }
         }
     }

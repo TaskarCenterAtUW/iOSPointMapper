@@ -42,17 +42,20 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
     }
     
     struct Metadata: Sendable {
+        let name: String
         let description: String
         let parent: OSWElementClass?
         let geometry: OSWGeometry
         let identifyingFields: [IdentifyingField]
         
         init(
+            name: String,
             description: String,
             parent: OSWElementClass? = nil,
             geometry: OSWGeometry,
             identifyingFields: [IdentifyingField] = []
         ) {
+            self.name = name
             self.description = description
             self.parent = parent
             self.geometry = geometry
@@ -64,12 +67,14 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
         switch self {
         case .BareNode:
             return Metadata(
+                name: "Bare Node",
                 description: "A special case of an abstract Node.",
                 parent: nil,
                 geometry: .point
             )
         case .Footway:
             return Metadata(
+                name: "Footway",
                 description: "The centerline of a dedicated pedestrian path that does not fall into any other subcategories.",
                 parent: nil,
                 geometry: .linestring,
@@ -79,6 +84,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .Sidewalk:
             return Metadata(
+                name: "Sidewalk",
                 description: "The centerline of a sidewalk, a designated pedestrian path to the side of a street.",
                 parent: .Footway,
                 geometry: .linestring,
@@ -89,6 +95,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .Building:
             return Metadata(
+                name: "Building",
                 description: "This field is used to mark a given entity as a building",
                 parent: nil,
                 geometry: .polygon,
@@ -100,6 +107,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .Pole:
             return Metadata(
+                name: "Pole",
                 description: "Pole",
                 parent: nil,
                 geometry: .point,
@@ -109,6 +117,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
              )
         case .TrafficLight:
             return Metadata(
+                name: "Traffic Light",
                 description: "Traffic Light",
                 parent: nil,
                 geometry: .point,
@@ -119,6 +128,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .TrafficSign:
             return Metadata(
+                name: "Traffic Sign",
                 description: "Traffic Sign",
                 parent: nil,
                 geometry: .point,
@@ -128,6 +138,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .Vegetation:
             return Metadata(
+                name: "Vegetation",
                 description: "Vegetation",
                 parent: nil,
                 geometry: .point,
@@ -137,6 +148,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
             )
         case .AppAnchorNode:
             return Metadata(
+                name: "App Anchor Node",
                 description: "A point used for iOSPointMapper-specific analysis and mapping purposes.",
                 parent: nil,
                 geometry: .point,
@@ -154,7 +166,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
  */
 extension OSWElementClass {
     var description: String {
-        return metadata.description
+        return metadata.name
     }
     
     var parent: OSWElementClass? {
