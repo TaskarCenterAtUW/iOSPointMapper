@@ -23,10 +23,10 @@ class DatasetEncoder {
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
     
-    public let rgbFilePath: URL // Relative to app document directory.
-    public let depthFilePath: URL // Relative to app document directory.
-    public let segmentationFilePath: URL // Relative to app document directory.
-    public let confidenceFilePath: URL // Relative to app document directory.
+    public let rgbFilePath: URL /// Relative to app document directory.
+    public let depthFilePath: URL /// Relative to app document directory.
+    public let segmentationFilePath: URL /// Relative to app document directory.
+    public let confidenceFilePath: URL /// Relative to app document directory.
     public let cameraIntrinsicsPath: URL
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
@@ -49,9 +49,9 @@ class DatasetEncoder {
     init(workspaceId: String, changesetId: String) throws {
         self.workspaceId = workspaceId
         
-        // Create workspace Directory if it doesn't exist
+        /// Create workspace Directory if it doesn't exist
         self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId)
-        // if workspace directory exists, create dataset directory inside it
+        /// if workspace directory exists, create dataset directory inside it
         datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
@@ -83,7 +83,7 @@ class DatasetEncoder {
         }
         let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: relativeTo)
         if FileManager.default.fileExists(atPath: directory.path) {
-            // Return existing directory if it already exists
+            /// Return existing directory if it already exists
             return directory
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
@@ -142,7 +142,6 @@ class DatasetEncoder {
         }
         try self.cameraIntrinsicsEncoder.add(intrinsics: cameraIntrinsics, timestamp: timestamp, frameNumber: frameNumber)
         try self.cameraTransformEncoder.add(transform: cameraTransform, timestamp: timestamp, frameNumber: frameNumber)
-//        self.writeIntrinsics(cameraIntrinsics: cameraIntrinsics)
         
         if let location = location {
             let latitude = location.latitude
@@ -164,21 +163,6 @@ class DatasetEncoder {
         savedFrames = savedFrames + 1
         self.capturedFrameIds.insert(frameNumber)
     }
-    
-//    private func writeIntrinsics(cameraIntrinsics: simd_float3x3) {
-//        let rows = cameraIntrinsics.transpose.columns
-//        var csv: [String] = []
-//        for row in [rows.0, rows.1, rows.2] {
-//            let csvLine = "\(row.x), \(row.y), \(row.z)"
-//            csv.append(csvLine)
-//        }
-//        let contents = csv.joined(separator: "\n")
-//        do {
-//            try contents.write(to: self.cameraMatrixPath, atomically: true, encoding: String.Encoding.utf8)
-//        } catch let error {
-//            print("Could not write camera matrix. \(error.localizedDescription)")
-//        }
-//    }
     
     func save() throws {
         try self.cameraTransformEncoder.done()

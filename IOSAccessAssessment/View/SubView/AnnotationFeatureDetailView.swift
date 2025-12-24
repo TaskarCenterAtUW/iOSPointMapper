@@ -18,6 +18,9 @@ struct AnnotationFeatureDetailView: View {
             static let statusAlertTitleKey: String = "Error"
             static let statusAlertDismissAlertSuffixKey: String = "Press OK to dismiss this alert."
             static let statusAlertDismissButtonKey: String = "OK"
+            
+            /// Invalid
+            static let invalidTextKey: String = "Invalid"
         }
         
         enum Images {
@@ -101,24 +104,28 @@ struct AnnotationFeatureDetailView: View {
                 /**
                  Location Section
                  */
-                if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
-                    Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
+                
+                Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
+                    if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
                         HStack {
                             Spacer()
                             Text(
                                 locationFormatter.string(
                                     from: NSNumber(value: featureLocation.latitude)
-                                ) ?? "N/A"
+                                ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
                             )
-                                .padding(.horizontal)
+                            .padding(.horizontal)
                             Text(
                                 locationFormatter.string(
                                     from: NSNumber(value: featureLocation.longitude)
-                                ) ?? "N/A"
+                                ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
                             )
-                                .padding(.horizontal)
+                            .padding(.horizontal)
                             Spacer()
                         }
+                    } else {
+                        Text(AnnotationFeatureDetailView.Constants.Texts.invalidTextKey)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 
@@ -242,7 +249,7 @@ struct AnnotationFeatureDetailView: View {
             guard let attributeValue = accessibilityFeature.experimentalAttributeValues[attribute],
                   let attributeValue,
                   let attributeBindableValue = attributeValue.toDouble() else {
-                return "N/A"
+                return AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
             }
             return String(attributeBindableValue)
         }()
