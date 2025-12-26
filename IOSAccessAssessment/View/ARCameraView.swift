@@ -228,13 +228,13 @@ struct ARCameraView: View {
             do {
                 var captureData: (any CaptureImageDataProtocol)
                 switch try await manager.performFinalSessionUpdateIfPossible() {
-                case .frameOnly(let data):
+                case .imageData(let data):
                     if (data.captureImageDataResults.segmentedClasses.isEmpty)
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
                     captureData = data
-                case .frameAndMesh(let data):
+                case .imageAndMeshData(let data):
                     if (data.captureImageDataResults.segmentedClasses.isEmpty)
                     || (data.captureMeshDataResults.segmentedMesh.totalVertexCount == 0)
                     {

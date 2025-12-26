@@ -694,11 +694,6 @@ extension ARCameraManager {
 
 // Functions to perform final session update
 extension ARCameraManager {
-    enum FinalSessionUpdateResults {
-        case frameOnly(CaptureImageData)
-        case frameAndMesh(CaptureAllData)
-    }
-    
     struct MeshDependencies {
         let capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator
         let metalContext: MetalContext
@@ -710,17 +705,17 @@ extension ARCameraManager {
      */
     @MainActor
     func performFinalSessionUpdateIfPossible(
-    ) async throws -> FinalSessionUpdateResults {
+    ) async throws -> CaptureData {
         if isEnhancedAnalysisEnabled {
             let _ = try getFinalSessionUpdateDependencies()
             let captureImageData = try await performFinalSessionFrameUpdate()
             let captureData = try await performFinalSessionMeshUpdate(
                 captureImageData: captureImageData
             )
-            return .frameAndMesh(captureData)
+            return .imageAndMeshData(captureData)
         } else {
             let captureData = try await performFinalSessionFrameUpdate()
-            return .frameOnly(captureData)
+            return .imageData(captureData)
         }
     }
     
@@ -803,7 +798,7 @@ extension ARCameraManager {
     @MainActor
     private func performFinalSessionMeshUpdate(
         captureImageData: CaptureImageData
-    ) async throws -> CaptureAllData {
+    ) async throws -> CaptureImageAndMeshData {
         /// NOTE: The redundancy is intentional to keep the two methods separate for now.
         guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
               let metalContext = self.metalContext,
@@ -850,7 +845,7 @@ extension ARCameraManager {
             segmentedMesh: cameraMeshSnapshot
         )
         
-        let captureData = CaptureAllData(
+        let captureData = CaptureImageAndMeshData(
             captureImageData: captureImageData,
             captureMeshDataResults: captureMeshDataResults
         )
