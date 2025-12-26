@@ -28,11 +28,15 @@ enum ProfileViewConstants {
         /// Enhanced Analysis Info Tip
         static let enhancedAnalysisInfoTipTitle = "Enhanced Analysis"
         static let enhancedAnalysisInfoTipMessage = """
-            Enhanced analysis uses advanced algorithms to improve the accuracy of localization and attribute estimations for accessibility features.
-            
-            Enabling this feature may increase processing time and battery usage.
+            Enhanced analysis improves the accuracy of localization and attribute estimations for accessibility features.
             """
         static let enhancedAnalysisInfoTipLearnButtonTitle = "Learn More"
+        /// Enhanced Analysis Learn More Sheet
+        static let enhancedAnalysisLearnMoreSheetMessage = """
+            Enhanced analysis uses advanced Augmented Reality-based scene understanding to improve the accuracy of localization and attribute estimations for accessibility features.
+            
+            Enabling this feature will increase processing time and battery usage.
+            """
         
         /// Log out
         static let logoutButtonText = "Log out"
@@ -243,7 +247,7 @@ struct EnhancedAnalysisLearnMoreSheetView: View {
 //                .foregroundStyle(.accentColor)
             Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipTitle)
                 .font(.headline)
-            Text(ProfileViewConstants.Texts.enhancedAnalysisInfoTipMessage)
+            Text(ProfileViewConstants.Texts.enhancedAnalysisLearnMoreSheetMessage)
                 .foregroundStyle(.secondary)
             Button("Dismiss") {
                 dismiss()
