@@ -179,10 +179,18 @@ class APITransmissionController: ObservableObject {
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
     ) -> [String: String] {
+        var enhancedAnalysisMode: Bool = false
+        switch captureData {
+        case .imageData(_):
+            enhancedAnalysisMode = false
+        case .imageAndMeshData(_):
+            enhancedAnalysisMode = true
+        }
         return [
             APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
             APIConstants.TagKeys.captureLatitudeKey: String(captureLocation.latitude),
-            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude)
+            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude),
+            APIConstants.TagKeys.enhancedAnalysisModeKey: String(enhancedAnalysisMode)
         ]
     }
 }

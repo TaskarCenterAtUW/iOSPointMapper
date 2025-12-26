@@ -64,6 +64,9 @@ struct MeshOtherDetails: Sendable {
 /**
     A  specialview controller that manages the AR camera view and segmentation display.
     Requires an ARSessionCameraProcessingDelegate to process camera frames (not just any ARSessionDelegate).
+ 
+    - NOTE:
+    Also processes the mesh data and (optionally) maintains the mesh entities in the ARView scene.
  */
 @MainActor
 final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
@@ -385,6 +388,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                         accessibilityFeatureClass: accessibilityFeatureClass
                     )
                     meshRecords[accessibilityFeatureClass] = meshRecord
+                    /// NOTE: To eliminate the mesh visualization, comment out the following line
                     anchorEntity.addChild(meshRecord.entity)
                     totalVertexCount += meshRecord.vertexCount
                 } catch {
