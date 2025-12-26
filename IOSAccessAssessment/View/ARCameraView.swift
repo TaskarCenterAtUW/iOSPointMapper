@@ -90,6 +90,7 @@ struct ARCameraView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
     @Environment(\.dismiss) var dismiss
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
@@ -158,6 +159,7 @@ struct ARCameraView: View {
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
+                    isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled,
                     cameraOutputImageCallback: cameraOutputImageCallback
                 )
             } catch {
@@ -224,18 +226,25 @@ struct ARCameraView: View {
     private func cameraCapture() {
         Task {
             do {
-                let captureData = try await manager.performFinalSessionUpdateIfPossible()
-                if (captureData.captureImageDataResults.segmentedClasses.isEmpty)
-                /// TODO: MESH PROCESSING: Re-enable check for vertex count when segmentation mesh generation is stable
-//                    || (captureData.captureMeshDataResults.segmentedMesh.totalVertexCount == 0)
-                {
-                    throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
+                let captureData: CaptureData = try await manager.performFinalSessionUpdateIfPossible()
+                switch captureData {
+                case .imageData(let data):
+                    if (data.captureImageDataResults.segmentedClasses.isEmpty)
+                    {
+                        throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
+                    }
+                case .imageAndMeshData(let data):
+                    if (data.captureImageDataResults.segmentedClasses.isEmpty)
+                    || (data.captureMeshDataResults.segmentedMesh.totalVertexCount == 0)
+                    {
+                        throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
+                    }
                 }
                 captureLocation = try locationManager.getLocationCoordinate()
                 try manager.pause()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
-                addCaptureDataToCurrentDataset(captureImageData: captureData, location: captureLocation)
+                addCaptureDataToCurrentDataset(captureImageData: captureData.imageData, location: captureLocation)
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)

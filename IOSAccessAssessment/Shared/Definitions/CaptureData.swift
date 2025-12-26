@@ -96,7 +96,7 @@ struct CaptureImageData: CaptureImageDataProtocol {
     }
 }
 
-struct CaptureAllData: CaptureImageDataProtocol, CaptureMeshDataProtocol {
+struct CaptureImageAndMeshData: CaptureImageDataProtocol, CaptureMeshDataProtocol {
     let id: UUID
     let timestamp: TimeInterval
     
@@ -148,3 +148,39 @@ struct CaptureAllData: CaptureImageDataProtocol, CaptureMeshDataProtocol {
         self.captureMeshDataResults = captureMeshDataResults
     }
 }
+
+/**
+ We need a type wrapper that can conditionally represent one of CaptureImageData, CaptureImageAndMeshData, etc.
+ */
+enum CaptureData: Sendable, Identifiable {
+    case imageData(CaptureImageData)
+    case imageAndMeshData(CaptureImageAndMeshData)
+    
+    var id: UUID {
+        switch self {
+        case .imageData(let data):
+            return data.id
+        case .imageAndMeshData(let data):
+            return data.id
+        }
+    }
+    
+    var imageData: any CaptureImageDataProtocol {
+        switch self {
+        case .imageData(let data):
+            return data
+        case .imageAndMeshData(let data):
+            return CaptureImageData(data)
+        }
+    }
+    
+    var meshData: (any CaptureMeshDataProtocol)? {
+        switch self {
+        case .imageData(_):
+            return nil
+        case .imageAndMeshData(let data):
+            return data
+        }
+    }
+}
+

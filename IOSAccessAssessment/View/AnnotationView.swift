@@ -463,7 +463,7 @@ struct AnnotationView: View {
               let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
             return false
         }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
         return (currentClassIndex >= 0 && currentClassIndex < segmentedClasses.count)
     }
     
@@ -472,29 +472,37 @@ struct AnnotationView: View {
               let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
             return false
         }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
         return currentClassIndex == segmentedClasses.count - 1
     }
     
     private func handleOnAppear() async {
         do {
-            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord
-            /// TODO: MESH PROCESSING: Enable mesh data processing
-//                    , let captureMeshData = currentCaptureDataRecord as? (any CaptureMeshDataProtocol)
-            else {
+            guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+            var captureMeshData: (any CaptureMeshDataProtocol)? = nil
+            if userStateViewModel.isEnhancedAnalysisEnabled {
+                guard let captureMeshDataResults = currentCaptureDataRecord.meshData?.captureMeshDataResults else {
+                    throw AnnotationViewError.invalidCaptureDataRecord
+                }
+                captureMeshData = CaptureImageAndMeshData(
+                    captureImageData: CaptureImageData(currentCaptureDataRecord.imageData),
+                    captureMeshDataResults: captureMeshDataResults
+                )
+            }
+            let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
             try attributeEstimationPipeline.configure(
-                captureImageData: currentCaptureDataRecord
+                captureImageData: currentCaptureDataRecord.imageData
                 /// TODO: MESH PROCESSING: Enable mesh data processing
-                ///, captureMeshData: captureMeshData
+                , captureMeshData: captureMeshData
             )
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
-                captureImageData: currentCaptureDataRecord,
-//                captureMeshData: captureMeshData
+                captureImageData: currentCaptureDataRecord.imageData,
+                captureMeshData: captureMeshData,
+                isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
             manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)
@@ -605,7 +613,7 @@ struct AnnotationView: View {
               let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
             throw AnnotationViewError.invalidCaptureDataRecord
         }
-        let segmentedClasses = currentCaptureDataRecord.captureImageDataResults.segmentedClasses
+        let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
         try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
     }
     
@@ -650,7 +658,7 @@ struct AnnotationView: View {
         print("Mapping Data: \(sharedAppData.mappingData)")
         
         addFeaturesToCurrentDataset(
-            captureImageData: currentCaptureDataRecord,
+            captureImageData: currentCaptureDataRecord.imageData,
             featuresToUpload: featuresToUpload, mappedAccessibilityFeatures: mappedAccessibilityFeatures
         )
         

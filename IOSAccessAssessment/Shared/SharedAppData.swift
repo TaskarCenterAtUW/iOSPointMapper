@@ -15,7 +15,7 @@ final class SharedAppData: ObservableObject {
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var currentDatasetEncoder: DatasetEncoder?
     
-    var currentCaptureDataRecord: (any CaptureImageDataProtocol)?
+    var currentCaptureDataRecord: CaptureData?
     /// A queue to hold recent capture image data.
     var captureDataQueue: SafeDeque<CaptureImageData>
     var captureDataCapacity: Int
@@ -33,7 +33,7 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
     }
     
-    func saveCaptureData(_ data: (any CaptureImageDataProtocol)) {
+    func saveCaptureData(_ data: CaptureData) {
         self.currentCaptureDataRecord = data
     }
     
