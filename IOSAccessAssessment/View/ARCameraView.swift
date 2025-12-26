@@ -226,27 +226,25 @@ struct ARCameraView: View {
     private func cameraCapture() {
         Task {
             do {
-                var captureData: (any CaptureImageDataProtocol)
-                switch try await manager.performFinalSessionUpdateIfPossible() {
+                let captureData: CaptureData = try await manager.performFinalSessionUpdateIfPossible()
+                switch captureData {
                 case .imageData(let data):
                     if (data.captureImageDataResults.segmentedClasses.isEmpty)
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
-                    captureData = data
                 case .imageAndMeshData(let data):
                     if (data.captureImageDataResults.segmentedClasses.isEmpty)
                     || (data.captureMeshDataResults.segmentedMesh.totalVertexCount == 0)
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
-                    captureData = data
                 }
                 captureLocation = try locationManager.getLocationCoordinate()
                 try manager.pause()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
-                addCaptureDataToCurrentDataset(captureImageData: captureData, location: captureLocation)
+                addCaptureDataToCurrentDataset(captureImageData: captureData.imageData, location: captureLocation)
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)

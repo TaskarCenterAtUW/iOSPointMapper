@@ -61,6 +61,9 @@ struct AnnotationImageResults {
     var featuresOverlayOutputImage: CIImage? = nil
 }
 
+/**
+    A class to manage annotation image processing including segmentation mask post-processing and feature detection.
+ */
 final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
     private var selectedClasses: [AccessibilityFeatureClass] = []
     private var segmentationAnnotationPipeline: SegmentationAnnotationPipeline? = nil
@@ -68,6 +71,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     
     private var captureImageData: (any CaptureImageDataProtocol)? = nil
     private var captureMeshData: (any CaptureMeshDataProtocol)? = nil
+    var isEnhancedAnalysisEnabled: Bool = false
     
     weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
@@ -83,12 +87,14 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationAnnotationPipeline: SegmentationAnnotationPipeline,
         captureImageData: (any CaptureImageDataProtocol),
-//        captureMeshData: (any CaptureMeshDataProtocol)
+        captureMeshData: (any CaptureMeshDataProtocol)?,
+        isEnhancedAnalysisEnabled: Bool
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationAnnotationPipeline = segmentationAnnotationPipeline
         self.captureImageData = captureImageData
-//        self.captureMeshData = captureMeshData
+        self.captureMeshData = captureMeshData
+        self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
         
         let cameraOutputImage = try getCameraOutputImage()
         let annotationImageResults: AnnotationImageResults = AnnotationImageResults(

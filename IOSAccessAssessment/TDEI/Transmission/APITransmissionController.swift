@@ -81,7 +81,7 @@ class APITransmissionController: ObservableObject {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
@@ -146,7 +146,7 @@ class APITransmissionController: ObservableObject {
         workspaceId: String,
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
@@ -175,7 +175,7 @@ class APITransmissionController: ObservableObject {
     
     private func getAdditionalTags(
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
     ) -> [String: String] {
@@ -196,7 +196,7 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
@@ -311,7 +311,7 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
@@ -474,7 +474,7 @@ extension APITransmissionController {
         changesetId: String,
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        captureData: any CaptureImageDataProtocol,
+        captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
         accessToken: String
