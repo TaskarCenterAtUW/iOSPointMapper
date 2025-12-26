@@ -20,7 +20,7 @@ class UserStateViewModel: ObservableObject {
      - NOTE:
         This feature may require additional processing power and may not be available on older devices.
      */
-    @Published var isEnhancedAnalysisEnabled: Bool = true
+    @Published var isEnhancedAnalysisEnabled: Bool = false
     
     init() {
         isAuthenticated = authService.checkTokenValid()
