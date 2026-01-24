@@ -43,17 +43,21 @@ enum SegmentationARPipelineError: Error, LocalizedError {
 
 struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
+    var segmentationDepthFilteredImage: CIImage? = nil
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
     var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
-    var transformMatrixFromPreviousFrame: simd_float3x3? = nil
     
-    init(segmentationImage: CIImage, segmentationColorImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
-         detectedFeatureMap: [UUID: DetectedAccessibilityFeature]) {
+    init(segmentationImage: CIImage, segmentationColorImage: CIImage,
+         segmentedClasses: [AccessibilityFeatureClass], detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
+         segmentationDepthFilteredImage: CIImage? = nil
+    ) {
         self.segmentationImage = segmentationImage
+        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
         self.detectedFeatureMap = detectedFeatureMap
+        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
     }
 }
 
@@ -79,6 +83,7 @@ final class SegmentationARPipeline: ObservableObject {
     private var perimeterThreshold: Float = 0.01
     
     private var grayscaleToColorFilter: GrayscaleToColorFilter?
+    private var depthFilter: DepthFilter?
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
     
@@ -90,6 +95,7 @@ final class SegmentationARPipeline: ObservableObject {
             perimeterThreshold: self.perimeterThreshold,
             selectedClasses: self.selectedClasses)
         self.grayscaleToColorFilter = try GrayscaleToColorFilter()
+        self.depthFilter = try DepthFilter()
     }
     
     func reset() {
@@ -110,7 +116,10 @@ final class SegmentationARPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
      */
-    func processRequest(with cIImage: CIImage, highPriority: Bool = false) async throws -> SegmentationARPipelineResults {
+    func processRequest(
+        with cIImage: CIImage, depthImage: CIImage? = nil,
+        highPriority: Bool = false
+    ) async throws -> SegmentationARPipelineResults {
         if (highPriority) {
             self.currentTask?.cancel()
         } else {
@@ -126,7 +135,7 @@ final class SegmentationARPipeline: ObservableObject {
             }
             try Task.checkCancellation()
             
-            let results = try await self.processImageWithTimeout(cIImage)
+            let results = try await self.processImageWithTimeout(cIImage, depthImage: depthImage)
             try Task.checkCancellation()
             return results
         }
@@ -135,10 +144,12 @@ final class SegmentationARPipeline: ObservableObject {
         return try await newTask.value
     }
     
-    private func processImageWithTimeout(_ cIImage: CIImage) async throws -> SegmentationARPipelineResults {
+    private func processImageWithTimeout(
+        _ cIImage: CIImage, depthImage: CIImage? = nil
+    ) async throws -> SegmentationARPipelineResults {
         try await withThrowingTaskGroup(of: SegmentationARPipelineResults.self) { group in
             group.addTask {
-                return try self.processImage(cIImage)
+                return try self.processImage(cIImage, depthImage: depthImage)
             }
             group.addTask {
                 try await Task.sleep(for: .seconds(self.timeoutInSeconds))
@@ -153,7 +164,7 @@ final class SegmentationARPipeline: ObservableObject {
     /**
      Function to process the given CIImage.
      This function will perform the processing within the thread in which it is called.
-     It does not check if the pipeline is already processing a request, or even look for the completion handler.
+     Optionally, it can also perform depth filtering if a depth image is provided.
      It will either return the SegmentationARPipelineResults or throw an error.
      
      The entire procedure has the following main steps:
@@ -163,7 +174,9 @@ final class SegmentationARPipeline: ObservableObject {
      
      Since this function can be called within a Task, it checks for cancellation at various points to ensure that it can exit early if needed.
      */
-    private func processImage(_ cIImage: CIImage) throws -> SegmentationARPipelineResults {
+    private func processImage(
+        _ cIImage: CIImage, depthImage: CIImage? = nil
+    ) throws -> SegmentationARPipelineResults {
         guard let segmentationModelRequestProcessor = self.segmentationModelRequestProcessor,
               let contourRequestProcessor = self.contourRequestProcessor,
               let grayscaleToColorFilter = self.grayscaleToColorFilter else {
@@ -174,10 +187,21 @@ final class SegmentationARPipeline: ObservableObject {
         
         try Task.checkCancellation()
         
+        var depthFilteredSegmentationImage: CIImage? = nil
+        if let depthImage, let depthFilter = self.depthFilter {
+            // Apply depth filtering to the segmentation image
+            let depthMinThresholdValue = Constants.DepthConstants.depthMinThreshold
+            let depthMaxThresholdValue = Constants.DepthConstants.depthMaxThreshold
+            depthFilteredSegmentationImage = try depthFilter.apply(
+                to: segmentationImage, depthMap: depthImage,
+                depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue
+            )
+        }
+        
         // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
         let detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
-            from: segmentationImage
+            from: depthFilteredSegmentationImage ?? segmentationImage
         )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
@@ -187,15 +211,16 @@ final class SegmentationARPipeline: ObservableObject {
         try Task.checkCancellation()
         
         let segmentationColorImage = try grayscaleToColorFilter.apply(
-            to: segmentationImage, grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
+            to: depthFilteredSegmentationImage ?? segmentationImage,
+            grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
         )
         
         return SegmentationARPipelineResults(
             segmentationImage: segmentationImage,
             segmentationColorImage: segmentationColorImage,
             segmentedClasses: segmentationResults.segmentedClasses,
-            detectedFeatureMap: detectedFeatureMap
+            detectedFeatureMap: detectedFeatureMap,
+            segmentationDepthFilteredImage: depthFilteredSegmentationImage
         )
     }
-    
 }

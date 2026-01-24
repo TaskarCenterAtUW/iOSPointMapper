@@ -50,7 +50,7 @@ typedef struct MeshParams {
 typedef struct AccessibilityFeatureMeshClassificationParams {
     MTL_UINT       classificationLookupTable[256];
     MTL_UINT8      labelValue;
-    MTL_UINT8      padding[3];
+    MTL_UINT8      padding[3]; // for alignment
 } SegmentationMeshClassificationParams;
 
 typedef struct BoundsParams {
