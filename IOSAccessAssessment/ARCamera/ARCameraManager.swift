@@ -210,8 +210,9 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     var cameraPixelFormatType: OSType = kCVPixelFormatType_32BGRA
     var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
-//    var depthPixelBufferPool: CVPixelBufferPool? = nil
-//    var depthColorSpace: CGColorSpace? = nil
+    var depthPixelBufferPool: CVPixelBufferPool? = nil
+    var depthPixelFormatType: OSType = kCVPixelFormatType_DepthFloat32
+    var depthColorSpace: CGColorSpace? = nil
     // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
     var segmentationMaskPixelBufferPool: CVPixelBufferPool? = nil
     var segmentationMaskPixelFormatType: OSType = kCVPixelFormatType_OneComponent8
@@ -382,6 +383,7 @@ extension ARCameraManager {
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
+        /// Pre-process the image: orient, center-crop, and back to pixel buffer
         let originalSize: CGSize = image.extent.size
         let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
@@ -395,8 +397,19 @@ extension ARCameraManager {
             inputImage, context: colorContext, pixelBufferPool: cameraCroppedPixelBufferPool, colorSpace: cameraColorSpace
         )
         
+        var inputDepthImage: CIImage? = nil
+        if let depthImage = depthImage,
+           let depthPixelBufferPool = depthPixelBufferPool {
+            /// Pre-process the depth image: resize to image original size, orient, center-crop, and back to pixel buffer
+            let resizedDepthImage = depthImage.resized(to: originalSize)
+            let orientedDepthImage = resizedDepthImage.oriented(imageOrientation)
+            let croppedDepthImage = CenterCropTransformUtils.centerCropAspectFit(orientedDepthImage, to: croppedSize)
+            inputDepthImage = try self.backCIImageWithPixelBuffer(
+                croppedDepthImage, context: rawContext, pixelBufferPool: depthPixelBufferPool, colorSpace: depthColorSpace
+            )
+        }
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
-            with: inputImage, depthImage: depthImage,
+            with: inputImage, depthImage: inputDepthImage,
             highPriority: highPriority
         )
         
@@ -625,6 +638,28 @@ extension ARCameraManager {
             &cameraCroppedPixelBufferPool
         )
         guard cameraStatus == kCVReturnSuccess else {
+            throw ARCameraManagerError.pixelBufferPoolCreationFailed
+        }
+        // Set up the pixel buffer pool for future flattening of depth images
+        let depthPixelBufferPoolAttributes: [String: Any] = [
+            kCVPixelBufferPoolMinimumBufferCountKey as String: 5
+        ]
+        let depthPixelBufferAttributes: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: depthPixelFormatType,
+            kCVPixelBufferWidthKey as String: size.width,
+            kCVPixelBufferHeightKey as String: size.height,
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
+            kCVPixelBufferMetalCompatibilityKey as String: true,
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+        ]
+        let depthStatus = CVPixelBufferPoolCreate(
+            kCFAllocatorDefault,
+            depthPixelBufferPoolAttributes as CFDictionary,
+            depthPixelBufferAttributes as CFDictionary,
+            &depthPixelBufferPool
+        )
+        guard depthStatus == kCVReturnSuccess else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
     }

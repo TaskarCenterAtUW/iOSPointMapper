@@ -79,7 +79,7 @@ struct DepthFilter {
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
         let depthTexture = try depthMap.toMTLTexture(
-            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )

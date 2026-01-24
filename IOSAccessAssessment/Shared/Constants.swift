@@ -15,8 +15,10 @@ struct Constants {
     static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
     
     struct DepthConstants {
+        /// Model-specific constants
         static let inputSize: CGSize = CGSize(width: 518, height: 392)
         
+        /// General constants
         static let depthMinThreshold: Float = 0.0
         static let depthMaxThreshold: Float = 10.0
     }
