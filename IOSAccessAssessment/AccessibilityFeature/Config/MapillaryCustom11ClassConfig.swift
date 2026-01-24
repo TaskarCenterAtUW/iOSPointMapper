@@ -24,7 +24,10 @@ extension AccessibilityFeatureConfig {
                     x: 0.0, y: 0.5, width: 1.0, height: 0.4
                 ),
                 meshClassification: [.floor],
-                attributes: [.width, .runningSlope, .crossSlope, .surfaceIntegrity],
+                attributes: [
+                    .width, .runningSlope, .crossSlope, .surfaceIntegrity,
+                    .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy
+                ],
                 oswPolicy: OSWPolicy(oswElementClass: .Sidewalk)
             ),
             

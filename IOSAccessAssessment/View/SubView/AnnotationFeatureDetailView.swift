@@ -168,6 +168,7 @@ struct AnnotationFeatureDetailView: View {
                     }
                 }
                 
+                /// Experimental Attributes Section
                 if (accessibilityFeature.accessibilityFeatureClass.experimentalAttributes.contains(.lidarDepth)) {
                     Section(header: Text(AccessibilityFeatureAttribute.lidarDepth.displayName)) {
                         numberTextView(attribute: .lidarDepth)
@@ -183,6 +184,31 @@ struct AnnotationFeatureDetailView: View {
                 if (accessibilityFeature.accessibilityFeatureClass.experimentalAttributes.contains(.longitudeDelta)) {
                     Section(header: Text(AccessibilityFeatureAttribute.longitudeDelta.displayName)) {
                         numberTextView(attribute: .longitudeDelta)
+                    }
+                }
+                
+                /// Legacy Attributes Section
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.widthLegacy))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.widthLegacy.displayName)) {
+                        numberTextFieldView(attribute: .widthLegacy)
+                            .focused($focusedField, equals: .widthLegacy)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.runningSlopeLegacy))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.runningSlopeLegacy.displayName)) {
+                        numberTextFieldView(attribute: .runningSlopeLegacy)
+                            .focused($focusedField, equals: .runningSlopeLegacy)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.crossSlopeLegacy))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.crossSlopeLegacy.displayName)) {
+                        numberTextFieldView(attribute: .crossSlopeLegacy)
+                            .focused($focusedField, equals: .crossSlopeLegacy)
                     }
                 }
             }

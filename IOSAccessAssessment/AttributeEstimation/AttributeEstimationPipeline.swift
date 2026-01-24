@@ -141,6 +141,15 @@ class AttributeEstimationPipeline: ObservableObject {
                 case .crossSlope:
                     let crossSlopeAttributeValue = try self.calculateCrossSlope(accessibilityFeature: accessibilityFeature)
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
+                case .widthLegacy:
+                    let widthAttributeValue = try self.calculateWidth(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .widthLegacy, isCalculated: true)
+                case .runningSlopeLegacy:
+                    let runningSlopeAttributeValue = try self.calculateRunningSlope(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlopeLegacy, isCalculated: true)
+                case .crossSlopeLegacy:
+                    let crossSlopeAttributeValue = try self.calculateCrossSlope(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlopeLegacy, isCalculated: true)
                 default:
                     continue
                 }

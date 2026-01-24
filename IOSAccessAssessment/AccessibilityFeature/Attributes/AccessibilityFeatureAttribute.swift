@@ -24,6 +24,13 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     case lidarDepth
     case latitudeDelta
     case longitudeDelta
+    /**
+    - NOTE:
+        Legacy attributes for comparison with older data
+     */
+    case widthLegacy
+    case runningSlopeLegacy
+    case crossSlopeLegacy
     
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
@@ -97,6 +104,24 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
                 valueType: .length(Measurement(value: 0, unit: .meters)),
                 osmTagKey: APIConstants.TagKeys.longitudeDeltaKey
             )
+        case .widthLegacy:
+            return Metadata(
+                id: 10, name: "Width Legacy", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: "width_legacy"
+            )
+        case .runningSlopeLegacy:
+            return Metadata(
+                id: 20, name: "Running Slope Legacy", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "incline_legacy"
+            )
+        case .crossSlopeLegacy:
+            return Metadata(
+                id: 30, name: "Cross Slope Legacy", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "cross_slope_legacy"
+            )
         }
     }
     
@@ -150,6 +175,12 @@ extension AccessibilityFeatureAttribute {
             return true
         case (.longitudeDelta, .length):
             return true
+        case (.widthLegacy, .length):
+            return true
+        case (.runningSlopeLegacy, .angle):
+            return true
+        case (.crossSlopeLegacy, .angle):
+            return true
         default:
             return false
         }
@@ -198,6 +229,12 @@ extension AccessibilityFeatureAttribute {
             return .length(Measurement(value: value, unit: .meters))
         case .longitudeDelta:
             return .length(Measurement(value: value, unit: .meters))
+        case .widthLegacy:
+            return .length(Measurement(value: value, unit: .meters))
+        case .runningSlopeLegacy:
+            return .angle(Measurement(value: value, unit: .degrees))
+        case .crossSlopeLegacy:
+            return .angle(Measurement(value: value, unit: .degrees))
         }
     }
     
@@ -229,6 +266,12 @@ extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         case (.longitudeDelta, .length(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.widthLegacy, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.runningSlopeLegacy, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case (.crossSlopeLegacy, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
         default:
             return nil
         }
