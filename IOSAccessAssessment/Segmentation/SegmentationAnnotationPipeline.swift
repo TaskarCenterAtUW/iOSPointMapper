@@ -40,16 +40,6 @@ enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     }
 }
 
-struct SegmentationAnnotationPipelineResults {
-    var segmentationImage: CIImage
-    var detectedFeatures: [DetectedAccessibilityFeature]
-    
-    init(segmentationImage: CIImage, detectedFeatures: [DetectedAccessibilityFeature]) {
-        self.segmentationImage = segmentationImage
-        self.detectedFeatures = detectedFeatures
-    }
-}
-
 /**
  A class to handle the segmentation pipeline for annotation purposes.
  
@@ -203,13 +193,8 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         var unionImage = try unionOfMasksProcessor.apply(targetValue: targetValue, unionOfMasksPolicy: unionOfMasksPolicy)
         if let bounds = bounds, let dimensionBasedMaskFilter = self.dimensionBasedMaskFilter {
             do {
-                print("Current bounds: \(bounds)")
-                print("Bounds: \(bounds.minX), \(bounds.minY), \(bounds.maxX), \(bounds.maxY)")
                 let transform = orientation.getNormalizedToUpTransform()
-                print("Transform for orientation \(orientation): \(transform)")
                 let boundsTransformed = bounds.applying(transform)
-                print("Applying dimension based mask filter with bounds: \(boundsTransformed)")
-                print("Bounds: \(boundsTransformed.minX), \(boundsTransformed.minY), \(boundsTransformed.maxX), \(boundsTransformed.maxY)")
                 unionImage = try dimensionBasedMaskFilter.apply(to: unionImage, bounds: boundsTransformed)
             } catch {
                 print("Error applying dimension based mask filter: \(error)")

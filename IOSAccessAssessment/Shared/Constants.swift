@@ -16,6 +16,9 @@ struct Constants {
     
     struct DepthConstants {
         static let inputSize: CGSize = CGSize(width: 518, height: 392)
+        
+        static let depthMinThreshold: Float = 0.0
+        static let depthMaxThreshold: Float = 10.0
     }
     
     struct WorkspaceConstants {
