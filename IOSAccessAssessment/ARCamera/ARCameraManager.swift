@@ -328,7 +328,9 @@ extension ARCameraManager {
         Task {
              do {
                  let cameraImageResults = try await self.processCameraImage(
-                     image: cameraImage, interfaceOrientation: interfaceOrientation, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+                     image: cameraImage, depthImage: depthImage,
+                     interfaceOrientation: interfaceOrientation,
+                     cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
                  )
                  let captureImageDataResults = CaptureImageDataResults(
                      segmentationLabelImage: cameraImageResults.segmentationLabelImage,
@@ -367,7 +369,9 @@ extension ARCameraManager {
     }
     
     private func processCameraImage(
-        image: CIImage, interfaceOrientation: UIInterfaceOrientation,
+        image: CIImage,
+        depthImage: CIImage? = nil,
+        interfaceOrientation: UIInterfaceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         highPriority: Bool = false
     ) async throws -> ARCameraImageResults {
@@ -392,7 +396,8 @@ extension ARCameraManager {
         )
         
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
-            with: inputImage, highPriority: highPriority
+            with: inputImage, depthImage: depthImage,
+            highPriority: highPriority
         )
         
         var segmentationImage = segmentationResults.segmentationImage
@@ -438,6 +443,7 @@ extension ARCameraManager {
         
         let cameraImageResults = ARCameraImageResults(
             cameraImage: image,
+            depthImage: depthImage,
             segmentationLabelImage: segmentationImage,
             segmentedClasses: segmentationResults.segmentedClasses,
             detectedFeatureMap: detectedFeatureMap,
@@ -748,14 +754,15 @@ extension ARCameraManager {
     ) async throws -> CaptureImageData {
         /// Process the latest camera image with high priority
         guard let cameraImage = self.cameraImageResults?.cameraImage,
-              let depthImage = self.cameraImageResults?.depthImage,
               let cameraTransform = self.cameraImageResults?.cameraTransform,
               let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics
         else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
+        let depthImage = self.cameraImageResults?.depthImage
         var cameraImageResults = try await self.processCameraImage(
-            image: cameraImage, interfaceOrientation: self.interfaceOrientation,
+            image: cameraImage, depthImage: depthImage,
+            interfaceOrientation: self.interfaceOrientation,
             cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
             highPriority: true
         )
