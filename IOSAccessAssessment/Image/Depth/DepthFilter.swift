@@ -62,7 +62,10 @@ struct DepthFilter {
         self.pipeline = pipeline
     }
     
-    func apply(to inputImage: CIImage, depthMap: CIImage) throws -> CIImage {
+    func apply(
+        to inputImage: CIImage, depthMap: CIImage,
+        depthMinThreshold: Float, depthMaxThreshold: Float
+    ) throws -> CIImage {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
@@ -83,6 +86,8 @@ struct DepthFilter {
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw BinaryMaskFilterError.textureCreationFailed
         }
+        var depthMinThresholdVar = depthMinThreshold
+        var depthMaxThresholdVar = depthMaxThreshold
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw BinaryMaskFilterError.metalPipelineCreationError
@@ -92,6 +97,8 @@ struct DepthFilter {
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(depthTexture, index: 1)
         commandEncoder.setTexture(outputTexture, index: 2)
+        commandEncoder.setBytes(&depthMinThresholdVar, length: MemoryLayout<Float>.size, index: 0)
+        commandEncoder.setBytes(&depthMaxThresholdVar, length: MemoryLayout<Float>.size, index: 1)
         
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,

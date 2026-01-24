@@ -84,7 +84,7 @@ struct BinaryMaskFilter {
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw BinaryMaskFilterError.textureCreationFailed
         }
-        var targetValueLocal = targetValue
+        var targetValueVar = targetValue
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw BinaryMaskFilterError.metalPipelineCreationError
@@ -93,7 +93,7 @@ struct BinaryMaskFilter {
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
-        commandEncoder.setBytes(&targetValueLocal, length: MemoryLayout<UInt8>.size, index: 0)
+        commandEncoder.setBytes(&targetValueVar, length: MemoryLayout<UInt8>.size, index: 0)
         
 //        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)

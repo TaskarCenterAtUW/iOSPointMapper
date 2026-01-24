@@ -67,6 +67,7 @@
 		A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051B2EDFB093003C26CF /* OSMNode.swift */; };
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
 		A364B5332F25576000325E5C /* DepthFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5322F25575D00325E5C /* DepthFilter.swift */; };
+		A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5342F25589600325E5C /* DepthFiltering.metal */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
@@ -241,6 +242,7 @@
 		A35E051B2EDFB093003C26CF /* OSMNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMNode.swift; sourceTree = "<group>"; };
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
 		A364B5322F25575D00325E5C /* DepthFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthFilter.swift; sourceTree = "<group>"; };
+		A364B5342F25589600325E5C /* DepthFiltering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DepthFiltering.metal; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMResponseElement.swift; sourceTree = "<group>"; };
 		A37E3E382EED60F300B07B77 /* lodepng.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
@@ -766,6 +768,7 @@
 		A38338C42EDAF3DC00F1A402 /* Depth */ = {
 			isa = PBXGroup;
 			children = (
+				A364B5342F25589600325E5C /* DepthFiltering.metal */,
 				A364B5322F25575D00325E5C /* DepthFilter.swift */,
 				A38338C52EDAF3E500F1A402 /* DepthMapProcessor.swift */,
 			);
@@ -1140,6 +1143,7 @@
 				A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
+				A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */,
 				A35547C82EC1B0DB00F43AFD /* MappingData.swift in Sources */,
 				A37E3EA02EFBAADD00B07B77 /* AccessibilityFeatureClassSnapshot.swift in Sources */,
 				A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */,
