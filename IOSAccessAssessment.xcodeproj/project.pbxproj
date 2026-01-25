@@ -68,6 +68,8 @@
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
 		A364B5332F25576000325E5C /* DepthFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5322F25575D00325E5C /* DepthFilter.swift */; };
 		A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5342F25589600325E5C /* DepthFiltering.metal */; };
+		A364B5D92F259AD700325E5C /* PlaneFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5D82F259AD600325E5C /* PlaneFit.swift */; };
+		A364B5DD2F259AFE00325E5C /* PlaneFitting.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DC2F259AF900325E5C /* PlaneFitting.metal */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
@@ -243,6 +245,8 @@
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
 		A364B5322F25575D00325E5C /* DepthFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthFilter.swift; sourceTree = "<group>"; };
 		A364B5342F25589600325E5C /* DepthFiltering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DepthFiltering.metal; sourceTree = "<group>"; };
+		A364B5D82F259AD600325E5C /* PlaneFit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneFit.swift; sourceTree = "<group>"; };
+		A364B5DC2F259AF900325E5C /* PlaneFitting.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlaneFitting.metal; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMResponseElement.swift; sourceTree = "<group>"; };
 		A37E3E382EED60F300B07B77 /* lodepng.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
@@ -602,6 +606,7 @@
 		A35E050B2EDE359C003C26CF /* AttributeEstimation */ = {
 			isa = PBXGroup;
 			children = (
+				A364B5D72F259A7800325E5C /* Plane */,
 				A35E050E2EDE35ED003C26CF /* Localization */,
 				A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */,
 			);
@@ -661,6 +666,15 @@
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A364B5D72F259A7800325E5C /* Plane */ = {
+			isa = PBXGroup;
+			children = (
+				A364B5DC2F259AF900325E5C /* PlaneFitting.metal */,
+				A364B5D82F259AD600325E5C /* PlaneFit.swift */,
+			);
+			path = Plane;
 			sourceTree = "<group>";
 		};
 		A37E3E352EED60C100B07B77 /* CHelpers */ = {
@@ -1185,6 +1199,7 @@
 				A35E05182EDEA476003C26CF /* AttributeEstimationPipeline.swift in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
+				A364B5DD2F259AFE00325E5C /* PlaneFitting.metal in Sources */,
 				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */,
 				A30C67E62EE27331006E4321 /* EditableAccessibilityFeature.swift in Sources */,
@@ -1249,6 +1264,7 @@
 				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,
 				A3FFAA7A2DE01A0F002B99BD /* ARCameraView.swift in Sources */,
 				A37E3E9E2EFBAA8700B07B77 /* AccessibilityFeatureSnapshot.swift in Sources */,
+				A364B5D92F259AD700325E5C /* PlaneFit.swift in Sources */,
 				A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */,
 				A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */,
 				A30BED3A2ED162F1004A5B51 /* ConnectedComponents.swift in Sources */,
@@ -1442,6 +1458,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
+				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1485,6 +1502,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
+				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
