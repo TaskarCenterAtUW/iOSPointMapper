@@ -14,6 +14,7 @@
     typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint               MTL_UINT;      // 32-bit
     typedef uint               MTL_BOOL;      // use 0/1
+    typedef float3             MTL_FLOAT3;
     typedef float4x4           MTL_FLOAT4X4;
     typedef float3x3           MTL_FLOAT3X3;  // 48 bytes (3 cols, 16B aligned)
     typedef uint2              MTL_UINT2;
@@ -24,6 +25,7 @@
     typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint32_t           MTL_UINT;
     typedef uint32_t           MTL_BOOL;      // 0/1
+    typedef simd_float3        MTL_FLOAT3;
     typedef simd_float4x4      MTL_FLOAT4X4;
     typedef simd_float3x3      MTL_FLOAT3X3;  // 48 bytes
     typedef simd_uint2         MTL_UINT2;
@@ -59,3 +61,17 @@ typedef struct BoundsParams {
     float       maxX;
     float       maxY;
 } BoundsParams;
+
+// For PCA Plane Fitting
+typedef struct PlanePoint {
+    MTL_FLOAT3  p;
+} PlanePoint;
+
+typedef struct PlanePointsParams {
+    MTL_UINT2       imageSize;
+    float           minDepthThreshold;
+    float           maxDepthThreshold;
+    MTL_FLOAT4X4    cameraTransform;
+    MTL_FLOAT3X3    invIntrinsics;
+} PlanePointsParams;
+

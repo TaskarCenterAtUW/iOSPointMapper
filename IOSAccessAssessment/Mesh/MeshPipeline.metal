@@ -9,7 +9,7 @@
 using namespace metal;
 #import "ShaderTypes.h"
 
-/// For debugging
+// For debugging
 enum DebugSlot : uint {
     zBelowZero = 0,
     outsideImage = 1,
