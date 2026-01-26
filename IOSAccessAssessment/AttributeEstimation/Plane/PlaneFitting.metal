@@ -32,7 +32,7 @@ inline float3 projectPixelToWorld(
 
 // Plane Fitting Point Extraction Kernel
 // Assumes the depth texture is the same size as the segmentation texture
-kernel void computePlanePoints(
+kernel void computeWorldPoints(
   texture2d<float, access::read> segmentationTexture [[texture(0)]],
   texture2d<float, access::read> depthTexture [[texture(1)]],
   constant uint8_t& targetValue [[buffer(0)]],
@@ -60,10 +60,10 @@ kernel void computePlanePoints(
     float3 worldPoint = projectPixelToWorld(
         float2(gid),
         depthValue,
-        params.cameraTransform,
+        params.cameraTransform, 
         params.invIntrinsics
     );
     
     uint idx = atomic_fetch_add_explicit(pointCount, 1u, memory_order_relaxed);
-    outPoints[idx].p = worldPoint;
+    points[idx].p = worldPoint;
 }
