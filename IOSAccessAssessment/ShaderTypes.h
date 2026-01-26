@@ -63,15 +63,15 @@ typedef struct BoundsParams {
 } BoundsParams;
 
 // For PCA Plane Fitting
-typedef struct PlanePoint {
+typedef struct WorldPoint {
     MTL_FLOAT3  p;
-} PlanePoint;
+} WorldPoint;
 
-typedef struct PlanePointsParams {
+typedef struct WorldPointsParams {
     MTL_UINT2       imageSize;
     float           minDepthThreshold;
     float           maxDepthThreshold;
     MTL_FLOAT4X4    cameraTransform;
     MTL_FLOAT3X3    invIntrinsics;
-} PlanePointsParams;
+} WorldPointsParams;
 

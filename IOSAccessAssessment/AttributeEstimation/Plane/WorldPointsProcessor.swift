@@ -71,12 +71,12 @@ struct WorldPointsProcessor {
         targetValue: UInt8,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
-    ) throws -> [PlanePoint] {
+    ) throws -> [WorldPoint] {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw WorldPointsProcessorError.metalPipelineCreationError
         }
         
-        print("PlanePoint Alignment and stride: \(MemoryLayout<PlanePoint>.alignment), \(MemoryLayout<PlanePoint>.alignment)")
+        print("WorldPoint Alignment and stride: \(MemoryLayout<WorldPoint>.alignment), \(MemoryLayout<WorldPoint>.alignment)")
         
         let imageSize = simd_uint2(UInt32(segmentationLabelImage.extent.width), UInt32(segmentationLabelImage.extent.height))
         let invIntrinsics = simd_inverse(cameraIntrinsics)
@@ -92,7 +92,7 @@ struct WorldPointsProcessor {
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
         var targetValueVar = targetValue
-        var params = PlanePointsParams(
+        var params = WorldPointsParams(
             imageSize: imageSize,
             minDepthThreshold: Constants.DepthConstants.depthMinThreshold,
             maxDepthThreshold: Constants.DepthConstants.depthMaxThreshold,
@@ -104,7 +104,7 @@ struct WorldPointsProcessor {
         )
         let maxPoints = imageSize.x * imageSize.y
         let pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device, length: MemoryLayout<PlanePoint>.stride * Int(maxPoints), options: .storageModeShared
+            device: self.device, length: MemoryLayout<WorldPoint>.stride * Int(maxPoints), options: .storageModeShared
         )
         
         /**
@@ -127,7 +127,7 @@ struct WorldPointsProcessor {
         commandEncoder.setTexture(segmentationLabelTexture, index: 0)
         commandEncoder.setTexture(depthTexture, index: 1)
         commandEncoder.setBytes(&targetValueVar, length: MemoryLayout<UInt8>.size, index: 0)
-        commandEncoder.setBytes(&params, length: MemoryLayout<PlanePointsParams>.stride, index: 1)
+        commandEncoder.setBytes(&params, length: MemoryLayout<WorldPointsParams>.stride, index: 1)
         commandEncoder.setBuffer(pointsBuffer, offset: 0, index: 2)
         commandEncoder.setBuffer(pointCount, offset: 0, index: 3)
         
@@ -143,9 +143,9 @@ struct WorldPointsProcessor {
         
         let pointsCountPointer = pointCount.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let actualPointCount = Int(pointsCountPointer)
-        var worldPoints: [PlanePoint] = []
+        var worldPoints: [WorldPoint] = []
         if actualPointCount > 0 {
-            let pointsPointer = pointsBuffer.contents().bindMemory(to: PlanePoint.self, capacity: actualPointCount)
+            let pointsPointer = pointsBuffer.contents().bindMemory(to: WorldPoint.self, capacity: actualPointCount)
             for i in 0..<actualPointCount {
                 let point = pointsPointer.advanced(by: i).pointee
                 worldPoints.append(point)

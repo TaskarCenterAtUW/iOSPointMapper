@@ -1,5 +1,5 @@
 //
-//  PlaneFit.swift
+//  PlaneFitProcessor.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 1/24/26.
@@ -9,7 +9,7 @@ import simd
 import Accelerate
 import CoreImage
 
-enum PlaneFitError: Error, LocalizedError {
+enum PlaneFitProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     
     var errorDescription: String? {
@@ -20,7 +20,7 @@ enum PlaneFitError: Error, LocalizedError {
     }
 }
 
-struct PlaneFit {
+struct PlaneFitProcessor {
     private let worldPointsProcessor: WorldPointsProcessor
     
     init() throws {
@@ -33,7 +33,10 @@ struct PlaneFit {
         targetValue: UInt8,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
-    ) {
-        
+    ) throws {
+        let worldPoints = try self.worldPointsProcessor.getWorldPoints(
+            segmentationLabelImage: segmentationLabelImage, depthImage: depthImage,
+            targetValue: targetValue, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
+        )
     }
 }

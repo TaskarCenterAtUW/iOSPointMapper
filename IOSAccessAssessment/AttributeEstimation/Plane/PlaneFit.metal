@@ -36,8 +36,8 @@ kernel void computeWorldPoints(
   texture2d<float, access::read> segmentationTexture [[texture(0)]],
   texture2d<float, access::read> depthTexture [[texture(1)]],
   constant uint8_t& targetValue [[buffer(0)]],
-  constant PlanePointsParams& params [[buffer(1)]],
-  device PlanePoint* points [[buffer(2)]],
+  constant WorldPointsParams& params [[buffer(1)]],
+  device WorldPoint* points [[buffer(2)]],
   device atomic_uint* pointCount [[buffer(3)]],
   uint2 gid [[thread_position_in_grid]]
 ) {
