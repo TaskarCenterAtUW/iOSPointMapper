@@ -222,6 +222,10 @@ class APITransmissionStatusViewModel: ObservableObject {
     }
 }
 
+struct AnnotationFeatureClassUpdateResults: Sendable {
+    let plane: Plane?
+}
+
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     let captureLocation: CLLocationCoordinate2D
@@ -516,7 +520,7 @@ struct AnnotationView: View {
         do {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
-            }
+            } 
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             var lastEstimationError: Error? = nil
             accessibilityFeatures.forEach { accessibilityFeature in
@@ -525,7 +529,9 @@ struct AnnotationView: View {
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
                     )
-                    try attributeEstimationPipeline.processAttributeRequest(accessibilityFeature: accessibilityFeature)
+                    try attributeEstimationPipeline.processAttributeRequest(
+                        accessibilityFeature: accessibilityFeature
+                    )
                 } catch {
                     lastEstimationError = error
                 }

@@ -37,6 +37,10 @@ struct LocationRequestResult: Sendable {
     let lidarDepth: Float
 }
 
+struct AttributeRequestResult: Sendable {
+    let plane: Plane?
+}
+
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
@@ -132,17 +136,32 @@ class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         var attributeAssignmentFlagError = false
+        
+        /// If the attributes include width, runningSlope or crossSlope, pre-calculate the fitting plane for efficiency
+        var plane: Plane? = nil
+        if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
+            $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+        }) {
+            plane = try self.calculatePlane(accessibilityFeature: accessibilityFeature)
+        }
+        
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
             do {
                 switch attribute {
                 case .width:
-                    let widthAttributeValue = try self.calculateWidth(accessibilityFeature: accessibilityFeature)
+                    let widthAttributeValue = try self.calculateWidth(
+                        accessibilityFeature: accessibilityFeature, plane: plane
+                    )
                     try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
                 case .runningSlope:
-                    let runningSlopeAttributeValue = try self.calculateRunningSlope(accessibilityFeature: accessibilityFeature)
+                    let runningSlopeAttributeValue = try self.calculateRunningSlope(
+                        accessibilityFeature: accessibilityFeature, plane: plane
+                    )
                     try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlope, isCalculated: true)
                 case .crossSlope:
-                    let crossSlopeAttributeValue = try self.calculateCrossSlope(accessibilityFeature: accessibilityFeature)
+                    let crossSlopeAttributeValue = try self.calculateCrossSlope(
+                        accessibilityFeature: accessibilityFeature, plane: plane
+                    )
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
                 case .widthLegacy:
                     let widthAttributeValue = try self.calculateWidthLegacy(accessibilityFeature: accessibilityFeature)

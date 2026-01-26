@@ -90,7 +90,6 @@ struct PlaneFitProcessor {
         let normalK = 0
         let normalVector = simd_normalize(simd_float3(a[normalK * 3 + 0], a[normalK * 3 + 1], a[normalK * 3 + 2]))
         let d = -simd_dot(normalVector, worldPointMean)
-        print("Eigen values: \(eigenvalues)")
         
         let plane = Plane(
             firstEigenVector: firstEigenVector,
@@ -112,39 +111,7 @@ struct PlaneFitProcessor {
             segmentationLabelImage: segmentationLabelImage, depthImage: depthImage,
             targetValue: targetValue, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
         )
-        
-        let worldPointsCPU = try self.worldPointsProcessor.getWorldPointsCPU(
-            segmentationLabelImage: segmentationLabelImage, depthImage: depthImage,
-            targetValue: targetValue, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-        )
-        /**
-         Find distributional differences between GPU and CPU world points
-         */
-        let gpuCount = worldPoints.count
-        let cpuCount = worldPointsCPU.count
-        print("PlaneFitProcessor: GPU World Points Count: \(gpuCount), CPU World Points Count: \(cpuCount)")
-        /// Sort by magnitude and do a chi-squared test
-        let worldPointsMagGPUSorted = worldPoints.map { simd_length($0.p) }.sorted()
-        let worldPointsMagCPUSorted = worldPointsCPU.map { simd_length($0.p) }.sorted()
-        let minCount = min(gpuCount, cpuCount)
-        var chiSum: Float = 0
-        for i in 0..<minCount {
-            var numerator = (worldPointsMagGPUSorted[i] - worldPointsMagCPUSorted[i])
-            numerator *= numerator
-            let denominator = worldPointsMagCPUSorted[i] + 1e-6
-            chiSum += numerator / denominator
-        }
-        print("PlaneFitProcessor: Chi-squared sum between GPU and CPU world points: \(chiSum)")
-        let df = minCount - 1
-        print("PlaneFitProcessor: Degrees of Freedom: \(df)")
-        
-        let worldPointsSorted = worldPoints.sorted { simd_length($0.p) < simd_length($1.p) }
-        let worldPointsCPUSorted = worldPointsCPU.sorted { simd_length($0.p) < simd_length($1.p) }
-        let plane = try fitPlanePCA(worldPoints: worldPointsSorted)
-        let planeCPU = try fitPlanePCA(worldPoints: worldPointsCPUSorted)
-        print("PlaneFitProcessor: Fitted Plane from GPU World Points: \(plane)")
-        print("PlaneFitProcessor: Fitted Plane from CPU World Points: \(planeCPU)")
-        
+        let plane = try fitPlanePCA(worldPoints: worldPoints)
         return plane
     }
 }

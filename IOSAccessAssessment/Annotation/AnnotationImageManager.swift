@@ -142,7 +142,10 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     /**
      Updates the camera image, and recreates the overlay image.
      */
-    func updateFeatureClass(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> [EditableAccessibilityFeature] {
+    func updateFeatureClass(
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        updateFeatureClassResults: AnnotationFeatureClassUpdateResults
+    ) throws -> [EditableAccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
