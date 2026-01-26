@@ -70,7 +70,7 @@
 		A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5342F25589600325E5C /* DepthFiltering.metal */; };
 		A364B5D92F259AD700325E5C /* PlaneFit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5D82F259AD600325E5C /* PlaneFit.swift */; };
 		A364B5DD2F259AFE00325E5C /* PlaneFitting.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DC2F259AF900325E5C /* PlaneFitting.metal */; };
-		A364B5DF2F26DB5700325E5C /* WorldPoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DE2F26DB5300325E5C /* WorldPoints.swift */; };
+		A364B5DF2F26DB5700325E5C /* WorldPointsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMResponseElement.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
@@ -248,7 +248,7 @@
 		A364B5342F25589600325E5C /* DepthFiltering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DepthFiltering.metal; sourceTree = "<group>"; };
 		A364B5D82F259AD600325E5C /* PlaneFit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneFit.swift; sourceTree = "<group>"; };
 		A364B5DC2F259AF900325E5C /* PlaneFitting.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PlaneFitting.metal; sourceTree = "<group>"; };
-		A364B5DE2F26DB5300325E5C /* WorldPoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPoints.swift; sourceTree = "<group>"; };
+		A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPointsProcessor.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMResponseElement.swift; sourceTree = "<group>"; };
 		A37E3E382EED60F300B07B77 /* lodepng.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
@@ -674,7 +674,7 @@
 		A364B5D72F259A7800325E5C /* Plane */ = {
 			isa = PBXGroup;
 			children = (
-				A364B5DE2F26DB5300325E5C /* WorldPoints.swift */,
+				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
 				A364B5DC2F259AF900325E5C /* PlaneFitting.metal */,
 				A364B5D82F259AD600325E5C /* PlaneFit.swift */,
 			);
@@ -1279,7 +1279,7 @@
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
 				A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */,
-				A364B5DF2F26DB5700325E5C /* WorldPoints.swift in Sources */,
+				A364B5DF2F26DB5700325E5C /* WorldPointsProcessor.swift in Sources */,
 				A3FE16672E18C81800DAE5BE /* LocationEncoder.swift in Sources */,
 				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,
 				A3FFAA7A2DE01A0F002B99BD /* ARCameraView.swift in Sources */,

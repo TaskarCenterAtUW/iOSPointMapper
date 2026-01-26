@@ -1,5 +1,5 @@
 //
-//  WorldPoints.swift
+//  WorldPointsProcessor.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 1/25/26.
@@ -10,7 +10,7 @@ import RealityKit
 import MetalKit
 import simd
 
-enum WorldPointsError: Error, LocalizedError {
+enum WorldPointsProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
@@ -39,7 +39,7 @@ enum WorldPointsError: Error, LocalizedError {
 /**
  Extacting 3D world points.
  */
-struct WorldPoints {
+struct WorldPointsProcessor {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let pipeline: MTLComputePipelineState
@@ -50,7 +50,7 @@ struct WorldPoints {
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            throw WorldPointsError.metalInitializationFailed
+            throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -60,7 +60,7 @@ struct WorldPoints {
         
         guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeWorldPoints"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            throw WorldPointsError.metalInitializationFailed
+            throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
@@ -73,7 +73,7 @@ struct WorldPoints {
         cameraIntrinsics: simd_float3x3
     ) throws -> [PlanePoint] {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw WorldPointsError.metalPipelineCreationError
+            throw WorldPointsProcessorError.metalPipelineCreationError
         }
         
         print("PlanePoint Alignment and stride: \(MemoryLayout<PlanePoint>.alignment), \(MemoryLayout<PlanePoint>.alignment)")
@@ -111,7 +111,7 @@ struct WorldPoints {
          Initialize point count to zero.
          */
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
-            throw WorldPointsError.meshPipelineBlitEncoderError
+            throw WorldPointsProcessorError.meshPipelineBlitEncoderError
         }
         blit.fill(buffer: pointCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
         blit.endEncoding()
@@ -120,7 +120,7 @@ struct WorldPoints {
             Encode compute command.
          */
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw WorldPointsError.metalPipelineCreationError
+            throw WorldPointsProcessorError.metalPipelineCreationError
         }
         
         commandEncoder.setComputePipelineState(self.pipeline)
