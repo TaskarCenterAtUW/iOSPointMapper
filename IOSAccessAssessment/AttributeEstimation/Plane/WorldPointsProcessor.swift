@@ -17,6 +17,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
     case metalPipelineCreationError
     case meshPipelineBlitEncoderError
     case outputImageCreationFailed
+    case unableToProcessBufferData
     
     var errorDescription: String? {
         switch self {
@@ -32,6 +33,8 @@ enum WorldPointsProcessorError: Error, LocalizedError {
             return "Failed to create Blit Command Encoder for the Segmentation Mesh Creation."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
+        case .unableToProcessBufferData:
+            return "Unable to process data from CVPixelBuffer."
         }
     }
 }
@@ -65,6 +68,9 @@ struct WorldPointsProcessor {
         self.pipeline = pipeline
     }
     
+    /**
+        Extract world points from segmentation and depth images (GPU version).
+     */
     func getWorldPoints(
         segmentationLabelImage: CIImage,
         depthImage: CIImage,
@@ -84,7 +90,8 @@ struct WorldPointsProcessor {
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
-        let depthTexture = try depthImage.toMTLTexture(
+        let resizedDepthImage = depthImage.resized(to: segmentationLabelImage.extent.size)
+        let depthTexture = try resizedDepthImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
@@ -157,16 +164,106 @@ struct WorldPointsProcessor {
                 worldPoints.append(point)
             }
         }
-        
         let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
-        print("outsideImage:", dbg[0])
-        print("unmatchedSegmentation:", dbg[1])
-        print("belowDepthRange:", dbg[2])
-        print("aboveDepthRange:", dbg[3])
-        print("wrotePoint:", dbg[4])
-        print("depthIsZero:", dbg[5])
-        print("pointCount:", pointsCountPointer)
         
         return worldPoints
     }
+    
+    /**
+        Compute world point from pixel coordinate and depth value (CPU version).
+     
+        Taking reference from `LocalizationProcessor`
+     */
+    private func computeWorldPointCPU(
+        pixelCoord: SIMD2<Int>,
+        depthValue: Float,
+        cameraTransform: simd_float4x4,
+        invIntrinsics: simd_float3x3
+    ) -> WorldPoint {
+        let imagePoint = simd_float3(Float(pixelCoord.x), Float(pixelCoord.y), 1.0)
+        let ray = invIntrinsics * imagePoint
+        let rayDirection = simd_normalize(ray)
+        
+        var cameraPoint = rayDirection * depthValue
+        cameraPoint.y = -cameraPoint.y
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        
+        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
+        
+        return WorldPoint(p: worldPoint)
+    }
+    
+    /**
+        Extract world points from segmentation and depth images (CPU version).
+     */
+    func getWorldPointsCPU(
+        segmentationLabelImage: CIImage,
+        depthImage: CIImage,
+        targetValue: UInt8,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3
+    ) throws -> [WorldPoint] {
+        let minDepthThreshold = Constants.DepthConstants.depthMinThreshold
+        let maxDepthThreshold = Constants.DepthConstants.depthMaxThreshold
+        let invIntrinsics = simd_inverse(cameraIntrinsics)
+        
+        /// Get CVPixelBuffer from segmentation image
+        let segmentationLabelPixelBuffer = try segmentationLabelImage.toPixelBuffer(
+            context: self.ciContext,
+            pixelFormatType: kCVPixelFormatType_OneComponent8,
+            colorSpace: nil
+        )
+        let segmentationWidth = CVPixelBufferGetWidth(segmentationLabelPixelBuffer)
+        let segmentationHeight = CVPixelBufferGetHeight(segmentationLabelPixelBuffer)
+        let resizedDepthImage = depthImage.resized(to: segmentationLabelImage.extent.size)
+        let depthBuffer = try resizedDepthImage.toPixelBuffer(
+            context: self.ciContext,
+            pixelFormatType: kCVPixelFormatType_DepthFloat32,
+            colorSpace: nil
+        )
+        
+        CVPixelBufferLockBaseAddress(segmentationLabelPixelBuffer, .readOnly)
+        CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
+        defer {
+            CVPixelBufferUnlockBaseAddress(segmentationLabelPixelBuffer, .readOnly)
+            CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly)
+        }
+        
+        guard let segmentationBaseAddress = CVPixelBufferGetBaseAddress(segmentationLabelPixelBuffer),
+              let depthBaseAddress = CVPixelBufferGetBaseAddress(depthBuffer) else {
+            throw WorldPointsProcessorError.unableToProcessBufferData
+        }
+        let segmentationBytesPerRow = CVPixelBufferGetBytesPerRow(segmentationLabelPixelBuffer)
+        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
+        let segmentationPtr = segmentationBaseAddress.assumingMemoryBound(to: UInt8.self)
+        let depthPtr = depthBaseAddress.assumingMemoryBound(to: Float.self)
+        
+        var worldPoints: [WorldPoint] = []
+        for y in 0..<segmentationHeight {
+            for x in 0..<segmentationWidth {
+                let segmentationIndex = y * segmentationBytesPerRow / MemoryLayout<UInt8>.stride + x
+                if segmentationPtr[segmentationIndex] != targetValue {
+                    continue
+                }
+                let depthIndex = y * depthBytesPerRow / MemoryLayout<Float>.stride + x
+                let depthValue = depthPtr[depthIndex]
+                if depthValue < minDepthThreshold || depthValue > maxDepthThreshold {
+                    continue
+                }
+                let worldPoint = self.computeWorldPointCPU(
+                    pixelCoord: SIMD2<Int>(x, y),
+                    depthValue: depthValue,
+                    cameraTransform: cameraTransform,
+                    invIntrinsics: invIntrinsics
+                )
+                worldPoints.append(worldPoint)
+            }
+        }
+        
+        return worldPoints
+    }
+    
+    
 }

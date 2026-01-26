@@ -53,7 +53,7 @@ kernel void computeWorldPoints(
   uint2 gid [[thread_position_in_grid]]
 ) {
     if (gid.x >= segmentationTexture.get_width() || gid.y >= segmentationTexture.get_height()) {
-        atomic_fetch_add_explicit(&debugCounts[outsideImage], 1, memory_order_relaxed);
+        atomic_fetch_add_explicit(&debugCounts[outsideImage], 1u, memory_order_relaxed);
         return;
     }
     

@@ -25,7 +25,7 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         
-        try planeFitProcesor.fitPlanePCAWithImage(
+        let plane = try planeFitProcesor.fitPlanePCAWithImage(
             segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
             depthImage: depthMapProcessor.depthImage,
             targetValue: accessibilityFeature.accessibilityFeatureClass.labelValue,

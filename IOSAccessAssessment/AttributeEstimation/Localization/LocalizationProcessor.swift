@@ -144,7 +144,7 @@ struct LocalizationProcessor {
         
         /// Transform the point from camera space to world space
         let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
         
         // Get camera world coordinates
         let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,

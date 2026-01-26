@@ -1498,7 +1498,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1542,7 +1542,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited)";
 				MARKETING_VERSION = 0.3;
 				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment/**";
-				OTHER_CFLAGS = "";
+				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
