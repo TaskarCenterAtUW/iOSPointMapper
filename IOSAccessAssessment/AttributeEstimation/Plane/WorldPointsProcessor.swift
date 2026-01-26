@@ -76,8 +76,6 @@ struct WorldPointsProcessor {
             throw WorldPointsProcessorError.metalPipelineCreationError
         }
         
-        print("WorldPoint Alignment and stride: \(MemoryLayout<WorldPoint>.alignment), \(MemoryLayout<WorldPoint>.alignment)")
-        
         let imageSize = simd_uint2(UInt32(segmentationLabelImage.extent.width), UInt32(segmentationLabelImage.extent.height))
         let invIntrinsics = simd_inverse(cameraIntrinsics)
         
@@ -106,6 +104,12 @@ struct WorldPointsProcessor {
         let pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device, length: MemoryLayout<WorldPoint>.stride * Int(maxPoints), options: .storageModeShared
         )
+        let debugCountSlots = 6
+        let debugBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: MemoryLayout<UInt32>.stride * debugCountSlots,
+            options: .storageModeShared
+        )
         
         /**
          Initialize point count to zero.
@@ -114,6 +118,7 @@ struct WorldPointsProcessor {
             throw WorldPointsProcessorError.meshPipelineBlitEncoderError
         }
         blit.fill(buffer: pointCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
+        blit.fill(buffer: debugBuffer, range: 0..<(MemoryLayout<UInt32>.stride * debugCountSlots), value: 0)
         blit.endEncoding()
         
         /**
@@ -130,6 +135,7 @@ struct WorldPointsProcessor {
         commandEncoder.setBytes(&params, length: MemoryLayout<WorldPointsParams>.stride, index: 1)
         commandEncoder.setBuffer(pointsBuffer, offset: 0, index: 2)
         commandEncoder.setBuffer(pointCount, offset: 0, index: 3)
+        commandEncoder.setBuffer(debugBuffer, offset: 0, index: 4)
         
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(imageSize.x) + threadgroupSize.width - 1) / threadgroupSize.width,
@@ -151,6 +157,16 @@ struct WorldPointsProcessor {
                 worldPoints.append(point)
             }
         }
+        
+        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
+        print("outsideImage:", dbg[0])
+        print("unmatchedSegmentation:", dbg[1])
+        print("belowDepthRange:", dbg[2])
+        print("aboveDepthRange:", dbg[3])
+        print("wrotePoint:", dbg[4])
+        print("depthIsZero:", dbg[5])
+        print("pointCount:", pointsCountPointer)
+        
         return worldPoints
     }
 }

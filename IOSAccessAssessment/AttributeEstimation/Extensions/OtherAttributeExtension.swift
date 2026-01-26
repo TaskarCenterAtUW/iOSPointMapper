@@ -1,5 +1,5 @@
 //
-//  OtherAttributeExtensionLegacy.swift
+//  OtherAttributeExtension.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 1/25/26.
@@ -18,32 +18,22 @@ extension AttributeEstimationPipeline {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
         }
-        guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        guard let planeFitProcesor = self.planeFitProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
-        guard trapezoidBoundPoints.count == 4 else {
-            throw AttributeEstimationPipelineError.invalidAttributeData
-        }
-        let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
-            detectedFeature: accessibilityFeature
-        )
-        let trapezoidBoundPointsWithDepth: [PointWithDepth] = zip(trapezoidBoundPoints, trapezoidBoundDepthValues).map {
-            PointWithDepth(
-                point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)),
-                depth: $0.1
-            )
-        }
-        let widthValue = try localizationProcessor.calculateWidth(
-            trapezoidBoundsWithDepth: trapezoidBoundPointsWithDepth,
-            imageSize: captureImageData.originalSize,
+        
+        try planeFitProcesor.fitPlanePCAWithImage(
+            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
+            depthImage: depthMapProcessor.depthImage,
+            targetValue: accessibilityFeature.accessibilityFeatureClass.labelValue,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(widthValue)) else {
+        
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(0)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue
