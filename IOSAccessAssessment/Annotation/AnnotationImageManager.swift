@@ -61,6 +61,11 @@ struct AnnotationImageResults {
     var featuresOverlayOutputImage: CIImage? = nil
 }
 
+struct AnnotationImageFeatureUpdateResults: Sendable {
+    let plane: Plane?
+    let projectedPlane: ProjectedPlane?
+}
+
 /**
     A class to manage annotation image processing including segmentation mask post-processing and feature detection.
  */
@@ -143,8 +148,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
      Updates the camera image, and recreates the overlay image.
      */
     func updateFeatureClass(
-        accessibilityFeatureClass: AccessibilityFeatureClass,
-        updateFeatureClassResults: AnnotationFeatureClassUpdateResults
+        accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> [EditableAccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
@@ -212,7 +216,8 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func updateFeature(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [EditableAccessibilityFeature],
-        featureSelectedStatus: [UUID: Bool]
+        featureSelectedStatus: [UUID: Bool],
+        updateFeatureResults: AnnotationImageFeatureUpdateResults
     ) throws {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured

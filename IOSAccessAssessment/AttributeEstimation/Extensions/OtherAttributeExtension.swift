@@ -38,6 +38,26 @@ extension AttributeEstimationPipeline {
         return plane
     }
     
+    func calculateProjectedPlane(
+        accessibilityFeature: EditableAccessibilityFeature,
+        plane: Plane
+    ) throws -> ProjectedPlane {
+        guard let planeFitProcesor = self.planeFitProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        
+        let projectedPlane = try planeFitProcesor.projectPlane(
+            plane: plane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        return projectedPlane
+    }
+    
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature,
         plane: Plane? = nil

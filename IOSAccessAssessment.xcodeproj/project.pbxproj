@@ -101,6 +101,7 @@
 		A3A45F0A2EE7A4E10029F5AE /* UnionOfMasksPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */; };
 		A3A45F0C2EE7A4F40029F5AE /* ContourDetectionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F0B2EE7A4F10029F5AE /* ContourDetectionPolicy.swift */; };
 		A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */; };
+		A3AC01AF2F294CCD00A1D0E5 /* PlaneRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */; };
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
 		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */; };
@@ -284,6 +285,7 @@
 		A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksPolicy.swift; sourceTree = "<group>"; };
 		A3A45F0B2EE7A4F10029F5AE /* ContourDetectionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourDetectionPolicy.swift; sourceTree = "<group>"; };
 		A3A739442DD4BA3B0073C7D2 /* CustomXMLParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomXMLParser.swift; sourceTree = "<group>"; };
+		A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneRasterizer.swift; sourceTree = "<group>"; };
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskFilter.swift; sourceTree = "<group>"; };
@@ -691,6 +693,7 @@
 		A364B5D72F259A7800325E5C /* Plane */ = {
 			isa = PBXGroup;
 			children = (
+				A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */,
 				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
 				A364B5DC2F259AF900325E5C /* PlaneFit.metal */,
 				A364B5D82F259AD600325E5C /* PlaneFitProcessor.swift */,
@@ -1230,6 +1233,7 @@
 				A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */,
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,
+				A3AC01AF2F294CCD00A1D0E5 /* PlaneRasterizer.swift in Sources */,
 				DAA7F8C82CA76527003666D8 /* CIImageUtils.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,
 				A3A45F0A2EE7A4E10029F5AE /* UnionOfMasksPolicy.swift in Sources */,
