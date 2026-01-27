@@ -42,10 +42,10 @@ struct Plane: Sendable, CustomStringConvertible {
 }
 
 struct ProjectedPlane: Sendable, CustomStringConvertible {
-    var origin: CGPoint
-    var firstEigenVector: (CGPoint, CGPoint)
-    var secondEigenVector: (CGPoint, CGPoint)
-    var normalVector: (CGPoint, CGPoint)
+    var origin: SIMD2<Float>
+    var firstEigenVector: (SIMD2<Float>, SIMD2<Float>)
+    var secondEigenVector: (SIMD2<Float>, SIMD2<Float>)
+    var normalVector: (SIMD2<Float>, SIMD2<Float>)
     
     var description: String {
         return "ProjectedPlane(origin: \(origin), firstEigenVector: \(firstEigenVector), secondEigenVector: \(secondEigenVector), normalVector: \(normalVector))"
@@ -139,66 +139,79 @@ struct PlaneFitProcessor {
         imageSize: CGSize
     ) throws -> ProjectedPlane {
         let viewMatrix = cameraTransform.inverse // world->camera
-        let pointsToProject = [
-            plane.origin,
-            plane.origin + plane.firstEigenVector,
-            plane.origin + plane.secondEigenVector,
-            plane.origin + plane.n
-        ]
-        var projectedPoints: [SIMD2<Float>] = try pointsToProject.map {
-            try projectWorldToPixel(
-                $0,
+        guard let projectedOrigin = projectWorldToPixel(
+            plane.origin, viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
+        ) else {
+            throw PlaneFitProcessorError.invalidProjectionData
+        }
+        let vectorsToProject = [plane.firstEigenVector, plane.secondEigenVector, plane.n]
+        let projectedVectors: [(SIMD2<Float>, SIMD2<Float>)] = try vectorsToProject.map {
+            try getProjectedVector(
+                origin: plane.origin,
+                vector: $0,
                 viewMatrix: viewMatrix,
-                intrinsics: cameraIntrinsics,
+                cameraIntrinsics: cameraIntrinsics,
                 imageSize: imageSize
             )
         }
-        let origin2D = CGPoint(x: CGFloat(projectedPoints[0].x), y: CGFloat(projectedPoints[0].y))
-        let firstEigenVector2D = ( origin2D, CGPoint(x: CGFloat(projectedPoints[1].x), y: CGFloat(projectedPoints[1].y)) )
-        let secondEigenVector2D = ( origin2D, CGPoint(x: CGFloat(projectedPoints[2].x), y: CGFloat(projectedPoints[2].y)) )
-        let normalVector2D = ( origin2D, CGPoint(x: CGFloat(projectedPoints[3].x), y: CGFloat(projectedPoints[3].y)) )
-        
         return ProjectedPlane(
-            origin: origin2D,
-            firstEigenVector: firstEigenVector2D,
-            secondEigenVector: secondEigenVector2D,
-            normalVector: normalVector2D
+            origin: projectedOrigin,
+            firstEigenVector: projectedVectors[0],
+            secondEigenVector: projectedVectors[1],
+            normalVector: projectedVectors[2]
         )
     }
     
+    private func getProjectedVector(
+        origin: simd_float3,
+        vector: simd_float3,
+        viewMatrix: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        imageSize: CGSize
+    ) throws -> (SIMD2<Float>, SIMD2<Float>) {
+        let points = [origin, origin + vector, origin - vector]
+        let projectedPoints: [SIMD2<Float>] = points.map {
+            projectWorldToPixel($0, viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize)
+        }.compactMap { $0 }
+        guard let firstprojectedPoint = projectedPoints.first,
+              let secondprojectedPoint = projectedPoints.last else {
+            throw PlaneFitProcessorError.invalidProjectionData
+        }
+        return (firstprojectedPoint, secondprojectedPoint)
+    }
+    
+    /**
+        Function to project a 3D world point to 2D pixel coordinates.
+     
+        Returns coordinates even if they are outside the image bounds.
+     */
     private func projectWorldToPixel(
         _ world: simd_float3,
         viewMatrix: simd_float4x4, // (world->camera)
         intrinsics K: simd_float3x3,
         imageSize: CGSize
-    ) throws -> SIMD2<Float> {
-       let p4   = simd_float4(world, 1.0)
-       let pc   = viewMatrix * p4                                  // camera space
-       let x = pc.x, y = pc.y, z = pc.z
-       
-       guard z < 0 else {
-           throw PlaneFitProcessorError.invalidProjectionData
-       }                       // behind camera
-       
-       // normalized image plane coords (flip Y so +Y goes up in pixels)
-       let xn = x / -z
-       let yn = -y / -z
-       
-       // intrinsics (column-major)
-       let fx = K.columns.0.x
-       let fy = K.columns.1.y
-       let cx = K.columns.2.x
-       let cy = K.columns.2.y
-       
-       // pixels in sensor/native image coordinates
-       let u = fx * xn + cx
-       let v = fy * yn + cy
-       
-       if u.isFinite && v.isFinite &&
-           u >= 0 && v >= 0 &&
-           u < Float(imageSize.width) && v < Float(imageSize.height) {
-           return SIMD2<Float>(u.rounded(), v.rounded())
-       }
-        throw PlaneFitProcessorError.invalidProjectionData
+    ) -> SIMD2<Float>? {
+        let p4   = simd_float4(world, 1.0)
+        let pc   = viewMatrix * p4                                  // camera space
+        let x = pc.x, y = pc.y, z = pc.z
+
+        guard z < 0 else {
+           return nil
+        }                       // behind camera
+
+        // normalized image plane coords (flip Y so +Y goes up in pixels)
+        let xn = x / -z
+        let yn = -y / -z
+
+        // intrinsics (column-major)
+        let fx = K.columns.0.x
+        let fy = K.columns.1.y
+        let cx = K.columns.2.x
+        let cy = K.columns.2.y
+
+        // pixels in sensor/native image coordinates
+        let u = fx * xn + cx
+        let v = fy * yn + cy
+        return SIMD2<Float>(u.rounded(), v.rounded())
    }
 }

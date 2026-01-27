@@ -41,7 +41,6 @@ struct DepthMapProcessor {
             pixelFormatType: kCVPixelFormatType_DepthFloat32,
             colorSpace: nil
         )
-        print("DepthMapProcessor initialized with depth image of size: \(depthWidth)x\(depthHeight)")
     }
     
     private func getDepthAtPoint(point: CGPoint) throws -> Float {

@@ -558,6 +558,7 @@ struct AnnotationView: View {
             }
             var accessibilityFeatures: [EditableAccessibilityFeature]
             var featureSelectedStatus: [UUID: Bool] = [:]
+            var updateFeatureResults: AnnotationImageFeatureUpdateResults? = nil
             if let currentFeature = featureSelectionViewModel.currentFeature {
                 accessibilityFeatures = [currentFeature]
                 featureSelectedStatus[currentFeature.id] = true /// Selected and highlighted
@@ -566,6 +567,15 @@ struct AnnotationView: View {
                     let oldFeature = featureSelectionViewModel.instances[oldIndex]
                     accessibilityFeatures.append(oldFeature)
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
+                }
+                if currentClass.attributes.contains(where: {
+                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+                }) {
+                    let plane = try attributeEstimationPipeline.calculatePlane(accessibilityFeature: currentFeature)
+                    let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
+                        accessibilityFeature: currentFeature, plane: plane
+                    )
+                    updateFeatureResults = AnnotationImageFeatureUpdateResults(plane: plane, projectedPlane: projectedPlane)
                 }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
@@ -578,7 +588,7 @@ struct AnnotationView: View {
                 accessibilityFeatureClass: currentClass,
                 accessibilityFeatures: accessibilityFeatures,
                 featureSelectedStatus: featureSelectedStatus,
-                updateFeatureResults: AnnotationImageFeatureUpdateResults(plane: nil, projectedPlane: nil)
+                updateFeatureResults: updateFeatureResults
             )
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)

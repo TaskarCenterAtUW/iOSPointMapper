@@ -62,8 +62,8 @@ struct AnnotationImageResults {
 }
 
 struct AnnotationImageFeatureUpdateResults: Sendable {
-    let plane: Plane?
-    let projectedPlane: ProjectedPlane?
+    let plane: Plane
+    let projectedPlane: ProjectedPlane
 }
 
 /**
@@ -217,7 +217,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [EditableAccessibilityFeature],
         featureSelectedStatus: [UUID: Bool],
-        updateFeatureResults: AnnotationImageFeatureUpdateResults
+        updateFeatureResults: AnnotationImageFeatureUpdateResults?
     ) throws {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
