@@ -162,6 +162,12 @@ struct PlaneFitProcessor {
         )
     }
     
+    /**
+        Function to project a 3D vector originating from a 3D point to 2D pixel coordinates.
+     
+        Ensures that the projected points are valid and within the image bounds by returning points at the corners of the image
+
+     */
     private func getProjectedVector(
         origin: simd_float3,
         vector: simd_float3,
@@ -169,15 +175,61 @@ struct PlaneFitProcessor {
         cameraIntrinsics: simd_float3x3,
         imageSize: CGSize
     ) throws -> (SIMD2<Float>, SIMD2<Float>) {
+        /// First, project the two endpoints of the vector
         let points = [origin, origin + vector, origin - vector]
         let projectedPoints: [SIMD2<Float>] = points.map {
             projectWorldToPixel($0, viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize)
         }.compactMap { $0 }
-        guard let firstprojectedPoint = projectedPoints.first,
-              let secondprojectedPoint = projectedPoints.last else {
+        guard let p1 = projectedPoints.first,
+              let p2 = projectedPoints.last else {
             throw PlaneFitProcessorError.invalidProjectionData
         }
-        return (firstprojectedPoint, secondprojectedPoint)
+        /// Second, express the vector as a line equation: L(s) = p1 + s * (p2 - p1)
+        let startPoint = p1
+        let delta = p2 - p1
+        /// Third, find intersections with image bounds
+        var candidates: [SIMD2<Float>] = []
+        /// Intersect with X=0
+        if delta.x != 0 {
+            let s = -startPoint.x / delta.x
+            let y = startPoint.y + s * delta.y
+            if y >= 0 && y < Float(imageSize.height) {
+                let intersectionPoint = SIMD2<Float>(0, y)
+                candidates.append(intersectionPoint)
+            }
+        }
+        /// Intersect with X=width-1
+        if delta.x != 0 {
+            let s = (Float(imageSize.width) - 1 - startPoint.x) / delta.x
+            let y = startPoint.y + s * delta.y
+            if y >= 0 && y < Float(imageSize.height) {
+                let intersectionPoint = SIMD2<Float>(Float(imageSize.width) - 1, y)
+                candidates.append(intersectionPoint)
+            }
+        }
+        /// Intersect with Y=0
+        if delta.y != 0 {
+            let s = -startPoint.y / delta.y
+            let x = startPoint.x + s * delta.x
+            if x >= 0 && x < Float(imageSize.width) {
+                let intersectionPoint = SIMD2<Float>(x, 0)
+                candidates.append(intersectionPoint)
+            }
+        }
+        /// Intersect with Y=height-1
+        if delta.y != 0 {
+            let s = (Float(imageSize.height) - 1 - startPoint.y) / delta.y
+            let x = startPoint.x + s * delta.x
+            if x >= 0 && x < Float(imageSize.width) {
+                let intersectionPoint = SIMD2<Float>(x, Float(imageSize.height) - 1)
+                candidates.append(intersectionPoint)
+            }
+        }
+        guard let firstProjectedPoint = candidates.first,
+              let secondProjectedPoint = candidates.last else {
+            throw PlaneFitProcessorError.invalidProjectionData
+        }
+        return (firstProjectedPoint, secondProjectedPoint)
     }
     
     /**
