@@ -35,7 +35,13 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        return plane
+        let alignedPlane = try planeFitProcesor.alignPlane(
+            plane: plane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        return alignedPlane
     }
     
     func calculateProjectedPlane(

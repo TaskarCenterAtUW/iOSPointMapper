@@ -28,6 +28,13 @@ struct PlaneRasterizer {
         return path
     }
     
+    static func createCircle(point: SIMD2<Float>, size: CGSize, radius: CGFloat) -> UIBezierPath {
+        let path = UIBezierPath()
+        let pixelPoint = CGPoint(x: CGFloat(point.x), y: (size.height - CGFloat(point.y)))
+        path.addArc(withCenter: pixelPoint, radius: radius, startAngle: 0, endAngle: CGFloat(2 * Double.pi), clockwise: true)
+        return path
+    }
+    
     static func rasterizePlane(
         projectedPlane: ProjectedPlane,
         size: CGSize,
@@ -36,11 +43,14 @@ struct PlaneRasterizer {
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
-        let vectorsToDraw = [projectedPlane.firstEigenVector, projectedPlane.secondEigenVector]
+        let vectorsToDraw = [projectedPlane.firstVector, projectedPlane.secondVector]
         let colors = [UIColor.red, UIColor.blue]
         for (index, vector) in vectorsToDraw.enumerated() {
             let path = createPath(points: [vector.0, vector.1], size: size)
             context.addPath(path.cgPath)
+            /// Add circle for second point
+            let circlePath = createCircle(point: vector.1, size: size, radius: 6.0)
+            context.addPath(circlePath.cgPath)
             context.setStrokeColor(colors[index].cgColor)
             context.setLineWidth(linesConfig.width)
             context.strokePath()

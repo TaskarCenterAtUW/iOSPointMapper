@@ -27,4 +27,8 @@ struct Constants {
         static let primaryWorkspaceIds: [String] = ["288", "349"]
 //      "252", "322", "368", "374", "378", "381", "384", "323", "369", "156", "375", "379"]
     }
+    
+    struct OtherConstants {
+        static let directionAlignmentDotProductThreshold: Float = 0.866 // cos(30 degrees)
+    }
 }
