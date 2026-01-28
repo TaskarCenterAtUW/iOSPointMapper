@@ -40,7 +40,7 @@ inline float3 projectPixelToWorld(
     return worldPoint;
 }
 
-// Plane Fitting Point Extraction Kernel
+// Function to compute world points from segmentation and depth textures
 // Assumes the depth texture is the same size as the segmentation texture
 kernel void computeWorldPoints(
   texture2d<float, access::read> segmentationTexture [[texture(0)]],
@@ -89,4 +89,24 @@ kernel void computeWorldPoints(
     
     uint idx = atomic_fetch_add_explicit(pointCount, 1u, memory_order_relaxed);
     points[idx].p = worldPoint;
+}
+
+// Function to project world points along a plane (longitudinal and lateral axes)
+kernel void projectPointsToPlane(
+    device const WorldPoint* inputPoints [[buffer(0)]],
+    constant uint& pointCount [[buffer(1)]],
+    constant ProjectedPointsParams& params [[buffer(2)]],
+    device ProjectedPoint* outputPoints [[buffer(3)]],
+    uint id [[thread_position_in_grid]]
+) {
+    if (id >= pointCount) return;
+    float3 longitudinalVector = normalize(params.longitudinalVector);
+    float3 lateralVector = normalize(params.lateralVector);
+    float3 origin = params.origin;
+    
+    float3 point = inputPoints[id].p;
+    float s = dot(point - origin, longitudinalVector);
+    float t = dot(point - origin, lateralVector);
+    outputPoints[id].s = s;
+    outputPoints[id].t = t;
 }
