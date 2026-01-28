@@ -45,7 +45,9 @@ enum WorldPointsProcessorError: Error, LocalizedError {
 struct WorldPointsProcessor {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
-    private let pipeline: MTLComputePipelineState
+    
+    private let worldPointsPipeline: MTLComputePipelineState
+    private let projectionPipeline: MTLComputePipelineState
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
@@ -61,11 +63,16 @@ struct WorldPointsProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeWorldPoints"),
-              let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+        guard let worldPointskernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeWorldPoints"),
+              let worldPointsPipeline = try? device.makeComputePipelineState(function: worldPointskernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
-        self.pipeline = pipeline
+        self.worldPointsPipeline = worldPointsPipeline
+        guard let projectionKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "projectPointsToPlane"),
+              let projectionPipeline = try? device.makeComputePipelineState(function: projectionKernelFunction) else {
+            throw WorldPointsProcessorError.metalInitializationFailed
+        }
+        self.projectionPipeline = projectionPipeline
     }
     
     /**
@@ -108,11 +115,11 @@ struct WorldPointsProcessor {
             device: self.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
         let maxPoints = imageSize.x * imageSize.y
-        let pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+        var pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device, length: MemoryLayout<WorldPoint>.stride * Int(maxPoints), options: .storageModeShared
         )
         let debugCountSlots = 6
-        let debugBuffer = try MetalBufferUtils.makeBuffer(
+        var debugBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<UInt32>.stride * debugCountSlots,
             options: .storageModeShared
@@ -135,7 +142,7 @@ struct WorldPointsProcessor {
             throw WorldPointsProcessorError.metalPipelineCreationError
         }
         
-        commandEncoder.setComputePipelineState(self.pipeline)
+        commandEncoder.setComputePipelineState(self.worldPointsPipeline)
         commandEncoder.setTexture(segmentationLabelTexture, index: 0)
         commandEncoder.setTexture(depthTexture, index: 1)
         commandEncoder.setBytes(&targetValueVar, length: MemoryLayout<UInt8>.size, index: 0)
@@ -144,7 +151,7 @@ struct WorldPointsProcessor {
         commandEncoder.setBuffer(pointCount, offset: 0, index: 3)
         commandEncoder.setBuffer(debugBuffer, offset: 0, index: 4)
         
-        let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
+        let threadgroupSize = MTLSize(width: worldPointsPipeline.threadExecutionWidth, height: worldPointsPipeline.maxTotalThreadsPerThreadgroup / worldPointsPipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(imageSize.x) + threadgroupSize.width - 1) / threadgroupSize.width,
                                       height: (Int(imageSize.y) + threadgroupSize.height - 1) / threadgroupSize.height,
                                         depth: 1)
@@ -164,7 +171,7 @@ struct WorldPointsProcessor {
                 worldPoints.append(point)
             }
         }
-        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
+//        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
         
         return worldPoints
     }
@@ -265,5 +272,67 @@ struct WorldPointsProcessor {
         return worldPoints
     }
     
-    
+    func projectPointsToPlane(
+        worldPoints: [WorldPoint],
+        plane: Plane,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        imageSize: CGSize
+    ) throws -> [ProjectedPoint] {
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw WorldPointsProcessorError.metalPipelineCreationError
+        }
+        var pointCount = worldPoints.count
+        if pointCount == 0 {
+            return []
+        }
+        var params = ProjectedPointsParams(
+            imageSize: simd_uint2(UInt32(imageSize.width), UInt32(imageSize.height)),
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics,
+            longitudinalVector: simd_float3(plane.firstVector),
+            lateralVector: simd_float3(plane.secondVector),
+            normalVector: simd_float3(plane.normalVector),
+            origin: simd_float3(plane.origin)
+        )
+        var worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: MemoryLayout<WorldPoint>.stride * pointCount,
+            options: .storageModeShared
+        )
+        var projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: MemoryLayout<ProjectedPoint>.stride * pointCount,
+            options: .storageModeShared
+        )
+        
+        let threadGroupSizeWidth = min(self.projectionPipeline.maxTotalThreadsPerThreadgroup, 256)
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw WorldPointsProcessorError.metalPipelineCreationError
+        }
+        
+        commandEncoder.setComputePipelineState(self.projectionPipeline)
+        commandEncoder.setBuffer(worldPointsBuffer, offset: 0, index: 0)
+        commandEncoder.setBytes(&pointCount, length: MemoryLayout<UInt32>.stride, index: 1)
+        commandEncoder.setBytes(&params, length: MemoryLayout<ProjectedPointsParams>.stride, index: 2)
+        commandEncoder.setBuffer(projectedPointsBuffer, offset: 0, index: 3)
+        
+        let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
+        let threadgroups = MTLSize(width: (pointCount + threadGroupSize.width - 1) / threadGroupSize.width,
+                                    height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        var projectedPoints: [ProjectedPoint] = []
+        let projectedPointsPointer = projectedPointsBuffer.contents().bindMemory(to: ProjectedPoint.self, capacity: pointCount)
+        for i in 0..<pointCount {
+            let projectedPoint = projectedPointsPointer.advanced(by: i).pointee
+            projectedPoints.append(projectedPoint)
+        }
+        return projectedPoints
+    }
 }
