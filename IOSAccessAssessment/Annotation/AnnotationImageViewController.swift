@@ -11,7 +11,7 @@ import SwiftUI
 protocol AnnotationImageProcessingOutputConsumer: AnyObject {
     func annotationOutputImage(
         _ delegate: AnnotationImageProcessingDelegate,
-        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?
+        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?, overlay3Image: CIImage?
     )
 }
 
@@ -57,6 +57,16 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
+    private let overlay3View: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 12
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
+        iv.isUserInteractionEnabled = false
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        return iv
+    }()
     
     init(annotationImageManager: AnnotationImageManager) {
         self.annotationImageManager = annotationImageManager
@@ -87,6 +97,8 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         constraintChildViewToParent(childView: overlayView, parentView: subView)
         subView.addSubview(overlay2View)
         constraintChildViewToParent(childView: overlay2View, parentView: subView)
+        subView.addSubview(overlay3View)
+        constraintChildViewToParent(childView: overlay3View, parentView: subView)
         
         annotationImageManager.outputConsumer = self
         annotationImageManager.setOrientation(getOrientation())
@@ -118,7 +130,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
     
     func annotationOutputImage(
         _ delegate: AnnotationImageProcessingDelegate,
-        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?
+        image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?, overlay3Image: CIImage?
     ) {
         if let img = image {
             let uiImage = UIImage(ciImage: img)
@@ -131,6 +143,12 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         if let overlay2Img = overlay2Image {
             let uiOverlay2Image = UIImage(ciImage: overlay2Img)
             overlay2View.image = uiOverlay2Image
+        }
+        if let overlay3Img = overlay3Image {
+            let uiOverlay3Image = UIImage(ciImage: overlay3Img)
+            overlay3View.image = uiOverlay3Image
+        } else {
+            overlay3View.image = nil
         }
     }
     
