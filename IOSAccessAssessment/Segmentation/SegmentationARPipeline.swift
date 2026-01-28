@@ -193,7 +193,7 @@ final class SegmentationARPipeline: ObservableObject {
             let depthMinThresholdValue = Constants.DepthConstants.depthMinThreshold
             let depthMaxThresholdValue = Constants.DepthConstants.depthMaxThreshold
             depthFilteredSegmentationImage = try depthFilter.apply(
-                to: segmentationImage, depthMap: depthImage,
+                to: segmentationImage, depthImage: depthImage,
                 depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue
             )
         }

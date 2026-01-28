@@ -60,8 +60,10 @@ struct LocalizationProcessor {
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics
         )
+        let latitudeDelta = -delta.z
+        let longitudeDelta = delta.x
         return self.calculateLocation(
-            latitudeDelta: delta.z, longitudeDelta: delta.x,
+            latitudeDelta: latitudeDelta, longitudeDelta: longitudeDelta,
             deviceLocation: deviceLocation
         )
     }
@@ -81,7 +83,7 @@ struct LocalizationProcessor {
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics
         )
-        return SIMD2<Float>(delta.z, delta.x)
+        return SIMD2<Float>( -delta.z, delta.x )
     }
     
     func calculateLocation(
@@ -142,15 +144,13 @@ struct LocalizationProcessor {
         
         /// Transform the point from camera space to world space
         let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z)
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
         
         // Get camera world coordinates
         let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
                                                  cameraTransform.columns.3.y,
                                                  cameraTransform.columns.3.z)
         var delta = worldPoint - cameraOriginPoint
-        /// Fix the z-axis back so that it points north
-        delta.z = -delta.z
         
         return delta
     }
@@ -194,10 +194,13 @@ extension LocalizationProcessor {
             throw LocalizationProcessorError.invalidBounds
         }
         let trapezoidDeltas = trapezoidBoundsWithDepth.map { pointWithDepth in
-            return getDeltaFromPoint(
+            let delta = getDeltaFromPoint(
                 point: pointWithDepth.point, depth: pointWithDepth.depth, imageSize: imageSize,
                 cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
             )
+            var deltaNorth = delta
+            deltaNorth.z = -deltaNorth.z
+            return deltaNorth
         }
         let bottomLeft = trapezoidDeltas[0]
         let topLeft = trapezoidDeltas[1]
@@ -240,10 +243,13 @@ extension LocalizationProcessor {
             throw LocalizationProcessorError.invalidBounds
         }
         let trapezoidDeltas = trapezoidBoundsWithDepth.map { pointWithDepth in
-            return getDeltaFromPoint(
+            let delta = getDeltaFromPoint(
                 point: pointWithDepth.point, depth: pointWithDepth.depth, imageSize: imageSize,
                 cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
             )
+            var deltaNorth = delta
+            deltaNorth.z = -deltaNorth.z
+            return deltaNorth
         }
         let bottomLeft = trapezoidDeltas[0]
         let topLeft = trapezoidDeltas[1]
@@ -275,10 +281,13 @@ extension LocalizationProcessor {
             throw LocalizationProcessorError.invalidBounds
         }
         let trapezoidDeltas = trapezoidBoundsWithDepth.map { pointWithDepth in
-            return getDeltaFromPoint(
+            let delta = getDeltaFromPoint(
                 point: pointWithDepth.point, depth: pointWithDepth.depth, imageSize: imageSize,
                 cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
             )
+            var deltaNorth = delta
+            deltaNorth.z = -deltaNorth.z
+            return deltaNorth
         }
         let bottomLeft = trapezoidDeltas[0]
         let topLeft = trapezoidDeltas[1]

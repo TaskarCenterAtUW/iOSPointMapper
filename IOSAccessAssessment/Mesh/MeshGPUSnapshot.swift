@@ -105,8 +105,8 @@ final class MeshGPUSnapshotGenerator: NSObject {
         let anchorTransform = meshAnchor.transform
         
         var meshGPUAnchor: MeshGPUAnchor = try currentSnapshot?.anchors[meshAnchor.identifier] ?? {
-            let vertexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
-            let indexBuffer = try MeshBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
+            let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
+            let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
             return MeshGPUAnchor(
                 vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: nil, anchorTransform: anchorTransform
             )
@@ -116,13 +116,13 @@ final class MeshGPUSnapshotGenerator: NSObject {
         // MARK: This code assumes the vertex format will always be only Float3
         let vertexElemSize = MemoryLayout<Float>.stride * 3
         let vertexByteCount = vertices.count * vertexElemSize
-        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
+        try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
         
         let vertexSrcPtr = vertices.buffer.contents().advanced(by: vertices.offset)
         if (vertices.stride == vertexElemSize) {
-            try MeshBufferUtils.copyContiguous(srcPtr: vertexSrcPtr, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+            try MetalBufferUtils.copyContiguous(srcPtr: vertexSrcPtr, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
         } else {
-            try MeshBufferUtils.copyStrided(count: vertices.count, srcPtr: vertexSrcPtr, srcStride: vertices.stride,
+            try MetalBufferUtils.copyStrided(count: vertices.count, srcPtr: vertexSrcPtr, srcStride: vertices.stride,
                             dst: meshGPUAnchor.vertexBuffer, elemSize: vertexElemSize)
         }
         
@@ -130,13 +130,13 @@ final class MeshGPUSnapshotGenerator: NSObject {
         // MARK: This code assumes the index type will always be only UInt32
         let indexTypeSize = MemoryLayout<UInt32>.stride
         let indexByteCount = faces.count * faces.bytesPerIndex * faces.indexCountPerPrimitive
-        try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.indexBuffer, requiredBytes: indexByteCount)
+        try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.indexBuffer, requiredBytes: indexByteCount)
         
         let indexSrcPtr = faces.buffer.contents()
         if (faces.bytesPerIndex == indexTypeSize) {
-            try MeshBufferUtils.copyContiguous(srcPtr: indexSrcPtr, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+            try MetalBufferUtils.copyContiguous(srcPtr: indexSrcPtr, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
         } else {
-            try MeshBufferUtils.copyStrided(count: faces.count * faces.indexCountPerPrimitive, srcPtr: indexSrcPtr, srcStride: faces.bytesPerIndex,
+            try MetalBufferUtils.copyStrided(count: faces.count * faces.indexCountPerPrimitive, srcPtr: indexSrcPtr, srcStride: faces.bytesPerIndex,
                             dst: meshGPUAnchor.indexBuffer, elemSize: indexTypeSize)
         }
         
@@ -146,18 +146,18 @@ final class MeshGPUSnapshotGenerator: NSObject {
             let classificationElemSize = MemoryLayout<UInt8>.stride
             let classificationByteCount = classifications.count * classificationElemSize
             if meshGPUAnchor.classificationBuffer == nil {
-                let newCapacity = MeshBufferUtils.nextCap(classificationByteCount)
-                meshGPUAnchor.classificationBuffer = try MeshBufferUtils.makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
+                let newCapacity = MetalBufferUtils.nextCap(classificationByteCount)
+                meshGPUAnchor.classificationBuffer = try MetalBufferUtils.makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
             } else {
-                try MeshBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.classificationBuffer!, requiredBytes: classificationByteCount)
+                try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.classificationBuffer!, requiredBytes: classificationByteCount)
             }
             let classificationSrcPtr = classifications.buffer.contents().advanced(by: classifications.offset)
             if (classifications.stride == classificationElemSize) {
-                try MeshBufferUtils.copyContiguous(
+                try MetalBufferUtils.copyContiguous(
                     srcPtr: classificationSrcPtr, dst: meshGPUAnchor.classificationBuffer!, byteCount: classificationByteCount
                 )
             } else {
-                try MeshBufferUtils.copyStrided(
+                try MetalBufferUtils.copyStrided(
                     count: classifications.count, srcPtr: classificationSrcPtr, srcStride: classifications.stride,
                     dst: meshGPUAnchor.classificationBuffer!, elemSize: classificationElemSize)
             }

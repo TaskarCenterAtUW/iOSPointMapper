@@ -55,15 +55,15 @@ struct DepthFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "depthFilteringKernel"), /// Need to create this kernel
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "depthFilteringKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            throw BinaryMaskFilterError.metalInitializationFailed
+            throw DepthFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
     
     func apply(
-        to inputImage: CIImage, depthMap: CIImage,
+        to inputImage: CIImage, depthImage: CIImage,
         depthMinThreshold: Float, depthMaxThreshold: Float
     ) throws -> CIImage {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
@@ -78,19 +78,19 @@ struct DepthFilter {
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
-        let depthTexture = try depthMap.toMTLTexture(
+        let depthTexture = try depthImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
-            throw BinaryMaskFilterError.textureCreationFailed
+            throw DepthFilterError.textureCreationFailed
         }
         var depthMinThresholdVar = depthMinThreshold
         var depthMaxThresholdVar = depthMaxThreshold
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw BinaryMaskFilterError.metalPipelineCreationError
+            throw DepthFilterError.metalPipelineCreationError
         }
         
         commandEncoder.setComputePipelineState(self.pipeline)

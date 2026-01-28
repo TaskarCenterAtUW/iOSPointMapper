@@ -1,5 +1,5 @@
 //
-//  MeshBufferUtils.swift
+//  MetalBufferUtils.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 11/3/25.
@@ -9,7 +9,7 @@ import RealityKit
 import Metal
 import simd
 
-enum MeshBufferUtilsError: Error, LocalizedError {
+enum MetalBufferUtilsError: Error, LocalizedError {
     case bufferTooSmall(expected: Int, actual: Int)
     case bufferCreationFailed
     
@@ -24,13 +24,13 @@ enum MeshBufferUtilsError: Error, LocalizedError {
 }
 
 
-struct MeshBufferUtils {
+struct MetalBufferUtils {
     static let defaultBufferSize: Int = 1024
     
     @inline(__always)
     static func copyContiguous(srcPtr: UnsafeRawPointer, dst: MTLBuffer, byteCount: Int) throws {
         guard byteCount <= dst.length else {
-            throw MeshBufferUtilsError.bufferTooSmall(expected: byteCount, actual: dst.length)
+            throw MetalBufferUtilsError.bufferTooSmall(expected: byteCount, actual: dst.length)
         }
         let dstPtr = dst.contents()
         dstPtr.copyMemory(from: srcPtr, byteCount: byteCount)
@@ -40,7 +40,7 @@ struct MeshBufferUtils {
     static func copyStrided(count: Int, srcPtr: UnsafeRawPointer, srcStride: Int,
                      dst: MTLBuffer, elemSize: Int) throws {
         guard count * elemSize <= dst.length else {
-            throw MeshBufferUtilsError.bufferTooSmall(expected: count * elemSize, actual: dst.length)
+            throw MetalBufferUtilsError.bufferTooSmall(expected: count * elemSize, actual: dst.length)
         }
         let dstPtr = dst.contents()
         for i in 0..<count {
@@ -61,7 +61,7 @@ struct MeshBufferUtils {
     @inline(__always)
     static func makeBuffer(device: MTLDevice, length: Int, options: MTLResourceOptions = .storageModeShared) throws -> MTLBuffer {
         guard let buffer = device.makeBuffer(length: length, options: options) else {
-            throw MeshBufferUtilsError.bufferCreationFailed
+            throw MetalBufferUtilsError.bufferCreationFailed
         }
         return buffer
     }

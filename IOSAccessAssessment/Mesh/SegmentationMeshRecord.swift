@@ -132,20 +132,20 @@ final class SegmentationMeshRecord {
             self.entity.model?.mesh = resource
         }
         
-        let outTriCount: MTLBuffer = try MeshBufferUtils.makeBuffer(
+        let outTriCount: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.context.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
         // For debugging
         let debugSlots = Int(3) // MARK: Hard-coded
         let debugBytes = debugSlots * MemoryLayout<UInt32>.stride
-        let debugCounter: MTLBuffer = try MeshBufferUtils.makeBuffer(
+        let debugCounter: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.context.device, length: debugBytes, options: .storageModeShared
         )
         
-        let aabbMinU = try MeshBufferUtils.makeBuffer(
+        let aabbMinU = try MetalBufferUtils.makeBuffer(
             device: self.context.device, length: 3 * MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
-        let aabbMaxU = try MeshBufferUtils.makeBuffer(
+        let aabbMaxU = try MetalBufferUtils.makeBuffer(
             device: self.context.device, length: 3 * MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
         do {

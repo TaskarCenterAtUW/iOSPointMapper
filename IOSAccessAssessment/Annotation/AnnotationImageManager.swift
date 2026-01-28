@@ -52,13 +52,18 @@ struct AnnotationImageResults {
     let cameraImage: CIImage
     let segmentationLabelImage: CIImage
     
-    var alignedSegmentationLabalImages: [CIImage]?
+    var alignedSegmentationLabelImages: [CIImage]?
     var processedSegmentationLabelImage: CIImage? = nil
     var featuresSourceCGImage: CGImage? = nil
     
     var cameraOutputImage: CIImage? = nil
     var segmentationOverlayOutputImage: CIImage? = nil
     var featuresOverlayOutputImage: CIImage? = nil
+}
+
+struct AnnotationImageFeatureUpdateResults: Sendable {
+    let plane: Plane
+    let projectedPlane: ProjectedPlane
 }
 
 /**
@@ -109,7 +114,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
-                    self, image: cameraOutputImage, overlayImage: nil, overlay2Image: nil
+                    self, image: cameraOutputImage, overlayImage: nil, overlay2Image: nil, overlay3Image: nil
                 )
             }
         }
@@ -127,7 +132,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             return
         }
         let alignedSegmentationLabelImages = getAlignedCaptureDataHistory(captureDataHistory: captureDataHistory)
-        annotationImageResults.alignedSegmentationLabalImages = alignedSegmentationLabelImages
+        annotationImageResults.alignedSegmentationLabelImages = alignedSegmentationLabelImages
         self.annotationImageResults = annotationImageResults
     }
     
@@ -142,7 +147,9 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     /**
      Updates the camera image, and recreates the overlay image.
      */
-    func updateFeatureClass(accessibilityFeatureClass: AccessibilityFeatureClass) throws -> [EditableAccessibilityFeature] {
+    func updateFeatureClass(
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> [EditableAccessibilityFeature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
@@ -199,7 +206,8 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
                     self,
                     image: cameraOutputImage,
                     overlayImage: segmentationOverlayOutputImage,
-                    overlay2Image: featuresOverlayOutputImage
+                    overlay2Image: featuresOverlayOutputImage,
+                    overlay3Image: nil
                 )
             }
         }
@@ -209,7 +217,8 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     func updateFeature(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         accessibilityFeatures: [EditableAccessibilityFeature],
-        featureSelectedStatus: [UUID: Bool]
+        featureSelectedStatus: [UUID: Bool],
+        updateFeatureResults: AnnotationImageFeatureUpdateResults?
     ) throws {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
@@ -217,7 +226,8 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         guard var annotationImageResults = self.annotationImageResults,
               let cameraOutputImage = annotationImageResults.cameraOutputImage,
               let segmentationOverlayOutputImage = annotationImageResults.segmentationOverlayOutputImage,
-              let featuresSourceCGImage = annotationImageResults.featuresSourceCGImage else {
+              let featuresSourceCGImage = annotationImageResults.featuresSourceCGImage,
+              let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.imageResultCacheFailed
         }
         let updatedFeaturesOverlayResults = try updateFeaturesOverlayOutputImageWithSource(
@@ -228,13 +238,20 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         annotationImageResults.featuresSourceCGImage = updatedFeaturesOverlayResults.sourceCGImage
         annotationImageResults.featuresOverlayOutputImage = updatedFeaturesOverlayResults.overlayImage
         self.annotationImageResults = annotationImageResults
+        /// Additional images for debugging
+        let overlay3Image: CIImage? = self.getPlaneImage(
+            captureImageData: captureImageData,
+            size: captureImageData.originalSize,
+            updateFeatureResults: updateFeatureResults
+        )
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
                     self,
                     image: cameraOutputImage,
                     overlayImage: segmentationOverlayOutputImage,
-                    overlay2Image: updatedFeaturesOverlayResults.overlayImage
+                    overlay2Image: updatedFeaturesOverlayResults.overlayImage,
+                    overlay3Image: overlay3Image
                 )
             }
         }
@@ -532,5 +549,37 @@ extension AnnotationImageManager {
         }
         
         return polygonsNormalizedCoordinates
+    }
+}
+
+/**
+ Additional images for debugging
+ */
+extension AnnotationImageManager {
+    private func getPlaneImage(
+        captureImageData: (any CaptureImageDataProtocol),
+        size: CGSize,
+        updateFeatureResults: AnnotationImageFeatureUpdateResults?
+    ) -> CIImage? {
+        guard let plane = updateFeatureResults?.plane,
+              let projectedPlane = updateFeatureResults?.projectedPlane else {
+            return nil
+        }
+        guard let rasterizedPlaneCGImage = PlaneRasterizer.rasterizePlane(
+            projectedPlane: projectedPlane, size: size
+        ) else { return nil }
+        let rasterizedPlaneCIImage = CIImage(cgImage: rasterizedPlaneCGImage)
+        let interfaceOrientation = captureImageData.interfaceOrientation
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = rasterizedPlaneCIImage.oriented(imageOrientation)
+        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+            return nil
+        }
+        return CIImage(cgImage: overlayCgImage)
     }
 }
