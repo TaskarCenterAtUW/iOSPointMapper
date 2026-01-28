@@ -13,21 +13,37 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     let area: Float
     let perimeter: Float
     
-    init(centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float) {
+    let trapezoidPoints: [SIMD2<Float>]?
+    
+    init(
+        centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float,
+        trapezoidPoints: [SIMD2<Float>]? = nil
+    ) {
         self.centroid = centroid
         self.boundingBox = boundingBox
         self.normalizedPoints = normalizedPoints
         self.area = area
         self.perimeter = perimeter
+        self.trapezoidPoints = trapezoidPoints
     }
     
-    init(normalizedPoints: [SIMD2<Float>]) {
+    init(normalizedPoints: [SIMD2<Float>], trapezoidPoints: [SIMD2<Float>]? = nil) {
         let contourDetails = ContourUtils.getCentroidAreaBounds(normalizedPoints: normalizedPoints)
         self.centroid = contourDetails.centroid
         self.boundingBox = contourDetails.boundingBox
         self.normalizedPoints = normalizedPoints
         self.area = contourDetails.area
         self.perimeter = contourDetails.perimeter
+        self.trapezoidPoints = trapezoidPoints
+    }
+    
+    init(contourDetails: ContourDetails, trapezoidPoints: [SIMD2<Float>]? = nil) {
+        self.centroid = contourDetails.centroid
+        self.boundingBox = contourDetails.boundingBox
+        self.normalizedPoints = contourDetails.normalizedPoints
+        self.area = contourDetails.area
+        self.perimeter = contourDetails.perimeter
+        self.trapezoidPoints = trapezoidPoints
     }
 }
 

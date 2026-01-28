@@ -26,8 +26,8 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
-        guard trapezoidBoundPoints.count == 4 else {
+        guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
+              trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
@@ -63,8 +63,8 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
-        guard trapezoidBoundPoints.count == 4 else {
+        guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
+              trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(
@@ -102,8 +102,8 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        let trapezoidBoundPoints = accessibilityFeature.contourDetails.normalizedPoints
-        guard trapezoidBoundPoints.count == 4 else {
+        guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
+              trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
         let trapezoidBoundDepthValues = try depthMapProcessor.getFeatureDepthsAtBounds(

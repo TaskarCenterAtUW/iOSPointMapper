@@ -12,15 +12,15 @@ struct PlaneRasterizer {
     /**
      The path points for ProjectedPlane are unnormalized.
      */
-    static func createPath(points: [SIMD2<Float>]) -> UIBezierPath {
+    static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
         let path = UIBezierPath()
         guard let firstPoint = points.first else { return path }
         
-        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x), y: CGFloat(firstPoint.y))
+        let firstPixelPoint = CGPoint(x: CGFloat(firstPoint.x), y: (size.height - CGFloat(firstPoint.y)))
         path.move(to: firstPixelPoint)
         
         for point in points.dropFirst() {
-            let pixelPoint = CGPoint(x: CGFloat(point.x), y: CGFloat(point.y))
+            let pixelPoint = CGPoint(x: CGFloat(point.x), y: (size.height - CGFloat(point.y)))
             path.addLine(to: pixelPoint)
         }
         
@@ -39,7 +39,7 @@ struct PlaneRasterizer {
         let vectorsToDraw = [projectedPlane.firstEigenVector, projectedPlane.secondEigenVector]
         let colors = [UIColor.red, UIColor.blue]
         for (index, vector) in vectorsToDraw.enumerated() {
-            let path = createPath(points: [vector.0, vector.1])
+            let path = createPath(points: [vector.0, vector.1], size: size)
             context.addPath(path.cgPath)
             context.setStrokeColor(colors[index].cgColor)
             context.setLineWidth(linesConfig.width)

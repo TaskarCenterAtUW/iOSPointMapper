@@ -236,7 +236,9 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         ) {
             let trapezoidFeature = DetectedAccessibilityFeature(
                 accessibilityFeatureClass: largestFeature.accessibilityFeatureClass,
-                contourDetails: ContourDetails(normalizedPoints: trapezoidPoints)
+                contourDetails: ContourDetails(
+                    contourDetails: largestFeature.contourDetails, trapezoidPoints: trapezoidPoints
+                )
             )
             detectedFeatures = [trapezoidFeature]
         }
