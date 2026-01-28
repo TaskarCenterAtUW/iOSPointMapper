@@ -138,7 +138,14 @@ struct PlaneFitProcessor {
         return plane
     }
     
-    func alignPlane(
+    /**
+        Function to align the plane's vectors based on camera view direction.
+     
+        NOTE:
+        The alignment prioritizes making sure that the running vector is aligned sufficiently with the camera view direction in the horizontal plane.
+        This is because the app assumes the device is pointed along the running direction.
+     */
+    func alignPlaneWithViewDirection(
         plane: Plane,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
@@ -158,7 +165,6 @@ struct PlaneFitProcessor {
             vector1: plane.secondVector,
             vector2: viewVector
         )
-        print("First vector alignment: \(firstVectorAlignment), Second vector alignment: \(secondVectorAlignment)")
         var runningVector: simd_float3
         var crossVector: simd_float3
         /// If neither are aligned, try to align the viewVector to be perpendicular to the plane normal, and use its orthogonal as cross

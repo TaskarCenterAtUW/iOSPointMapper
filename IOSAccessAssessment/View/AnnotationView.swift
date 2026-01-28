@@ -571,7 +571,7 @@ struct AnnotationView: View {
                 if currentClass.attributes.contains(where: {
                     $0 == .width || $0 == .runningSlope || $0 == .crossSlope
                 }) {
-                    let plane = try attributeEstimationPipeline.calculatePlane(accessibilityFeature: currentFeature)
+                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(accessibilityFeature: currentFeature)
                     let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
                         accessibilityFeature: currentFeature, plane: plane
                     )

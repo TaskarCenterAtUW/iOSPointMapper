@@ -15,7 +15,7 @@ extension AttributeEstimationPipeline {
     /**
      Intermediary method to calculate the plane of the feature.
      */
-    func calculatePlane(
+    func calculateAlignedPlane(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> Plane {
         guard let depthMapProcessor = self.depthMapProcessor else {
@@ -35,7 +35,7 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        let alignedPlane = try planeFitProcesor.alignPlane(
+        let alignedPlane = try planeFitProcesor.alignPlaneWithViewDirection(
             plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
@@ -66,9 +66,26 @@ extension AttributeEstimationPipeline {
     
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature,
-        plane: Plane? = nil
+        alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        var plane = try (plane ?? calculatePlane(accessibilityFeature: accessibilityFeature))
+        guard let planeFitProcesor = self.planeFitProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let finalPlane: Plane
+        if let alignedPlane = alignedPlane {
+            finalPlane = alignedPlane
+        } else {
+            let plane = try calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
+            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
+                plane: plane,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics,
+                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+            )
+        }
         
         guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(0)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
@@ -76,13 +93,42 @@ extension AttributeEstimationPipeline {
         return widthAttributeValue
     }
     
+    /**
+        Function to calculate the running slope of the feature.
+     
+        Assumes that the plane being calculated has its first vector aligned with the direction of travel.
+     */
     func calculateRunningSlope(
         accessibilityFeature: EditableAccessibilityFeature,
-        plane: Plane? = nil
+        alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        var plane = try (plane ?? calculatePlane(accessibilityFeature: accessibilityFeature))
+        guard let planeFitProcesor = self.planeFitProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let finalPlane: Plane
+        if let alignedPlane = alignedPlane {
+            finalPlane = alignedPlane
+        } else {
+            let plane = try calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
+            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
+                plane: plane,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics,
+                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+            )
+        }
+        let runningVector = simd_normalize(finalPlane.firstVector)
+        let gravityVector = SIMD3<Float>(0, 1, 0)
+        let rise = simd_dot(runningVector, gravityVector)
+        let runningHorizontalVector = simd_normalize(runningVector - (rise * gravityVector))
+        let run = simd_length(runningHorizontalVector)
+        let slopeRadians = atan2(rise, run)
+        let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
         
-        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(0) else {
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return runningSlopeAttributeValue
@@ -90,11 +136,35 @@ extension AttributeEstimationPipeline {
     
     func calculateCrossSlope(
         accessibilityFeature: EditableAccessibilityFeature,
-        plane: Plane? = nil
+        alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        var plane = try (plane ?? calculatePlane(accessibilityFeature: accessibilityFeature))
+        guard let planeFitProcesor = self.planeFitProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let finalPlane: Plane
+        if let alignedPlane = alignedPlane {
+            finalPlane = alignedPlane
+        } else {
+            let plane = try calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
+            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
+                plane: plane,
+                cameraTransform: captureImageData.cameraTransform,
+                cameraIntrinsics: captureImageData.cameraIntrinsics,
+                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+            )
+        }
+        let crossVector = simd_normalize(finalPlane.secondVector)
+        let gravityVector = SIMD3<Float>(0, 1, 0)
+        let rise = simd_dot(crossVector, gravityVector)
+        let crossHorizontalVector = simd_normalize(crossVector - (rise * gravityVector))
+        let run = simd_length(crossHorizontalVector)
+        let slopeRadians = atan2(rise, run)
+        let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
         
-        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(0) else {
+        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return crossSlopeAttributeValue

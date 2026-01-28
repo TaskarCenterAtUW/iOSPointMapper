@@ -142,7 +142,7 @@ class AttributeEstimationPipeline: ObservableObject {
         if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
             $0 == .width || $0 == .runningSlope || $0 == .crossSlope
         }) {
-            plane = try self.calculatePlane(accessibilityFeature: accessibilityFeature)
+            plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
         }
         
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
@@ -150,17 +150,17 @@ class AttributeEstimationPipeline: ObservableObject {
                 switch attribute {
                 case .width:
                     let widthAttributeValue = try self.calculateWidth(
-                        accessibilityFeature: accessibilityFeature, plane: plane
+                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
                 case .runningSlope:
                     let runningSlopeAttributeValue = try self.calculateRunningSlope(
-                        accessibilityFeature: accessibilityFeature, plane: plane
+                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlope, isCalculated: true)
                 case .crossSlope:
                     let crossSlopeAttributeValue = try self.calculateCrossSlope(
-                        accessibilityFeature: accessibilityFeature, plane: plane
+                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
                 case .widthLegacy:
