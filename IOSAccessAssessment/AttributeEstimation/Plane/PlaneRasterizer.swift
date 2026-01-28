@@ -45,6 +45,14 @@ struct PlaneRasterizer {
             context.setLineWidth(linesConfig.width)
             context.strokePath()
         }
+        let additionalLineColor: CGColor = linesConfig.color?.cgColor ?? UIColor.white.cgColor
+        for (vectorStart, vectorEnd) in projectedPlane.additionalVectors {
+            let path = createPath(points: [vectorStart, vectorEnd], size: size)
+            context.addPath(path.cgPath)
+            context.setStrokeColor(additionalLineColor)
+            context.setLineWidth(linesConfig.width)
+            context.strokePath()
+        }
         
         let cgImage = UIGraphicsGetImageFromCurrentImageContext()?.cgImage
         UIGraphicsEndImageContext()

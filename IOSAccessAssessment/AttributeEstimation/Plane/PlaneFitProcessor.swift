@@ -47,6 +47,9 @@ struct ProjectedPlane: Sendable, CustomStringConvertible {
     var secondEigenVector: (SIMD2<Float>, SIMD2<Float>)
     var normalVector: (SIMD2<Float>, SIMD2<Float>)
     
+    /// Can contain reference vectors for comparison
+    var additionalVectors: [(SIMD2<Float>, SIMD2<Float>)]
+    
     var description: String {
         return "ProjectedPlane(origin: \(origin), firstEigenVector: \(firstEigenVector), secondEigenVector: \(secondEigenVector), normalVector: \(normalVector))"
     }
@@ -154,11 +157,31 @@ struct PlaneFitProcessor {
                 imageSize: imageSize
             )
         }
+        /// Additional vectors for reference
+        let viewVector = simd_normalize(simd_float3(
+            cameraTransform.columns.2.x,
+            cameraTransform.columns.2.y,
+            cameraTransform.columns.2.z
+        ) * -1)
+        let additionalVectors: [(SIMD2<Float>, SIMD2<Float>)] = try [
+            viewVector
+        ].map {
+            try getProjectedVector(
+                origin: plane.origin,
+                vector: $0,
+                viewMatrix: viewMatrix,
+                cameraIntrinsics: cameraIntrinsics,
+                imageSize: imageSize
+            )
+        }
+        checkVectorsHorizontalAlignment(vector1: plane.firstEigenVector, vector2: viewVector)
+        checkVectorsHorizontalAlignment(vector1: plane.secondEigenVector, vector2: viewVector)
         return ProjectedPlane(
             origin: projectedOrigin,
             firstEigenVector: projectedVectors[0],
             secondEigenVector: projectedVectors[1],
-            normalVector: projectedVectors[2]
+            normalVector: projectedVectors[2],
+            additionalVectors: additionalVectors
         )
     }
     
@@ -246,24 +269,37 @@ struct PlaneFitProcessor {
         let p4   = simd_float4(world, 1.0)
         let pc   = viewMatrix * p4                                  // camera space
         let x = pc.x, y = pc.y, z = pc.z
-
+        
         guard z < 0 else {
-           return nil
+            return nil
         }                       // behind camera
-
+        
         // normalized image plane coords (flip Y so +Y goes up in pixels)
         let xn = x / -z
         let yn = -y / -z
-
+        
         // intrinsics (column-major)
         let fx = K.columns.0.x
         let fy = K.columns.1.y
         let cx = K.columns.2.x
         let cy = K.columns.2.y
-
+        
         // pixels in sensor/native image coordinates
         let u = fx * xn + cx
         let v = fy * yn + cy
         return SIMD2<Float>(u.rounded(), v.rounded())
-   }
+    }
+    
+    private func checkVectorsHorizontalAlignment(
+        vector1: simd_float3,
+        vector2: simd_float3
+    ) {
+        let horizontalVector1 = simd_normalize(simd_float3(vector1.x, 0, vector1.z))
+        let horizontalVector2 = simd_normalize(simd_float3(vector2.x, 0, vector2.z))
+        let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
+        let angle = acos(dotProduct)
+        let angleDegrees = angle * (180.0 / .pi)
+        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
+        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
+    }
 }
