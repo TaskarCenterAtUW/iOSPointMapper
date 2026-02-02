@@ -50,11 +50,13 @@ class AttributeEstimationPipeline: ObservableObject {
             static let depthMapProcessorKey = "Depth Map Processor"
             static let localizationProcessorKey = "Localization Processor"
             static let planeFitProcessorKey = "Plane Fit Processor"
+            static let worldPointsProcessorKey = "World Points Processor"
         }
     }
     
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
+    var worldPointsProcessor: WorldPointsProcessor?
     var planeFitProcessor: PlaneFitProcessor?
     var captureImageData: (any CaptureImageDataProtocol)?
     var captureMeshData: (any CaptureMeshDataProtocol)?
@@ -70,7 +72,9 @@ class AttributeEstimationPipeline: ObservableObject {
         }
         self.depthMapProcessor = try DepthMapProcessor(depthImage: depthImage)
         self.localizationProcessor = LocalizationProcessor()
-        self.planeFitProcessor = try PlaneFitProcessor()
+        let worldPointsProcessor = try WorldPointsProcessor()
+        self.worldPointsProcessor = worldPointsProcessor
+        self.planeFitProcessor = PlaneFitProcessor(worldPointsProcessor: worldPointsProcessor)
         self.captureImageData = captureImageData
         self.captureMeshData = captureMeshData
     }
@@ -138,11 +142,15 @@ class AttributeEstimationPipeline: ObservableObject {
         var attributeAssignmentFlagError = false
         
         /// If the attributes include width, runningSlope or crossSlope, pre-calculate the fitting plane for efficiency
+        var worldPoints: [WorldPoint]? = nil
         var plane: Plane? = nil
         if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
             $0 == .width || $0 == .runningSlope || $0 == .crossSlope
         }) {
-            plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
+            worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+            plane = try self.calculateAlignedPlane(
+                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+            )
         }
         
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
@@ -150,17 +158,17 @@ class AttributeEstimationPipeline: ObservableObject {
                 switch attribute {
                 case .width:
                     let widthAttributeValue = try self.calculateWidth(
-                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
                 case .runningSlope:
                     let runningSlopeAttributeValue = try self.calculateRunningSlope(
-                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlope, isCalculated: true)
                 case .crossSlope:
                     let crossSlopeAttributeValue = try self.calculateCrossSlope(
-                        accessibilityFeature: accessibilityFeature, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
                     )
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
                 case .widthLegacy:

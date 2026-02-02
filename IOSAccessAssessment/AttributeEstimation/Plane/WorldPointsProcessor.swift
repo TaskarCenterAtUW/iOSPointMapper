@@ -115,11 +115,11 @@ struct WorldPointsProcessor {
             device: self.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
         )
         let maxPoints = imageSize.x * imageSize.y
-        var pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+        let pointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device, length: MemoryLayout<WorldPoint>.stride * Int(maxPoints), options: .storageModeShared
         )
         let debugCountSlots = 6
-        var debugBuffer = try MetalBufferUtils.makeBuffer(
+        let debugBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<UInt32>.stride * debugCountSlots,
             options: .storageModeShared
@@ -295,12 +295,12 @@ struct WorldPointsProcessor {
             normalVector: simd_float3(plane.normalVector),
             origin: simd_float3(plane.origin)
         )
-        var worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+        let worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<WorldPoint>.stride * pointCount,
             options: .storageModeShared
         )
-        var projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+        let projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<ProjectedPoint>.stride * pointCount,
             options: .storageModeShared
@@ -332,6 +332,33 @@ struct WorldPointsProcessor {
         for i in 0..<pointCount {
             let projectedPoint = projectedPointsPointer.advanced(by: i).pointee
             projectedPoints.append(projectedPoint)
+        }
+        return projectedPoints
+    }
+    
+    func projectPointsToPlaneCPU(
+        worldPoints: [WorldPoint],
+        plane: Plane,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        imageSize: CGSize
+    ) throws -> [ProjectedPoint] {
+        var pointCount = worldPoints.count
+        if pointCount == 0 {
+            return []
+        }
+        let longitudinalVector = simd_float3(plane.firstVector)
+        let lateralVector = simd_float3(plane.secondVector)
+        let normalVector = simd_float3(plane.normalVector)
+        let origin = simd_float3(plane.origin)
+        var projectedPoints: [ProjectedPoint] = []
+        for i in 0..<pointCount {
+            let worldPoint = worldPoints[i].p
+            let s = simd_dot(worldPoint - origin, longitudinalVector)
+            let t = simd_dot(worldPoint - origin, lateralVector)
+            projectedPoints.append(
+                ProjectedPoint(s: s, t: t)
+            )
         }
         return projectedPoints
     }

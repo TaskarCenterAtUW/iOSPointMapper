@@ -58,11 +58,11 @@ struct ProjectedPlane: Sendable, CustomStringConvertible {
 struct PlaneFitProcessor {
     private let worldPointsProcessor: WorldPointsProcessor
     
-    init() throws {
-        self.worldPointsProcessor = try WorldPointsProcessor()
+    init(worldPointsProcessor: WorldPointsProcessor) {
+        self.worldPointsProcessor = worldPointsProcessor
     }
     
-    private func fitPlanePCA(worldPoints: [WorldPoint]) throws -> Plane {
+    func fitPlanePCA(worldPoints: [WorldPoint]) throws -> Plane {
         guard worldPoints.count>=3 else {
             throw PlaneFitProcessorError.invalidPointData
         }
@@ -117,24 +117,6 @@ struct PlaneFitProcessor {
             d: d,
             origin: worldPointMean
         )
-        return plane
-    }
-    
-    /**
-        Function to fit a plane to 3D world points extracted from depth and segmentation images using PCA.
-     */
-    func fitPlanePCAWithImage(
-        segmentationLabelImage: CIImage,
-        depthImage: CIImage,
-        targetValue: UInt8,
-        cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3
-    ) throws -> Plane {
-        let worldPoints = try self.worldPointsProcessor.getWorldPoints(
-            segmentationLabelImage: segmentationLabelImage, depthImage: depthImage,
-            targetValue: targetValue, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics
-        )
-        let plane = try fitPlanePCA(worldPoints: worldPoints)
         return plane
     }
     
