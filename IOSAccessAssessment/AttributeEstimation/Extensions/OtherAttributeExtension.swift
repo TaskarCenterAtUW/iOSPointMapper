@@ -110,8 +110,14 @@ extension AttributeEstimationPipeline {
         worldPoints: [WorldPoint]? = nil,
         alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let worldPointsProcessor = self.worldPointsProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+        }
         guard let planeFitProcesor = self.planeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+        }
+        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -133,8 +139,19 @@ extension AttributeEstimationPipeline {
                 imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
             )
         }
+        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+            worldPoints: worldPointsLocal, plane: finalPlane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        let projectedPointBinValues = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBinValues: projectedPointBinValues)
+        let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
+            return partialResult + Double(binWidth.width)
+        } / Double(binWidths.count)
         
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(0)) else {
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue

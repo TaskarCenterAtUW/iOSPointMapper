@@ -8,9 +8,10 @@
 import ARKit
 import RealityKit
 import MetalKit
+import Accelerate
 import simd
 
-enum PlaneWidthProcessorError: Error, LocalizedError {
+enum PlaneAttributeProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
@@ -33,7 +34,12 @@ struct ProjectedPointBinValues: Sendable {
     let binValues: [[Float]]
 }
 
-struct PlaneWidthProcessor {
+struct BinWidth: Sendable {
+    let width: Float
+    let count: Int
+}
+
+struct PlaneAttributeProcessor {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     
@@ -60,6 +66,15 @@ struct PlaneWidthProcessor {
         self.pipeline = pipeline
     }
     
+    /**
+        Bin projected points along the 's' axis.
+     
+        - Parameters:
+            - projectedPoints: An array of ProjectedPoint to be binned.
+            - binSize: The size of each bin along the 's' axis. Default is 0.25.
+     
+        - Returns: A ProjectedPointBinValues containing the binned values.
+     */
     func binProjectedPoints(
         projectedPoints: [ProjectedPoint],
         binSize: Float = 0.25
@@ -81,7 +96,7 @@ struct PlaneWidthProcessor {
         let binCount = Int(ceil((sMax - sMin) / binSize))
         
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw PlaneWidthProcessorError.metalPipelineCreationError
+            throw PlaneAttributeProcessorError.metalPipelineCreationError
         }
         
         /// Set up the projected points buffer
@@ -120,13 +135,13 @@ struct PlaneWidthProcessor {
          Initialize point count to zero.
          */
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
-            throw PlaneWidthProcessorError.metalPipelineBlitEncoderError
+            throw PlaneAttributeProcessorError.metalPipelineBlitEncoderError
         }
         blit.fill(buffer: binCountsBuffer, range: 0..<(MemoryLayout<UInt32>.stride * binCount), value: 0)
         blit.endEncoding()
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw PlaneWidthProcessorError.metalPipelineCreationError
+            throw PlaneAttributeProcessorError.metalPipelineCreationError
         }
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setBuffer(projectedPointsBuffer, offset: 0, index: 0)
@@ -159,5 +174,42 @@ struct PlaneWidthProcessor {
             binValues.append(valuesForBin)
         }
         return ProjectedPointBinValues(binCount: binCount, binValueCounts: binValueCounts, binValues: binValues)
+    }
+    
+    /**
+        Compute the width of the plane by analyzing the binned projected point values.
+     
+        - Parameters:
+            - projectedPointBinValues: The binned projected point values.
+            - minCount: Minimum number of points required in a bin to consider it for width computation. Default is 100.
+            - trimLow: The lower percentile to trim when computing width. Default is 0.05.
+            - trimHigh: The upper percentile to trim when computing width. Default is 0.
+     
+        - Returns: An array of BinWidth representing the computed widths for each bin.
+     */
+    func computeWidthByBin(
+        projectedPointBinValues: ProjectedPointBinValues,
+        minCount: Int = 100,
+        trimLow: Float = 0.05, trimHigh: Float = 0.95
+    ) -> [BinWidth] {
+        var binWidths: [BinWidth] = []
+        let binCount = projectedPointBinValues.binCount
+        for binIndex in 0..<binCount {
+            let count = projectedPointBinValues.binValueCounts[binIndex]
+            guard count >= minCount else {
+                continue
+            }
+            let values = projectedPointBinValues.binValues[binIndex]
+            /// Can replace with Accelerate framework for better performance if arrays are large
+            let sortedValues = values.sorted()
+            
+            let trimLowIndex = Int(Float(count) * trimLow)
+            let trimHighIndex = Int(Float(count) * trimHigh)
+            
+            let width = abs(sortedValues[trimHighIndex] - sortedValues[trimLowIndex])
+            
+            binWidths.append(BinWidth(width: width, count: count))
+        }
+        return binWidths
     }
 }
