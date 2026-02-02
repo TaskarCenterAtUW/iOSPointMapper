@@ -91,3 +91,10 @@ typedef struct ProjectedPointsParams {
     MTL_FLOAT3      normalVector;
     MTL_FLOAT3      origin;
 } ProjectedPointsParams;
+
+typedef struct ProjectedPointBinningParams {
+    float sMin;
+    float sMax;
+    float sBinSize;
+    MTL_UINT maxBinCount;
+} ProjectedPointBinningParams;

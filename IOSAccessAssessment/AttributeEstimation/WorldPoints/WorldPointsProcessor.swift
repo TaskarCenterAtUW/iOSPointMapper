@@ -300,7 +300,6 @@ struct WorldPointsProcessor {
             length: MemoryLayout<WorldPoint>.stride * pointCount,
             options: .storageModeShared
         )
-        /// Copy the world points data to the buffer
         let worldPointsBufferPtr = worldPointsBuffer.contents()
         worldPoints.withUnsafeBytes { srcPtr in
             guard let baseAddress = srcPtr.baseAddress else { return }
