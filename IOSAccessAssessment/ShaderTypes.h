@@ -96,5 +96,6 @@ typedef struct ProjectedPointBinningParams {
     float sMin;
     float sMax;
     float sBinSize;
-    MTL_UINT maxBinCount;
+    MTL_UINT binCount;
+    MTL_UINT maxValuesPerBin;
 } ProjectedPointBinningParams;

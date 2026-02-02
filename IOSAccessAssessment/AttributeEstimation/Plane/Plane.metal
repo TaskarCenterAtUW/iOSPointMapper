@@ -14,7 +14,7 @@ kernel void binProjectedPoints(
    device const ProjectedPoint* inputPoints [[buffer(0)]],
    constant uint& pointCount [[buffer(1)]],
    constant ProjectedPointBinningParams& params [[buffer(2)]],
-   device atomic_uint* binCounts [[buffer(3)]],
+   device atomic_uint* binValueCounts [[buffer(3)]],
    device float* binTValues [[buffer(4)]],
    uint id [[thread_position_in_grid]]
 ) {
@@ -26,10 +26,10 @@ kernel void binProjectedPoints(
     if (s < params.sMin || s > params.sMax) { return; }
     
     uint bin = uint(floor((s - params.sMin) / params.sBinSize));
-    if (bin >= params.maxBinCount) { return; }
+    if (bin >= params.binCount) { return; }
     
-    uint count = atomic_fetch_add_explicit(&binCounts[bin], 1u, memory_order_relaxed);
-    if (count < params.maxBinCount) {
-        binTValues[bin * params.maxBinCount + count] = t;
+    uint count = atomic_fetch_add_explicit(&binValueCounts[bin], 1u, memory_order_relaxed);
+    if (count < params.maxValuesPerBin) {
+        binTValues[bin * params.maxValuesPerBin + count] = t;
     }
 }

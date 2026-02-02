@@ -15,7 +15,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
     case invalidInputImage
     case textureCreationFailed
     case metalPipelineCreationError
-    case meshPipelineBlitEncoderError
+    case metalPipelineBlitEncoderError
     case outputImageCreationFailed
     case unableToProcessBufferData
     
@@ -29,8 +29,8 @@ enum WorldPointsProcessorError: Error, LocalizedError {
             return "Failed to create Metal textures."
         case .metalPipelineCreationError:
             return "Failed to create Metal compute pipeline."
-        case .meshPipelineBlitEncoderError:
-            return "Failed to create Blit Command Encoder for the Segmentation Mesh Creation."
+        case .metalPipelineBlitEncoderError:
+            return "Failed to create Blit Command Encoder for the World Points Processor."
         case .outputImageCreationFailed:
             return "Failed to create output CIImage from Metal texture."
         case .unableToProcessBufferData:
@@ -129,7 +129,7 @@ struct WorldPointsProcessor {
          Initialize point count to zero.
          */
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
-            throw WorldPointsProcessorError.meshPipelineBlitEncoderError
+            throw WorldPointsProcessorError.metalPipelineBlitEncoderError
         }
         blit.fill(buffer: pointCount, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
         blit.fill(buffer: debugBuffer, range: 0..<(MemoryLayout<UInt32>.stride * debugCountSlots), value: 0)
@@ -286,15 +286,7 @@ struct WorldPointsProcessor {
         if pointCount == 0 {
             return []
         }
-        var params = ProjectedPointsParams(
-            imageSize: simd_uint2(UInt32(imageSize.width), UInt32(imageSize.height)),
-            cameraTransform: cameraTransform,
-            cameraIntrinsics: cameraIntrinsics,
-            longitudinalVector: simd_float3(plane.firstVector),
-            lateralVector: simd_float3(plane.secondVector),
-            normalVector: simd_float3(plane.normalVector),
-            origin: simd_float3(plane.origin)
-        )
+        /// Set up the world points buffer
         let worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<WorldPoint>.stride * pointCount,
@@ -305,7 +297,15 @@ struct WorldPointsProcessor {
             guard let baseAddress = srcPtr.baseAddress else { return }
             worldPointsBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<WorldPoint>.stride * pointCount)
         }
-        
+        var params = ProjectedPointsParams(
+            imageSize: simd_uint2(UInt32(imageSize.width), UInt32(imageSize.height)),
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics,
+            longitudinalVector: simd_float3(plane.firstVector),
+            lateralVector: simd_float3(plane.secondVector),
+            normalVector: simd_float3(plane.normalVector),
+            origin: simd_float3(plane.origin)
+        )
         let projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<ProjectedPoint>.stride * pointCount,
