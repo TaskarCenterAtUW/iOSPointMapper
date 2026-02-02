@@ -1,5 +1,5 @@
 //
-//  PlaneFitProcessor.swift
+//  PlaneProcessor.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 1/24/26.
@@ -8,7 +8,7 @@
 import Accelerate
 import CoreImage
 
-enum PlaneFitProcessorError: Error, LocalizedError {
+enum PlaneProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     case invalidPointData
     case invalidPlaneData
@@ -55,7 +55,7 @@ struct ProjectedPlane: Sendable, CustomStringConvertible {
     }
 }
 
-struct PlaneFitProcessor {
+struct PlaneProcessor {
     private let worldPointsProcessor: WorldPointsProcessor
     
     init(worldPointsProcessor: WorldPointsProcessor) {
@@ -64,7 +64,7 @@ struct PlaneFitProcessor {
     
     func fitPlanePCA(worldPoints: [WorldPoint]) throws -> Plane {
         guard worldPoints.count>=3 else {
-            throw PlaneFitProcessorError.invalidPointData
+            throw PlaneProcessorError.invalidPointData
         }
         let worldPointMean = worldPoints.reduce(simd_float3(0,0,0), { $0 + $1.p }) / Float(worldPoints.count)
         let centeredWorldPoints = worldPoints.map { $0.p - worldPointMean }
@@ -98,7 +98,7 @@ struct PlaneFitProcessor {
         ssyev_(&jobz, &uplo, &n, &a, &lda, &eigenvalues, &work, &lwork, &info)
         
         guard info == 0 else {
-            throw PlaneFitProcessorError.invalidPlaneData
+            throw PlaneProcessorError.invalidPlaneData
         }
         
         /// Eigen values in ascending order
@@ -119,7 +119,12 @@ struct PlaneFitProcessor {
         )
         return plane
     }
-    
+}
+
+/**
+ Extension for aligning planes based on camera view direction.
+ */
+extension PlaneProcessor {
     /**
         Function to align the plane's vectors based on camera view direction.
      
@@ -195,7 +200,7 @@ struct PlaneFitProcessor {
         let angle = acos(dotProduct)
         let angleDegrees = angle * (180.0 / .pi)
         let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
-        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
+//        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
         return abs(dotProduct)
     }
 }
@@ -203,7 +208,7 @@ struct PlaneFitProcessor {
 /**
  Extension for projecting planes to 2D pixel coordinates.
  */
-extension PlaneFitProcessor {
+extension PlaneProcessor {
     /**
         Function to project a 3D plane to 2D pixel coordinates.
         Can be used for visualization or debugging purposes.
@@ -218,7 +223,7 @@ extension PlaneFitProcessor {
         guard let projectedOrigin = projectWorldToPixel(
             plane.origin, viewMatrix: viewMatrix, intrinsics: cameraIntrinsics, imageSize: imageSize
         ) else {
-            throw PlaneFitProcessorError.invalidProjectionData
+            throw PlaneProcessorError.invalidProjectionData
         }
         let vectorsToProject = [plane.firstVector, plane.secondVector, plane.normalVector]
         let projectedVectors: [(SIMD2<Float>, SIMD2<Float>)] = try vectorsToProject.map {
@@ -275,7 +280,7 @@ extension PlaneFitProcessor {
         }.compactMap { $0 }
         guard let p1 = projectedPoints.first,
               let p2 = projectedPoints.last else {
-            throw PlaneFitProcessorError.invalidProjectionData
+            throw PlaneProcessorError.invalidProjectionData
         }
         /// Second, express the vector as a line equation: L(s) = p1 + s * (p2 - p1)
         let startPoint = p1
@@ -320,7 +325,7 @@ extension PlaneFitProcessor {
         }
         guard let firstProjectedPoint = candidates.first,
               let secondProjectedPoint = candidates.last else {
-            throw PlaneFitProcessorError.invalidProjectionData
+            throw PlaneProcessorError.invalidProjectionData
         }
         return (firstProjectedPoint, secondProjectedPoint)
     }

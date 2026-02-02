@@ -300,6 +300,13 @@ struct WorldPointsProcessor {
             length: MemoryLayout<WorldPoint>.stride * pointCount,
             options: .storageModeShared
         )
+        /// Copy the world points data to the buffer
+        let worldPointsBufferPtr = worldPointsBuffer.contents()
+        worldPoints.withUnsafeBytes { srcPtr in
+            guard let baseAddress = srcPtr.baseAddress else { return }
+            worldPointsBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<WorldPoint>.stride * pointCount)
+        }
+        
         let projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: MemoryLayout<ProjectedPoint>.stride * pointCount,
@@ -343,13 +350,13 @@ struct WorldPointsProcessor {
         cameraIntrinsics: simd_float3x3,
         imageSize: CGSize
     ) throws -> [ProjectedPoint] {
-        var pointCount = worldPoints.count
+        let pointCount = worldPoints.count
         if pointCount == 0 {
             return []
         }
         let longitudinalVector = simd_float3(plane.firstVector)
         let lateralVector = simd_float3(plane.secondVector)
-        let normalVector = simd_float3(plane.normalVector)
+//        let normalVector = simd_float3(plane.normalVector)
         let origin = simd_float3(plane.origin)
         var projectedPoints: [ProjectedPoint] = []
         for i in 0..<pointCount {

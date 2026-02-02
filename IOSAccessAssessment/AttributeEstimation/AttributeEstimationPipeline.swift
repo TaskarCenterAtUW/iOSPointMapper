@@ -49,7 +49,7 @@ class AttributeEstimationPipeline: ObservableObject {
         enum Texts {
             static let depthMapProcessorKey = "Depth Map Processor"
             static let localizationProcessorKey = "Localization Processor"
-            static let planeFitProcessorKey = "Plane Fit Processor"
+            static let planeProcessorKey = "Plane Processor"
             static let worldPointsProcessorKey = "World Points Processor"
         }
     }
@@ -57,7 +57,7 @@ class AttributeEstimationPipeline: ObservableObject {
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
     var worldPointsProcessor: WorldPointsProcessor?
-    var planeFitProcessor: PlaneFitProcessor?
+    var planeProcessor: PlaneProcessor?
     var captureImageData: (any CaptureImageDataProtocol)?
     var captureMeshData: (any CaptureMeshDataProtocol)?
     
@@ -74,7 +74,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.localizationProcessor = LocalizationProcessor()
         let worldPointsProcessor = try WorldPointsProcessor()
         self.worldPointsProcessor = worldPointsProcessor
-        self.planeFitProcessor = PlaneFitProcessor(worldPointsProcessor: worldPointsProcessor)
+        self.planeProcessor = PlaneProcessor(worldPointsProcessor: worldPointsProcessor)
         self.captureImageData = captureImageData
         self.captureMeshData = captureMeshData
     }

@@ -39,8 +39,8 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature,
         worldPoints: [WorldPoint]? = nil
     ) throws -> Plane {
-        guard let planeFitProcesorLocal = self.planeFitProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        guard let planeProcessorLocal = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -49,8 +49,8 @@ extension AttributeEstimationPipeline {
         let worldPointsLocal: [WorldPoint] = try worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        plane = try planeFitProcesorLocal.fitPlanePCA(worldPoints: worldPointsLocal)
-        let alignedPlane = try planeFitProcesorLocal.alignPlaneWithViewDirection(
+        plane = try planeProcessorLocal.fitPlanePCA(worldPoints: worldPointsLocal)
+        let alignedPlane = try planeProcessorLocal.alignPlaneWithViewDirection(
             plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
@@ -63,20 +63,40 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature,
         plane: Plane
     ) throws -> ProjectedPlane {
-        guard let planeFitProcesor = self.planeFitProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        guard let planeProcessor = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         
-        let projectedPlane = try planeFitProcesor.projectPlane(
+        let projectedPlane = try planeProcessor.projectPlane(
             plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
         )
         return projectedPlane
+    }
+    
+    func getProjectedPointsOnPlane(
+        worldPoints: [WorldPoint],
+        plane: Plane
+    ) throws -> [ProjectedPoint] {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let worldPointsProcessor = self.worldPointsProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+        }
+        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+            worldPoints: worldPoints, plane: plane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        
+        return projectedPoints
     }
 }
 
@@ -90,8 +110,8 @@ extension AttributeEstimationPipeline {
         worldPoints: [WorldPoint]? = nil,
         alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeFitProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        guard let planeFitProcesor = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -130,8 +150,8 @@ extension AttributeEstimationPipeline {
         worldPoints: [WorldPoint]? = nil,
         alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeFitProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        guard let planeFitProcesor = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -167,8 +187,8 @@ extension AttributeEstimationPipeline {
         worldPoints: [WorldPoint]? = nil,
         alignedPlane: Plane? = nil
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeFitProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeFitProcessorKey)
+        guard let planeFitProcesor = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
