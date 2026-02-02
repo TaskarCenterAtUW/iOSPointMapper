@@ -8,8 +8,7 @@ import SwiftUI
 import CoreLocation
 
 /**
- Extension for attribute calculation with rudimentary methods.
- TODO: Improve upon these methods with more robust implementations.
+ Extension for utilities related to world point extraction and plane calculation.
  */
 extension AttributeEstimationPipeline {
     func getWorldPoints(
@@ -79,7 +78,13 @@ extension AttributeEstimationPipeline {
         )
         return projectedPlane
     }
-    
+}
+
+/**
+ Extension for attribute calculation with rudimentary methods.
+ TODO: Improve upon these methods with more robust implementations.
+ */
+extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature,
         worldPoints: [WorldPoint]? = nil,

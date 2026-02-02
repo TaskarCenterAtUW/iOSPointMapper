@@ -185,8 +185,28 @@ struct PlaneFitProcessor {
         return alignedPlane
     }
     
+    private func checkVectorsHorizontalAlignment(
+        vector1: simd_float3,
+        vector2: simd_float3
+    ) -> Float {
+        let horizontalVector1 = simd_normalize(simd_float3(vector1.x, 0, vector1.z))
+        let horizontalVector2 = simd_normalize(simd_float3(vector2.x, 0, vector2.z))
+        let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
+        let angle = acos(dotProduct)
+        let angleDegrees = angle * (180.0 / .pi)
+        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
+        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
+        return abs(dotProduct)
+    }
+}
+
+/**
+ Extension for projecting planes to 2D pixel coordinates.
+ */
+extension PlaneFitProcessor {
     /**
         Function to project a 3D plane to 2D pixel coordinates.
+        Can be used for visualization or debugging purposes.
      */
     func projectPlane(
         plane: Plane,
@@ -338,19 +358,5 @@ struct PlaneFitProcessor {
         let u = fx * xn + cx
         let v = fy * yn + cy
         return SIMD2<Float>(u.rounded(), v.rounded())
-    }
-    
-    private func checkVectorsHorizontalAlignment(
-        vector1: simd_float3,
-        vector2: simd_float3
-    ) -> Float {
-        let horizontalVector1 = simd_normalize(simd_float3(vector1.x, 0, vector1.z))
-        let horizontalVector2 = simd_normalize(simd_float3(vector2.x, 0, vector2.z))
-        let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
-        let angle = acos(dotProduct)
-        let angleDegrees = angle * (180.0 / .pi)
-        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
-        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
-        return abs(dotProduct)
     }
 }

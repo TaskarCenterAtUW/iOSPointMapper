@@ -583,6 +583,15 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
+		A3247B2B2F312E8200F915A9 /* WorldPoints */ = {
+			isa = PBXGroup;
+			children = (
+				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
+				A364B5DC2F259AF900325E5C /* WorldPoints.metal */,
+			);
+			path = WorldPoints;
+			sourceTree = "<group>";
+		};
 		A329433D2EE7BF0200C4C1BC /* Others */ = {
 			isa = PBXGroup;
 			children = (
@@ -629,6 +638,7 @@
 			children = (
 				A3431E002F26FA0C00B96610 /* Extensions */,
 				A364B5D72F259A7800325E5C /* Plane */,
+				A3247B2B2F312E8200F915A9 /* WorldPoints */,
 				A35E050E2EDE35ED003C26CF /* Localization */,
 				A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */,
 			);
@@ -694,8 +704,6 @@
 			isa = PBXGroup;
 			children = (
 				A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */,
-				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
-				A364B5DC2F259AF900325E5C /* WorldPoints.metal */,
 				A364B5D82F259AD600325E5C /* PlaneFitProcessor.swift */,
 			);
 			path = Plane;
