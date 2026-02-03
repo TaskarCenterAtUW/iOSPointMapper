@@ -14,6 +14,7 @@
     typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint               MTL_UINT;      // 32-bit
     typedef uint               MTL_BOOL;      // use 0/1
+    typedef float2             MTL_FLOAT2;
     typedef float3             MTL_FLOAT3;
     typedef float4x4           MTL_FLOAT4X4;
     typedef float3x3           MTL_FLOAT3X3;  // 48 bytes (3 cols, 16B aligned)
@@ -25,6 +26,7 @@
     typedef uint8_t            MTL_UINT8;     // 8-bit
     typedef uint32_t           MTL_UINT;
     typedef uint32_t           MTL_BOOL;      // 0/1
+    typedef simd_float2        MTL_FLOAT2;
     typedef simd_float3        MTL_FLOAT3;
     typedef simd_float4x4      MTL_FLOAT4X4;
     typedef simd_float3x3      MTL_FLOAT3X3;  // 48 bytes
@@ -62,10 +64,15 @@ typedef struct BoundsParams {
     float       maxY;
 } BoundsParams;
 
-// For PCA Plane Fitting
+// For back-projecting pixels to World Points (useful for applications such as plane-fitting)
 typedef struct WorldPoint {
     MTL_FLOAT3  p;
 } WorldPoint;
+
+typedef struct ProjectedPoint {
+    float s;
+    float t;
+} WorldSTPoint;
 
 typedef struct WorldPointsParams {
     MTL_UINT2       imageSize;
@@ -75,3 +82,20 @@ typedef struct WorldPointsParams {
     MTL_FLOAT3X3    invIntrinsics;
 } WorldPointsParams;
 
+typedef struct ProjectedPointsParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    cameraTransform;
+    MTL_FLOAT3X3    cameraIntrinsics;
+    MTL_FLOAT3      longitudinalVector;
+    MTL_FLOAT3      lateralVector;
+    MTL_FLOAT3      normalVector;
+    MTL_FLOAT3      origin;
+} ProjectedPointsParams;
+
+typedef struct ProjectedPointBinningParams {
+    float sMin;
+    float sMax;
+    float sBinSize;
+    MTL_UINT binCount;
+    MTL_UINT maxValuesPerBin;
+} ProjectedPointBinningParams;
