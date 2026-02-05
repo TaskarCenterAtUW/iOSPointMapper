@@ -199,7 +199,7 @@ extension PlaneProcessor {
         let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
         let angle = acos(dotProduct)
         let angleDegrees = angle * (180.0 / .pi)
-        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
+//        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
 //        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
         return abs(dotProduct)
     }
