@@ -73,6 +73,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     private var selectedClasses: [AccessibilityFeatureClass] = []
     private var segmentationAnnotationPipeline: SegmentationAnnotationPipeline? = nil
     private var grayscaleToColorFilter: GrayscaleToColorFilter? = nil
+    private var intersectionFilter: IntersectionFilter? = nil
     
     private var captureImageData: (any CaptureImageDataProtocol)? = nil
     private var captureMeshData: (any CaptureMeshDataProtocol)? = nil
@@ -109,6 +110,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         )
         self.annotationImageResults = annotationImageResults
         self.grayscaleToColorFilter = try GrayscaleToColorFilter()
+        self.intersectionFilter = try IntersectionFilter()
         self.isConfigured = true
         
         Task {
@@ -166,11 +168,20 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         } catch {
             processedSegmentationLabelImage = captureImageData.captureImageDataResults.segmentationLabelImage
         }
-        let segmentationOverlayOutputImage = try getSegmentationOverlayOutputImage(
+        let accessibilityFeatures = try getAccessibilityFeatures(
             segmentationLabelImage: processedSegmentationLabelImage,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
-        let accessibilityFeatures = try getAccessibilityFeatures(
+//        do {
+//            processedSegmentationLabelImage = try getFeatureFilteredSegmentationLabelImage(
+//                segmentationLabelImage: processedSegmentationLabelImage,
+//                accessibilityFeatureClass: accessibilityFeatureClass,
+//                accessibilityFeatures: accessibilityFeatures
+//            )
+//        } catch {
+//            /// Continue
+//        }
+        let segmentationOverlayOutputImage = try getSegmentationOverlayOutputImage(
             segmentationLabelImage: processedSegmentationLabelImage,
             accessibilityFeatureClass: accessibilityFeatureClass
         )
@@ -329,6 +340,27 @@ extension AnnotationImageManager {
             orientation: imageOrientation
         )
         return processedSegmentationLabelImage
+    }
+    
+    private func getFeatureFilteredSegmentationLabelImage(
+        segmentationLabelImage: CIImage,
+        accessibilityFeatureClass: AccessibilityFeatureClass,
+        accessibilityFeatures: [any DetectedFeatureProtocol]
+    ) throws -> CIImage {
+        guard let intersectionFilter = self.intersectionFilter else {
+            throw AnnotationImageManagerError.segmentationNotConfigured
+        }
+        guard let rasterizedFeaturesFilledImage = ContourFeatureRasterizer.rasterizeFeaturesFill(
+            detectedFeatures: accessibilityFeatures, size: segmentationLabelImage.extent.size,
+            polygonConfig: RasterizeConfig(draw: true, color: .white, width: 1)
+        ) else {
+            throw AnnotationImageManagerError.featureRasterizationFailed
+        }
+        let rasterizedFeaturesFilledCIImage = CIImage(cgImage: rasterizedFeaturesFilledImage)
+        let filteredSegmentationLabelImage = try intersectionFilter.apply(
+            inputImage1: segmentationLabelImage, inputImage2: rasterizedFeaturesFilledCIImage
+        )
+        return filteredSegmentationLabelImage
     }
     
     private func getSegmentationOverlayOutputImage(

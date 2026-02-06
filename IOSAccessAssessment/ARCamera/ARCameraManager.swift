@@ -807,7 +807,6 @@ extension ARCameraManager {
         cameraImageResults.depthImage = depthImage
         cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
         
-        /// Process the latest mesh anchors
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,

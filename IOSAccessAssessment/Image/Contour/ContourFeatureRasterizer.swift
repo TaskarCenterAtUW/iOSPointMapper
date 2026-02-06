@@ -152,9 +152,9 @@ struct ContourFeatureRasterizer {
     /**
     Rasterizes filled contours for the given detected features. This is used for generating segmentation masks.
      */
-    static func rasterizeFilledContour(
+    static func rasterizeFeaturesFill(
         detectedFeatures: [any DetectedFeatureProtocol], size: CGSize,
-        contourConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 1.0)
+        polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 1.0)
     ) -> CGImage? {
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
@@ -163,9 +163,9 @@ struct ContourFeatureRasterizer {
             let featureContourDetails = feature.contourDetails
             let featureColor: UIColor = UIColor(ciColor: feature.accessibilityFeatureClass.color)
             /// First, draw the contour
-            if contourConfig.draw {
+            if polygonConfig.draw {
                 let path = createPath(points: featureContourDetails.normalizedPoints, size: size)
-                let polygonColor = contourConfig.color ?? featureColor
+                let polygonColor = polygonConfig.color ?? featureColor
                 context.setFillColor(polygonColor.cgColor)
                 context.addPath(path.cgPath)
                 context.fillPath()

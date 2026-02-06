@@ -43,21 +43,20 @@ enum SegmentationARPipelineError: Error, LocalizedError {
 
 struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
-    var segmentationDepthFilteredImage: CIImage? = nil
+    var originalSegmentationImage: CIImage
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
     var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage,
          segmentedClasses: [AccessibilityFeatureClass], detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
-         segmentationDepthFilteredImage: CIImage? = nil
+         originalSegmentationImage: CIImage
     ) {
         self.segmentationImage = segmentationImage
-        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
+        self.originalSegmentationImage = originalSegmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
         self.detectedFeatureMap = detectedFeatureMap
-        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
     }
 }
 
@@ -216,11 +215,11 @@ final class SegmentationARPipeline: ObservableObject {
         )
         
         return SegmentationARPipelineResults(
-            segmentationImage: segmentationImage,
+            segmentationImage: depthFilteredSegmentationImage ?? segmentationImage,
             segmentationColorImage: segmentationColorImage,
             segmentedClasses: segmentationResults.segmentedClasses,
             detectedFeatureMap: detectedFeatureMap,
-            segmentationDepthFilteredImage: depthFilteredSegmentationImage
+            originalSegmentationImage: segmentationImage
         )
     }
 }
