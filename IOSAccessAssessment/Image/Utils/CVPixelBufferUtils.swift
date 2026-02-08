@@ -253,6 +253,8 @@ extension CVPixelBuffer {
         case kCVPixelFormatType_14Bayer_RGGB:                  return "kCVPixelFormatType_14Bayer_RGGB"
         case kCVPixelFormatType_14Bayer_BGGR:                  return "kCVPixelFormatType_14Bayer_BGGR"
         case kCVPixelFormatType_14Bayer_GBRG:                  return "kCVPixelFormatType_14Bayer_GBRG"
+        case kCVPixelFormatType_DepthFloat16:                  return "kCVPixelFormatType_DepthFloat16"
+        case kCVPixelFormatType_DepthFloat32:                  return "kCVPixelFormatType_DepthFloat32"
         default: return "UNKNOWN"
         }
     }

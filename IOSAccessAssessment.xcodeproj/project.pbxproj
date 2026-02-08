@@ -35,6 +35,7 @@
 		A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30C67E72EE27336006E4321 /* MappedAccessibilityFeature.swift */; };
 		A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
+		A3281AEE2F3950210003E396 /* MTLTextureUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3281AED2F39501E0003E396 /* MTLTextureUtils.swift */; };
 		A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */; };
 		A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */; };
 		A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943472EE7C0D800C4C1BC /* OSWElementClass.swift */; };
@@ -220,6 +221,7 @@
 		A30C67E72EE27336006E4321 /* MappedAccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedAccessibilityFeature.swift; sourceTree = "<group>"; };
 		A30D05832E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640.mlpackage; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
+		A3281AED2F39501E0003E396 /* MTLTextureUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTLTextureUtils.swift; sourceTree = "<group>"; };
 		A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolicy.swift; sourceTree = "<group>"; };
 		A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWGeometry.swift; sourceTree = "<group>"; };
 		A32943472EE7C0D800C4C1BC /* OSWElementClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElementClass.swift; sourceTree = "<group>"; };
@@ -963,6 +965,7 @@
 		A3DA4DBF2EBE867F005BB812 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				A3281AED2F39501E0003E396 /* MTLTextureUtils.swift */,
 				A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */,
 				DAA7F8C72CA76527003666D8 /* CIImageUtils.swift */,
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
@@ -1308,6 +1311,7 @@
 				A38338C62EDAF3E900F1A402 /* DepthMapProcessor.swift in Sources */,
 				A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */,
 				A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */,
+				A3281AEE2F3950210003E396 /* MTLTextureUtils.swift in Sources */,
 				A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */,
 				A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
