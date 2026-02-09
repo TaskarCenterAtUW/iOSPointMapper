@@ -116,9 +116,11 @@ struct DepthFilter {
             throw DepthFilterError.outputImageCreationFailed
         }
         
-        try debugWithPixelBuffer(mtlTexture: outputTexture)
-        try debugWithTransformedCIImage(mtlTexture: outputTexture)
-        try debugWithRevertedCenterCropCIImage(mtlTexture: outputTexture)
+//        try debugWithPixelBuffer(mtlTexture: outputTexture)
+//        try debugWithTransformedCIImage(mtlTexture: outputTexture)
+//        try debugWithRevertedCenterCropCIImage(mtlTexture: outputTexture)
+        try debugWithSyntheticMaskPixelBuffer()
+        try debugWithSyntheticMaskMetal()
         
         return resultCIImage
     }
@@ -204,5 +206,79 @@ struct DepthFilter {
         let ptr = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
         print("Debugging with CIImage Rendered Pixel Buffer 2:")
         print(ptr[0], ptr[10], ptr[100])
+    }
+    
+    private func debugWithSyntheticMaskPixelBuffer() throws {
+        let width = 256
+        let height = 256
+        let pixelBuffer = CVPixelBufferUtils.createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_OneComponent8)!
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        let ptr = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+
+        for y in 0..<height {
+            for x in 0..<width {
+                ptr[y * bytesPerRow + x] = UInt8(x % 16)  // values 0–15
+            }
+        }
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        let ptr2 = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with Synthetic Mask Pixel Buffer (Direct Access):")
+        print(ptr2[0], ptr2[1], ptr2[2], ptr2[8], ptr2[9], ptr2[15])
+        
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        /// Render ciImage to a new pixel buffer to verify that the rendering is working as expected.
+        let outputPixelBuffer = CVPixelBufferUtils.createPixelBuffer(width: width, height: height, pixelFormat: kCVPixelFormatType_OneComponent8)!
+        let context = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+        context.render(ciImage, to: outputPixelBuffer, bounds: CGRect(x: 0, y: 0, width: width, height: height), colorSpace: nil)
+        CVPixelBufferLockBaseAddress(outputPixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(outputPixelBuffer, .readOnly) }
+        let outputPtr = CVPixelBufferGetBaseAddress(outputPixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with Synthetic Mask Pixel Buffer:")
+        print(outputPtr[0], outputPtr[1], outputPtr[2], outputPtr[8], outputPtr[9], outputPtr[15])
+    }
+    
+    private func debugWithSyntheticMaskMetal() throws {
+        let width = 256
+        let height = 256
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .r8Unorm, width: width, height: height,
+            mipmapped: false
+        )
+        descriptor.usage = [.shaderRead, .shaderWrite]
+        guard let texture = self.device.makeTexture(descriptor: descriptor) else {
+            throw DepthFilterError.textureCreationFailed
+        }
+        
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()!
+        let debugKernelFunction = device.makeDefaultLibrary()!.makeFunction(name: "syntheticMask")!
+        let debugPipeline = try device.makeComputePipelineState(function: debugKernelFunction)
+        commandEncoder.setComputePipelineState(debugPipeline)
+        commandEncoder.setTexture(texture, index: 0)
+        let threadgroupSize = MTLSize(width: debugPipeline.threadExecutionWidth, height: debugPipeline.maxTotalThreadsPerThreadgroup / debugPipeline.threadExecutionWidth, depth: 1)
+        let threadgroups = MTLSize(width: (texture.width + threadgroupSize.width - 1) / threadgroupSize.width,
+                                        height: (texture.height + threadgroupSize.height - 1) / threadgroupSize.height,
+                                        depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
+        commandEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        let ciImage = CIImage(mtlTexture: texture, options: [.colorSpace: NSNull()])!
+        /// Render to a pixel buffer to verify that the synthetic mask is being generated as expected.
+        let outputPixelBuffer = CVPixelBufferUtils.createPixelBuffer(
+            width: width, height: height,
+            pixelFormat: kCVPixelFormatType_OneComponent8
+        )!
+        let context = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+        context.render(ciImage, to: outputPixelBuffer, bounds: CGRect(x: 0, y: 0, width: width, height: height),
+                       colorSpace: nil)
+        CVPixelBufferLockBaseAddress(outputPixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(outputPixelBuffer, .readOnly) }
+        let outputPtr = CVPixelBufferGetBaseAddress(outputPixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with Synthetic Mask Generated by Metal:")
+        print(outputPtr[0], outputPtr[1], outputPtr[2], outputPtr[8], outputPtr[9], outputPtr[15])
     }
 }

@@ -41,4 +41,12 @@ kernel void copyMask(
     dst.write(v, gid);
 }
 
-        
+kernel void syntheticMask(
+    texture2d<float, access::write> dst [[texture(0)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= dst.get_width() || gid.y >= dst.get_height()) return;
+    float v = float(gid.x % 16) / 255.0;
+    dst.write(v, gid);
+}
+
