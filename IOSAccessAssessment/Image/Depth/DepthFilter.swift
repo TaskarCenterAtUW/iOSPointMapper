@@ -9,6 +9,7 @@ import UIKit
 import Metal
 import CoreImage
 import MetalKit
+import CoreVideo
 
 enum DepthFilterError: Error, LocalizedError {
     case metalInitializationFailed
@@ -115,6 +116,93 @@ struct DepthFilter {
             throw DepthFilterError.outputImageCreationFailed
         }
         
+        try debugWithPixelBuffer(mtlTexture: outputTexture)
+        try debugWithTransformedCIImage(mtlTexture: outputTexture)
+        try debugWithRevertedCenterCropCIImage(mtlTexture: outputTexture)
+        
         return resultCIImage
+    }
+    
+    private func debugWithPixelBuffer(mtlTexture: MTLTexture) throws {
+        let pixelBuffer = CVPixelBufferUtils.createPixelBuffer(width: mtlTexture.width, height: mtlTexture.height, pixelFormat: kCVPixelFormatType_OneComponent8)!
+        var textureCache: CVMetalTextureCache!
+        CVMetalTextureCacheCreate(nil, nil, device, nil, &textureCache)
+        var cvMetalTex: CVMetalTexture?
+        CVMetalTextureCacheCreateTextureFromImage(
+            nil,
+            textureCache,
+            pixelBuffer,
+            nil,
+            .r8Unorm,
+            CVPixelBufferGetWidth(pixelBuffer),
+            CVPixelBufferGetHeight(pixelBuffer),
+            0,
+            &cvMetalTex
+        )
+        let dstTexture = CVMetalTextureGetTexture(cvMetalTex!)!
+        
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()!
+        let debugKernelFunction = device.makeDefaultLibrary()!.makeFunction(name: "copyMask")!
+        let debugPipeline = try device.makeComputePipelineState(function: debugKernelFunction)
+        commandEncoder.setComputePipelineState(debugPipeline)
+        commandEncoder.setTexture(mtlTexture, index: 0)
+        commandEncoder.setTexture(dstTexture, index: 1)
+        let threadgroupSize = MTLSize(width: debugPipeline.threadExecutionWidth, height: debugPipeline.maxTotalThreadsPerThreadgroup / debugPipeline.threadExecutionWidth, depth: 1)
+        let threadgroups = MTLSize(width: (mtlTexture.width + threadgroupSize.width - 1) / threadgroupSize.width,
+                                      height: (mtlTexture.height + threadgroupSize.height - 1) / threadgroupSize.height,
+                                        depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
+        commandEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        /// Compare values in the pixel buffer to the output texture to verify that the filtering is working as expected.
+        CVMetalTextureCacheFlush(textureCache, 0)
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let ptr = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with Pixel Buffer:")
+        print(ptr[0], ptr[10], ptr[100])
+    }
+    
+    private func debugWithTransformedCIImage(mtlTexture: MTLTexture) throws {
+        let originalImage = CIImage(mtlTexture: mtlTexture, options: [.colorSpace: NSNull()])!
+        let identityTransform = CGAffineTransform(scaleX: 1.0, y: 1.0)
+        let ciImage = originalImage.transformed(by: identityTransform)
+        
+        let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+        let colorSpace: CGColorSpace? = nil
+        let canvas: CGRect = CGRect(x: 0, y: 0, width: ciImage.extent.width, height: ciImage.extent.height)
+        
+        let pixelBuffer = CVPixelBufferUtils.createPixelBuffer(width: mtlTexture.width, height: mtlTexture.height, pixelFormat: kCVPixelFormatType_OneComponent8)!
+        rawContext.render(ciImage, to: pixelBuffer, bounds: canvas, colorSpace: colorSpace)
+        
+        /// Compare values in the pixel buffer to the output to verify that the filtering is working as expected.
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let ptr = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with CIImage Rendered Pixel Buffer:")
+        print(ptr[0], ptr[10], ptr[100])
+    }
+    
+    private func debugWithRevertedCenterCropCIImage(mtlTexture: MTLTexture) throws {
+        let originalImage = CIImage(mtlTexture: mtlTexture, options: [.colorSpace: NSNull()])!
+        let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+        let colorSpace: CGColorSpace? = nil
+        
+        let pixelBuffer = CVPixelBufferUtils.createPixelBuffer(width: mtlTexture.width, height: mtlTexture.height, pixelFormat: kCVPixelFormatType_OneComponent8)!
+        
+        CenterCropTransformUtils.revertCenterCropAspectFit(
+            originalImage, from: CGSize(width: mtlTexture.width*2, height: mtlTexture.height*2),
+            to: pixelBuffer, context: rawContext, colorSpace: colorSpace
+        )
+        
+        /// Compare values in the pixel buffer to the output to verify that the filtering is working as expected.
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let ptr = CVPixelBufferGetBaseAddress(pixelBuffer)!.assumingMemoryBound(to: UInt8.self)
+        print("Debugging with CIImage Rendered Pixel Buffer 2:")
+        print(ptr[0], ptr[10], ptr[100])
     }
 }

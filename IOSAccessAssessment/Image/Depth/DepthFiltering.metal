@@ -30,6 +30,15 @@ extern "C" kernel void depthFilteringKernel(
     
     outputTexture.write(pixelColor, gid);
 }
-    
-    
+
+kernel void copyMask(
+    texture2d<float, access::read>  src [[texture(0)]],
+    texture2d<float, access::write> dst [[texture(1)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= dst.get_width() || gid.y >= dst.get_height()) return;
+    float v = src.read(gid).r;
+    dst.write(v, gid);
+}
+
         

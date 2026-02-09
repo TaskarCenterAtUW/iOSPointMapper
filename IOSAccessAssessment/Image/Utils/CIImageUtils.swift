@@ -60,7 +60,9 @@ extension CIImage {
             kCVPixelBufferCGImageCompatibilityKey: true,
             kCVPixelBufferCGBitmapContextCompatibilityKey: true,
             kCVPixelBufferMetalCompatibilityKey: true,
-            kCVPixelBufferIOSurfacePropertiesKey: [:]
+            kCVPixelBufferIOSurfacePropertiesKey: [:],
+            kCVPixelBufferWidthKey: width,
+            kCVPixelBufferHeightKey: height
         ]
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
