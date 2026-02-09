@@ -43,6 +43,7 @@ struct DepthFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
+    private let outputColorSpace: CGColorSpace? = nil //CGColorSpace(name: CGColorSpace.linearGray)
     
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -110,9 +111,10 @@ struct DepthFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace ?? NSNull()]) else {
             throw DepthFilterError.outputImageCreationFailed
         }
+        
         return resultCIImage
     }
 }

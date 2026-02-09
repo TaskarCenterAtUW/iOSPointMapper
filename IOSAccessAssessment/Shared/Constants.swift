@@ -20,7 +20,7 @@ struct Constants {
         
         /// General constants
         static let depthMinThreshold: Float = 0.0
-        static let depthMaxThreshold: Float = 10.0
+        static let depthMaxThreshold: Float = 5.0
     }
     
     struct WorkspaceConstants {

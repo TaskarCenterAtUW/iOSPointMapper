@@ -415,15 +415,10 @@ extension ARCameraManager {
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
-        let segmentationPixelBuffer = try self.createPixelBufferFromPool(pixelBufferPool: segmentationPixelBufferPool)
-        CenterCropTransformUtils.revertCenterCropAspectFit(
-            segmentationImage, from: originalSize,
-            to: segmentationPixelBuffer,
-            context: rawContext, colorSpace: segmentationMaskColorSpace
-        )
-        segmentationImage = CIImage(
-            cvPixelBuffer: segmentationPixelBuffer, options: [.colorSpace: segmentationMaskColorSpace ?? NSNull()]
-        )
+        segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
+//        segmentationImage = try self.backCIImageWithPixelBuffer(
+//            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool, colorSpace: segmentationMaskColorSpace
+//        )
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
         segmentationColorCIImage = segmentationColorCIImage.oriented(inverseOrientation)

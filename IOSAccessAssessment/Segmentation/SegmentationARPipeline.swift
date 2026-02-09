@@ -196,11 +196,12 @@ final class SegmentationARPipeline: ObservableObject {
                 depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue
             )
         }
+        let finalSegmentationImage = depthFilteredSegmentationImage ?? segmentationImage
         
         // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
         let detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
-            from: depthFilteredSegmentationImage ?? segmentationImage
+            from: finalSegmentationImage
         )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
@@ -210,12 +211,12 @@ final class SegmentationARPipeline: ObservableObject {
         try Task.checkCancellation()
         
         let segmentationColorImage = try grayscaleToColorFilter.apply(
-            to: depthFilteredSegmentationImage ?? segmentationImage,
+            to: finalSegmentationImage,
             grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
         )
         
         return SegmentationARPipelineResults(
-            segmentationImage: depthFilteredSegmentationImage ?? segmentationImage,
+            segmentationImage: finalSegmentationImage,
             segmentationColorImage: segmentationColorImage,
             segmentedClasses: segmentationResults.segmentedClasses,
             detectedFeatureMap: detectedFeatureMap,
