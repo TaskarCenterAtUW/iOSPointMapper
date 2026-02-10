@@ -212,4 +212,10 @@ struct PlaneAttributeProcessor {
         }
         return binWidths
     }
+    
+    func computeEndpointsFromBins(
+        projectedPointBinValues: ProjectedPointBinValues,
+        minCount: Int = 100,
+        trimLow: Float = 0.05, trimHigh: Float = 0.95
+    ) -> 
 }
