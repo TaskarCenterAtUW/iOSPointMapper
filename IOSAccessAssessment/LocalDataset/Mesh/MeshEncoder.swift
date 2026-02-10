@@ -68,7 +68,6 @@ class MeshEncoder {
         vertexColor: UIColor? = nil
     ) throws -> MeshPlyContents {
         guard let model = entity.model else {
-            status = .encodingError
             print("ModelEntity has no model.")
             throw NSError(domain: "MeshEncoder", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelEntity has no model."])
         }
@@ -130,7 +129,6 @@ class MeshEncoder {
         }
         
         guard !positions.isEmpty, !indices.isEmpty else {
-            status = .encodingError
             print("No vertex or index data found in ModelEntity.")
             throw NSError(domain: "MeshEncoder", code: 2, userInfo: [NSLocalizedDescriptionKey: "No vertex or index data found in ModelEntity."])
         }
@@ -198,5 +196,74 @@ class MeshEncoder {
 
 extension MeshEncoder {
     func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) {
+        let filename = String(frameNumber.uuidString)
+        
+        var plyContents: [MeshPlyContents] = []
+        for anchor in meshAnchors {
+            let content = getPlyForAnchor(meshAnchor: anchor, vertexColor: .white)
+            plyContents.append(content)
+        }
+        
+        let ply = generatePlyContent(plyContents, includeColor: true)
+        do {
+            let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
+            try ply.data(using: .utf8)?.write(to: path, options: .atomic)
+        } catch {
+            print("Error writing PLY file: \(error.localizedDescription)")
+        }
+    }
+    
+    func getPlyForAnchor(
+        meshAnchor: ARMeshAnchor,
+        vertexColor: UIColor = .white
+    ) -> MeshPlyContents {
+        let geometry = meshAnchor.geometry
+        let transform = meshAnchor.transform
+        
+        var r8 = 255, g8 = 255, b8 = 255
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        vertexColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        r8 = Int(r * 255)
+        g8 = Int(g * 255)
+        b8 = Int(b * 255)
+        
+        let vertices = geometry.vertices
+        let vertexCount = geometry.vertices.count
+        
+        var positions: [SIMD3<Float>] = []
+        positions.reserveCapacity(vertexCount)
+        
+        let vertexBuffer = geometry.vertices.buffer.contents()
+        let vertexStride = geometry.vertices.stride
+        let vertexOffset = geometry.vertices.offset
+        
+        for i in 0..<vertexCount {
+            let ptr = vertexBuffer.advanced(by: vertexOffset + i * vertexStride)
+            let local = ptr.assumingMemoryBound(to: SIMD3<Float>.self).pointee
+            let world = transform * SIMD4<Float>(local, 1.0)
+            positions.append(SIMD3(world.x, world.y, world.z))
+        }
+        
+        // --- Indices ---
+        let faceCount = geometry.faces.count
+        let faces = geometry.faces
+        var indices: [UInt32] = []
+        /// Each face is a triangle (3 indices)
+        indices.reserveCapacity(faceCount * 3)
+        
+        for index in 0..<faceCount {
+            /// Each face is a triangle (3 indices)
+            let face = faces[index]
+            indices.append(UInt32(face[0]))
+            indices.append(UInt32(face[1]))
+            indices.append(UInt32(face[2]))
+        }
+        return MeshPlyContents(
+            positions: positions,
+            indices: indices,
+            colorR8: r8,
+            colorG8: g8,
+            colorB8: b8
+        )
     }
 }
