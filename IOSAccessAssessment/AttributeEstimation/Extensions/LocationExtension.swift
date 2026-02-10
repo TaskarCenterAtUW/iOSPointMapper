@@ -166,18 +166,22 @@ extension AttributeEstimationPipeline {
         let projectedEndpoints: (ProjectedPoint, ProjectedPoint) = try planeAttributeProcessor.getEndpointsFromBins(
             projectedPointBins: projectedPointBins
         )
-        let worldEndpoints: [WorldPoint] = try worldPointsProcessor.unprojectPointsFromPlaneCPU(
+        var worldEndpoints: [WorldPoint] = try worldPointsProcessor.unprojectPointsFromPlaneCPU(
             projectedPoints: [projectedEndpoints.0, projectedEndpoints.1], plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
         )
-        let locationDeltas: [SIMD2<Float>] = worldEndpoints.map { worldEndpoint in
+        var locationDeltas: [SIMD2<Float>] = worldEndpoints.map { worldEndpoint in
             return localizationProcessor.calculateDelta(
                 worldPoint: SIMD3<Float>(worldEndpoint.p.x, worldEndpoint.p.y, worldEndpoint.p.z),
                 cameraTransform: captureImageData.cameraTransform,
             )
         }
+        /// Sort world endpoints based on location deltas  by distance from the camera, so that the closer endpoint is used as the first location for the line string. This is a heuristic to improve location accuracy, especially for longer line strings where depth estimation can be noisier.
+        let sortedEndpointsWithDeltas = zip(worldEndpoints, locationDeltas).sorted { simd_length($0.1) < simd_length($1.1) }
+        worldEndpoints = sortedEndpointsWithDeltas.map { $0.0 }
+        locationDeltas = sortedEndpointsWithDeltas.map { $0.1 }
         let locationCoordinates: [CLLocationCoordinate2D] = worldEndpoints.map { worldEndpoint in
             return localizationProcessor.calculateLocation(
                 worldPoint: SIMD3<Float>(worldEndpoint.p.x, worldEndpoint.p.y, worldEndpoint.p.z),
@@ -187,7 +191,7 @@ extension AttributeEstimationPipeline {
         }
         let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
-        let lidarDepth = worldEndpoints.map { sqrt($0.p.x * $0.p.x + $0.p.y * $0.p.y + $0.p.z * $0.p.z) }.reduce(0, +) / Float(worldEndpoints.count)
+        let lidarDepth = locationDeltas.map { simd_length($0) }.reduce(0, +) / Float(locationDeltas.count)
         return LocationRequestResult(
             coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
         )
