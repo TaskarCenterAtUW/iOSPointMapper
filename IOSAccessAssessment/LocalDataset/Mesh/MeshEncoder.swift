@@ -33,26 +33,11 @@ struct MeshPlyContents {
 }
 
 class MeshEncoder {
-    enum Status {
-        case ok
-        case fileCreationError
-        case encodingError
-    }
     private var baseDirectory: URL
-    public var status: Status = Status.ok
 
-    init(outDirectory: URL) {
+    init(outDirectory: URL) throws {
         self.baseDirectory = outDirectory
-        createDirectoryIfNeeded()
-    }
-    
-    private func createDirectoryIfNeeded() {
-        do {
-            try FileManager.default.createDirectory(at: self.baseDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
-        } catch let error {
-            print("Could not create folder. \(error.localizedDescription)")
-            status = Status.fileCreationError
-        }
+        try FileManager.default.createDirectory(at: self.baseDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
 
     func save(meshBundle: MeshBundle, fileName: String = "mesh") {
@@ -212,6 +197,6 @@ class MeshEncoder {
 }
 
 extension MeshEncoder {
-    func save(meshSnapshot: MeshGPUSnapshot, fileName: String = "mesh") {
+    func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) {
     }
 }

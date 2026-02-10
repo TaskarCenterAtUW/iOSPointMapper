@@ -244,7 +244,9 @@ struct ARCameraView: View {
                 try manager.pause()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
-                addCaptureDataToCurrentDataset(captureImageData: captureData.imageData, location: captureLocation)
+                addCaptureDataToCurrentDataset(
+                    captureImageData: captureData.imageData, captureMeshData: captureData.meshData, location: captureLocation
+                )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
@@ -263,12 +265,14 @@ struct ARCameraView: View {
     
     private func addCaptureDataToCurrentDataset(
         captureImageData: any CaptureImageDataProtocol,
+        captureMeshData: (any CaptureMeshDataProtocol)? = nil,
         location: CLLocationCoordinate2D?
     ) {
         Task {
             do {
                 try sharedAppData.currentDatasetEncoder?.addCaptureData(
                     captureImageData: captureImageData,
+                    captureMeshData: captureMeshData,
                     location: captureLocation
                 )
             } catch {
