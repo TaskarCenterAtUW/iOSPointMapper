@@ -199,9 +199,20 @@ extension MeshEncoder {
         let filename = String(frameNumber.uuidString)
         
         var plyContents: [MeshPlyContents] = []
+        var vertexBase: UInt32 = 0
         for anchor in meshAnchors {
             let content = getPlyForAnchor(meshAnchor: anchor, vertexColor: .white)
-            plyContents.append(content)
+            /// Rebase the indices to the total vertex count so far
+            let rebasedIndices = content.indices.map { $0 + vertexBase }
+            vertexBase += UInt32(content.positions.count)
+            let rebasedContent = MeshPlyContents(
+                positions: content.positions,
+                indices: rebasedIndices,
+                colorR8: content.colorR8,
+                colorG8: content.colorG8,
+                colorB8: content.colorB8
+            )
+            plyContents.append(rebasedContent)
         }
         
         let ply = generatePlyContent(plyContents, includeColor: true)
@@ -227,9 +238,7 @@ extension MeshEncoder {
         g8 = Int(g * 255)
         b8 = Int(b * 255)
         
-        let vertices = geometry.vertices
         let vertexCount = geometry.vertices.count
-        
         var positions: [SIMD3<Float>] = []
         positions.reserveCapacity(vertexCount)
         
@@ -246,18 +255,20 @@ extension MeshEncoder {
         
         // --- Indices ---
         let faceCount = geometry.faces.count
-        let faces = geometry.faces
         var indices: [UInt32] = []
         /// Each face is a triangle (3 indices)
         indices.reserveCapacity(faceCount * 3)
         
-        for index in 0..<faceCount {
-            /// Each face is a triangle (3 indices)
-            let face = faces[index]
-            indices.append(UInt32(face[0]))
-            indices.append(UInt32(face[1]))
-            indices.append(UInt32(face[2]))
+        let facesBuffer = geometry.faces.buffer.contents()
+        let indicesPerFace = geometry.faces.indexCountPerPrimitive
+        for i in 0..<faceCount {
+            let baseAddress = facesBuffer.advanced(by: i * indicesPerFace * MemoryLayout<UInt32>.size)
+            for offset in 0..<indicesPerFace {
+                let ptr = baseAddress.advanced(by: offset * MemoryLayout<UInt32>.size).assumingMemoryBound(to: UInt32.self)
+                indices.append(ptr.pointee)
+            }
         }
+        
         return MeshPlyContents(
             positions: positions,
             indices: indices,
