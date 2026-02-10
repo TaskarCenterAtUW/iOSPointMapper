@@ -129,6 +129,7 @@
 		A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */; };
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
 		A3E161D22F3A8AF6002D4D08 /* CenterCropTransformUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E161D12F3A8AEF002D4D08 /* CenterCropTransformUtils.swift */; };
+		A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -319,6 +320,7 @@
 		A3DC22F82DD0369E0020CE84 /* UnionOfMasksProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksProcessor.swift; sourceTree = "<group>"; };
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
 		A3E161D12F3A8AEF002D4D08 /* CenterCropTransformUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtils.swift; sourceTree = "<group>"; };
+		A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CenterCropTransformUtils.metal; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBEncoder.swift; sourceTree = "<group>"; };
@@ -973,6 +975,7 @@
 				DAA7F8C92CA76550003666D8 /* CVPixelBufferUtils.swift */,
 				A3E161D12F3A8AEF002D4D08 /* CenterCropTransformUtils.swift */,
 				A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtilsExtension.swift */,
+				A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -1335,6 +1338,7 @@
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
+				A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,
 				A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */,
