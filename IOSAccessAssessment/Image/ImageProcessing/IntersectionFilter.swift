@@ -1,16 +1,17 @@
 //
-//  DepthFilter.swift
+//  BinaryMaskCIFilter.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 1/24/26.
+//  Created by Himanshu on 4/17/25.
 //
+
 
 import UIKit
 import Metal
 import CoreImage
 import MetalKit
 
-enum DepthFilterError: Error, LocalizedError {
+enum IntersectionFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
@@ -33,22 +34,19 @@ enum DepthFilterError: Error, LocalizedError {
     }
 }
 
-/**
-    DepthFilter applies depth-based filtering to images using Metal.
- */
-struct DepthFilter {
+struct IntersectionFilter {
+    // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let pipeline: MTLComputePipelineState
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
-    private let outputColorSpace: CGColorSpace? = nil //CGColorSpace(name: CGColorSpace.linearGray)
-    
+
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            throw DepthFilterError.metalInitializationFailed
+            throw IntersectionFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -56,65 +54,61 @@ struct DepthFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "depthFilteringKernel"),
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "intersectionTextureKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            throw DepthFilterError.metalInitializationFailed
+            throw IntersectionFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
-    
-    func apply(
-        to inputImage: CIImage, depthImage: CIImage,
-        depthMinThreshold: Float, depthMaxThreshold: Float
-    ) throws -> CIImage {
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+
+    /**
+        Applies the intersection filter to two input images and returns the resulting image.
+     */
+    func apply(inputImage1: CIImage, inputImage2: CIImage) throws -> CIImage {
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage1.extent.width), height: Int(inputImage1.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw DepthFilterError.metalPipelineCreationError
+            throw IntersectionFilterError.metalPipelineCreationError
         }
         
-        let inputTexture = try inputImage.toMTLTexture(
+        let inputTexture1 = try inputImage1.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
-        let depthTexture = try depthImage.toMTLTexture(
-            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
+        let inputTexture2 = try inputImage2.toMTLTexture(
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
-            throw DepthFilterError.textureCreationFailed
+            throw IntersectionFilterError.textureCreationFailed
         }
-        var depthMinThresholdVar = depthMinThreshold
-        var depthMaxThresholdVar = depthMaxThreshold
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw DepthFilterError.metalPipelineCreationError
+            throw IntersectionFilterError.metalPipelineCreationError
         }
         
         commandEncoder.setComputePipelineState(self.pipeline)
-        commandEncoder.setTexture(inputTexture, index: 0)
-        commandEncoder.setTexture(depthTexture, index: 1)
+        commandEncoder.setTexture(inputTexture1, index: 0)
+        commandEncoder.setTexture(inputTexture2, index: 1)
         commandEncoder.setTexture(outputTexture, index: 2)
-        commandEncoder.setBytes(&depthMinThresholdVar, length: MemoryLayout<Float>.size, index: 0)
-        commandEncoder.setBytes(&depthMaxThresholdVar, length: MemoryLayout<Float>.size, index: 1)
         
+//        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
-        let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
-                                   height: (Int(inputImage.extent.height) + threadgroupSize.height - 1) / threadgroupSize.height,
+        let threadgroups = MTLSize(width: (Int(inputImage1.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
+                                   height: (Int(inputImage1.extent.height) + threadgroupSize.height - 1) / threadgroupSize.height,
                                    depth: 1)
         commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
         commandEncoder.endEncoding()
 
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
-        
-        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace ?? NSNull()]) else {
-            throw DepthFilterError.outputImageCreationFailed
+
+        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+            throw IntersectionFilterError.outputImageCreationFailed
         }
-        
         return resultCIImage
     }
 }

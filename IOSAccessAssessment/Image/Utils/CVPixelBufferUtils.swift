@@ -10,16 +10,24 @@ import Accelerate
 
 struct CVPixelBufferUtils {
     /**
-     TODO: Currently, this function is quite hardcoded. For example, it uses a fixed pixel format and attributes.
-        It would be better to make it more flexible by allowing the caller to specify the pixel format and attributes.
+        This function creates a CVPixelBuffer with the specified width, height, and pixel format.
      */
     static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
         var pixelBuffer: CVPixelBuffer?
         let attrs = [
             kCVPixelBufferCGImageCompatibilityKey: true,
-            kCVPixelBufferCGBitmapContextCompatibilityKey: true
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true,
+            kCVPixelBufferMetalCompatibilityKey: true,
+            kCVPixelBufferIOSurfacePropertiesKey: [:]
         ] as CFDictionary
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, pixelFormat, attrs, &pixelBuffer)
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            width,
+            height,
+            pixelFormat,
+            attrs as CFDictionary,
+            &pixelBuffer
+        )
         if status != kCVReturnSuccess {
             print("Failed to create pixel buffer")
             return nil
@@ -48,10 +56,6 @@ struct CVPixelBufferUtils {
      This function extracts unique grayscale values from a pixel buffer,
      gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
         and returns both the unique values and their corresponding indices.
-     
-     TODO: The function does more than just extracting unique grayscale values.
-     It also returns the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues.
-     This can cause confusion. Thus, the index extraction logic should be separated from the unique value extraction.
      */
     static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
@@ -253,6 +257,8 @@ extension CVPixelBuffer {
         case kCVPixelFormatType_14Bayer_RGGB:                  return "kCVPixelFormatType_14Bayer_RGGB"
         case kCVPixelFormatType_14Bayer_BGGR:                  return "kCVPixelFormatType_14Bayer_BGGR"
         case kCVPixelFormatType_14Bayer_GBRG:                  return "kCVPixelFormatType_14Bayer_GBRG"
+        case kCVPixelFormatType_DepthFloat16:                  return "kCVPixelFormatType_DepthFloat16"
+        case kCVPixelFormatType_DepthFloat32:                  return "kCVPixelFormatType_DepthFloat32"
         default: return "UNKNOWN"
         }
     }

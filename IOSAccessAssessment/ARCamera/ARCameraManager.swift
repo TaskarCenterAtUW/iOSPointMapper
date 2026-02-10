@@ -415,15 +415,14 @@ extension ARCameraManager {
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
-        let segmentationPixelBuffer = try self.createPixelBufferFromPool(pixelBufferPool: segmentationPixelBufferPool)
-        CenterCropTransformUtils.revertCenterCropAspectFit(
-            segmentationImage, from: originalSize,
-            to: segmentationPixelBuffer,
-            context: rawContext, colorSpace: segmentationMaskColorSpace
-        )
-        segmentationImage = CIImage(
-            cvPixelBuffer: segmentationPixelBuffer, options: [.colorSpace: segmentationMaskColorSpace ?? NSNull()]
-        )
+        segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
+        /**
+         ERROR: The segmentation mask cannot be backed by a pixel buffer after the revert center-crop transform, as it leads to unwanted downscaling of the values.
+         Using Core Image for segmentation masks which are supposed to be numerically precise leads to such issues.
+         */
+//        segmentationImage = try self.backCIImageWithPixelBuffer(
+//            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool, colorSpace: segmentationMaskColorSpace
+//        )
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
         segmentationColorCIImage = segmentationColorCIImage.oriented(inverseOrientation)
@@ -807,7 +806,6 @@ extension ARCameraManager {
         cameraImageResults.depthImage = depthImage
         cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
         
-        /// Process the latest mesh anchors
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,

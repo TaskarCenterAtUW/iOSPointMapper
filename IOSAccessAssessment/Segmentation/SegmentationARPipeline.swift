@@ -43,21 +43,20 @@ enum SegmentationARPipelineError: Error, LocalizedError {
 
 struct SegmentationARPipelineResults {
     var segmentationImage: CIImage
-    var segmentationDepthFilteredImage: CIImage? = nil
+    var originalSegmentationImage: CIImage
     var segmentationColorImage: CIImage
     var segmentedClasses: [AccessibilityFeatureClass]
     var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     
     init(segmentationImage: CIImage, segmentationColorImage: CIImage,
          segmentedClasses: [AccessibilityFeatureClass], detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
-         segmentationDepthFilteredImage: CIImage? = nil
+         originalSegmentationImage: CIImage
     ) {
         self.segmentationImage = segmentationImage
-        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
+        self.originalSegmentationImage = originalSegmentationImage
         self.segmentationColorImage = segmentationColorImage
         self.segmentedClasses = segmentedClasses
         self.detectedFeatureMap = detectedFeatureMap
-        self.segmentationDepthFilteredImage = segmentationDepthFilteredImage
     }
 }
 
@@ -197,11 +196,12 @@ final class SegmentationARPipeline: ObservableObject {
                 depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue
             )
         }
+        let finalSegmentationImage = depthFilteredSegmentationImage ?? segmentationImage
         
         // MARK: Ignoring the object tracking for now
         // Get the objects from the segmentation image
         let detectedFeatures: [DetectedAccessibilityFeature] = try contourRequestProcessor.processRequest(
-            from: depthFilteredSegmentationImage ?? segmentationImage
+            from: finalSegmentationImage
         )
         // MARK: The temporary UUIDs can be removed if we do not need to track objects across frames
         let detectedFeatureMap: [UUID: DetectedAccessibilityFeature] = Dictionary(
@@ -211,16 +211,16 @@ final class SegmentationARPipeline: ObservableObject {
         try Task.checkCancellation()
         
         let segmentationColorImage = try grayscaleToColorFilter.apply(
-            to: depthFilteredSegmentationImage ?? segmentationImage,
+            to: finalSegmentationImage,
             grayscaleValues: self.selectedClassGrayscaleValues, colorValues: self.selectedClassColors
         )
         
         return SegmentationARPipelineResults(
-            segmentationImage: segmentationImage,
+            segmentationImage: finalSegmentationImage,
             segmentationColorImage: segmentationColorImage,
             segmentedClasses: segmentationResults.segmentedClasses,
             detectedFeatureMap: detectedFeatureMap,
-            segmentationDepthFilteredImage: depthFilteredSegmentationImage
+            originalSegmentationImage: segmentationImage
         )
     }
 }

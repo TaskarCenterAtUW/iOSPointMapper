@@ -30,6 +30,3 @@ extern "C" kernel void depthFilteringKernel(
     
     outputTexture.write(pixelColor, gid);
 }
-    
-    
-        

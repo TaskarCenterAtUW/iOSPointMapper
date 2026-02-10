@@ -129,3 +129,20 @@ kernel void warpPointsKernel(
 
     outputPoints[id] = warpedPoint;
 }
+
+kernel void intersectionTextureKernel
+(
+    texture2d<float, access::read> inputTexture1 [[texture(0)]],
+    texture2d<float, access::read> inputTexture2 [[texture(1)]],
+    texture2d<float, access::write> outputTexture [[texture(2)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= inputTexture1.get_width() || gid.y >= inputTexture1.get_height())
+        return;
+    
+    float4 color1 = inputTexture1.read(gid);
+    float4 color2 = inputTexture2.read(gid);
+    
+    float4 result = (color1.r > 0.0 && color2.r > 0.0) ? color1 : float4(0.0, 0.0, 0.0, 0.0);
+    outputTexture.write(result, gid);
+}

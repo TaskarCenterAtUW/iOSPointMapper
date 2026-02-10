@@ -2,243 +2,115 @@
 //  CenterCropTransformUtils.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 10/27/25.
+//  Created by Himanshu on 2/9/26.
 //
 
-import UIKit
+import Metal
+import MetalKit
 
-/**
-    Utility struct for center crop transformations.
-    Contains methods to perform center-crop with aspect-fit resizing, to get the transform, process a CIImage, or process a CGRect.
-    Also contains methods to revert the center-crop transformation.
- */
+enum CenterCropTransformUtilsError: Error, LocalizedError {
+    case metalInitializationFailed
+    case invalidInputImage
+    case textureCreationFailed
+    case metalPipelineCreationError
+    case outputImageCreationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .metalInitializationFailed:
+            return "Failed to initialize Metal resources."
+        case .invalidInputImage:
+            return "The input image is invalid."
+        case .textureCreationFailed:
+            return "Failed to create Metal textures."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
+        case .outputImageCreationFailed:
+            return "Failed to create output CIImage from Metal texture."
+        }
+    }
+}
+
 struct CenterCropTransformUtils {
-    /**
-     Center-crop with aspect-fit resizing.
-     
-     This function resizes a CIImage to match the specified size by:
-        - First, resizing the image to match the smaller dimension while maintaining the aspect ratio.
-        - Then, cropping the image to the specified size while centering it.
-     It thus gets the largest possible subregion of the image that fits within the target size without distortion.
-     */
-    static func centerCropAspectFit(_ image: CIImage, to size: CGSize) -> CIImage {
-        let sourceAspect = image.extent.width / image.extent.height
-        let destAspect = size.width / size.height
-        
-        var transform: CGAffineTransform = .identity
-        if sourceAspect > destAspect {
-            let scale = size.height / image.extent.height
-            let newWidth = image.extent.width * scale
-            let xOffset = (size.width - newWidth) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = size.width / image.extent.width
-            let newHeight = image.extent.height * scale
-            let yOffset = (size.height - newHeight) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
+    private let device: MTLDevice
+    private let commandQueue: MTLCommandQueue
+    private let textureLoader: MTKTextureLoader
+    
+    private let ciContext: CIContext
+    
+    init() throws {
+        guard let device = MTLCreateSystemDefaultDevice(),
+              let commandQueue = device.makeCommandQueue() else  {
+            throw CenterCropTransformUtilsError.metalInitializationFailed
         }
-        let transformedImage = image.transformed(by: transform)
-        let croppedImage = transformedImage.cropped(to: CGRect(origin: .zero, size: size))
-        return croppedImage
+        self.device = device
+        self.commandQueue = commandQueue
+        self.textureLoader = MTKTextureLoader(device: device)
+        
+        self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
     }
     
-    static func centerCropAspectFitTransform(imageSize: CGSize, to size: CGSize) -> CGAffineTransform {
-        let sourceAspect = imageSize.width / imageSize.height
-        let destAspect = size.width / size.height
+    func revertCenterCropAspectFit(_ image: CIImage, to destSize: CGSize) throws -> CIImage {
+        let sourceSize = image.extent.size
+        let sourceAspect = sourceSize.width / sourceSize.height
+        let destAspect = destSize.width / destSize.height
         
-        var transform: CGAffineTransform = .identity
-        if sourceAspect > destAspect {
-            let scale = size.height / imageSize.height
-            let newWidth = imageSize.width * scale
-            let xOffset = (size.width - newWidth) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = size.width / imageSize.width
-            let newHeight = imageSize.height * scale
-            let yOffset = (size.height - newHeight) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
-        }
-        return transform
-    }
-    
-    /**
-     This reverse function attempts to revert the effect of `centerCropAspectFit`.
-        It takes the cropped and resized image, the target size it was resized to, and the original size before resizing and cropping.
-        It calculates the necessary scaling and translation to restore the image to its original aspect ratio and size.
-     
-     - WARNING:
-     Do not use this function for images without color space or with alpha channels, as it may produce incorrect results.
-     */
-    static func revertCenterCropAspectFit(
-        _ image: CIImage, from originalSize: CGSize
-    ) -> CIImage {
-        let sourceAspect = image.extent.width / image.extent.height
-        let destAspect = originalSize.width / originalSize.height
-        
-        var transform: CGAffineTransform = .identity
-        var newWidth: CGFloat = originalSize.width
-        var newHeight: CGFloat = originalSize.height
+        let scale: CGFloat
+        var offsetX: CGFloat = 0
+        var offsetY: CGFloat = 0
         if sourceAspect < destAspect {
-            let scale = originalSize.height / image.extent.height
-            newWidth = originalSize.width
-            let xOffset = (newWidth - image.extent.width * scale) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
+            scale = destSize.height / sourceSize.height
+            let scaledWidth = sourceSize.width * scale
+            offsetX = (destSize.width - scaledWidth) / 2
         } else {
-            let scale = originalSize.width / image.extent.width
-            newHeight = originalSize.height
-            let yOffset = (newHeight - image.extent.height * scale) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
+            scale = destSize.width / sourceSize.width
+            let scaledHeight = sourceSize.height * scale
+            offsetY = (destSize.height - scaledHeight) / 2
         }
-        let transformedImage = image.samplingNearest().transformed(by: transform)
-        let canvas = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
-        let background = CIImage(color: .clear).cropped(to: canvas)
-        let composed = transformedImage.composited(over: background)
-        return composed
-    }
-    
-    /**
-     This reverse function attempts to revert the effect of `centerCropAspectFit`.
-        It takes the cropped and resized image, the target size it was resized to, and the original size before resizing and cropping.
-        It calculates the necessary scaling and translation to restore the image to its original aspect ratio and size.
-        It renders the final image on a provided pixel buffer
-     */
-    static func revertCenterCropAspectFit(
-        _ image: CIImage, from originalSize: CGSize,
-        to pixelBuffer: CVPixelBuffer,
-        context: CIContext, colorSpace: CGColorSpace? = nil
-    ) {
-        let sourceAspect = image.extent.width / image.extent.height
-        let destAspect = originalSize.width / originalSize.height
+        var params = RevertCenterCropParams(
+            srcWidth: UInt32(sourceSize.width),
+            srcHeight: UInt32(sourceSize.height),
+            dstWidth: UInt32(destSize.width),
+            dstHeight: UInt32(destSize.height),
+            scale: Float(scale),
+            offset: SIMD2<Float>(Float(offsetX), Float(offsetY))
+        )
         
-        var transform: CGAffineTransform = .identity
-        var newWidth: CGFloat = originalSize.width
-        var newHeight: CGFloat = originalSize.height
-        if sourceAspect < destAspect {
-            let scale = originalSize.height / image.extent.height
-            newWidth = originalSize.width
-            let xOffset = (newWidth - image.extent.width * scale) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = originalSize.width / image.extent.width
-            newHeight = originalSize.height
-            let yOffset = (newHeight - image.extent.height * scale) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(destSize.width), height: Int(destSize.height), mipmapped: false)
+        descriptor.usage = [.shaderRead, .shaderWrite]
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw CenterCropTransformUtilsError.metalPipelineCreationError
         }
-        let transformedImage = image.samplingNearest().transformed(by: transform)
-        let canvas = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
-        context.render(transformedImage, to: pixelBuffer, bounds: canvas, colorSpace: colorSpace)
-    }
-    
-    /**
-     This function returns the transformation to revert the effect of `centerCropAspectFit`.
-     */
-    static func revertCenterCropAspectFitTransform(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
-        let sourceAspect = imageSize.width / imageSize.height
-        let destAspect = originalSize.width / originalSize.height
+        let sourceTexture: MTLTexture = try image.toMTLTexture(
+            device: device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            context: ciContext, colorSpace: CGColorSpaceCreateDeviceRGB()
+        )
+        guard let destTexture = self.device.makeTexture(descriptor: descriptor) else {
+            throw CenterCropTransformUtilsError.textureCreationFailed
+        }
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "revertCenterCropAspectFitKernel"),
+              let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+            throw CenterCropTransformUtilsError.metalInitializationFailed
+        }
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw CenterCropTransformUtilsError.metalPipelineCreationError
+        }
+        commandEncoder.setComputePipelineState(pipeline)
+        commandEncoder.setTexture(sourceTexture, index: 0)
+        commandEncoder.setTexture(destTexture, index: 1)
+        commandEncoder.setBytes(&params, length: MemoryLayout<RevertCenterCropParams>.stride, index: 0)
+        let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
+        let threadgroups = MTLSize(width: (Int(destSize.width) + threadgroupSize.width - 1) / threadgroupSize.width,
+                                   height: (Int(destSize.height) + threadgroupSize.height - 1) / threadgroupSize.height,
+                                   depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadgroupSize)
+        commandEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
         
-        var transform: CGAffineTransform = .identity
-        if sourceAspect < destAspect {
-            let scale = originalSize.height / imageSize.height
-            let newWidth = imageSize.width * scale
-            let xOffset = (originalSize.width - newWidth) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: xOffset / scale, y: 0)
-        } else {
-            let scale = originalSize.width / imageSize.width
-            let newHeight = imageSize.height * scale
-            let yOffset = (originalSize.height - newHeight) / 2
-            transform = CGAffineTransform(scaleX: scale, y: scale)
-                .translatedBy(x: 0, y: yOffset / scale)
+        guard let destCIImage = CIImage(mtlTexture: destTexture, options: [.colorSpace: NSNull()]) else {
+            throw CenterCropTransformUtilsError.outputImageCreationFailed
         }
-        return transform
-    }
-    
-    /**
-     This function computes the bounding rectangle of the center-cropped area within the original image that corresponds to the specified size after center-crop with aspect-fit resizing.
-     */
-    static func centerCropAspectFitBoundingRect(imageSize: CGSize, to size: CGSize) -> CGRect {
-        let sourceAspect = imageSize.width / imageSize.height
-        let destAspect = size.width / size.height
-        
-        var rect: CGRect = .zero
-        var scale: CGFloat = 1.0
-        var xOffset: CGFloat = 0.0
-        var yOffset: CGFloat = 0.0
-        if sourceAspect > destAspect {
-            scale = imageSize.height / size.height
-            xOffset = (imageSize.width - (size.width * scale)) / 2
-        } else {
-            scale = imageSize.width / size.width
-            yOffset = (imageSize.height - (size.height * scale)) / 2
-        }
-        rect.size = CGSize(width: size.width * scale, height: size.height * scale)
-        rect.origin = CGPoint(x: xOffset, y: yOffset)
-        return rect
-    }
-    
-    /**
-     This function reverts the effect of `centerCropAspectFit` on a CGRect.
-        It computes the original rectangle in the source image that corresponds to the given rectangle in the cropped and resized image.
-     */
-    static func revertCenterCropAspectFitRect(_ rect: CGRect, imageSize: CGSize, from originalSize: CGSize) -> CGRect {
-        let sourceAspect = imageSize.width / imageSize.height
-        let destAspect = originalSize.width / originalSize.height
-        
-        var transform: CGAffineTransform = .identity
-        if sourceAspect < destAspect {
-            // Image was cropped horizontally because original is wider
-            let scale = imageSize.height / originalSize.height
-            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
-            let xOffset = (originalSize.width - newImageSize.width) / (2 * originalSize.width)
-            let widthScale = newImageSize.width / originalSize.width
-            transform = CGAffineTransform(scaleX: widthScale, y: 1)
-                .translatedBy(x: xOffset / widthScale, y: 0)
-        } else {
-            // Image was cropped vertically because original is taller
-            let scale = imageSize.width / originalSize.width
-            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
-            let yOffset = (originalSize.height - newImageSize.height) / (2 * originalSize.height)
-            let heightScale = newImageSize.height / originalSize.height
-            transform = CGAffineTransform(scaleX: 1, y: heightScale)
-                .translatedBy(x: 0, y: yOffset / heightScale)
-        }
-        let revertedRect = rect.applying(transform)
-        return revertedRect
-    }
-    
-    /**
-     This function returns the transformation to reverse the effect of `centerCropAspectFit` on normalized co-ordinates.
-     */
-    static func revertCenterCropAspectFitNormalizedTransform(imageSize: CGSize, from originalSize: CGSize) -> CGAffineTransform {
-        let sourceAspect = imageSize.width / imageSize.height
-        let destAspect = originalSize.width / originalSize.height
-        
-        var transform: CGAffineTransform = .identity
-        if sourceAspect < destAspect {
-            // Image was cropped horizontally because original is wider
-            let scale = imageSize.height / originalSize.height
-            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
-            let xOffset = (originalSize.width - newImageSize.width) / (2 * originalSize.width)
-            let widthScale = newImageSize.width / originalSize.width
-            transform = CGAffineTransform(scaleX: widthScale, y: 1)
-                .translatedBy(x: xOffset / widthScale, y: 0)
-        } else {
-            // Image was cropped vertically because original is taller
-            let scale = imageSize.width / originalSize.width
-            let newImageSize = CGSize(width: imageSize.width / scale, height: imageSize.height / scale)
-            let yOffset = (originalSize.height - newImageSize.height) / (2 * originalSize.height)
-            let heightScale = newImageSize.height / originalSize.height
-            transform = CGAffineTransform(scaleX: 1, y: heightScale)
-                .translatedBy(x: 0, y: yOffset / heightScale)
-        }
-        return transform
+        return destCIImage
     }
 }

@@ -167,3 +167,49 @@ extension CIImage {
         return try textureLoader.newTexture(cgImage: cgImage, options: options)
     }
 }
+
+/**
+ Debugging functions
+ */
+extension CIImage {
+    /**
+        Function to check if the CIImage has backed data. This is useful for debugging purposes to check what the CIImage is backed by, and the relevant formats.
+     */
+    func checkBackedData() {
+        if let cs = self.colorSpace {
+            print("CIImage is backed by color space: \(cs)")
+        } else {
+            print("CIImage has no color space")
+        }
+        
+        if self.properties.isEmpty {
+            print("CIImage has no properties")
+        } else {
+            print("CIImage properties: \(self.properties)")
+        }
+        
+        if let pb = self.pixelBuffer {
+            print("CIImage is backed by pixel buffer")
+            print("    Format: \(CVPixelBufferGetPixelFormatType(pb)) \(pb.pixelFormatName())")
+            print("    Size: \(CVPixelBufferGetWidth(pb))x\(CVPixelBufferGetHeight(pb))")
+        } else {
+            print("CIImage is not backed by a pixel buffer")
+        }
+        
+        if let mtl = self.metalTexture {
+            print("CIImage is backed by metal texture")
+            print("    Format: \(mtl.pixelFormat) \(mtl.pixelFormatName())")
+            print("    Size: \(mtl.width)x\(mtl.height)")
+        } else {
+            print("CIImage is not backed by a metal texture")
+        }
+        
+        if let cg = self.cgImage {
+            print("CIImage is backed by CGImage")
+            print("    Format: \(String(cg.colorSpace?.name ?? "Unknown"))")
+            print("    Size: \(cg.width)x\(cg.height)")
+        } else {
+            print("CIImage is not backed by a CGImage")
+        }
+    }
+}
