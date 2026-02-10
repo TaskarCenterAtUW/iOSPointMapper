@@ -212,5 +212,6 @@ class MeshEncoder {
 }
 
 extension MeshEncoder {
-    
+    func save(meshSnapshot: MeshGPUSnapshot, fileName: String = "mesh") {
+    }
 }
