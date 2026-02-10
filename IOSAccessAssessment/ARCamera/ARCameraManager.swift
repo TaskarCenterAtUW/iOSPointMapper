@@ -416,6 +416,10 @@ extension ARCameraManager {
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
         segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
+        /**
+         ERROR: The segmentation mask cannot be backed by a pixel buffer after the revert center-crop transform, as it leads to unwanted downscaling of the values.
+         Using Core Image for segmentation masks which are supposed to be numerically precise leads to such issues.
+         */
 //        segmentationImage = try self.backCIImageWithPixelBuffer(
 //            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool, colorSpace: segmentationMaskColorSpace
 //        )
