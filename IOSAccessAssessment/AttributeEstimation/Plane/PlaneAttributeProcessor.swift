@@ -15,6 +15,7 @@ enum PlaneAttributeProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
+    case endpointsComputationFailed
     
     var errorDescription: String? {
         switch self {
@@ -24,14 +25,21 @@ enum PlaneAttributeProcessorError: Error, LocalizedError {
             return "Failed to create Metal compute pipeline."
         case .metalPipelineBlitEncoderError:
             return "Failed to create Blit Command Encoder for the Plane Width Processor."
+        case .endpointsComputationFailed:
+            return "Failed to compute endpoints from projected points."
         }
     }
 }
 
-struct ProjectedPointBinValues: Sendable {
+struct ProjectedPointBin: Sendable {
+    let binValueCount: Int
+    let binValues: [Float]
+    let sRange: (Float, Float)
+}
+
+struct ProjectedPointBins: Sendable {
     let binCount: Int
-    let binValueCounts: [Int]
-    let binValues: [[Float]]
+    let bins: [ProjectedPointBin]
 }
 
 struct BinWidth: Sendable {
@@ -78,10 +86,10 @@ struct PlaneAttributeProcessor {
     func binProjectedPoints(
         projectedPoints: [ProjectedPoint],
         binSize: Float = 0.25
-    ) throws -> ProjectedPointBinValues {
+    ) throws -> ProjectedPointBins {
         var projectedPointCount = projectedPoints.count
         guard let firstProjectedPoint = projectedPoints.first else {
-            return ProjectedPointBinValues(binCount: 0, binValueCounts: [], binValues: [])
+            return ProjectedPointBins(binCount: 0, bins: [])
         }
         var sMin: Float = firstProjectedPoint.s
         var sMax: Float = firstProjectedPoint.s
@@ -113,6 +121,7 @@ struct PlaneAttributeProcessor {
                 byteCount: MemoryLayout<ProjectedPoint>.stride * projectedPointCount
             )
         }
+        /// TODO: Find a more optimal maxValuesPerBin.
         var params = ProjectedPointBinningParams(
             sMin: sMin, sMax: sMax, sBinSize: binSize,
             binCount: UInt32(binCount), maxValuesPerBin: UInt32(projectedPointCount)
@@ -161,19 +170,21 @@ struct PlaneAttributeProcessor {
         
         let binCountsPtr = binCountsBuffer.contents().bindMemory(to: UInt32.self, capacity: binCount)
         let binValuesPtr = binValuesBuffer.contents().bindMemory(to: Float.self, capacity: binCount * projectedPointCount)
-        var binValueCounts: [Int] = []
-        var binValues: [[Float]] = []
+        var bins: [ProjectedPointBin] = []
         for binIndex in 0..<binCount {
             let count = Int(binCountsPtr[binIndex])
-            binValueCounts.append(count)
             var valuesForBin: [Float] = []
             for valueIndex in 0..<count {
                 let value = binValuesPtr[binIndex * projectedPointCount + valueIndex]
                 valuesForBin.append(value)
             }
-            binValues.append(valuesForBin)
+            let sRangeMin = sMin + Float(binIndex) * binSize
+            let sRangeMax = sRangeMin + binSize
+            bins.append(ProjectedPointBin(binValueCount: count, binValues: valuesForBin, sRange: (sRangeMin, sRangeMax)))
         }
-        return ProjectedPointBinValues(binCount: binCount, binValueCounts: binValueCounts, binValues: binValues)
+        return ProjectedPointBins(
+            binCount: binCount, bins: bins
+        )
     }
     
     /**
@@ -188,18 +199,19 @@ struct PlaneAttributeProcessor {
         - Returns: An array of BinWidth representing the computed widths for each bin.
      */
     func computeWidthByBin(
-        projectedPointBinValues: ProjectedPointBinValues,
+        projectedPointBins: ProjectedPointBins,
         minCount: Int = 100,
         trimLow: Float = 0.05, trimHigh: Float = 0.95
     ) -> [BinWidth] {
         var binWidths: [BinWidth] = []
-        let binCount = projectedPointBinValues.binCount
+        let binCount = projectedPointBins.binCount
         for binIndex in 0..<binCount {
-            let count = projectedPointBinValues.binValueCounts[binIndex]
+            let bin = projectedPointBins.bins[binIndex]
+            let count = bin.binValueCount
             guard count >= minCount else {
                 continue
             }
-            let values = projectedPointBinValues.binValues[binIndex]
+            let values = bin.binValues
             /// Can replace with Accelerate framework for better performance if arrays are large
             let sortedValues = values.sorted()
             
@@ -213,9 +225,31 @@ struct PlaneAttributeProcessor {
         return binWidths
     }
     
-    func computeEndpointsFromBins(
-        projectedPointBinValues: ProjectedPointBinValues,
-        minCount: Int = 100,
+    /**
+     Get the endpoints of the sidewalk along the 's' axis by analyzing the projected points.
+     */
+    func getEndpointsFromBins(
+        projectedPointBins: ProjectedPointBins,
         trimLow: Float = 0.05, trimHigh: Float = 0.95
-    ) -> 
+    ) throws -> (ProjectedPoint, ProjectedPoint) {
+        /// Get the first and the last bin that has enough points to be considered valid
+        let validBins = projectedPointBins.bins.filter { $0.binValueCount > 0 }
+        guard let firstValidBin = validBins.first, let lastValidBin = validBins.last else {
+            throw PlaneAttributeProcessorError.endpointsComputationFailed
+        }
+        let firstBinValues = firstValidBin.binValues
+        let lastBinValues = lastValidBin.binValues
+        let firstBinSortedValues = firstBinValues.sorted()
+        let lastBinSortedValues = lastBinValues.sorted()
+        let firstBinTrimLowIndex = Int(Float(firstBinValues.count) * trimLow)
+        let firstBinTrimHighIndex = Int(Float(firstBinValues.count) * trimHigh)
+        let lastBinTrimLowIndex = Int(Float(lastBinValues.count) * trimLow)
+        let lastBinTrimHighIndex = Int(Float(lastBinValues.count) * trimHigh)
+        let firstEndpointS = (firstValidBin.sRange.0 + firstValidBin.sRange.1) / 2
+        let lastEndpointS = (lastValidBin.sRange.0 + lastValidBin.sRange.1) / 2
+        
+        let firstEndpoint = ProjectedPoint(s: firstEndpointS, t: (firstBinSortedValues[firstBinTrimLowIndex] + firstBinSortedValues[firstBinTrimHighIndex]) / 2)
+        let lastEndpoint = ProjectedPoint(s: lastEndpointS, t: (lastBinSortedValues[lastBinTrimLowIndex] + lastBinSortedValues[lastBinTrimHighIndex]) / 2)
+        return (firstEndpoint, lastEndpoint)
+    }
 }

@@ -390,5 +390,6 @@ struct WorldPointsProcessor {
             let worldPointPosition = origin + projectedPoint.s * longitudinalVector + projectedPoint.t * lateralVector
             worldPoints.append(WorldPoint(p: worldPointPosition))
         }
+        return worldPoints
     }
 }

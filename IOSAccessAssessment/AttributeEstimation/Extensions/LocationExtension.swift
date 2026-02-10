@@ -156,11 +156,40 @@ extension AttributeEstimationPipeline {
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
         }
-        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+        let projectedPoints: [ProjectedPoint] = try worldPointsProcessor.projectPointsToPlane(
             worldPoints: worldPoints, plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        let projectedPointBins: ProjectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+        let projectedEndpoints: (ProjectedPoint, ProjectedPoint) = try planeAttributeProcessor.getEndpointsFromBins(
+            projectedPointBins: projectedPointBins
+        )
+        let worldEndpoints: [WorldPoint] = try worldPointsProcessor.unprojectPointsFromPlaneCPU(
+            projectedPoints: [projectedEndpoints.0, projectedEndpoints.1], plane: plane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        let locationDeltas: [SIMD2<Float>] = worldEndpoints.map { worldEndpoint in
+            return localizationProcessor.calculateDelta(
+                worldPoint: SIMD3<Float>(worldEndpoint.p.x, worldEndpoint.p.y, worldEndpoint.p.z),
+                cameraTransform: captureImageData.cameraTransform,
+            )
+        }
+        let locationCoordinates: [CLLocationCoordinate2D] = worldEndpoints.map { worldEndpoint in
+            return localizationProcessor.calculateLocation(
+                worldPoint: SIMD3<Float>(worldEndpoint.p.x, worldEndpoint.p.y, worldEndpoint.p.z),
+                cameraTransform: captureImageData.cameraTransform,
+                deviceLocation: deviceLocation
+            )
+        }
+        let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
+        let lidarDepth = worldEndpoints.map { sqrt($0.p.x * $0.p.x + $0.p.y * $0.p.y + $0.p.z * $0.p.z) }.reduce(0, +) / Float(worldEndpoints.count)
+        return LocationRequestResult(
+            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
         )
     }
     
