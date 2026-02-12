@@ -195,6 +195,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     
     var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
     var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+    var centerCropTransformUtils: CenterCropTransformUtils? = nil
     
     var frameRate: Int = 15
     var lastFrameTime: TimeInterval = 0
@@ -249,6 +250,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
         try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
+        self.centerCropTransformUtils = try CenterCropTransformUtils()
         self.isConfigured = true
         
         Task {
@@ -383,6 +385,9 @@ extension ARCameraManager {
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
+        guard let centerCropTransformUtils = centerCropTransformUtils else {
+            throw ARCameraManagerError.segmentationProcessingFailed
+        }
         /// Pre-process the image: orient, center-crop, and back to pixel buffer
         let originalSize: CGSize = image.extent.size
         let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
@@ -415,7 +420,7 @@ extension ARCameraManager {
         
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
-        segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
+        let segmentationBuffer = try centerCropTransformUtils.revertCenterCropAspectFitGetBuffer(segmentationImage, to: originalSize)
         /**
          ERROR: The segmentation mask cannot be backed by a pixel buffer after the revert center-crop transform, as it leads to unwanted downscaling of the values.
          Using Core Image for segmentation masks which are supposed to be numerically precise leads to such issues.
@@ -423,6 +428,7 @@ extension ARCameraManager {
 //        segmentationImage = try self.backCIImageWithPixelBuffer(
 //            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool, colorSpace: segmentationMaskColorSpace
 //        )
+        segmentationImage = CIImage(cvPixelBuffer: segmentationBuffer)
         
         var segmentationColorCIImage = segmentationResults.segmentationColorImage
         segmentationColorCIImage = segmentationColorCIImage.oriented(inverseOrientation)

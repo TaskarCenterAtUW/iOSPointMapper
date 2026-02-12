@@ -50,7 +50,7 @@ struct CenterCropTransformUtils {
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
     }
     
-    func revertCenterCropAspectFit(_ image: CIImage, to destSize: CGSize) throws -> CIImage {
+    func revertCenterCropAspectFit(_ image: CIImage, to destSize: CGSize) throws -> MTLTexture {
         let sourceSize = image.extent.size
         let sourceAspect = sourceSize.width / sourceSize.height
         let destAspect = destSize.width / destSize.height
@@ -108,9 +108,20 @@ struct CenterCropTransformUtils {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        guard let destCIImage = CIImage(mtlTexture: destTexture, options: [.colorSpace: NSNull()]) else {
+        return destTexture
+    }
+    
+    func revertCenterCropAspectFitGetBuffer(_ image: CIImage, to destSize: CGSize) throws -> CVPixelBuffer {
+        let destTexture = try revertCenterCropAspectFit(image, to: destSize)
+        var pixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, destTexture.width, destTexture.height, kCVPixelFormatType_OneComponent8, [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pixelBuffer)
+        guard status == kCVReturnSuccess, let pixelBuffer = pixelBuffer else {
             throw CenterCropTransformUtilsError.outputImageCreationFailed
         }
-        return destCIImage
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        let region = MTLRegionMake2D(0, 0, destTexture.width, destTexture.height)
+        destTexture.getBytes(CVPixelBufferGetBaseAddress(pixelBuffer)!, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer), from: region, mipmapLevel: 0)
+        CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+        return pixelBuffer
     }
 }

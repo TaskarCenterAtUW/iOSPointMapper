@@ -119,8 +119,8 @@ struct DepthFilter {
 //        try debugWithPixelBuffer(mtlTexture: outputTexture)
 //        try debugWithTransformedCIImage(mtlTexture: outputTexture)
 //        try debugWithRevertedCenterCropCIImage(mtlTexture: outputTexture)
-        try debugWithSyntheticMaskPixelBuffer()
-        try debugWithSyntheticMaskMetal()
+//        try debugWithSyntheticMaskPixelBuffer()
+//        try debugWithSyntheticMaskMetal()
         
         return resultCIImage
     }
