@@ -90,9 +90,14 @@ class AttributeEstimationPipeline: ObservableObject {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         switch(oswElementClass) {
         case .Sidewalk:
+            let worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+            let plane = try self.calculateAlignedPlane(
+                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+            )
             locationRequestResult = try self.calculateLocationForLineString(
                 deviceLocation: deviceLocation,
-                accessibilityFeature: accessibilityFeature
+                accessibilityFeature: accessibilityFeature,
+                alignedPlane: plane, worldPoints: worldPoints
             )
         case .Building:
             locationRequestResult = try self.calculateLocationForPolygon(

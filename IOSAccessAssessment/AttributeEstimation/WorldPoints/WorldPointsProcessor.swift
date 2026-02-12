@@ -368,4 +368,28 @@ struct WorldPointsProcessor {
         }
         return projectedPoints
     }
+    
+    func unprojectPointsFromPlaneCPU(
+        projectedPoints: [ProjectedPoint],
+        plane: Plane,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        imageSize: CGSize
+    ) throws -> [WorldPoint] {
+        let pointCount = projectedPoints.count
+        if pointCount == 0 {
+            return []
+        }
+        let longitudinalVector = simd_float3(plane.firstVector)
+        let lateralVector = simd_float3(plane.secondVector)
+        let normalVector = simd_float3(plane.normalVector)
+        let origin = simd_float3(plane.origin)
+        var worldPoints: [WorldPoint] = []
+        for i in 0..<pointCount {
+            let projectedPoint = projectedPoints[i]
+            let worldPointPosition = origin + projectedPoint.s * longitudinalVector + projectedPoint.t * lateralVector
+            worldPoints.append(WorldPoint(p: worldPointPosition))
+        }
+        return worldPoints
+    }
 }

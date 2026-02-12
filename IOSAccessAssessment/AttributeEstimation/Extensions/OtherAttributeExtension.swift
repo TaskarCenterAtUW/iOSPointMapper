@@ -145,8 +145,8 @@ extension AttributeEstimationPipeline {
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
         )
-        let projectedPointBinValues = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
-        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBinValues: projectedPointBinValues)
+        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: projectedPointBins)
         let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
             return partialResult + Double(binWidth.width)
         } / Double(binWidths.count)
