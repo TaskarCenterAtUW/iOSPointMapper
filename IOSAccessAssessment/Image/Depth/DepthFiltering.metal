@@ -49,4 +49,3 @@ kernel void syntheticMask(
     float v = float(gid.x % 16) / 255.0;
     dst.write(v, gid);
 }
-

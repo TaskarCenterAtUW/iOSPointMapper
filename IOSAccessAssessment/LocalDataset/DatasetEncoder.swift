@@ -34,6 +34,7 @@ class DatasetEncoder {
 //    public let headingPath: URL
     public let accessibilityFeaturePath: URL
     public let otherDetailsPath: URL
+    public let meshPath: URL
     
     private let rgbEncoder: RGBEncoder
     private let depthEncoder: DepthEncoder
@@ -45,6 +46,7 @@ class DatasetEncoder {
 //    private let headingEncoder: HeadingEncoder
     private let accessibilityFeatureEncoder: AccessibilityFeatureEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
+    private let meshEncoder: MeshEncoder
     
     public var capturedFrameIds: Set<UUID> = []
     
@@ -67,6 +69,7 @@ class DatasetEncoder {
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.accessibilityFeaturePath = datasetDirectory.appendingPathComponent("features", isDirectory: true)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
+        self.meshPath = datasetDirectory.appendingPathComponent("mesh", isDirectory: true)
         
         self.rgbEncoder = try RGBEncoder(outDirectory: self.rgbFilePath)
         self.depthEncoder = try DepthEncoder(outDirectory: self.depthFilePath)
@@ -78,6 +81,7 @@ class DatasetEncoder {
 //        self.headingEncoder = HeadingEncoder(url: self.headingPath)
         self.accessibilityFeatureEncoder = try AccessibilityFeatureEncoder(outDirectory: self.accessibilityFeaturePath)
         self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
+        self.meshEncoder = try MeshEncoder(outDirectory: self.meshPath)
     }
     
     static private func createDirectory(id: String, relativeTo: URL? = nil) throws -> URL {
@@ -96,6 +100,7 @@ class DatasetEncoder {
     
     public func addCaptureData(
         captureImageData: any CaptureImageDataProtocol,
+        captureMeshData: (any CaptureMeshDataProtocol)? = nil,
         location: CLLocationCoordinate2D?
     ) throws {
         let otherDetailsData = OtherDetailsData(
@@ -103,6 +108,7 @@ class DatasetEncoder {
             deviceOrientation: captureImageData.interfaceOrientation,
             originalSize: captureImageData.originalSize
         )
+        let meshAnchors = captureMeshData?.captureMeshDataResults.meshAnchors
         try self.addData(
             frameId: captureImageData.id,
             cameraImage: captureImageData.cameraImage,
@@ -114,6 +120,7 @@ class DatasetEncoder {
             location: location,
 //            heading: captureImageData.heading,
             otherDetails: otherDetailsData,
+            meshAnchors: meshAnchors,
             timestamp: captureImageData.timestamp
         )
     }
@@ -127,6 +134,7 @@ class DatasetEncoder {
         location: CLLocationCoordinate2D?,
 //        heading: CLHeading?,
         otherDetails: OtherDetailsData?,
+        meshAnchors: [ARMeshAnchor]? = nil,
         timestamp: TimeInterval = Date().timeIntervalSince1970
     ) throws {
         if (self.capturedFrameIds.contains(frameId)) {
@@ -159,6 +167,9 @@ class DatasetEncoder {
         }
         if let otherDetailsData = otherDetails {
             try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
+        }
+        if let meshAnchors = meshAnchors {
+            self.meshEncoder.save(meshAnchors: meshAnchors, frameNumber: frameNumber)
         }
         
         /// TODO: Add error handling for each encoder

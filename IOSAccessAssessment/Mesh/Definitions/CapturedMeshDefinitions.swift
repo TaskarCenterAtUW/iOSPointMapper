@@ -5,6 +5,7 @@
 //  Created by Himanshu on 11/27/25.
 //
 import Foundation
+import ARKit
 
 struct CapturedMeshAnchorSnapshot: Sendable {
     let vertexData: Data

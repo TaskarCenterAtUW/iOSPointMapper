@@ -143,7 +143,7 @@ struct ARCameraMeshResults {
     
     init(
         meshGPUSnapshot: MeshGPUSnapshot,
-        meshAnchors: [ARMeshAnchor] = [],
+        meshAnchors: [ARMeshAnchor],
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
@@ -416,6 +416,10 @@ extension ARCameraManager {
         var segmentationImage = segmentationResults.segmentationImage
         segmentationImage = segmentationImage.oriented(inverseOrientation)
         segmentationImage = CenterCropTransformUtils.revertCenterCropAspectFit(segmentationImage, from: originalSize)
+        /**
+         ERROR: The segmentation mask cannot be backed by a pixel buffer after the revert center-crop transform, as it leads to unwanted downscaling of the values.
+         Using Core Image for segmentation masks which are supposed to be numerically precise leads to such issues.
+         */
 //        segmentationImage = try self.backCIImageWithPixelBuffer(
 //            segmentationImage, context: rawContext, pixelBufferPool: segmentationPixelBufferPool, colorSpace: segmentationMaskColorSpace
 //        )
@@ -553,7 +557,7 @@ extension ARCameraManager {
                     self.outputConsumer?.cameraOutputMesh(
                         self, metalContext: metalContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: anchors,
+                        for: anchors.compactMap { $0 as? ARMeshAnchor },
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
@@ -594,6 +598,7 @@ extension ARCameraManager {
         }
         return ARCameraMeshResults(
             meshGPUSnapshot: meshGPUSnapshot,
+            meshAnchors: anchors.compactMap { $0 as? ARMeshAnchor },
             segmentationLabelImage: backedSegmentationLabelImage,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
@@ -854,7 +859,7 @@ extension ARCameraManager {
         outputConsumer?.cameraOutputMesh(
             self, metalContext: metalContext,
             meshGPUSnapshot: meshGPUSnapshot,
-            for: nil as [ARAnchor]?,
+            for: cameraMeshResults?.meshAnchors,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             segmentationLabelImage: backedSegmentationLabelImage,
@@ -878,7 +883,8 @@ extension ARCameraManager {
             totalVertexCount: cameraMeshOtherDetails.totalVertexCount
         )
         let captureMeshDataResults = CaptureMeshDataResults(
-            segmentedMesh: cameraMeshSnapshot
+            segmentedMesh: cameraMeshSnapshot,
+            meshAnchors: cameraMeshResults?.meshAnchors,
         )
         
         let captureData = CaptureImageAndMeshData(

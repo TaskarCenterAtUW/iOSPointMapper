@@ -68,6 +68,23 @@ struct LocalizationProcessor {
         )
     }
     
+    func calculateLocation(
+        worldPoint: SIMD3<Float>,
+        cameraTransform: simd_float4x4,
+        deviceLocation: CLLocationCoordinate2D
+    ) -> CLLocationCoordinate2D {
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
+        let delta = worldPoint - cameraOriginPoint
+        let latitudeDelta = -delta.z
+        let longitudeDelta = delta.x
+        return self.calculateLocation(
+            latitudeDelta: latitudeDelta, longitudeDelta: longitudeDelta,
+            deviceLocation: deviceLocation
+        )
+    }
+    
     /**
         Calculate the latitude and longitude deltas of an object at a given point with depth in the image.
      
@@ -83,6 +100,17 @@ struct LocalizationProcessor {
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics
         )
+        return SIMD2<Float>( -delta.z, delta.x )
+    }
+    
+    func calculateDelta(
+        worldPoint: SIMD3<Float>,
+        cameraTransform: simd_float4x4
+    ) -> SIMD2<Float> {
+        let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
+                                                 cameraTransform.columns.3.y,
+                                                 cameraTransform.columns.3.z)
+        let delta = worldPoint - cameraOriginPoint
         return SIMD2<Float>( -delta.z, delta.x )
     }
     

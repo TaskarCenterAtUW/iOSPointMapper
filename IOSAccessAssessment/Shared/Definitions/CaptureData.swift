@@ -8,6 +8,7 @@
 import SwiftUI
 import DequeModule
 import simd
+import ARKit
 
 struct CaptureImageDataResults: Sendable {
     let segmentationLabelImage: CIImage
@@ -18,6 +19,12 @@ struct CaptureImageDataResults: Sendable {
 
 struct CaptureMeshDataResults: Sendable {
     let segmentedMesh: CapturedMeshSnapshot
+    let meshAnchors: [ARMeshAnchor]?
+    
+    init(segmentedMesh: CapturedMeshSnapshot, meshAnchors: [ARMeshAnchor]? = nil) {
+        self.segmentedMesh = segmentedMesh
+        self.meshAnchors = meshAnchors
+    }
 }
 
 /**

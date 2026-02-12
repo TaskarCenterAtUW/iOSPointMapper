@@ -33,6 +33,15 @@
     typedef simd_uint2         MTL_UINT2;
 #endif
 
+typedef struct RevertCenterCropParams {
+    MTL_UINT srcWidth;
+    MTL_UINT srcHeight;
+    MTL_UINT dstWidth;
+    MTL_UINT dstHeight;
+    float scale;
+    MTL_FLOAT2 offset;
+} RevertCenterCropParams;
+
 typedef struct MeshTriangle {
     packed_float3 a;
     packed_float3 b;
@@ -99,3 +108,4 @@ typedef struct ProjectedPointBinningParams {
     MTL_UINT binCount;
     MTL_UINT maxValuesPerBin;
 } ProjectedPointBinningParams;
+
