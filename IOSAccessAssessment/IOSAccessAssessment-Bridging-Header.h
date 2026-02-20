@@ -4,3 +4,4 @@
 
 #import "ShaderTypes.h"
 #include "PngEncoder.h"
+#include "PngDecoder.h"
