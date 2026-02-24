@@ -219,6 +219,8 @@ struct SetupView: View {
         return (self.selectedClasses.count == 0)
     }
     
+    @State private var expandedClasses: Set<AccessibilityFeatureClass> = []
+    
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @EnvironmentObject var userStateViewModel: UserStateViewModel
     
@@ -335,6 +337,10 @@ struct SetupView: View {
                         }
                     }
                 }
+                
+                disclosureList {
+                    
+                }
             }
             .padding()
             .navigationBarTitle(SetupViewConstants.Texts.setupViewTitle, displayMode: .inline)
@@ -428,6 +434,66 @@ struct SetupView: View {
         .environmentObject(self.segmentationPipeline)
     }
     
+    @ViewBuilder
+    private func disclosureList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        List {
+            ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { c in
+                DisclosureGroup(
+                    isExpanded: Binding(
+                        get: { isExpanded(c) },
+                        set: { newValue in
+                            if newValue { expandedClasses.insert(c) }
+                            else { expandedClasses.remove(c) }
+                        }
+                    )
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(c.attributes), id: \.self) { attr in
+                            Text("• \(attr.name)")   // adjust for your attribute type
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 8)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                } label: {
+                    // Collapsed row label: keep your original HStack
+                    HStack {
+                        Text(c.name)
+                            .foregroundStyle(
+                                selectedClasses.contains(c)
+                                ? SetupViewConstants.Colors.selectedClass
+                                : SetupViewConstants.Colors.unselectedClass
+                            )
+
+                        Spacer()
+
+                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(Color(UIColor(ciColor: c.color)))
+                            .overlay(
+                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundStyle(
+                                        selectedClasses.contains(c)
+                                        ? SetupViewConstants.Colors.selectedClass
+                                        : SetupViewConstants.Colors.unselectedClass
+                                    )
+                            )
+                    }
+                    // Make the label tappable to select/deselect, without stealing the chevron tap
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if selectedClasses.contains(c) { selectedClasses.remove(c) }
+                        else { selectedClasses.insert(c) }
+                    }
+                }
+            }
+        }
+    }
+    
     private func openChangeset() {
         Task {
             do {
@@ -518,6 +584,18 @@ struct SetupView: View {
                     areModelsInitialized: false, showRetryAlert: true,
                     retryMessage: "\(SetupViewConstants.Texts.modelInitializationRetryMessageText) \nError: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    private func isExpanded(_ c: AccessibilityFeatureClass) -> Bool {
+        expandedClasses.contains(c)
+    }
+
+    private func toggleExpanded(_ c: AccessibilityFeatureClass) {
+        if expandedClasses.contains(c) {
+            expandedClasses.remove(c)
+        } else {
+            expandedClasses.insert(c)
         }
     }
     
