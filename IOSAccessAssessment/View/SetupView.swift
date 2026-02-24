@@ -302,45 +302,43 @@ struct SetupView: View {
                     }
                 }
                 
-                List {
-                    ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
-                        Button(action: {
-                            if self.selectedClasses.contains(accessibilityFeatureClass) {
-                                self.selectedClasses.remove(accessibilityFeatureClass)
-                            } else {
-                                self.selectedClasses.insert(accessibilityFeatureClass)
-                            }
-                        }) {
-                            HStack {
-                                Text(accessibilityFeatureClass.name)
-                                    .foregroundStyle(
-                                        self.selectedClasses.contains(accessibilityFeatureClass)
-                                        ? SetupViewConstants.Colors.selectedClass
-                                        : SetupViewConstants.Colors.unselectedClass
-                                    )
-                                Spacer()
-                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
-                                    .overlay(
-                                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
-                                            .resizable()
-                                            .frame(width: 20, height: 20)
-                                            .foregroundStyle(
-                                                self.selectedClasses.contains(accessibilityFeatureClass)
-                                                ? SetupViewConstants.Colors.selectedClass
-                                                : SetupViewConstants.Colors.unselectedClass
-                                            )
-                                    )
-                            }
-                        }
-                    }
-                }
+//                List {
+//                    ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
+//                        Button(action: {
+//                            if self.selectedClasses.contains(accessibilityFeatureClass) {
+//                                self.selectedClasses.remove(accessibilityFeatureClass)
+//                            } else {
+//                                self.selectedClasses.insert(accessibilityFeatureClass)
+//                            }
+//                        }) {
+//                            HStack {
+//                                Text(accessibilityFeatureClass.name)
+//                                    .foregroundStyle(
+//                                        self.selectedClasses.contains(accessibilityFeatureClass)
+//                                        ? SetupViewConstants.Colors.selectedClass
+//                                        : SetupViewConstants.Colors.unselectedClass
+//                                    )
+//                                Spacer()
+//                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+//                                    .resizable()
+//                                    .frame(width: 20, height: 20)
+//                                    .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
+//                                    .overlay(
+//                                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+//                                            .resizable()
+//                                            .frame(width: 20, height: 20)
+//                                            .foregroundStyle(
+//                                                self.selectedClasses.contains(accessibilityFeatureClass)
+//                                                ? SetupViewConstants.Colors.selectedClass
+//                                                : SetupViewConstants.Colors.unselectedClass
+//                                            )
+//                                    )
+//                            }
+//                        }
+//                    }
+//                }
                 
-                disclosureList {
-                    
-                }
+                disclosureList()
             }
             .padding()
             .navigationBarTitle(SetupViewConstants.Texts.setupViewTitle, displayMode: .inline)
@@ -435,59 +433,105 @@ struct SetupView: View {
     }
     
     @ViewBuilder
-    private func disclosureList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    private func rowLabel(for c: AccessibilityFeatureClass, placeholderButton: Bool = false) -> some View {
+        HStack {
+            Text(c.name)
+                .foregroundStyle(
+                    selectedClasses.contains(c)
+                    ? SetupViewConstants.Colors.selectedClass
+                    : SetupViewConstants.Colors.unselectedClass
+                )
+
+            Spacer()
+
+            Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+                .resizable()
+                .frame(width: 20, height: 20)
+                .foregroundStyle(Color(UIColor(ciColor: c.color)))
+                .overlay(
+                    Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .foregroundStyle(
+                            selectedClasses.contains(c)
+                            ? SetupViewConstants.Colors.selectedClass
+                            : SetupViewConstants.Colors.unselectedClass
+                        )
+                )
+            
+            if placeholderButton {
+                Image(systemName: "chevron.forward")
+                    .disabled(true)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func disclosureList() -> some View {
         List {
-            ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { c in
-                DisclosureGroup(
-                    isExpanded: Binding(
-                        get: { isExpanded(c) },
-                        set: { newValue in
-                            if newValue { expandedClasses.insert(c) }
-                            else { expandedClasses.remove(c) }
+            ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
+                let attributes = Array(accessibilityFeatureClass.attributes)
+                
+                if (attributes.isEmpty) {
+                    Button(action: {
+                        if self.selectedClasses.contains(accessibilityFeatureClass) {
+                            self.selectedClasses.remove(accessibilityFeatureClass)
+                        } else {
+                            self.selectedClasses.insert(accessibilityFeatureClass)
                         }
-                    )
-                ) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(Array(c.attributes), id: \.self) { attr in
-                            Text("• \(attr.name)")   // adjust for your attribute type
-                                .font(.subheadline)
+                    }) {
+                        rowLabel(for: accessibilityFeatureClass, placeholderButton: true)
+                    }
+                } else {
+                    DisclosureGroup(
+                        isExpanded: Binding(
+                            get: { isExpanded(accessibilityFeatureClass) },
+                            set: { newValue in
+                                if newValue { expandedClasses.insert(accessibilityFeatureClass) }
+                                else { expandedClasses.remove(accessibilityFeatureClass) }
+                            }
+                        )
+                    ) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            
+                            Text("Attributes")
+                                .font(.caption)
+                                .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, 8)
+                                .textCase(.uppercase)
+
+                            Divider()
+
+                            ForEach(attributes, id: \.self) { attr in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Image(systemName: "circle.fill")
+                                        .font(.system(size: 5))
+                                        .foregroundStyle(.secondary)
+                                        .padding(.top, 6)
+
+                                    Text(attr.name)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                }
+                            }
+
                         }
-                    }
-                    .padding(.vertical, 6)
-                } label: {
-                    // Collapsed row label: keep your original HStack
-                    HStack {
-                        Text(c.name)
-                            .foregroundStyle(
-                                selectedClasses.contains(c)
-                                ? SetupViewConstants.Colors.selectedClass
-                                : SetupViewConstants.Colors.unselectedClass
-                            )
-
-                        Spacer()
-
-                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .foregroundStyle(Color(UIColor(ciColor: c.color)))
-                            .overlay(
-                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(
-                                        selectedClasses.contains(c)
-                                        ? SetupViewConstants.Colors.selectedClass
-                                        : SetupViewConstants.Colors.unselectedClass
-                                    )
-                            )
-                    }
-                    // Make the label tappable to select/deselect, without stealing the chevron tap
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if selectedClasses.contains(c) { selectedClasses.remove(c) }
-                        else { selectedClasses.insert(c) }
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.secondarySystemBackground))
+                        )
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                    } label: {
+                        // Collapsed row label: keep your original HStack
+                        rowLabel(for: accessibilityFeatureClass)
+                        // Make the label tappable to select/deselect, without stealing the chevron tap
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if selectedClasses.contains(accessibilityFeatureClass) { selectedClasses.remove(accessibilityFeatureClass) }
+                            else { selectedClasses.insert(accessibilityFeatureClass) }
+                        }
                     }
                 }
             }

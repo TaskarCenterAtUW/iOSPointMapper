@@ -250,11 +250,12 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         annotationImageResults.featuresOverlayOutputImage = updatedFeaturesOverlayResults.overlayImage
         self.annotationImageResults = annotationImageResults
         /// Additional images for debugging
-        let overlay3Image: CIImage? = self.getPlaneImage(
-            captureImageData: captureImageData,
-            size: captureImageData.originalSize,
-            updateFeatureResults: updateFeatureResults
-        )
+        let overlay3Image: CIImage? = nil
+//        self.getPlaneImage(
+//            captureImageData: captureImageData,
+//            size: captureImageData.originalSize,
+//            updateFeatureResults: updateFeatureResults
+//        )
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
