@@ -96,7 +96,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
      */
     private let segmentationBoundingFrameView: UIImageView = {
         let iv = UIImageView()
-        iv.contentMode = .scaleAspectFit
+        iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
         iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
@@ -109,7 +109,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
      */
     private let segmentationImageView: UIImageView = {
         let iv = UIImageView()
-        iv.contentMode = .scaleAspectFit
+        iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.layer.cornerRadius = 12
         iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
