@@ -20,9 +20,9 @@ enum CameraTransformCoderError: Error, LocalizedError {
         case .dataWriteFailed:
             return "Failed to write data to camera transform file."
         case .fileNotFound:
-            return "Location data file not found."
+            return "Camera transform file not found."
         case .fileReadFailed:
-            return "Failed to read location data from file."
+            return "Failed to read camera transform file."
         }
     }
 }
@@ -101,7 +101,7 @@ class CameraTransformDecoder {
             throw CameraTransformCoderError.fileReadFailed
         }
         let maxIndex = max(timestampIndex, frameIndex, rxxIndex, rxyIndex, rxzIndex, ryxIndex, ryyIndex, ryzIndex, rzxIndex, rzyIndex, rzzIndex, xIndex, yIndex, zIndex)
-        var cameraTransformList: [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)] = []
+        var cameraTransformDataList: [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)] = []
         for line in fileLines.dropFirst() {
             let values = line.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             guard columnNames.count > maxIndex else {
@@ -129,8 +129,8 @@ class CameraTransformDecoder {
                 SIMD4<Float>(rzx, rzy, rzz, 0),
                 SIMD4<Float>(x, y, z, 1)
             )
-            cameraTransformList.append((timestamp: timestamp, frame: frame, transform: transform))
+            cameraTransformDataList.append((timestamp: timestamp, frame: frame, transform: transform))
         }
-        return cameraTransformList
+        return cameraTransformDataList
     }
 }

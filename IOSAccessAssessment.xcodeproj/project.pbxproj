@@ -82,7 +82,7 @@
 		A37C3C1C2F356254001F4248 /* IntersectionFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C1B2F356254001F4248 /* IntersectionFilter.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
 		A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E392EED60F300B07B77 /* lodepng.cpp */; };
-		A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */; };
+		A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E942EFB66E600B07B77 /* CameraIntrinsicsCoder.swift */; };
 		A37E3E9B2EFB8F7500B07B77 /* HeadingCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E9A2EFB8F7200B07B77 /* HeadingCoder.swift */; };
 		A37E3E9E2EFBAA8700B07B77 /* AccessibilityFeatureSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E9D2EFBAA7D00B07B77 /* AccessibilityFeatureSnapshot.swift */; };
 		A37E3EA02EFBAADD00B07B77 /* AccessibilityFeatureClassSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E9F2EFBAADC00B07B77 /* AccessibilityFeatureClassSnapshot.swift */; };
@@ -274,7 +274,7 @@
 		A37E3E392EED60F300B07B77 /* lodepng.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lodepng.cpp; sourceTree = "<group>"; };
 		A37E3E3A2EED60F300B07B77 /* PngEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngEncoder.h; sourceTree = "<group>"; };
 		A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngEncoder.mm; sourceTree = "<group>"; };
-		A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraIntrinsicsEncoder.swift; sourceTree = "<group>"; };
+		A37E3E942EFB66E600B07B77 /* CameraIntrinsicsCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraIntrinsicsCoder.swift; sourceTree = "<group>"; };
 		A37E3E9A2EFB8F7200B07B77 /* HeadingCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadingCoder.swift; sourceTree = "<group>"; };
 		A37E3E9D2EFBAA7D00B07B77 /* AccessibilityFeatureSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureSnapshot.swift; sourceTree = "<group>"; };
 		A37E3E9F2EFBAADC00B07B77 /* AccessibilityFeatureClassSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureClassSnapshot.swift; sourceTree = "<group>"; };
@@ -781,7 +781,7 @@
 			isa = PBXGroup;
 			children = (
 				A3FE16642E18C53D00DAE5BE /* CameraTransformCoder.swift */,
-				A37E3E942EFB66E600B07B77 /* CameraIntrinsicsEncoder.swift */,
+				A37E3E942EFB66E600B07B77 /* CameraIntrinsicsCoder.swift */,
 			);
 			path = ARCamera;
 			sourceTree = "<group>";
@@ -1350,7 +1350,7 @@
 				A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */,
 				A37E72162ED95CB400CFE4EF /* MeshGPUDefinitions.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
-				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsEncoder.swift in Sources */,
+				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedFeature.swift in Sources */,
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
