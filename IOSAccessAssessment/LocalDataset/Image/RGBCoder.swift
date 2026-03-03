@@ -14,6 +14,7 @@ enum RGBCoderError: Error, LocalizedError {
     case writeFailed(String)
     case invalidFilePath(String)
     case invalidFileData
+    case pixelBufferCreationFailed(OSStatus)
     
     var errorDescription: String? {
         switch self {
@@ -25,6 +26,8 @@ enum RGBCoderError: Error, LocalizedError {
             return "The file path is invalid: \(path)"
         case .invalidFileData:
             return "The file data is invalid."
+        case .pixelBufferCreationFailed(let status):
+            return "Failed to create pixel buffer. OSStatus: \(status)"
         }
     }
 }
@@ -55,7 +58,7 @@ class RGBDecoder {
         self.baseDirectory = inDirectory
     }
     
-    func load(frameNumber: UUID) throws -> CIImage {
+    func load(frameNumber: UUID) throws -> CVPixelBuffer {
         let filename = String(frameNumber.uuidString)
         let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("png")
         guard FileManager.default.fileExists(atPath: path.path) else {
@@ -68,6 +71,44 @@ class RGBDecoder {
               let cgImage = image.cgImage else {
             throw RGBCoderError.invalidFileData
         }
-        return CIImage(cgImage: cgImage)
+        let width = cgImage.width
+        let height = cgImage.height
+        
+        var pixelBuffer: CVPixelBuffer?
+        //kCVPixelFormatType_32BGRA
+        let attrs: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: width,
+            kCVPixelBufferHeightKey as String: height,
+            kCVPixelBufferCGImageCompatibilityKey as String: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: true,
+            kCVPixelBufferMetalCompatibilityKey as String: true,
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+        ]
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer)
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            throw RGBCoderError.pixelBufferCreationFailed(status)
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer, [])
+        let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
+        guard let context = CGContext(data: CVPixelBufferGetBaseAddress(buffer),
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: 8,
+                                      bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: bitmapInfo) else {
+            CVPixelBufferUnlockBaseAddress(buffer, [])
+            throw RGBCoderError.pixelBufferCreationFailed(-1)
+        }
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        CVPixelBufferUnlockBaseAddress(buffer, [])
+        return buffer
+    }
+    
+    func load(frameNumber: UUID) throws -> CIImage {
+        let pixelBuffer: CVPixelBuffer = try load(frameNumber: frameNumber)
+        return CIImage(cvPixelBuffer: pixelBuffer)
     }
 }
