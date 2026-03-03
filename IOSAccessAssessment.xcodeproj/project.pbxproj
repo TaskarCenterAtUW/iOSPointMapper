@@ -135,7 +135,7 @@
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
-		A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */; };
+		A3FE16612E18BA5900DAE5BE /* RGBCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */; };
 		A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */; };
 		A3FE16652E18C54000DAE5BE /* CameraTransformEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */; };
 		A3FE16672E18C81800DAE5BE /* LocationEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */; };
@@ -328,7 +328,7 @@
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
-		A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBEncoder.swift; sourceTree = "<group>"; };
+		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
 		A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfidenceEncoder.swift; sourceTree = "<group>"; };
 		A3FE16642E18C53D00DAE5BE /* CameraTransformEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraTransformEncoder.swift; sourceTree = "<group>"; };
 		A3FE16662E18C81500DAE5BE /* LocationEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationEncoder.swift; sourceTree = "<group>"; };
@@ -770,7 +770,7 @@
 			isa = PBXGroup;
 			children = (
 				A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */,
-				A3FE16602E18BA5600DAE5BE /* RGBEncoder.swift */,
+				A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */,
 				A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */,
 				A305B06B2E18A85D00ECCF9B /* DepthCoder.swift */,
 			);
@@ -1277,7 +1277,7 @@
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
 				A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */,
 				A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */,
-				A3FE16612E18BA5900DAE5BE /* RGBEncoder.swift in Sources */,
+				A3FE16612E18BA5900DAE5BE /* RGBCoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
 				A364B5332F25576000325E5C /* DepthFilter.swift in Sources */,
 				A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */,
