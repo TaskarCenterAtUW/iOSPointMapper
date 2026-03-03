@@ -139,7 +139,7 @@
 		A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16622E18BAE900DAE5BE /* ConfidenceEncoder.swift */; };
 		A3FE16652E18C54000DAE5BE /* CameraTransformCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16642E18C53D00DAE5BE /* CameraTransformCoder.swift */; };
 		A3FE16672E18C81800DAE5BE /* LocationCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE16662E18C81500DAE5BE /* LocationCoder.swift */; };
-		A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE166B2E1C29C800DAE5BE /* OtherDetailsEncoder.swift */; };
+		A3FE166C2E1C29CB00DAE5BE /* OtherDetailsCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE166B2E1C29C800DAE5BE /* OtherDetailsCoder.swift */; };
 		A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */; };
 		A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */; };
 		A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */; };
@@ -333,7 +333,7 @@
 		A3FE16642E18C53D00DAE5BE /* CameraTransformCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraTransformCoder.swift; sourceTree = "<group>"; };
 		A3FE16662E18C81500DAE5BE /* LocationCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCoder.swift; sourceTree = "<group>"; };
 		A3FE166A2E18DD2A00DAE5BE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		A3FE166B2E1C29C800DAE5BE /* OtherDetailsEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherDetailsEncoder.swift; sourceTree = "<group>"; };
+		A3FE166B2E1C29C800DAE5BE /* OtherDetailsCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherDetailsCoder.swift; sourceTree = "<group>"; };
 		A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationEncoder.swift; sourceTree = "<group>"; };
 		A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraManager.swift; sourceTree = "<group>"; };
 		A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraUtils.swift; sourceTree = "<group>"; };
@@ -798,7 +798,7 @@
 		A37E3E992EFB8F5400B07B77 /* Others */ = {
 			isa = PBXGroup;
 			children = (
-				A3FE166B2E1C29C800DAE5BE /* OtherDetailsEncoder.swift */,
+				A3FE166B2E1C29C800DAE5BE /* OtherDetailsCoder.swift */,
 			);
 			path = Others;
 			sourceTree = "<group>";
@@ -1240,7 +1240,7 @@
 				A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */,
 				A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */,
 				A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */,
-				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsEncoder.swift in Sources */,
+				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsCoder.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */,
