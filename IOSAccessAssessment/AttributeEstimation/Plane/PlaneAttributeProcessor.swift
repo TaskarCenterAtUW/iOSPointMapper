@@ -114,8 +114,10 @@ struct PlaneAttributeProcessor {
             options: .storageModeShared
         )
         let projectedPointsBufferPtr = projectedPointsBuffer.contents()
-        projectedPoints.withUnsafeBytes { srcPtr in
-            guard let baseAddress = srcPtr.baseAddress else { return }
+        try projectedPoints.withUnsafeBytes { srcPtr in
+            guard let baseAddress = srcPtr.baseAddress else {
+                throw PlaneAttributeProcessorError.metalPipelineCreationError
+            }
             projectedPointsBufferPtr.copyMemory(
                 from: baseAddress,
                 byteCount: MemoryLayout<ProjectedPoint>.stride * projectedPointCount

@@ -293,8 +293,10 @@ struct WorldPointsProcessor {
             options: .storageModeShared
         )
         let worldPointsBufferPtr = worldPointsBuffer.contents()
-        worldPoints.withUnsafeBytes { srcPtr in
-            guard let baseAddress = srcPtr.baseAddress else { return }
+        try worldPoints.withUnsafeBytes { srcPtr in
+            guard let baseAddress = srcPtr.baseAddress else {
+                throw WorldPointsProcessorError.unableToProcessBufferData
+            }
             worldPointsBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<WorldPoint>.stride * pointCount)
         }
         var params = ProjectedPointsParams(
