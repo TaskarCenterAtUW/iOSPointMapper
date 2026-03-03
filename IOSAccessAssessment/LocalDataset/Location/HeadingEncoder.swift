@@ -14,9 +14,11 @@ struct HeadingData {
 //    let headingAccuracy: Double
 }
 
-enum HeadingEncoderError: Error, LocalizedError {
+enum HeadingCoderError: Error, LocalizedError {
     case fileCreationFailed
     case dataWriteFailed
+    case fileNotFound
+    case fileReadFailed
     
     var errorDescription: String? {
         switch self {
@@ -24,6 +26,10 @@ enum HeadingEncoderError: Error, LocalizedError {
             return "Unable to create heading data file."
         case .dataWriteFailed:
             return "Failed to write heading data to file."
+        case .fileNotFound:
+            return "Heading data file not found."
+        case .fileReadFailed:
+            return "Failed to read heading data from file."
         }
     }
 }
@@ -38,7 +44,7 @@ class HeadingEncoder {
         try "".write(to: self.path, atomically: true, encoding: .utf8)
         self.fileHandle = try FileHandle(forWritingTo: self.path)
         guard let header = "timestamp, frame, magnetic_heading, true_heading\n".data(using: .utf8) else {
-            throw HeadingEncoderError.fileCreationFailed
+            throw HeadingCoderError.fileCreationFailed
         }
 //            , heading_accuracy\n"
         try self.fileHandle.write(contentsOf: header)
@@ -49,12 +55,58 @@ class HeadingEncoder {
         let line = "\(headingData.timestamp), \(frameNumber) \(headingData.magneticHeading), \(headingData.trueHeading)\n"
 //        , \(headingData.headingAccuracy)\n"
         guard let lineData = line.data(using: .utf8) else {
-            throw HeadingEncoderError.dataWriteFailed
+            throw HeadingCoderError.dataWriteFailed
         }
         try self.fileHandle.write(contentsOf: lineData)
     }
 
     func done() throws {
         try self.fileHandle.close()
+    }
+}
+
+class HeadingDecoder {
+    let path: URL
+    
+    init(url: URL) {
+        self.path = url
+    }
+    
+    func load() throws -> [HeadingData] {
+        guard FileManager.default.fileExists(atPath: self.path.absoluteString) else {
+            throw HeadingCoderError.fileNotFound
+        }
+        guard let fileContents = try? String(contentsOf: self.path, encoding: .utf8) else {
+            throw HeadingCoderError.fileReadFailed
+        }
+        let fileLines = fileContents.components(separatedBy: .newlines).filter {
+            !$0.trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        let expectedHeader = "timestamp, frame, magnetic_heading, true_heading"
+        guard let headerLine = fileLines.first?.trimmingCharacters(in: .whitespacesAndNewlines),
+              headerLine == expectedHeader else {
+            throw HeadingCoderError.fileReadFailed
+        }
+        let columnNames = headerLine.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let timestampIndex = columnNames.firstIndex(of: "timestamp")
+        let magneticHeadingIndex = columnNames.firstIndex(of: "magnetic_heading")
+        let trueHeadingIndex = columnNames.firstIndex(of: "true_heading")
+        guard let timestampIndex, let magneticHeadingIndex, let trueHeadingIndex else {
+            throw LocationCoderError.fileReadFailed
+        }
+        var headingDataList: [HeadingData] = []
+        for line in fileLines.dropFirst() {
+            let columns = line.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            guard columns.count > max(timestampIndex, magneticHeadingIndex, trueHeadingIndex) else {
+                continue
+            }
+            if let timestamp = TimeInterval(columns[timestampIndex]),
+               let magneticHeading = Double(columns[magneticHeadingIndex]),
+               let trueHeading = Double(columns[trueHeadingIndex]) {
+                let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
+                headingDataList.append(headingData)
+            }
+        }
+        return headingDataList
     }
 }
