@@ -38,24 +38,40 @@ struct TestWorkspaceListView: View {
     
     var body: some View {
         VStack {
+            HStack {
+                Text("Please select a workspace dataset:")
+                    .font(.subheadline)
+                    .padding(.bottom, 5)
+            }
+            
             if datasetLister.workspaceDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.workspaceDirectories, id: \.self) { workspaceDir in
-                        Button(action: {
-                            print("Selected workspace: \(workspaceDir)")
-                        }) {
+//                        Button(action: {
+//                            print("Selected workspace: \(workspaceDir)")
+//                        }) {
+//                            Text(workspaceDir.lastPathComponent)
+//                        }
+                        NavigationLink(
+                            destination: TestChangesetListView(
+                                selectedClasses: selectedClasses, workspaceDir: workspaceDir, datasetLister: datasetLister
+                            )
+                        ) {
                             Text(workspaceDir.lastPathComponent)
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
                         }
                     }
                 }
             } else {
                 Text("No workspace datasets found.")
+                Spacer()
             }
         }
+        .navigationBarTitle("Test: Workspace Selection", displayMode: .inline)
         .onAppear {
             do {
                 try datasetLister.configure()
-                print(datasetLister.workspaceDirectories)
             } catch {
                 print("Error fetching workspace datasets: \(error)")
             }
@@ -68,7 +84,7 @@ struct TestWorkspaceListView: View {
  */
 struct TestChangesetListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
-    let workspaceId: String
+    let workspaceDir: URL
     let datasetLister: DatasetLister
     
     @EnvironmentObject var sharedAppData: SharedAppData
@@ -78,11 +94,35 @@ struct TestChangesetListView: View {
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        Text("Test Changeset List View")
+        VStack {
+            HStack {
+                Text("Please select a changeset dataset:")
+                    .font(.subheadline)
+                    .padding(.bottom, 5)
+            }
+            
+            if datasetLister.changesetDirectories.count > 0 {
+                List {
+                    ForEach(datasetLister.changesetDirectories, id: \.self) { changesetDir in
+                        Button(action: {
+                            print("Selected changeset: \(changesetDir)")
+                        }) {
+                            Text(changesetDir.lastPathComponent)
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+            } else {
+                Text("No changeset datasets found for the selected workspace.")
+                Spacer()
+            }
+        }
+        .navigationBarTitle("Test: Changeset Selection", displayMode: .inline)
         .onAppear {
             do {
+                let workspaceId = workspaceDir.lastPathComponent
                 try datasetLister.selectWorkspace(workspaceId: workspaceId)
-                print(datasetLister.changesetDirectories)
             } catch {
                 print("Error selecting workspace: \(error)")
             }
