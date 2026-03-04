@@ -352,11 +352,7 @@ struct SetupView: View {
                     }
                 ,
                 trailing:
-                    NavigationLink(
-                        destination: ARCameraView(
-                            selectedClasses: Array(self.selectedClasses).sorted()
-                        )
-                    ) {
+                    NavigationLink(destination: mappingDestination) {
                         Text(SetupViewConstants.Texts.nextButton)
                             .foregroundStyle(isSelectionEmpty ? Color.gray : Color.primary)
                             .font(.headline)
@@ -426,6 +422,15 @@ struct SetupView: View {
         .environmentObject(self.sharedAppData)
         .environmentObject(self.sharedAppContext)
         .environmentObject(self.segmentationPipeline)
+    }
+    
+    @ViewBuilder
+    private var mappingDestination: some View {
+        if userStateViewModel.appMode == .standard {
+            ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
+        } else {
+            TestListView(selectedClasses: Array(self.selectedClasses).sorted())
+        }
     }
     
     private func openChangeset() {

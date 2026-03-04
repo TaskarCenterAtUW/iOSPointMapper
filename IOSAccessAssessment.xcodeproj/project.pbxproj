@@ -134,6 +134,9 @@
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
 		A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E452F57FE6200F515E6 /* AppMode.swift */; };
+		A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E472F580D0A00F515E6 /* TestListView.swift */; };
+		A3EE6E4A2F580D6200F515E6 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E492F580D6000F515E6 /* TestView.swift */; };
+		A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -330,6 +333,9 @@
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
 		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
 		A3EE6E452F57FE6200F515E6 /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
+		A3EE6E472F580D0A00F515E6 /* TestListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestListView.swift; sourceTree = "<group>"; };
+		A3EE6E492F580D6000F515E6 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetLister.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -510,6 +516,7 @@
 				A37E3E972EFB8F3800B07B77 /* ARCamera */,
 				A37E3E992EFB8F5400B07B77 /* Others */,
 				A37E3E9C2EFB8F8400B07B77 /* AccessibilityFeature */,
+				A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */,
 				A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */,
 				A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */,
 			);
@@ -1033,6 +1040,8 @@
 		A3EE6E442F57FE4400F515E6 /* TestMode */ = {
 			isa = PBXGroup;
 			children = (
+				A3EE6E472F580D0A00F515E6 /* TestListView.swift */,
+				A3EE6E492F580D6000F515E6 /* TestView.swift */,
 			);
 			path = TestMode;
 			sourceTree = "<group>";
@@ -1278,6 +1287,7 @@
 				A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */,
 				A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */,
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtilsExtension.swift in Sources */,
+				A3EE6E4A2F580D6200F515E6 /* TestView.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
 				A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */,
 				A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */,
@@ -1319,10 +1329,12 @@
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */,
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
+				A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */,
 				A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */,
 				A30801682EC0AE7700B1BA3A /* MeshInstancePolicy.swift in Sources */,
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
+				A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */,
 				A3FE16652E18C54000DAE5BE /* CameraTransformCoder.swift in Sources */,
 				A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
