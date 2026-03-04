@@ -12,11 +12,14 @@ import CoreLocation
 
 enum DatasetDecoderError: Error, LocalizedError {
     case directoryRetrievalFailed
+    case indexDataNotFound(Int)
     
     var errorDescription: String? {
         switch self {
         case .directoryRetrievalFailed:
             return "Failed to retrieve dataset directory."
+        case .indexDataNotFound(let index):
+            return "Data for index \(index) not found."
         }
     }
 }
@@ -92,5 +95,16 @@ class DatasetDecoder {
         return directory
     }
     
-    
+    func loadData(index: Int) throws {
+        /// Use the camera intrinsics data as the source of truth for getting the frame for a specific index
+        let cameraIntrinsicsResults = self.cameraIntrinsicsDecoder.results
+        guard index < cameraIntrinsicsResults.count else {
+            throw DatasetDecoderError.indexDataNotFound(index)
+        }
+        let frameNumber = cameraIntrinsicsResults[index].frameNumber
+        
+        let cameraImage: CIImage = try rgbDecoder.load(frameNumber: frameNumber)
+        let depthBuffer: CVPixelBuffer = try depthDecoder.decodeFrame(frameNumber: frameNumber)
+        let depthImage: CIImage = CIImage(cvPixelBuffer: depthBuffer)
+    }
 }

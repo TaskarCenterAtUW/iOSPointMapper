@@ -67,16 +67,23 @@ class OtherDetailsEncoder {
     }
 }
 
+struct OtherDetailsOutputData {
+    let timestamp: TimeInterval
+    let frame: UUID
+    let deviceOrientation: UIInterfaceOrientation
+    let originalSize: CGSize
+}
+
 class OtherDetailsDecoder {
     private let path: URL
-    let results: [OtherDetailsData]
+    let results: [OtherDetailsOutputData]
     
     init(path: URL) throws {
         self.path = path
         self.results = try OtherDetailsDecoder.preload(path: path)
     }
     
-    static func preload(path: URL) throws -> [OtherDetailsData] {
+    static func preload(path: URL) throws -> [OtherDetailsOutputData] {
         guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw OtherDetailsCoderError.fileNotFound
         }
@@ -101,7 +108,7 @@ class OtherDetailsDecoder {
             throw OtherDetailsCoderError.fileReadFailed
         }
         let maxIndex = max(timestampIndex, frameIndex, deviceOrientationIndex, originalWidthIndex, originalHeightIndex)
-        var otherDetailsDataList: [OtherDetailsData] = []
+        var otherDetailsDataList: [OtherDetailsOutputData] = []
         for line in fileLines.dropFirst() {
             let values = line.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             guard columnNames.count > maxIndex else {
@@ -115,8 +122,9 @@ class OtherDetailsDecoder {
                   let originalHeight = Float(values[originalHeightIndex]) else {
                 continue
             }
-            let otherDetailsData = OtherDetailsData(
+            let otherDetailsData = OtherDetailsOutputData(
                 timestamp: timestamp,
+                frame: frameNumber,
                 deviceOrientation: deviceOrientation,
                 originalSize: CGSize(width: CGFloat(originalWidth), height: CGFloat(originalHeight))
             )

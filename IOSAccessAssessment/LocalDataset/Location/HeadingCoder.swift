@@ -65,16 +65,23 @@ class HeadingEncoder {
     }
 }
 
+struct HeadingOutputData {
+    let timestamp: TimeInterval
+    let frame: UUID
+    let magneticHeading: Double
+    let trueHeading: Double
+}
+
 class HeadingDecoder {
     let path: URL
-    let results: [HeadingData]
+    let results: [HeadingOutputData]
     
     init(url: URL) throws {
         self.path = url
         self.results = try HeadingDecoder.preload(path: url)
     }
     
-    static func preload(path: URL) throws -> [HeadingData] {
+    static func preload(path: URL) throws -> [HeadingOutputData] {
         guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw HeadingCoderError.fileNotFound
         }
@@ -91,21 +98,27 @@ class HeadingDecoder {
         }
         let columnNames = headerLine.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let timestampIndex = columnNames.firstIndex(of: "timestamp")
+        let frameIndex = columnNames.firstIndex(of: "frame")
         let magneticHeadingIndex = columnNames.firstIndex(of: "magnetic_heading")
         let trueHeadingIndex = columnNames.firstIndex(of: "true_heading")
-        guard let timestampIndex, let magneticHeadingIndex, let trueHeadingIndex else {
+        guard let timestampIndex, let frameIndex, let magneticHeadingIndex, let trueHeadingIndex else {
             throw LocationCoderError.fileReadFailed
         }
-        var headingDataList: [HeadingData] = []
+        let maxIndex = max(timestampIndex, frameIndex, magneticHeadingIndex, trueHeadingIndex)
+        var headingDataList: [HeadingOutputData] = []
         for line in fileLines.dropFirst() {
             let columns = line.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            guard columns.count > max(timestampIndex, magneticHeadingIndex, trueHeadingIndex) else {
+            guard columns.count > maxIndex else {
                 continue
             }
             if let timestamp = TimeInterval(columns[timestampIndex]),
+               let frameNumber = UUID(uuidString: columns[frameIndex]),
                let magneticHeading = Double(columns[magneticHeadingIndex]),
                let trueHeading = Double(columns[trueHeadingIndex]) {
-                let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
+                let headingData = HeadingOutputData(
+                    timestamp: timestamp, frame: frameNumber,
+                    magneticHeading: magneticHeading, trueHeading: trueHeading
+                )
                 headingDataList.append(headingData)
             }
         }

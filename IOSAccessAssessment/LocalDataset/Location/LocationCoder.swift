@@ -69,16 +69,23 @@ class LocationEncoder {
     }
 }
 
+struct LocationOutputData {
+    let timestamp: TimeInterval
+    let frame: UUID
+    let latitude: Double
+    let longitude: Double
+}
+
 class LocationDecoder {
     let path: URL
-    let results: [LocationData]
+    let results: [LocationOutputData]
     
     init(path: URL) throws {
         self.path = path
         self.results = try LocationDecoder.preload(path: path)
     }
     
-    static func preload(path: URL) throws -> [LocationData] {
+    static func preload(path: URL) throws -> [LocationOutputData] {
         guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw LocationCoderError.fileNotFound
         }
@@ -95,21 +102,27 @@ class LocationDecoder {
         }
         let columnNames = headerLine.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let timestampIndex = columnNames.firstIndex(of: "timestamp")
+        let frameIndex = columnNames.firstIndex(of: "frame")
         let latitudeIndex = columnNames.firstIndex(of: "latitude")
         let longitudeIndex = columnNames.firstIndex(of: "longitude")
-        guard let timestampIndex, let latitudeIndex, let longitudeIndex else {
+        guard let timestampIndex, let frameIndex, let latitudeIndex, let longitudeIndex else {
             throw LocationCoderError.fileReadFailed
         }
-        var locationDataList: [LocationData] = []
+        let maxIndex = max(timestampIndex, frameIndex, latitudeIndex, longitudeIndex)
+        var locationDataList: [LocationOutputData] = []
         for line in fileLines.dropFirst() {
             let columns = line.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            guard columns.count > max(timestampIndex, latitudeIndex, longitudeIndex) else {
+            guard columns.count > maxIndex else {
                 continue
             }
             if let timestamp = TimeInterval(columns[timestampIndex]),
+               let frameNumber = UUID(uuidString: columns[frameIndex]),
                let latitude = Double(columns[latitudeIndex]),
                let longitude = Double(columns[longitudeIndex]) {
-                let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
+                let locationData = LocationOutputData(
+                    timestamp: timestamp, frame: frameNumber,
+                    latitude: latitude, longitude: longitude
+                )
                 locationDataList.append(locationData)
             }
         }
