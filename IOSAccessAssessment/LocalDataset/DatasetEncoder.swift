@@ -10,6 +10,17 @@ import ARKit
 import CryptoKit
 import CoreLocation
 
+enum DatasetEncoderError: Error, LocalizedError {
+    case directoryCreationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .directoryCreationFailed:
+            return "Failed to create dataset directory."
+        }
+    }
+}
+
 /**
     Encoder for saving dataset frames and metadata.
  
@@ -56,7 +67,7 @@ class DatasetEncoder {
         /// Create workspace Directory if it doesn't exist
         self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId)
         /// if workspace directory exists, create dataset directory inside it
-        datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
+        self.datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
@@ -87,7 +98,10 @@ class DatasetEncoder {
     static private func createDirectory(id: String, relativeTo: URL? = nil) throws -> URL {
         var relativeTo = relativeTo
         if relativeTo == nil {
-            relativeTo = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first!
+            guard let relativeToUrl = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first else {
+                throw DatasetEncoderError.directoryCreationFailed
+            }
+            relativeTo = relativeToUrl
         }
         let directory = URL(filePath: id, directoryHint: .isDirectory, relativeTo: relativeTo)
         if FileManager.default.fileExists(atPath: directory.path) {

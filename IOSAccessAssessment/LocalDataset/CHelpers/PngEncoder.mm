@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#define LODEPNG_NO_COMPILE_DECODER 1
+//#define LODEPNG_NO_COMPILE_DECODER 1
 #define LODEPNG_NO_COMPILE_DISK 1
 #import "PngEncoder.h"
 #import "lodepng.h"
