@@ -69,16 +69,18 @@ class OtherDetailsEncoder {
 
 class OtherDetailsDecoder {
     private let path: URL
+    let results: [OtherDetailsData]
     
-    init(url: URL) {
-        self.path = url
+    init(path: URL) throws {
+        self.path = path
+        self.results = try OtherDetailsDecoder.preload(path: path)
     }
     
-    func load() throws -> [OtherDetailsData] {
-        guard FileManager.default.fileExists(atPath: self.path.absoluteString) else {
+    static func preload(path: URL) throws -> [OtherDetailsData] {
+        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw OtherDetailsCoderError.fileNotFound
         }
-        guard let fileContents = try? String(contentsOf: self.path, encoding: .utf8) else {
+        guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {
             throw OtherDetailsCoderError.fileReadFailed
         }
         let fileLines = fileContents.components(separatedBy: .newlines).filter {

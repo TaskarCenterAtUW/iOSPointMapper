@@ -75,7 +75,6 @@ class RGBDecoder {
         let height = cgImage.height
         
         var pixelBuffer: CVPixelBuffer?
-        //kCVPixelFormatType_32BGRA
         let attrs: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
             kCVPixelBufferWidthKey as String: width,

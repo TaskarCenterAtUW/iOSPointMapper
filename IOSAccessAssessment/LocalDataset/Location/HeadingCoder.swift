@@ -67,16 +67,18 @@ class HeadingEncoder {
 
 class HeadingDecoder {
     let path: URL
+    let results: [HeadingData]
     
-    init(url: URL) {
+    init(url: URL) throws {
         self.path = url
+        self.results = try HeadingDecoder.preload(path: url)
     }
     
-    func load() throws -> [HeadingData] {
-        guard FileManager.default.fileExists(atPath: self.path.absoluteString) else {
+    static func preload(path: URL) throws -> [HeadingData] {
+        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw HeadingCoderError.fileNotFound
         }
-        guard let fileContents = try? String(contentsOf: self.path, encoding: .utf8) else {
+        guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {
             throw HeadingCoderError.fileReadFailed
         }
         let fileLines = fileContents.components(separatedBy: .newlines).filter {

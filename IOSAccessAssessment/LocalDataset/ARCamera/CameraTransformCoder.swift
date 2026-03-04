@@ -62,16 +62,18 @@ class CameraTransformEncoder {
 
 class CameraTransformDecoder {
     private let path: URL
+    let results: [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)]
     
-    init(url: URL) {
-        self.path = url
+    init(path: URL) throws {
+        self.path = path
+        self.results = try CameraTransformDecoder.preload(path: path)
     }
     
-    func load() throws -> [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)] {
-        guard FileManager.default.fileExists(atPath: self.path.absoluteString) else {
+    static func preload(path: URL) throws -> [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)] {
+        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw CameraTransformCoderError.fileNotFound
         }
-        guard let fileContents = try? String(contentsOf: self.path, encoding: .utf8) else {
+        guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {
             throw CameraTransformCoderError.fileReadFailed
         }
         let fileLines = fileContents.components(separatedBy: .newlines).filter {

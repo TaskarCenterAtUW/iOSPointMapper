@@ -132,6 +132,7 @@
 		A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */; };
 		A3E162782F3AFC66002D4D08 /* MeshEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */; };
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
+		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -326,6 +327,7 @@
 		A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshEncoder.swift; sourceTree = "<group>"; };
 		A3E6D2312F4649AD00DAF88E /* PngDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngDecoder.h; sourceTree = "<group>"; };
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
+		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -506,6 +508,7 @@
 				A37E3E992EFB8F5400B07B77 /* Others */,
 				A37E3E9C2EFB8F8400B07B77 /* AccessibilityFeature */,
 				A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */,
+				A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */,
 			);
 			path = LocalDataset;
 			sourceTree = "<group>";
@@ -1325,6 +1328,7 @@
 				A32943532EE814A700C4C1BC /* OSWElement.swift in Sources */,
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
 				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
+				A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MetalBufferUtils.swift in Sources */,
 				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */,

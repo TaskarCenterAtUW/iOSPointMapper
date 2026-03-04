@@ -67,16 +67,18 @@ class CameraIntrinsicsEncoder {
 
 class CameraIntrinsicsDecoder {
     private let path: URL
+    let results: [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)]
     
-    init(path: URL) {
+    init(path: URL) throws {
         self.path = path
+        self.results = try CameraIntrinsicsDecoder.preload(path: path)
     }
     
-    func load() throws -> [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)] {
-        guard FileManager.default.fileExists(atPath: self.path.absoluteString) else {
+    static func preload(path: URL) throws -> [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)] {
+        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw CameraIntrinsicsCoderError.fileNotFound
         }
-        guard let fileContents = try? String(contentsOf: self.path, encoding: .utf8) else {
+        guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {
             throw CameraIntrinsicsCoderError.fileReadFailed
         }
         let fileLines = fileContents.components(separatedBy: .newlines).filter {
