@@ -47,11 +47,6 @@ struct TestWorkspaceListView: View {
             if datasetLister.workspaceDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.workspaceDirectories, id: \.self) { workspaceDir in
-//                        Button(action: {
-//                            print("Selected workspace: \(workspaceDir)")
-//                        }) {
-//                            Text(workspaceDir.lastPathComponent)
-//                        }
                         NavigationLink(
                             destination: TestChangesetListView(
                                 selectedClasses: selectedClasses, workspaceDir: workspaceDir, datasetLister: datasetLister
@@ -104,9 +99,7 @@ struct TestChangesetListView: View {
             if datasetLister.changesetDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.changesetDirectories, id: \.self) { changesetDir in
-                        Button(action: {
-                            print("Selected changeset: \(changesetDir)")
-                        }) {
+                        NavigationLink(destination: changesetDestination(workspaceDir: workspaceDir, changesetDir: changesetDir)) {
                             Text(changesetDir.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
@@ -127,5 +120,12 @@ struct TestChangesetListView: View {
                 print("Error selecting workspace: \(error)")
             }
         }
+    }
+    
+    @ViewBuilder
+    private func changesetDestination(workspaceDir: URL, changesetDir: URL) -> some View {
+        let workspaceId: String = workspaceDir.lastPathComponent
+        let changesetId: String = changesetDir.lastPathComponent
+        TestMappingView(workspaceId: workspaceId, changesetId: changesetId)
     }
 }

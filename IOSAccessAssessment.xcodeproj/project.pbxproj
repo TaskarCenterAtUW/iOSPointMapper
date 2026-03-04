@@ -135,7 +135,7 @@
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
 		A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E452F57FE6200F515E6 /* AppMode.swift */; };
 		A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E472F580D0A00F515E6 /* TestListView.swift */; };
-		A3EE6E4A2F580D6200F515E6 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E492F580D6000F515E6 /* TestView.swift */; };
+		A3EE6E4A2F580D6200F515E6 /* TestMappingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E492F580D6000F515E6 /* TestMappingView.swift */; };
 		A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
@@ -334,7 +334,7 @@
 		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
 		A3EE6E452F57FE6200F515E6 /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
 		A3EE6E472F580D0A00F515E6 /* TestListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestListView.swift; sourceTree = "<group>"; };
-		A3EE6E492F580D6000F515E6 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
+		A3EE6E492F580D6000F515E6 /* TestMappingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestMappingView.swift; sourceTree = "<group>"; };
 		A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetLister.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
@@ -1041,7 +1041,7 @@
 			isa = PBXGroup;
 			children = (
 				A3EE6E472F580D0A00F515E6 /* TestListView.swift */,
-				A3EE6E492F580D6000F515E6 /* TestView.swift */,
+				A3EE6E492F580D6000F515E6 /* TestMappingView.swift */,
 			);
 			path = TestMode;
 			sourceTree = "<group>";
@@ -1287,7 +1287,7 @@
 				A374FAB72EE0173600055268 /* OSMResponseElement.swift in Sources */,
 				A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */,
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtilsExtension.swift in Sources */,
-				A3EE6E4A2F580D6200F515E6 /* TestView.swift in Sources */,
+				A3EE6E4A2F580D6200F515E6 /* TestMappingView.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
 				A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */,
 				A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */,
