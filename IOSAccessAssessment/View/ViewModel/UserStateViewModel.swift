@@ -22,6 +22,15 @@ class UserStateViewModel: ObservableObject {
      */
     @Published var isEnhancedAnalysisEnabled: Bool = false
     
+    /**
+     Select the app mode.
+     
+        1. Standard Mode: Standard mode allows users to capture new data and perform mapping in real-time, providing an interactive experience.
+     
+        2. Test Mode: Test mode allows developers to simulate mapping by using existing locally saved input data to perform mapping without needing to capture new data.
+     */
+    @Published var appMode: AppMode = .standard
+    
     init() {
         isAuthenticated = authService.checkTokenValid()
     }

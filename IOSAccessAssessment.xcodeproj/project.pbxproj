@@ -133,6 +133,7 @@
 		A3E162782F3AFC66002D4D08 /* MeshEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */; };
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
+		A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E452F57FE6200F515E6 /* AppMode.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -328,6 +329,7 @@
 		A3E6D2312F4649AD00DAF88E /* PngDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngDecoder.h; sourceTree = "<group>"; };
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
 		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
+		A3EE6E452F57FE6200F515E6 /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -491,6 +493,7 @@
 				A3FFAA792DE01A0F002B99BD /* ARCameraView.swift */,
 				A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */,
 				A38338C02EDA9E3200F1A402 /* SubView */,
+				A3EE6E442F57FE4400F515E6 /* TestMode */,
 				A31A1E772EAC49E3008B30B7 /* UI */,
 				CAF812C32CFA108100D44B84 /* ViewModel */,
 			);
@@ -827,6 +830,7 @@
 		A37E720A2ED571A800CFE4EF /* Definitions */ = {
 			isa = PBXGroup;
 			children = (
+				A3EE6E452F57FE6200F515E6 /* AppMode.swift */,
 				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
 				A35547C72EC1B0D900F43AFD /* MappingData.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
@@ -1024,6 +1028,13 @@
 				A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */,
 			);
 			path = Annotation;
+			sourceTree = "<group>";
+		};
+		A3EE6E442F57FE4400F515E6 /* TestMode */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = TestMode;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* DepthEstimation */ = {
@@ -1254,6 +1265,7 @@
 				A35547C82EC1B0DB00F43AFD /* MappingData.swift in Sources */,
 				A37E3EA02EFBAADD00B07B77 /* AccessibilityFeatureClassSnapshot.swift in Sources */,
 				A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */,
+				A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */,
 				A308015E2EC09BB700B1BA3A /* CocoCustom35ClassConfig.swift in Sources */,
 				A308015F2EC09BB700B1BA3A /* MapillaryCustom11ClassConfig.swift in Sources */,
 				A3E162782F3AFC66002D4D08 /* MeshEncoder.swift in Sources */,

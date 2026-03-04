@@ -38,6 +38,18 @@ enum ProfileViewConstants {
             Enabling this feature will increase processing time and battery usage.
             """
         
+        /// App Mode
+        static let appModeSettingsTitle = "App Mode"
+        static let appModeDescription = "Switch between different app modes"
+        static let appModeLearnMoreButtonTitle = "Learn More"
+        static let appModeInfoTipTitle = "App Mode"
+        static let appModeInfoTipMessage = """
+            App mode allows you to switch between different modes:
+            
+            - Standard Mode: The default mode to capture new data and perform mapping in real-time, providing an interactive experience.
+            - Test Mode: Developmental mode to simulate mapping by using existing locally saved input data to perform mapping without needing to capture new data.
+            """
+        
         /// Log out
         static let logoutButtonText = "Log out"
         static let confirmationDialogTitle = "Are you sure you want to log out?"
@@ -57,6 +69,7 @@ enum ProfileViewConstants {
     
     enum Identifiers {
         static let enhancedAnalysisInfoTipLearnMoreActionId: String = "enhanced-analysis-learn-more"
+        static let appModeLearnMoreActionId: String = "app-mode-learn-more"
     }
 }
 
@@ -81,6 +94,26 @@ struct EnhancedAnalysisInfoTip: Tip {
     }
 }
 
+struct AppModeInfoTip: Tip {
+    var title: Text {
+        Text(ProfileViewConstants.Texts.appModeInfoTipTitle)
+    }
+    var message: Text? {
+        Text(ProfileViewConstants.Texts.appModeInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: ProfileViewConstants.Images.infoIcon)
+            .resizable()
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId,
+            title: ProfileViewConstants.Texts.appModeLearnMoreButtonTitle
+        )
+    }
+}
+
 struct ProfileView: View {
     @State private var username: String = ""
     @State private var showLogoutConfirmation: Bool = false
@@ -93,6 +126,8 @@ struct ProfileView: View {
     @State private var showWorkspaceLearnMoreSheet = false
     var enhancedAnalysisInfoTip = EnhancedAnalysisInfoTip()
     @State private var showEnhancedAnalysisLearnMoreSheet = false
+    var appModeInfoTip = AppModeInfoTip()
+    @State private var showAppModeLearnMoreSheet = false
     
     var body: some View {
         ScrollView(.vertical) {
@@ -178,6 +213,44 @@ struct ProfileView: View {
                     TipView(enhancedAnalysisInfoTip, arrowEdge: .top) { action in
                         if action.id == ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId {
                             showEnhancedAnalysisLearnMoreSheet = true
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                VStack {
+                    HStack {
+                        Text(ProfileViewConstants.Texts.appModeSettingsTitle)
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        HStack {
+                            Text(ProfileViewConstants.Texts.appModeDescription)
+                                .font(.subheadline)
+                            Button(action: {
+                                showEnhancedAnalysisLearnMoreSheet = true
+                            }) {
+                                Image(systemName: ProfileViewConstants.Images.infoIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        
+                        Picker(userState.appMode.description, selection: $userState.appMode) {
+                            ForEach(AppMode.allCases) { mode in
+                                Text(mode.description).tag(mode)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 20)
+                    TipView(appModeInfoTip, arrowEdge: .top) { action in
+                        if action.id == ProfileViewConstants.Identifiers.appModeLearnMoreActionId {
+                            showAppModeLearnMoreSheet = true
                         }
                     }
                 }
