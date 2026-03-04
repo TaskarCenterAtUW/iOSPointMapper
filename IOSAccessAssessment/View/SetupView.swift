@@ -18,6 +18,7 @@ enum SetupViewConstants {
         static let changesetOpeningErrorTitle = "Changeset failed to open. Please retry."
         static let changesetOpeningRetryText = "Retry"
         static let changesetOpeningRetryMessageText = "Failed to open changeset."
+        static let changesetOpeningBackText = "Back"
         static let workspaceIdMissingMessageText = "Workspace ID is missing."
         static let changesetClosingErrorTitle = "Changeset failed to close. Please retry."
         static let changesetClosingRetryText = "Retry"
@@ -221,6 +222,7 @@ struct SetupView: View {
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @Environment(\.dismiss) var dismiss
     
     @StateObject private var sharedAppData: SharedAppData = SharedAppData()
     @StateObject private var sharedAppContext: SharedAppContext = SharedAppContext()
@@ -359,9 +361,14 @@ struct SetupView: View {
                     }
                     .disabled(isSelectionEmpty)
             )
-            /// Alert for changeset opening error
+            /// Alert for changeset opening error (Contains the retry and the back button)
             .alert(SetupViewConstants.Texts.changesetOpeningErrorTitle, isPresented: $changesetOpenViewModel.showRetryAlert) {
-                Button(SetupViewConstants.Texts.changesetOpeningRetryText) {
+                Button(SetupViewConstants.Texts.changesetOpeningBackText, role: .destructive) {
+                    changesetOpenViewModel.update(isChangesetOpened: false, showRetryAlert: false, retryMessage: "")
+                    
+                    workspaceViewModel.clearWorkspaceSelection()
+                }
+                Button(SetupViewConstants.Texts.changesetOpeningRetryText, role: .cancel) {
                     changesetOpenViewModel.update(isChangesetOpened: false, showRetryAlert: false, retryMessage: "")
                     
                     openChangeset()
@@ -429,7 +436,7 @@ struct SetupView: View {
         if userStateViewModel.appMode == .standard {
             ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
         } else {
-            TestListView(selectedClasses: Array(self.selectedClasses).sorted())
+            TestWorkspaceListView(selectedClasses: Array(self.selectedClasses).sorted())
         }
     }
     

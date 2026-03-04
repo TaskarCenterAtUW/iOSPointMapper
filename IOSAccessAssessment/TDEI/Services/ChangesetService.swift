@@ -88,7 +88,9 @@ class ChangesetService {
                 return
             }
             
-            if let data = data, let changesetId = String(data: data, encoding: .utf8) {
+            /// MARK: Changsets are generally numeric. Add that as a validation step
+            if let data = data, let changesetId = String(data: data, encoding: .utf8),
+                !changesetId.isEmpty, Int(changesetId) != nil {
                 completion(.success(changesetId))
             } else {
                 completion(.failure(NSError(domain: "ChangesetError",

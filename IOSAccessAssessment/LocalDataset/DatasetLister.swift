@@ -12,20 +12,45 @@ enum DatasetListerError: Error, LocalizedError {
 }
 
 class DatasetLister {
+    var workspaceDirectories: [URL] = []
+    
     private var workspaceId: String? = nil
-    
     private var workspaceDirectory: URL? = nil
-    private var changesetDirectories: [URL] = []
     
-    func configure(workspaceId: String) throws {
-        self.workspaceId = workspaceId
-        /// Get workspace directory
-        let workspaceDirectory = try DatasetLister.findDirectory(id: workspaceId)
-        self.workspaceDirectory = workspaceDirectory
-        self.changesetDirectories = try DatasetLister.listChangesetDirectories(workspaceDirectory: workspaceDirectory)
+    var changesetDirectories: [URL] = []
+    
+    func configure() throws {
+        self.workspaceDirectories = try DatasetLister.listWorkspaceDirectories()
     }
     
-    static private func findDirectory(id: String, relativeTo: URL? = nil) throws -> URL {
+    func selectWorkspace(workspaceId: String) throws {
+        self.workspaceId = workspaceId
+        /// Get workspace directory
+        let workspaceDirectory = try self.findDirectory(id: workspaceId)
+        self.workspaceDirectory = workspaceDirectory
+        self.changesetDirectories = try self.listChangesetDirectories(workspaceDirectory: workspaceDirectory)
+    }
+    
+    /**
+        Finds all workspace directories within the app's document directory.
+     
+        A workspace directory is a number-named directory within the document directory, containing data for a specific workspace.
+        Each workspace directory is expected to contain at least one changeset directory, which is a number-named directory containing data for a specific changeset.
+     */
+    static func listWorkspaceDirectories() throws -> [URL] {
+        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            throw DatasetDecoderError.directoryRetrievalFailed
+        }
+        let contents = try FileManager.default.contentsOfDirectory(at: documentsDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+        let workspaceDirectories = contents.filter { content in
+            var isDirectory: ObjCBool = false
+            let exists = FileManager.default.fileExists(atPath: content.path, isDirectory: &isDirectory)
+            return exists && isDirectory.boolValue && content.lastPathComponent.allSatisfy { $0.isNumber }
+        }
+        return workspaceDirectories
+    }
+    
+    private func findDirectory(id: String, relativeTo: URL? = nil) throws -> URL {
         var relativeTo = relativeTo
         if relativeTo == nil {
             guard let relativeToUrl = FileManager.default.urls(for:.documentDirectory, in: .userDomainMask).first else {
@@ -46,7 +71,7 @@ class DatasetLister {
      Changesets are number-named directories within the workspace directory, each containing data for a specific changeset.
      Each changeset directory is expected to contain an rgb directory, within which there is at least one .png file.
      */
-    static private func listChangesetDirectories(workspaceDirectory: URL) throws -> [URL] {
+    private func listChangesetDirectories(workspaceDirectory: URL) throws -> [URL] {
         let contents = try FileManager.default.contentsOfDirectory(at: workspaceDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
         let changesetDirectories = contents.filter { content in
             var isDirectory: ObjCBool = false
