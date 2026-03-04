@@ -24,6 +24,26 @@ enum DatasetDecoderError: Error, LocalizedError {
     }
 }
 
+struct DatasetCaptureBaseData: CaptureDataProtocol {
+    let id: UUID
+    let timestamp: TimeInterval
+    
+    let cameraImage: CIImage
+    let cameraTransform: simd_float4x4
+    let cameraIntrinsics: simd_float3x3
+    
+    let interfaceOrientation: UIInterfaceOrientation
+    let originalSize: CGSize
+    
+    let depthImage: CIImage?
+    let confidenceImage: CIImage?
+}
+
+struct DatasetCaptureData {
+    let captureImageData: DatasetCaptureBaseData
+    let location: CLLocationCoordinate2D?
+}
+
 /**
     Encoder for saving dataset frames and metadata.
  
@@ -95,16 +115,41 @@ class DatasetDecoder {
         return directory
     }
     
-    func loadData(index: Int) throws {
+    func loadData(index: Int) throws -> DatasetCaptureData {
         /// Use the camera intrinsics data as the source of truth for getting the frame for a specific index
         let cameraIntrinsicsResults = self.cameraIntrinsicsDecoder.results
         guard index < cameraIntrinsicsResults.count else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
-        let frameNumber = cameraIntrinsicsResults[index].frameNumber
+        let frameNumber = cameraIntrinsicsResults[index].frame
         
         let cameraImage: CIImage = try rgbDecoder.load(frameNumber: frameNumber)
         let depthBuffer: CVPixelBuffer = try depthDecoder.decodeFrame(frameNumber: frameNumber)
         let depthImage: CIImage = CIImage(cvPixelBuffer: depthBuffer)
+        guard let cameraIntrinsics = cameraIntrinsicsDecoder.load(index: index, frameNumber: frameNumber)?.intrinsics else {
+            throw DatasetDecoderError.indexDataNotFound(index)
+        }
+        guard let cameraTransform = cameraTransformDecoder.load(index: index, frameNumber: frameNumber)?.transform else {
+            throw DatasetDecoderError.indexDataNotFound(index)
+        }
+        guard let locationData = locationDecoder.load(index: index, frameNumber: frameNumber) else {
+            throw DatasetDecoderError.indexDataNotFound(index)
+        }
+        guard let otherDetailsData = otherDetailsDecoder.load(index: index, frameNumber: frameNumber) else {
+            throw DatasetDecoderError.indexDataNotFound(index)
+        }
+        
+        let datasetCaptureBaseData = DatasetCaptureBaseData(
+            id: frameNumber, timestamp: cameraIntrinsicsResults[index].timestamp,
+            cameraImage: cameraImage, cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            interfaceOrientation: otherDetailsData.deviceOrientation, originalSize: otherDetailsData.originalSize,
+            depthImage: depthImage, confidenceImage: nil
+        )
+        let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
+        let datasetCaptureData = DatasetCaptureData(
+            captureImageData: datasetCaptureBaseData,
+            location: location
+        )
+        return datasetCaptureData
     }
 }

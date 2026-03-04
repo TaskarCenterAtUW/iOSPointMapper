@@ -128,4 +128,14 @@ class LocationDecoder {
         }
         return locationDataList
     }
+    
+    /**
+        Loads location data from a specific index, that should match the frame number.
+     */
+    func load(index: Int, frameNumber: UUID) -> LocationOutputData? {
+        guard index < results.count else { return nil }
+        let locationData = results[index]
+        guard locationData.frame == frameNumber else { return nil }
+        return locationData
+    }
 }

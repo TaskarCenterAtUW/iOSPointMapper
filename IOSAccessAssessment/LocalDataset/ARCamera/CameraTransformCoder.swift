@@ -135,4 +135,14 @@ class CameraTransformDecoder {
         }
         return cameraTransformDataList
     }
+    
+    /**
+        Loads camera transform data from a specific index, that should match the frame number.
+     */
+    func load(index: Int, frameNumber: UUID) -> (timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)? {
+        guard index < results.count else { return nil }
+        let cameraTransformData = results[index]
+        guard cameraTransformData.frame == frameNumber else { return nil }
+        return cameraTransformData
+    }
 }

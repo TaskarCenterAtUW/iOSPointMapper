@@ -132,4 +132,14 @@ class OtherDetailsDecoder {
         }
         return otherDetailsDataList
     }
+    
+    /**
+        Loads other details data from a specific index, that should match the frame number.
+     */
+    func load(index: Int, frameNumber: UUID) -> OtherDetailsOutputData? {
+        guard index < results.count else { return nil }
+        let otherDetailsData = results[index]
+        guard otherDetailsData.frame == frameNumber else { return nil }
+        return otherDetailsData
+    }
 }

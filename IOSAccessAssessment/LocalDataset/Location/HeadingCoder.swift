@@ -124,4 +124,14 @@ class HeadingDecoder {
         }
         return headingDataList
     }
+    
+    /**
+        Loads heading data from a specific index, that should match the frame number.
+     */
+    func load(index: Int, frameNumber: UUID) -> HeadingOutputData? {
+        guard index < results.count else { return nil }
+        let headingData = results[index]
+        guard headingData.frame == frameNumber else { return nil }
+        return headingData
+    }
 }

@@ -67,14 +67,14 @@ class CameraIntrinsicsEncoder {
 
 class CameraIntrinsicsDecoder {
     private let path: URL
-    let results: [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)]
+    let results: [(timestamp: TimeInterval, frame: UUID, intrinsics: simd_float3x3)]
     
     init(path: URL) throws {
         self.path = path
         self.results = try CameraIntrinsicsDecoder.preload(path: path)
     }
     
-    static func preload(path: URL) throws -> [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)] {
+    static func preload(path: URL) throws -> [(timestamp: TimeInterval, frame: UUID, intrinsics: simd_float3x3)] {
         guard FileManager.default.fileExists(atPath: path.absoluteString) else {
             throw CameraIntrinsicsCoderError.fileNotFound
         }
@@ -106,7 +106,7 @@ class CameraIntrinsicsDecoder {
             throw CameraIntrinsicsCoderError.fileReadFailed
         }
         let maxIndex = max(timestampIndex, frameIndex, fxIndex, sxIndex, cxIndex, syIndex, fyIndex, cyIndex, i02Index, i12Index, i22Index)
-        var cameraIntrinsicsDataList: [(timestamp: TimeInterval, frameNumber: UUID, intrinsics: simd_float3x3)] = []
+        var cameraIntrinsicsDataList: [(timestamp: TimeInterval, frame: UUID, intrinsics: simd_float3x3)] = []
         for line in fileLines.dropFirst() {
             let values = line.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             guard columnNames.count > maxIndex else {
@@ -130,8 +130,18 @@ class CameraIntrinsicsDecoder {
                 SIMD3<Float>(sx, fy, i12),
                 SIMD3<Float>(cx, cy, i22)
             ])
-            cameraIntrinsicsDataList.append((timestamp: timestamp, frameNumber: frameNumber, intrinsics: intrinsics))
+            cameraIntrinsicsDataList.append((timestamp: timestamp, frame: frameNumber, intrinsics: intrinsics))
         }
         return cameraIntrinsicsDataList
+    }
+    
+    /**
+        Loads camera intrinsics data from a specific index, that should match the frame number.
+     */
+    func load(index: Int, frameNumber: UUID) -> (timestamp: TimeInterval, frame: UUID, intrinsics: simd_float3x3)? {
+        guard index < results.count else { return nil }
+        let cameraIntrinsicsData = results[index]
+        guard cameraIntrinsicsData.frame == frameNumber else { return nil }
+        return cameraIntrinsicsData
     }
 }
