@@ -11,6 +11,7 @@ import TipKit
 enum SetupViewConstants {
     enum Texts {
         static let setupViewTitle = "Setup"
+        static let selectedWorkspaceTitle = "Selected Workspace"
         static let uploadChangesetTitle = "Upload Changeset"
         static let selectClassesText = "Select Feature Types to Map"
         
@@ -242,6 +243,18 @@ struct SetupView: View {
     var body: some View {
         return NavigationStack {
             VStack(alignment: .leading) {
+                HStack {
+                    HStack {
+                        Text(SetupViewConstants.Texts.selectedWorkspaceTitle)
+                            .font(.headline)
+                        Spacer()
+                        Text(workspaceViewModel.workspaceTitle ?? "N/A")
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                
                 HStack {
                     HStack {
                         Text(SetupViewConstants.Texts.uploadChangesetTitle)
