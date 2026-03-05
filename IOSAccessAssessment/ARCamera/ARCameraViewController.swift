@@ -19,7 +19,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
                            metalContext: MetalContext,
                            segmentationImage: CIImage?,
                            segmentationBoundingFrameImage: CIImage?,
-                           for frame: ARFrame
+                           for frame: ARFrame?
     )
     func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
                            metalContext: MetalContext,
@@ -336,7 +336,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
                            metalContext: MetalContext,
                            segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
-                           for frame: ARFrame) {
+                           for frame: ARFrame?) {
         if let segmentationImage = segmentationImage,
            let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
             self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)

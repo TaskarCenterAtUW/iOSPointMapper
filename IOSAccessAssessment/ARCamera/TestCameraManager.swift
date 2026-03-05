@@ -13,6 +13,7 @@ import simd
 final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
+    var metalContext: MetalContext? = nil
     var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
@@ -20,6 +21,20 @@ final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProces
     
     // Contexts depending on type of color space processing required
     let colorContext = CIContext(options: nil)
+    let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+    // Properties for processing camera and depth frames
+    // Pixel buffer pools for rendering camera frames to fixed size as segmentation model input (pre-defined size)
+    var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    var cameraPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    var depthPixelFormatType: OSType = kCVPixelFormatType_DepthFloat32
+    var depthColorSpace: CGColorSpace? = nil
+    // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
+    var segmentationMaskPixelFormatType: OSType = kCVPixelFormatType_OneComponent8
+    /// TODO: While the segmentation color space is hard-coded for now, add it as part of the AccessibilityFeatureConfig later.
+    var segmentationMaskColorSpace: CGColorSpace? = nil
+    var segmentationColorPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     
     @Published var isConfigured: Bool = false
     
@@ -34,10 +49,15 @@ final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProces
     
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
+        metalContext: MetalContext?,
         cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationPipeline = segmentationPipeline
+        
+        guard let metalContext = metalContext else {
+            throw ARCameraManagerError.metalDeviceUnavailable
+        }
         
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
@@ -52,17 +72,65 @@ final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProces
     }
 }
 
+/**
+    Handles processing of camera frames from ARSession, including segmentation and alignment of detected features.
+ */
 extension TestCameraManager {
-    func handleSessionFrameUpdate(datasetCaptureData: DatasetCaptureData) {
+    func handleSessionFrameUpdate(datasetCaptureData: DatasetCaptureData) throws {
         guard isConfigured else {
             return
         }
+        guard let metalContext = metalContext else {
+            return
+        }
+        
         let cameraTransform = datasetCaptureData.captureImageData.cameraTransform
         let cameraIntrinsics = datasetCaptureData.captureImageData.cameraIntrinsics
         let cameraImage = datasetCaptureData.captureImageData.cameraImage
         let depthImage = datasetCaptureData.captureImageData.depthImage
         
-        
+        Task {
+            do {
+                let cameraImageResults = try await self.processCameraImage(
+                    image: cameraImage, depthImage: depthImage,
+                    interfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation,
+                    cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+                    originalSize: datasetCaptureData.captureImageData.originalSize
+                )
+                let captureImageDataResults = CaptureImageDataResults(
+                    segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+                    segmentedClasses: cameraImageResults.segmentedClasses,
+                    detectedFeatureMap: cameraImageResults.detectedFeatureMap
+                )
+                let captureImageData = CaptureImageData(
+                    id: UUID(),
+                    timestamp: Date().timeIntervalSince1970,
+                    cameraImage: cameraImageResults.cameraImage,
+                    cameraTransform: cameraImageResults.cameraTransform,
+                    cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+                    interfaceOrientation: cameraImageResults.interfaceOrientation,
+                    originalSize: cameraImageResults.originalImageSize,
+                    depthImage: cameraImageResults.depthImage,
+                    confidenceImage: cameraImageResults.confidenceImage,
+                    captureImageDataResults: captureImageDataResults
+                )
+                await MainActor.run {
+                    var results = cameraImageResults
+                    results.depthImage = depthImage
+                    results.confidenceImage = nil
+                    self.cameraImageResults = results
+                    self.outputConsumer?.cameraOutputImage(
+                        self, metalContext: metalContext,
+                        segmentationImage: cameraImageResults.segmentationColorImage,
+                        segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
+                        for: nil
+                    )
+                    self.cameraOutputImageCallback?(captureImageData)
+                }
+            } catch {
+                print("Error processing camera image: \(error.localizedDescription)")
+            }
+        }
     }
     
     private func processCameraImage(
@@ -82,14 +150,20 @@ extension TestCameraManager {
         let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = image.oriented(imageOrientation)
-        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        var inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        inputImage = try self.backCIImageWithPixelBuffer(
+            inputImage, context: colorContext, pixelFormatType: cameraPixelFormatType, colorSpace: cameraColorSpace
+        )
         
         var inputDepthImage: CIImage? = nil
         if let depthImage = depthImage {
             /// Pre-process the depth image: resize to image original size, orient, center-crop, and back to pixel buffer
             let resizedDepthImage = depthImage.resized(to: originalSize)
             let orientedDepthImage = resizedDepthImage.oriented(imageOrientation)
-            let inputDepthImage = CenterCropTransformUtils.centerCropAspectFit(orientedDepthImage, to: croppedSize)
+            let croppedDepthImage = CenterCropTransformUtils.centerCropAspectFit(orientedDepthImage, to: croppedSize)
+            inputDepthImage = try self.backCIImageWithPixelBuffer(
+                croppedDepthImage, context: rawContext, pixelFormatType: depthPixelFormatType, colorSpace: depthColorSpace
+            )
         }
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
             with: inputImage, depthImage: inputDepthImage,
@@ -112,7 +186,11 @@ extension TestCameraManager {
         segmentationColorCIImage = CenterCropTransformUtils.revertCenterCropAspectFit(
             segmentationColorCIImage, from: originalSize
         )
-        let segmentationColorImage = segmentationColorCIImage.oriented(imageOrientation)
+        segmentationColorCIImage = segmentationColorCIImage.oriented(imageOrientation)
+        let segmentationColorImage = try self.backCIImageWithPixelBuffer(
+            segmentationColorCIImage, context: colorContext, pixelFormatType: segmentationColorPixelFormatType,
+            colorSpace: segmentationColorColorSpace
+        )
         
         let detectedFeatureMap = alignDetectedFeatures(
             segmentationResults.detectedFeatureMap,
@@ -197,5 +275,19 @@ extension TestCameraManager {
         }
         segmentationFrameImage = CIImage(cgImage: segmentationFrameOrientedCGImage)
         return segmentationFrameImage
+    }
+}
+
+/**
+ Handles backing of CIImage objects with CVPixelBuffer objects when needed.
+ */
+extension TestCameraManager {
+    private func backCIImageWithPixelBuffer(
+        _ ciImage: CIImage, context: CIContext,
+        pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
+    ) throws -> CIImage {
+        let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
+        let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
+        return backedImage
     }
 }
