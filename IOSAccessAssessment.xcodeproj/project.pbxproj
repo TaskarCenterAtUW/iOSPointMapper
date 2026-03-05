@@ -662,9 +662,9 @@
 			children = (
 				A3FFAA762DE01631002B99BD /* Helpers */,
 				A3DA4DC12EBE87B6005BB812 /* Utils */,
-				A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */,
 				A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */,
 				A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */,
+				A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */,
 				A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */,
 			);
 			path = ARCamera;

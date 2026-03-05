@@ -275,6 +275,7 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
             videoFormatImageResolution = newImageResolution
             updateAspectRatio()
         }
+        print("Received camera image with resolution: \(cameraImage.extent.size)")
         if let cameraCGImage = metalContext.ciContext.createCGImage(cameraImage, from: cameraImage.extent) {
             self.imageView.image = UIImage(cgImage: cameraCGImage)
         } else {
@@ -287,6 +288,7 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
                            metalContext: MetalContext,
                            segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                            for frame: ARFrame?) {
+        print("Received camera output images. Segmentation image resolution: \(segmentationImage?.extent.size.debugDescription ?? "nil"), Bounding frame image resolution: \(segmentationBoundingFrameImage?.extent.size.debugDescription ?? "nil")")
         if let segmentationImage = segmentationImage,
            let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
             self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)

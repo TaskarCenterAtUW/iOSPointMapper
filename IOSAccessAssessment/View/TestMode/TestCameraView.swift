@@ -105,18 +105,7 @@ struct TestCameraView: View {
         }
         .navigationBarTitle("Test Mapping", displayMode: .inline)
         .onAppear {
-            initializeCurrentDatasetReader()
-            loadData()
-            do {
-                try manager.configure(
-                    selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
-                    metalContext: sharedAppContext.metalContext,
-                    cameraOutputImageCallback: cameraOutputImageCallback
-                )
-            } catch {
-                print("Error configuring TestCameraManager: \(error)")
-                
-            }
+            onAppearLoadData()
         }
     }
     
@@ -134,25 +123,31 @@ struct TestCameraView: View {
         AnyLayout(HStackLayout())(content)
     }
     
-    private func initializeCurrentDatasetReader() {
+    private func onAppearLoadData() {
         do {
-            sharedAppData.currentDatasetDecoder = try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
+            let datasetDecoder = try initializeDatasetDecoder()
+            try manager.configure(
+                selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
+                metalContext: sharedAppContext.metalContext,
+                cameraOutputImageCallback: cameraOutputImageCallback
+            )
+            let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+            try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+            sharedAppData.currentDatasetDecoder = datasetDecoder
+            self.datasetCaptureData = datasetCaptureData
         } catch {
-            print("Error initializing DatasetDecoder: \(error)")
+            print("Error configuring TestCameraManager: \(error)")
+            
         }
     }
     
-    private func loadData() {
-        do {
-            guard let currentDatasetDecoder = sharedAppData.currentDatasetDecoder else {
-                throw NSError(domain: "DatasetDecoderError", code: 1, userInfo: [NSLocalizedDescriptionKey: "DatasetDecoder not initialized"])
-            }
-            let datasetCaptureData = try currentDatasetDecoder.loadData(index: currentIndex)
-            try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
-            self.datasetCaptureData = datasetCaptureData
-        } catch {
-            print("Error loading data: \(error)")
-        }
+    private func initializeDatasetDecoder() throws -> DatasetDecoder {
+        return try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
+    }
+    
+    private func loadData(datasetDecoder: DatasetDecoder) throws -> DatasetCaptureData {
+        let datasetCaptureData = try datasetDecoder.loadData(index: currentIndex)
+        return datasetCaptureData
     }
     
     private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {

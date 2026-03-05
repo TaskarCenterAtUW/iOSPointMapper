@@ -70,7 +70,7 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
         guard let metalContext = metalContext else {
             throw ARCameraManagerError.metalDeviceUnavailable
         }
-        
+        self.metalContext = metalContext
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
     }
@@ -139,6 +139,11 @@ extension TestCameraManager {
                     results.depthImage = depthImage
                     results.confidenceImage = nil
                     self.cameraImageResults = results
+                    self.outputConsumer?.cameraImage(
+                        self, metalContext: metalContext,
+                        cameraImage: cameraImageResults.cameraImage,
+                        for: nil
+                    )
                     self.outputConsumer?.cameraOutputImage(
                         self, metalContext: metalContext,
                         segmentationImage: cameraImageResults.segmentationColorImage,
