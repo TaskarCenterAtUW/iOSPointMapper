@@ -7,6 +7,16 @@
 
 import SwiftUI
 
+class TestCameraManagerStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 /**
  TestCameraView uses the data saved in the changeset directory, to simulate mapping
  */
@@ -16,8 +26,16 @@ struct TestCameraView: View {
     
     @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var sharedAppContext: SharedAppContext
+    @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
+    @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @Environment(\.dismiss) var dismiss
+    
+    @StateObject private var manager: TestCameraManager = TestCameraManager()
+    @StateObject private var managerConfigureStatusViewModel = TestCameraManagerStatusViewModel()
     
     @State private var currentIndex: Int = 0
+    
+    @State private var showAnnotationView = false
     
     var body: some View {
         VStack {
@@ -46,6 +64,12 @@ struct TestCameraView: View {
             let datasetCaptureData = try currentDatasetDecoder.loadData(index: currentIndex)
         } catch {
             print("Error loading data: \(error)")
+        }
+    }
+    
+    private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
+        Task {
+            await sharedAppData.appendCaptureDataToQueue(captureImageData)
         }
     }
 }
