@@ -11,11 +11,13 @@ import SwiftUI
  TestMappingView uses the data saved in the changeset directory, to simulate mapping
  */
 struct TestMappingView: View {
+    let workspaceId: String
+    let changesetId: String
+    
     @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var sharedAppContext: SharedAppContext
     
-    let workspaceId: String
-    let changesetId: String
+    @State private var currentIndex: Int = 0
     
     var body: some View {
         VStack {
@@ -24,6 +26,7 @@ struct TestMappingView: View {
         .navigationBarTitle("Test Mapping", displayMode: .inline)
         .onAppear {
             initializeCurrentDatasetReader()
+            loadData()
         }
     }
     
@@ -32,6 +35,17 @@ struct TestMappingView: View {
             sharedAppData.currentDatasetDecoder = try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
         } catch {
             print("Error initializing DatasetDecoder: \(error)")
+        }
+    }
+    
+    private func loadData() {
+        do {
+            guard let currentDatasetDecoder = sharedAppData.currentDatasetDecoder else {
+                throw NSError(domain: "DatasetDecoderError", code: 1, userInfo: [NSLocalizedDescriptionKey: "DatasetDecoder not initialized"])
+            }
+            let datasetCaptureData = try currentDatasetDecoder.loadData(index: currentIndex)
+        } catch {
+            print("Error loading data: \(error)")
         }
     }
 }

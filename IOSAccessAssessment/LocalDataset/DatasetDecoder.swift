@@ -60,7 +60,7 @@ class DatasetDecoder {
     public let rgbFilePath: URL /// Relative to app document directory.
     public let depthFilePath: URL /// Relative to app document directory.
     public let cameraIntrinsicsPath: URL
-    public let cameraMatrixPath: URL
+//    public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
 //    public let headingPath: URL
@@ -85,7 +85,7 @@ class DatasetDecoder {
         self.rgbFilePath = datasetDirectory.appendingPathComponent("rgb", isDirectory: true)
         self.depthFilePath = datasetDirectory.appendingPathComponent("depth", isDirectory: true)
         self.cameraIntrinsicsPath = datasetDirectory.appendingPathComponent("camera_intrinsics.csv", isDirectory: false)
-        self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
+//        self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)

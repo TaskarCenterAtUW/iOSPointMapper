@@ -31,4 +31,13 @@ struct Constants {
     struct OtherConstants {
         static let directionAlignmentDotProductThreshold: Float = 0.866 // cos(30 degrees)
     }
+    
+    struct UserDefaultsKeys {
+        /// Workspace selection
+        static let selectedWorkspaceIdKey = "selectedWorkspaceId"
+        
+        /// User settings
+        static let isEnhancedAnalysisEnabledKey = "isEnhancedAnalysisEnabled"
+        static let appModeKey = "appMode"
+    }
 }

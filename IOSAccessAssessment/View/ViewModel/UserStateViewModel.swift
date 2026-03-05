@@ -20,7 +20,11 @@ class UserStateViewModel: ObservableObject {
      - NOTE:
         This feature may require additional processing power and may not be available on older devices.
      */
-    @Published var isEnhancedAnalysisEnabled: Bool = false
+    @Published var isEnhancedAnalysisEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isEnhancedAnalysisEnabled, forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
+        }
+    }
     
     /**
      Select the app mode.
@@ -29,10 +33,22 @@ class UserStateViewModel: ObservableObject {
      
         2. Test Mode: Test mode allows developers to simulate mapping by using existing locally saved input data to perform mapping without needing to capture new data.
      */
-    @Published var appMode: AppMode = .standard
+    @Published var appMode: AppMode {
+        didSet {
+            UserDefaults.standard.set(appMode.rawValue, forKey: Constants.UserDefaultsKeys.appModeKey)
+        }
+    }
     
     init() {
-        isAuthenticated = authService.checkTokenValid()
+        self.isAuthenticated = authService.checkTokenValid()
+        self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
+        if let savedAppModeRawValue = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.appModeKey),
+           let savedAppMode = AppMode(rawValue: savedAppModeRawValue) {
+            self.appMode = savedAppMode
+        } else {
+            self.appMode = .standard
+        }
+        print("UserStateViewModel initialized with isAuthenticated: \(isAuthenticated), isEnhancedAnalysisEnabled: \(isEnhancedAnalysisEnabled), appMode: \(appMode)")
     }
     
     func getUsername() -> String? {

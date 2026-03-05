@@ -70,7 +70,7 @@ class CameraTransformDecoder {
     }
     
     static func preload(path: URL) throws -> [(timestamp: TimeInterval, frame: UUID, transform: simd_float4x4)] {
-        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
+        guard FileManager.default.fileExists(atPath: path.path) else {
             throw CameraTransformCoderError.fileNotFound
         }
         guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {
