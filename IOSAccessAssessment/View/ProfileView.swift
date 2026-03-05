@@ -23,8 +23,12 @@ enum ProfileViewConstants {
         
         /// Advanced Settings
         static let advancedSettingsTitle = "Advanced Settings"
+        /// Enhanced Analysis
         static let enhancedAnalysisLabel = "Enhanced Analysis"
         static let enhancedAnalysisDescription = "Enable enhanced analysis features for better localization and attribute estimations."
+        /// App Mode
+        static let appModeSettingsLabel = "App Mode"
+        static let appModeDescription = "Switch between different app modes"
         /// Enhanced Analysis Info Tip
         static let enhancedAnalysisInfoTipTitle = "Enhanced Analysis"
         static let enhancedAnalysisInfoTipMessage = """
@@ -36,6 +40,18 @@ enum ProfileViewConstants {
             Enhanced analysis uses advanced Augmented Reality-based scene understanding to improve the accuracy of localization and attribute estimations for accessibility features.
             
             Enabling this feature will increase processing time and battery usage.
+            """
+        /// App Mode Info Tip
+        static let appModeInfoTipTitle = "App Mode"
+        static let appModeInfoTipMessage = """
+            App mode allows you to switch between different modes: Standard Mode and Test Mode. 
+            """
+        static let appModeLearnMoreButtonTitle = "Learn More"
+        static let appModeLearnMoreSheetMessage = """
+            App mode allows you to switch between different modes:
+            
+            - Standard Mode: The default mode to capture new data and perform mapping in real-time, providing an interactive experience.
+            - Test Mode: Developmental mode to simulate mapping by using existing locally saved input data to perform mapping without needing to capture new data.
             """
         
         /// Log out
@@ -57,6 +73,7 @@ enum ProfileViewConstants {
     
     enum Identifiers {
         static let enhancedAnalysisInfoTipLearnMoreActionId: String = "enhanced-analysis-learn-more"
+        static let appModeLearnMoreActionId: String = "app-mode-learn-more"
     }
 }
 
@@ -81,6 +98,26 @@ struct EnhancedAnalysisInfoTip: Tip {
     }
 }
 
+struct AppModeInfoTip: Tip {
+    var title: Text {
+        Text(ProfileViewConstants.Texts.appModeInfoTipTitle)
+    }
+    var message: Text? {
+        Text(ProfileViewConstants.Texts.appModeInfoTipMessage)
+    }
+    var image: Image? {
+        Image(systemName: ProfileViewConstants.Images.infoIcon)
+            .resizable()
+    }
+    var actions: [Action] {
+        // Define a learn more button.
+        Action(
+            id: ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId,
+            title: ProfileViewConstants.Texts.appModeLearnMoreButtonTitle
+        )
+    }
+}
+
 struct ProfileView: View {
     @State private var username: String = ""
     @State private var showLogoutConfirmation: Bool = false
@@ -93,6 +130,8 @@ struct ProfileView: View {
     @State private var showWorkspaceLearnMoreSheet = false
     var enhancedAnalysisInfoTip = EnhancedAnalysisInfoTip()
     @State private var showEnhancedAnalysisLearnMoreSheet = false
+    var appModeInfoTip = AppModeInfoTip()
+    @State private var showAppModeLearnMoreSheet = false
     
     var body: some View {
         ScrollView(.vertical) {
@@ -153,6 +192,7 @@ struct ProfileView: View {
                             .font(.headline)
                         Spacer()
                     }
+                    
                     HStack {
                         HStack {
                             Text(ProfileViewConstants.Texts.enhancedAnalysisLabel)
@@ -174,13 +214,44 @@ struct ProfileView: View {
                         }
                         .tint(.blue)
                     }
-                    .padding(.vertical, 20)
+                    .padding(.top, 20)
                     TipView(enhancedAnalysisInfoTip, arrowEdge: .top) { action in
                         if action.id == ProfileViewConstants.Identifiers.enhancedAnalysisInfoTipLearnMoreActionId {
                             showEnhancedAnalysisLearnMoreSheet = true
                         }
                     }
+                    
+                    HStack {
+                        HStack {
+                            Text(ProfileViewConstants.Texts.appModeSettingsLabel)
+                                .font(.subheadline)
+                            Button(action: {
+                                showAppModeLearnMoreSheet = true
+                            }) {
+                                Image(systemName: ProfileViewConstants.Images.infoIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                            }
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        
+                        Picker(userState.appMode.description, selection: $userState.appMode) {
+                            ForEach(AppMode.allCases) { mode in
+                                Text(mode.description).tag(mode)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 20)
+                    TipView(appModeInfoTip, arrowEdge: .top) { action in
+                        if action.id == ProfileViewConstants.Identifiers.appModeLearnMoreActionId {
+                            showAppModeLearnMoreSheet = true
+                        }
+                    }
                 }
+                
+                Divider()
                 
                 Divider()
                 
@@ -231,6 +302,10 @@ struct ProfileView: View {
             EnhancedAnalysisLearnMoreSheetView()
                 .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showAppModeLearnMoreSheet) {
+            AppModeLearnMoreSheetView()
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
@@ -256,3 +331,22 @@ struct EnhancedAnalysisLearnMoreSheetView: View {
         .padding(.horizontal, 40)
     }
 }
+
+struct AppModeLearnMoreSheetView: View {
+    @Environment(\.dismiss)
+    var dismiss
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text(ProfileViewConstants.Texts.appModeInfoTipTitle)
+                .font(.headline)
+            Text(ProfileViewConstants.Texts.appModeLearnMoreSheetMessage)
+                .foregroundStyle(.secondary)
+            Button("Dismiss") {
+                dismiss()
+            }
+        }
+        .padding(.horizontal, 40)
+    }
+}
+

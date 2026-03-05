@@ -84,7 +84,7 @@ class OtherDetailsDecoder {
     }
     
     static func preload(path: URL) throws -> [OtherDetailsOutputData] {
-        guard FileManager.default.fileExists(atPath: path.absoluteString) else {
+        guard FileManager.default.fileExists(atPath: path.path) else {
             throw OtherDetailsCoderError.fileNotFound
         }
         guard let fileContents = try? String(contentsOf: path, encoding: .utf8) else {

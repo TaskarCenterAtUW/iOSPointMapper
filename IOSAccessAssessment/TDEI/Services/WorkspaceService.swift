@@ -84,7 +84,7 @@ class WorkspaceService {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        print("Requesting workspaces with URL: \(url.absoluteString)")
+//        print("Requesting workspaces with URL: \(url.absoluteString)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {

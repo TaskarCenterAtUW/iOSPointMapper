@@ -264,7 +264,7 @@ struct WorkspaceListView: View {
             ForEach(workspaces, id: \.id) { workspace in
                 Button {
                     // Handle workspace selection
-                    workspaceViewModel.workspaceSelected(id: "\(workspace.id)")
+                    workspaceViewModel.workspaceSelected(id: "\(workspace.id)", title: workspace.title)
                 } label: {
                     Text(workspace.title)
                         .frame(maxWidth: .infinity)

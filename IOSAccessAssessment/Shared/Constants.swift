@@ -24,12 +24,21 @@ struct Constants {
     }
     
     struct WorkspaceConstants {
-        static let primaryWorkspaceIds: [String] = ["1463"]
-//        ["288", "349", "1411"]
+        static let primaryWorkspaceIds: [String] = ["288", "349", "1411"]
 //      "252", "322", "368", "374", "378", "381", "384", "323", "369", "156", "375", "379"]
     }
     
     struct OtherConstants {
         static let directionAlignmentDotProductThreshold: Float = 0.866 // cos(30 degrees)
+    }
+    
+    struct UserDefaultsKeys {
+        /// Workspace selection
+        static let selectedWorkspaceIdKey = "selectedWorkspaceId"
+        static let selectedWorkspaceTitleKey = "selectedWorkspaceTitle"
+        
+        /// User settings
+        static let isEnhancedAnalysisEnabledKey = "isEnhancedAnalysisEnabled"
+        static let appModeKey = "appMode"
     }
 }

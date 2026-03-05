@@ -14,6 +14,7 @@ final class SharedAppData: ObservableObject {
     @Published var isUploadReady: Bool = false
     var isLidarAvailable: Bool = ARCameraUtils.checkDepthSupport()
     var currentDatasetEncoder: DatasetEncoder?
+    var currentDatasetDecoder: DatasetDecoder?
     
     var currentCaptureDataRecord: CaptureData?
     /// A queue to hold recent capture image data.
@@ -30,6 +31,7 @@ final class SharedAppData: ObservableObject {
     func refreshData() {
         self.isUploadReady = false
         self.currentDatasetEncoder = nil
+        self.currentDatasetDecoder = nil
         self.currentCaptureDataRecord = nil
     }
     
