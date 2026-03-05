@@ -18,6 +18,7 @@ final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProces
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
+    @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
     // Contexts depending on type of color space processing required
     let colorContext = CIContext(options: nil)
@@ -69,6 +70,14 @@ final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProces
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
         /// Do nothing for now
+    }
+    
+    @MainActor
+    func pause() throws {
+        self.outputConsumer?.pauseSession()
+        self.cameraImageResults = nil
+        self.cameraMeshResults = nil
+        self.cameraCache = ARCameraCache()
     }
 }
 
@@ -126,6 +135,7 @@ extension TestCameraManager {
                         for: nil
                     )
                     self.cameraOutputImageCallback?(captureImageData)
+                    self.interfaceOrientation = datasetCaptureData.captureImageData.interfaceOrientation
                 }
             } catch {
                 print("Error processing camera image: \(error.localizedDescription)")
@@ -275,6 +285,63 @@ extension TestCameraManager {
         }
         segmentationFrameImage = CIImage(cgImage: segmentationFrameOrientedCGImage)
         return segmentationFrameImage
+    }
+}
+
+/**
+ Handling final capture
+ */
+extension TestCameraManager {
+    @MainActor
+    func performFinalSessionUpdateIfPossible(
+    ) async throws -> CaptureData {
+        let captureData = try await performFinalSessionFrameUpdate()
+        return .imageData(captureData)
+    }
+    
+    @MainActor
+    private func performFinalSessionFrameUpdate(
+    ) async throws -> CaptureImageData {
+        /// Process the latest camera image with high priority
+        guard let cameraImage = self.cameraImageResults?.cameraImage,
+              let cameraTransform = self.cameraImageResults?.cameraTransform,
+              let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics,
+              let originalImageSize = self.cameraImageResults?.originalImageSize
+        else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        let depthImage = self.cameraImageResults?.depthImage
+        var cameraImageResults = try await self.processCameraImage(
+            image: cameraImage, depthImage: depthImage,
+            interfaceOrientation: self.interfaceOrientation,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            originalSize: originalImageSize
+        )
+        guard cameraImageResults.segmentedClasses.count > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationClass
+        }
+        cameraImageResults.depthImage = depthImage
+        cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
+        
+        let captureImageDataResults = CaptureImageDataResults(
+            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentedClasses: cameraImageResults.segmentedClasses,
+            detectedFeatureMap: cameraImageResults.detectedFeatureMap
+        )
+        
+        let captureImageData = CaptureImageData(
+            id: UUID(),
+            timestamp: Date().timeIntervalSince1970,
+            cameraImage: cameraImageResults.cameraImage,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            interfaceOrientation: self.interfaceOrientation,
+            originalSize: cameraImageResults.originalImageSize,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            captureImageDataResults: captureImageDataResults
+        )
+        return captureImageData
     }
 }
 
