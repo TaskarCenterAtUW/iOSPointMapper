@@ -58,7 +58,50 @@ struct TestCameraView: View {
     
     var body: some View {
         VStack {
-            Text("Test Mapping for workspace: \(workspaceId), changeset: \(changesetId)")
+            if manager.isConfigured {
+                orientationStack {
+                    HostedTestCameraViewContainer(arSessionCameraProcessingDelegate: manager)
+                    VStack {
+                        /// Text for hinting user with status
+                        Text("Processing")
+                            .padding()
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                            .frame(maxWidth: 300)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                        
+                        reverseOrientationStack {
+                            Spacer()
+                            Button {
+                                cameraCapture()
+                            } label: {
+                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                    .resizable()
+                                    .frame(width: 60, height: 60)
+                            }
+                            .padding(.bottom, 20)
+                            Spacer()
+                        }
+//                        .overlay(
+//                            reverseOrientationStack {
+//                                Spacer()
+//                                Button(action: {
+//                                    showARCameraLearnMoreSheet = true
+//                                }) {
+//                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
+//                                        .resizable()
+//                                        .frame(width: 20, height: 20)
+//                                }
+//                                .padding(.horizontal, 20)
+//                                .padding(.bottom, 20)
+//                            }
+//                        )
+                    }
+                }
+            }
+            else {
+                ProgressView(ARCameraViewConstants.Texts.cameraInProgressText)
+            }
         }
         .navigationBarTitle("Test Mapping", displayMode: .inline)
         .onAppear {
@@ -75,6 +118,20 @@ struct TestCameraView: View {
                 
             }
         }
+    }
+    
+    @ViewBuilder
+    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        manager.interfaceOrientation.isLandscape ?
+        AnyLayout(HStackLayout())(content) :
+        AnyLayout(VStackLayout())(content)
+    }
+    
+    @ViewBuilder
+    private func reverseOrientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        manager.interfaceOrientation.isLandscape ?
+        AnyLayout(VStackLayout())(content) :
+        AnyLayout(HStackLayout())(content)
     }
     
     private func initializeCurrentDatasetReader() {

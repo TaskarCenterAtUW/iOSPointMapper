@@ -10,14 +10,25 @@ import RealityKit
 import Combine
 import simd
 
-final class TestCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
+protocol TestCameraProcessingDelegate: ARSessionDelegate {
+    /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
+    @MainActor
+    var outputConsumer: TestCameraProcessingOutputConsumer? { get set }
+    /// This method will help set up any configuration that depends on the video format image resolution.
+    @MainActor
+    func setVideoFormatImageResolution(_ imageResolution: CGSize)
+    @MainActor
+    func setOrientation(_ orientation: UIInterfaceOrientation)
+}
+
+final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
     var metalContext: MetalContext? = nil
     var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
-    weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
+    weak var outputConsumer: TestCameraProcessingOutputConsumer? = nil
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
     // Contexts depending on type of color space processing required
