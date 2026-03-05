@@ -8,9 +8,9 @@
 import SwiftUI
 
 /**
- TestMappingView uses the data saved in the changeset directory, to simulate mapping
+ TestCameraView uses the data saved in the changeset directory, to simulate mapping
  */
-struct TestMappingView: View {
+struct TestCameraView: View {
     let workspaceId: String
     let changesetId: String
     
