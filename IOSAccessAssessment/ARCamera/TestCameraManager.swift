@@ -10,17 +10,6 @@ import RealityKit
 import Combine
 import simd
 
-protocol TestCameraProcessingDelegate: ARSessionDelegate {
-    /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
-    @MainActor
-    var outputConsumer: TestCameraProcessingOutputConsumer? { get set }
-    /// This method will help set up any configuration that depends on the video format image resolution.
-    @MainActor
-    func setVideoFormatImageResolution(_ imageResolution: CGSize)
-    @MainActor
-    func setOrientation(_ orientation: UIInterfaceOrientation)
-}
-
 final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
@@ -134,6 +123,9 @@ extension TestCameraManager {
                     confidenceImage: cameraImageResults.confidenceImage,
                     captureImageDataResults: captureImageDataResults
                 )
+                let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+                    currentInterfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation
+                )
                 await MainActor.run {
                     var results = cameraImageResults
                     results.depthImage = depthImage
@@ -142,6 +134,7 @@ extension TestCameraManager {
                     self.outputConsumer?.cameraImage(
                         self, metalContext: metalContext,
                         cameraImage: cameraImageResults.cameraImage,
+                        imageOrientation: imageOrientation,
                         for: nil
                     )
                     self.outputConsumer?.cameraOutputImage(

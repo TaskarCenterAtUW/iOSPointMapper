@@ -124,6 +124,8 @@ struct TestCameraView: View {
     }
     
     private func onAppearLoadData() {
+        showAnnotationView = false
+        segmentationPipeline.setSelectedClasses(selectedClasses)
         do {
             let datasetDecoder = try initializeDatasetDecoder()
             try manager.configure(

@@ -17,6 +17,7 @@ protocol TestCameraProcessingOutputConsumer: AnyObject {
     func cameraImage(_ delegate: TestCameraProcessingDelegate,
                         metalContext: MetalContext,
                         cameraImage: CIImage,
+                        imageOrientation: CGImagePropertyOrientation,
                         for frame: ARFrame?)
     func cameraOutputImage(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
@@ -39,6 +40,17 @@ protocol TestCameraProcessingOutputConsumer: AnyObject {
     )
     func resumeSession()
     func pauseSession()
+}
+
+protocol TestCameraProcessingDelegate: ARSessionDelegate {
+    /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
+    @MainActor
+    var outputConsumer: TestCameraProcessingOutputConsumer? { get set }
+    /// This method will help set up any configuration that depends on the video format image resolution.
+    @MainActor
+    func setVideoFormatImageResolution(_ imageResolution: CGSize)
+    @MainActor
+    func setOrientation(_ orientation: UIInterfaceOrientation)
 }
 
 /**
@@ -269,6 +281,7 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
     func cameraImage(_ delegate: TestCameraProcessingDelegate,
                      metalContext: MetalContext,
                      cameraImage: CIImage,
+                     imageOrientation: CGImagePropertyOrientation,
                      for frame: ARFrame?) {
         let newImageResolution = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
         if videoFormatImageResolution == nil || videoFormatImageResolution != newImageResolution {
@@ -276,7 +289,8 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
             updateAspectRatio()
         }
         print("Received camera image with resolution: \(cameraImage.extent.size)")
-        if let cameraCGImage = metalContext.ciContext.createCGImage(cameraImage, from: cameraImage.extent) {
+        let orientedImage = cameraImage.oriented(imageOrientation)
+        if let cameraCGImage = metalContext.ciContext.createCGImage(orientedImage, from: orientedImage.extent) {
             self.imageView.image = UIImage(cgImage: cameraCGImage)
         } else {
             self.imageView.image = nil
