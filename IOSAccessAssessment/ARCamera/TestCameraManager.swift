@@ -13,12 +13,25 @@ import simd
 final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
+    /// Whether to enable enhanced analysis (e.g., anchor-based analysis) or not.
+//    var isEnhancedAnalysisEnabled: Bool = false
     var metalContext: MetalContext? = nil
     var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
+    /// Mesh update callbacks not in use for now, as creating snapshots in real-time is expensive.
+//    var cameraOutputMeshCallback: ((any CaptureMeshDataProtocol) -> Void)? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
     weak var outputConsumer: TestCameraProcessingOutputConsumer? = nil
+//    var imageResolution: CGSize = .zero
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
+    
+//    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+//    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+//    
+//    var frameRate: Int = 15
+//    var lastFrameTime: TimeInterval = 0
+//    var meshFrameRate: Int = 15
+//    var lastMeshFrameTime: TimeInterval = 0
     
     // Contexts depending on type of color space processing required
     let colorContext = CIContext(options: nil)
@@ -60,25 +73,45 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
             throw ARCameraManagerError.metalDeviceUnavailable
         }
         self.metalContext = metalContext
+//        self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
+//        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
+//        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
+        
+//        Task {
+//            await MainActor.run {
+//                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
+//            }
+//        }
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
         /// Do nothing for now
+//        self.imageResolution = imageResolution
+//        do {
+//            try setupSegmentationPixelBufferPool(size: imageResolution)
+//        } catch {
+//            print("Error setting up segmentation pixel buffer pool: \(error.localizedDescription)")
+//        }
     }
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
         /// Do nothing for now
+//        Task {
+//            await MainActor.run {
+//                self.interfaceOrientation = orientation
+//            }
+//        }
     }
     
-    @MainActor
-    func pause() throws {
-        self.outputConsumer?.pauseSession()
-        self.cameraImageResults = nil
-        self.cameraMeshResults = nil
-        self.cameraCache = ARCameraCache()
-    }
+//    func setFrameRate(_ frameRate: Int) {
+//        self.frameRate = frameRate
+//    }
+//    
+//    func setMeshFrameRate(_ meshFrameRate: Int) {
+//        self.meshFrameRate = meshFrameRate
+//    }
 }
 
 /**
@@ -297,9 +330,24 @@ extension TestCameraManager {
     }
 }
 
-/**
- Handling final capture
- */
+// Functions to handle the mesh processing pipeline
+extension TestCameraManager {
+    /// Do nothing for now
+}
+
+// Functions to orient and fix the camera and depth frames
+extension TestCameraManager {
+    private func backCIImageWithPixelBuffer(
+        _ ciImage: CIImage, context: CIContext,
+        pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
+    ) throws -> CIImage {
+        let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
+        let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
+        return backedImage
+    }
+}
+
+// Functions to perform final session update
 extension TestCameraManager {
     @MainActor
     func performFinalSessionUpdateIfPossible(
@@ -352,18 +400,12 @@ extension TestCameraManager {
         )
         return captureImageData
     }
-}
-
-/**
- Handles backing of CIImage objects with CVPixelBuffer objects when needed.
- */
-extension TestCameraManager {
-    private func backCIImageWithPixelBuffer(
-        _ ciImage: CIImage, context: CIContext,
-        pixelFormatType: OSType, colorSpace: CGColorSpace? = nil,
-    ) throws -> CIImage {
-        let pixelBuffer = try ciImage.toPixelBuffer(context: context, pixelFormatType: pixelFormatType, colorSpace: colorSpace)
-        let backedImage = CIImage(cvPixelBuffer: pixelBuffer)
-        return backedImage
+    
+    @MainActor
+    func pause() throws {
+        self.outputConsumer?.pauseSession()
+        self.cameraImageResults = nil
+        self.cameraMeshResults = nil
+        self.cameraCache = ARCameraCache()
     }
 }

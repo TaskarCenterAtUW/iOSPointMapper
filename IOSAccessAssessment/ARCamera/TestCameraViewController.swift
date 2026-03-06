@@ -74,6 +74,8 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
     private var fitHeightConstraint: NSLayoutConstraint!
     private var topAlignConstraint: [NSLayoutConstraint] = []
     private var leadingAlignConstraint: [NSLayoutConstraint] = []
+    
+    /// No arView
     private var videoFormatImageResolution: CGSize? = nil
     
     private let imageView: UIImageView = {
@@ -113,6 +115,11 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
+    
+    // Mesh-related properties
+//    private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
+//    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
+//    private var meshOtherDetails: MeshOtherDetails? = nil
     
     init(arSessionCameraProcessingDelegate: TestCameraProcessingDelegate) {
         self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
@@ -166,8 +173,10 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
         constraintChildViewToParent(childView: segmentationBoundingFrameView, parentView: subView)
         constraintChildViewToParent(childView: segmentationImageView, parentView: subView)
 
+//        arView.session.delegate = arSessionCameraProcessingDelegate
         arSessionCameraProcessingDelegate.outputConsumer = self
         
+//        applyDebugIfNeeded()
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
@@ -288,7 +297,6 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
             videoFormatImageResolution = newImageResolution
             updateAspectRatio()
         }
-        print("Received camera image with resolution: \(cameraImage.extent.size)")
         let orientedImage = cameraImage.oriented(imageOrientation)
         if let cameraCGImage = metalContext.ciContext.createCGImage(orientedImage, from: orientedImage.extent) {
             self.imageView.image = UIImage(cgImage: cameraCGImage)
@@ -296,13 +304,11 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
             self.imageView.image = nil
         }
     }
-        
     
     func cameraOutputImage(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
                            segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                            for frame: ARFrame?) {
-        print("Received camera output images. Segmentation image resolution: \(segmentationImage?.extent.size.debugDescription ?? "nil"), Bounding frame image resolution: \(segmentationBoundingFrameImage?.extent.size.debugDescription ?? "nil")")
         if let segmentationImage = segmentationImage,
            let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
             self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)
