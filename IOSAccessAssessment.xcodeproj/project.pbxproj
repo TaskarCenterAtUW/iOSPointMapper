@@ -137,6 +137,8 @@
 		A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E472F580D0A00F515E6 /* TestListView.swift */; };
 		A3EE6E4A2F580D6200F515E6 /* TestCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E492F580D6000F515E6 /* TestCameraView.swift */; };
 		A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */; };
+		A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */; };
+		A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -336,6 +338,8 @@
 		A3EE6E472F580D0A00F515E6 /* TestListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestListView.swift; sourceTree = "<group>"; };
 		A3EE6E492F580D6000F515E6 /* TestCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraView.swift; sourceTree = "<group>"; };
 		A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetLister.swift; sourceTree = "<group>"; };
+		A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraManager.swift; sourceTree = "<group>"; };
+		A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraViewController.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -660,6 +664,8 @@
 				A3DA4DC12EBE87B6005BB812 /* Utils */,
 				A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */,
 				A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */,
+				A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */,
+				A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */,
 			);
 			path = ARCamera;
 			sourceTree = "<group>";
@@ -1354,6 +1360,7 @@
 				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
 				A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MetalBufferUtils.swift in Sources */,
+				A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */,
 				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */,
 				A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */,
@@ -1384,6 +1391,7 @@
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
+				A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */,
 				A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
 				A3DC22ED2DCF10050020CE84 /* Homography.metal in Sources */,

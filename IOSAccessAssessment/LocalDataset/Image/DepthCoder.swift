@@ -129,7 +129,15 @@ class DepthDecoder {
             }
             bufferBaseAddress.copyMemory(from: depthBaseAddress, byteCount: pixelCount * MemoryLayout<Float32>.size)
         }
+        
         CVPixelBufferUnlockBaseAddress(buffer, [])
+        /// Read a few pixels to verify the data was copied correctly
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        if let verifyBaseAddress = CVPixelBufferGetBaseAddress(buffer) {
+            let verifyPixelData = verifyBaseAddress.assumingMemoryBound(to: Float32.self)
+            print("First 5 values: \(Array(UnsafeBufferPointer(start: verifyPixelData, count: min(5, pixelCount))))")
+        }
+        
         return buffer
     }
 }

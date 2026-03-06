@@ -12,16 +12,20 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import simd
 
-/// The consumer of post-processed camera outputs (e.g., overlay images).
 @MainActor
-protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
-    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
+protocol TestCameraProcessingOutputConsumer: AnyObject {
+    func cameraImage(_ delegate: TestCameraProcessingDelegate,
+                        metalContext: MetalContext,
+                        cameraImage: CIImage,
+                        imageOrientation: CGImagePropertyOrientation,
+                        for frame: ARFrame?)
+    func cameraOutputImage(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
                            segmentationImage: CIImage?,
                            segmentationBoundingFrameImage: CIImage?,
                            for frame: ARFrame?
     )
-    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
+    func cameraOutputMesh(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for meshAnchors: [ARMeshAnchor]?,
@@ -38,27 +42,15 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func pauseSession()
 }
 
-protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
+protocol TestCameraProcessingDelegate: ARSessionDelegate {
     /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
     @MainActor
-    var outputConsumer: ARSessionCameraProcessingOutputConsumer? { get set }
+    var outputConsumer: TestCameraProcessingOutputConsumer? { get set }
     /// This method will help set up any configuration that depends on the video format image resolution.
     @MainActor
     func setVideoFormatImageResolution(_ imageResolution: CGSize)
     @MainActor
     func setOrientation(_ orientation: UIInterfaceOrientation)
-}
-
-/**
- A small struct to save other important attributes of the mesh to maintain sync.
- */
-struct MeshOtherDetails: Sendable {
-    let vertexStride: Int
-    let vertexOffset: Int
-    let indexStride: Int
-    let classificationStride: Int
-    
-    let totalVertexCount: Int
 }
 
 /**
@@ -69,8 +61,8 @@ struct MeshOtherDetails: Sendable {
     Also processes the mesh data and (optionally) maintains the mesh entities in the ARView scene.
  */
 @MainActor
-final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
-    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
+final class TestCameraViewController: UIViewController, TestCameraProcessingOutputConsumer {
+    var arSessionCameraProcessingDelegate: TestCameraProcessingDelegate
     
     /**
      Sub-view containing the other views
@@ -83,13 +75,19 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     private var topAlignConstraint: [NSLayoutConstraint] = []
     private var leadingAlignConstraint: [NSLayoutConstraint] = []
     
-    private let arView: ARView = {
-        let v = ARView(frame: .zero)
-        v.automaticallyConfigureSession = false
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
-    }()
+    /// No arView
     private var videoFormatImageResolution: CGSize? = nil
+    
+    private let imageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 12
+        iv.backgroundColor = UIColor(white: 0, alpha: 0.0)
+        iv.isUserInteractionEnabled = false
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        return iv
+    }()
     
     /**
      A static frame view to show the bounds of segmentation
@@ -119,11 +117,11 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }()
     
     // Mesh-related properties
-    private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
-    private var meshOtherDetails: MeshOtherDetails? = nil
+//    private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
+//    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
+//    private var meshOtherDetails: MeshOtherDetails? = nil
     
-    init(arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate) {
+    init(arSessionCameraProcessingDelegate: TestCameraProcessingDelegate) {
         self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
         super.init(nibName: nil, bundle: nil)
     }
@@ -167,18 +165,18 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
             subView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ]
         
-        subView.addSubview(arView)
+        subView.addSubview(imageView)
         subView.addSubview(segmentationBoundingFrameView)
         subView.addSubview(segmentationImageView)
         
-        constraintChildViewToParent(childView: arView, parentView: subView)
+        constraintChildViewToParent(childView: imageView, parentView: subView)
         constraintChildViewToParent(childView: segmentationBoundingFrameView, parentView: subView)
         constraintChildViewToParent(childView: segmentationImageView, parentView: subView)
 
-        arView.session.delegate = arSessionCameraProcessingDelegate
+//        arView.session.delegate = arSessionCameraProcessingDelegate
         arSessionCameraProcessingDelegate.outputConsumer = self
         
-        applyDebugIfNeeded()
+//        applyDebugIfNeeded()
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
@@ -252,22 +250,6 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         return getOrientation().isPortrait
     }
     
-    func applyDebugIfNeeded() {
-        arView.environment.sceneUnderstanding.options.insert(.occlusion)
-        /// TODO: MESH PROCESSING: Use the mesh processing visualization
-//        arView.debugOptions.insert(.showSceneUnderstanding)
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        runSessionIfNeeded()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        pauseSession()
-    }
-    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateFitConstraints()
@@ -291,49 +273,39 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
 //        pauseSession()
 //    }
     
-    func runSessionIfNeeded() {
-        let config = ARWorldTrackingConfiguration()
-        config.worldAlignment = .gravityAndHeading
-        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
-            config.sceneReconstruction = .meshWithClassification
-        }
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            config.frameSemantics.insert(.sceneDepth)
-        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            config.frameSemantics.insert(.smoothedSceneDepth)
-        }
-        // Update aspectRatio based on video format
-        let videoFormat = config.videoFormat
-        videoFormatImageResolution = videoFormat.imageResolution
-        // Run the session
-        arView.session.run(config, options: [.removeExistingAnchors, .resetTracking, .resetSceneReconstruction])
-        // Add Anchor Entity
-        arView.scene.addAnchor(anchorEntity)
-        // Set the image resolution in the camera manager
-        arSessionCameraProcessingDelegate.setVideoFormatImageResolution(videoFormat.imageResolution)
-    }
-    
     /**
     Resumes the AR session and sets its delegate.
      */
     func resumeSession() {
-        arView.session.delegate = arSessionCameraProcessingDelegate
-        runSessionIfNeeded()
+        /// Nothing for now
     }
     
     /**
     Pauses the AR session and removes its delegate.
      */
     func pauseSession() {
-        arView.session.delegate = nil
-        arView.session.pause()
-        self.anchorEntity.removeFromParent()
-        self.anchorEntity = AnchorEntity(world: .zero)
-        self.meshRecords.removeAll()
-        self.meshOtherDetails = nil
+        /// Nothing for now
     }
     
-    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
+    func cameraImage(_ delegate: TestCameraProcessingDelegate,
+                     metalContext: MetalContext,
+                     cameraImage: CIImage,
+                     imageOrientation: CGImagePropertyOrientation,
+                     for frame: ARFrame?) {
+        let newImageResolution = CGSize(width: cameraImage.extent.width, height: cameraImage.extent.height)
+        if videoFormatImageResolution == nil || videoFormatImageResolution != newImageResolution {
+            videoFormatImageResolution = newImageResolution
+            updateAspectRatio()
+        }
+        let orientedImage = cameraImage.oriented(imageOrientation)
+        if let cameraCGImage = metalContext.ciContext.createCGImage(orientedImage, from: orientedImage.extent) {
+            self.imageView.image = UIImage(cgImage: cameraCGImage)
+        } else {
+            self.imageView.image = nil
+        }
+    }
+    
+    func cameraOutputImage(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
                            segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
                            for frame: ARFrame?) {
@@ -348,7 +320,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
+    func cameraOutputMesh(_ delegate: TestCameraProcessingDelegate,
                            metalContext: MetalContext,
                            meshGPUSnapshot: MeshGPUSnapshot,
                            for meshAnchors: [ARMeshAnchor]?,
@@ -357,73 +329,28 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
                            segmentationLabelImage: CIImage,
                            accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
-        var totalVertexCount = 0
-        for accessibilityFeatureClass in accessibilityFeatureClasses {
-            guard Constants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
-                print("Invalid segmentation class: \(accessibilityFeatureClass)")
-                continue
-            }
-            if let existingMeshRecord = meshRecords[accessibilityFeatureClass] {
-                // Update existing mesh entity
-                do {
-                    try existingMeshRecord.replace(
-                        meshGPUSnapshot: meshGPUSnapshot,
-                        segmentationImage: segmentationLabelImage,
-                        cameraTransform: cameraTransform,
-                        cameraIntrinsics: cameraIntrinsics
-                    )
-                    totalVertexCount += existingMeshRecord.vertexCount
-                } catch {
-                    print("Error updating mesh entity: \(error.localizedDescription)")
-                }
-            } else {
-                // Create new mesh entity
-                do {
-                    let meshRecord = try SegmentationMeshRecord(
-                        metalContext,
-                        meshGPUSnapshot: meshGPUSnapshot,
-                        segmentationImage: segmentationLabelImage,
-                        cameraTransform: cameraTransform,
-                        cameraIntrinsics: cameraIntrinsics,
-                        accessibilityFeatureClass: accessibilityFeatureClass
-                    )
-                    meshRecords[accessibilityFeatureClass] = meshRecord
-                    /// NOTE: To eliminate the mesh visualization, comment out the following line
-                    anchorEntity.addChild(meshRecord.entity)
-                    totalVertexCount += meshRecord.vertexCount
-                } catch {
-                    print("Error creating mesh entity: \(error.localizedDescription)")
-                }
-            }
-        }
-        self.meshOtherDetails = MeshOtherDetails (
-            vertexStride: meshGPUSnapshot.vertexStride,
-            vertexOffset: meshGPUSnapshot.vertexOffset,
-            indexStride: meshGPUSnapshot.indexStride,
-            classificationStride: meshGPUSnapshot.classificationStride,
-            totalVertexCount: totalVertexCount
-        )
+        /// Nothing for now
     }
     
     func getMeshRecordDetails() -> (
         records: [AccessibilityFeatureClass: SegmentationMeshRecord],
         otherDetails: MeshOtherDetails?
     ) {
-        return (meshRecords, meshOtherDetails)
+        return ([:], nil)
     }
 }
 
-struct HostedARCameraViewContainer: UIViewControllerRepresentable {
-    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
+struct HostedTestCameraViewContainer: UIViewControllerRepresentable {
+    var arSessionCameraProcessingDelegate: TestCameraProcessingDelegate
     
-    func makeUIViewController(context: Context) -> ARCameraViewController {
-        let vc = ARCameraViewController(arSessionCameraProcessingDelegate: arSessionCameraProcessingDelegate)
+    func makeUIViewController(context: Context) -> TestCameraViewController {
+        let vc = TestCameraViewController(arSessionCameraProcessingDelegate: arSessionCameraProcessingDelegate)
         return vc
     }
     
-    func updateUIViewController(_ uiViewController: ARCameraViewController, context: Context) {
+    func updateUIViewController(_ uiViewController: TestCameraViewController, context: Context) {
     }
     
-    static func dismantleUIViewController(_ uiViewController: ARCameraViewController, coordinator: ()) {
+    static func dismantleUIViewController(_ uiViewController: TestCameraViewController, coordinator: ()) {
     }
 }

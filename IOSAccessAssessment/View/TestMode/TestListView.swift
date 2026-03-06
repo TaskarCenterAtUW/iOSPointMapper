@@ -126,6 +126,9 @@ struct TestChangesetListView: View {
     private func changesetDestination(workspaceDir: URL, changesetDir: URL) -> some View {
         let workspaceId: String = workspaceDir.lastPathComponent
         let changesetId: String = changesetDir.lastPathComponent
-        TestCameraView(workspaceId: workspaceId, changesetId: changesetId)
+        TestCameraView(
+            selectedClasses: selectedClasses,
+            workspaceId: workspaceId, changesetId: changesetId
+        )
     }
 }
