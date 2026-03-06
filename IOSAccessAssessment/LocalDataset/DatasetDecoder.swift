@@ -55,7 +55,7 @@ class DatasetDecoder {
     
     private var workspaceDirectory: URL
     private var datasetDirectory: URL
-    private var savedFrames: Int = 0
+    var totalFrames: Int = 0
     
     public let rgbFilePath: URL /// Relative to app document directory.
     public let depthFilePath: URL /// Relative to app document directory.
@@ -98,6 +98,8 @@ class DatasetDecoder {
         self.locationDecoder = try LocationDecoder(path: self.locationPath)
 //        self.headingDecoder = HeadingDecoder(url: self.headingPath)
         self.otherDetailsDecoder = try OtherDetailsDecoder(path: self.otherDetailsPath)
+        
+        self.totalFrames = self.cameraIntrinsicsDecoder.results.count
     }
     
     static private func findDirectory(id: String, relativeTo: URL? = nil) throws -> URL {

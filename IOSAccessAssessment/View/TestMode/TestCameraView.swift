@@ -81,6 +81,7 @@ struct TestCameraView: View {
     // Latest dataset capture data
     @State private var datasetCaptureData: DatasetCaptureData?
     @State private var currentIndex: Int = 0
+    @State private var totalCaptures: Int = 0
     
     var body: some View {
         VStack {
@@ -119,7 +120,7 @@ struct TestCameraView: View {
                             Spacer()
                             Button {
                                 /// TODO: Find the total number of captures in the dataset and disable the button accordingly
-                                self.currentIndex += 1
+                                self.currentIndex = max(self.currentIndex + 1, self.totalCaptures - 1)
                             } label: {
                                 Image(systemName: TestCameraViewConstants.Images.nextIcon)
                                     .resizable()
@@ -127,6 +128,7 @@ struct TestCameraView: View {
                             }
                             .padding(.trailing, 20)
                             .padding(.bottom, 20)
+                            .disabled(currentIndex >= totalCaptures - 1)
                         }
 //                        .overlay(
 //                            reverseOrientationStack {
@@ -155,6 +157,7 @@ struct TestCameraView: View {
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
                 let datasetDecoder = try initializeDatasetDecoder()
+                self.totalCaptures = datasetDecoder.totalFrames
                 let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
