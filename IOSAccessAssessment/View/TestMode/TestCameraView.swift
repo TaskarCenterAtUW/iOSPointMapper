@@ -112,15 +112,19 @@ struct TestCameraView: View {
                             Button {
                                 cameraCapture()
                             } label: {
-                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
-                                    .resizable()
+//                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+//                                    .resizable()
+//                                    .frame(width: 60, height: 60)
+                                Text("\(self.currentIndex)")
                                     .frame(width: 60, height: 60)
+    //                                .foregroundColor(.white)
+                                    .border(Color.black, width: 2)
                             }
                             .padding(.bottom, 20)
                             Spacer()
                             Button {
                                 /// TODO: Find the total number of captures in the dataset and disable the button accordingly
-                                self.currentIndex = max(self.currentIndex + 1, self.totalCaptures - 1)
+                                self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
                             } label: {
                                 Image(systemName: TestCameraViewConstants.Images.nextIcon)
                                     .resizable()
@@ -193,16 +197,13 @@ struct TestCameraView: View {
             }
         }
         .onChange(of: showAnnotationView, initial: false) { oldValue, newValue in
-            // If the AnnotationView is dismissed, reconfigure the manager for a new session
-//            if (oldValue == true && newValue == false) {
-//                do {
-////                    captureLocation = nil
-////                    try manager.resume()
-//                } catch {
-//                    managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
-//                }
-//            }
-            self.currentIndex += 1
+            // If the AnnotationView is dismissed, clear capture history and move to the next capture data
+            Task {
+                if (oldValue == true && newValue == false) {
+                    await sharedAppData.refreshQueue()
+                    self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
+                }
+            }
         }
         .onChange(of: currentIndex) { oldValue, newValue in
             do {

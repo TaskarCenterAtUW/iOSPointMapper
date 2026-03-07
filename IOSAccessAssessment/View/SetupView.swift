@@ -506,6 +506,7 @@ struct SetupView: View {
                     changesetId: changesetId, accessToken: accessToken
                 )
                 sharedAppData.refreshData()
+                await sharedAppData.refreshQueue()
                 openChangeset()
                 try saveCurrentDataset()
             } catch SetupViewError.currentDatasetSaveFailed {
