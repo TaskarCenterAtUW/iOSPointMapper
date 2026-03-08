@@ -187,13 +187,16 @@ struct ARCameraView: View {
             }
         }
         .onChange(of: showAnnotationView, initial: false) { oldValue, newValue in
-            // If the AnnotationView is dismissed, reconfigure the manager for a new session
-            if (oldValue == true && newValue == false) {
-                do {
-                    captureLocation = nil
-                    try manager.resume()
-                } catch {
-                    managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+            // If the AnnotationView is dismissed, clear capture history and reconfigure the manager for a new session
+            Task {
+                if (oldValue == true && newValue == false) {
+                    do {
+                        await sharedAppData.refreshQueue()
+                        captureLocation = nil
+                        try manager.resume()
+                    } catch {
+                        managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                    }
                 }
             }
         }

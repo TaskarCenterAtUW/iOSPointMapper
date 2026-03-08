@@ -28,6 +28,10 @@ final class SharedAppData: ObservableObject {
         self.captureDataQueue = SafeDeque<CaptureImageData>(capacity: captureDataCapacity)
     }
     
+    func refreshQueue() async {
+        await self.captureDataQueue.removeAll()
+    }
+    
     func refreshData() {
         self.isUploadReady = false
         self.currentDatasetEncoder = nil

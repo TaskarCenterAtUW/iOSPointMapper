@@ -125,11 +125,11 @@ class CameraIntrinsicsDecoder {
                   let i22 = Float(values[i22Index]) else {
                 continue
             }
-            let intrinsics = simd_float3x3(rows: [
+            let intrinsics = simd_float3x3(
                 SIMD3<Float>(fx, sy, i02),
                 SIMD3<Float>(sx, fy, i12),
                 SIMD3<Float>(cx, cy, i22)
-            ])
+            )
             cameraIntrinsicsDataList.append((timestamp: timestamp, frame: frameNumber, intrinsics: intrinsics))
         }
         return cameraIntrinsicsDataList

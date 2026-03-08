@@ -15,6 +15,10 @@ enum TestCameraViewConstants {
     enum Texts {
         static let contentViewTitle = "Test: Capture"
         
+        /// Change index buttons
+        static let previousButtonText = "Previous"
+        static let nextButtonText = "Next"
+        
         /// Camera Hint Texts
         static let cameraHintPlaceholderText = "..."
         
@@ -27,6 +31,11 @@ enum TestCameraViewConstants {
         
         After capturing, you will be prompted to validate the annotated features.
         """
+    }
+    
+    enum Images {
+        static let previousIcon = "arrow.left.circle"
+        static let nextIcon = "arrow.right.circle"
     }
 }
 
@@ -63,7 +72,7 @@ struct TestCameraView: View {
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
 //    var locationManager: LocationManager = LocationManager()
-//    @State private var captureLocation: CLLocationCoordinate2D?
+    @State private var captureLocation: CLLocationCoordinate2D?
     
     @State private var showARCameraLearnMoreSheet = false
     
@@ -72,6 +81,7 @@ struct TestCameraView: View {
     // Latest dataset capture data
     @State private var datasetCaptureData: DatasetCaptureData?
     @State private var currentIndex: Int = 0
+    @State private var totalCaptures: Int = 0
     
     var body: some View {
         VStack {
@@ -88,31 +98,56 @@ struct TestCameraView: View {
                             .truncationMode(.tail)
                         
                         reverseOrientationStack {
+                            Button {
+                                self.currentIndex = max(self.currentIndex - 1, 0)
+                            } label: {
+                                Image(systemName: TestCameraViewConstants.Images.previousIcon)
+                                    .resizable()
+                                    .frame(width: 30, height: 30)
+                            }
+                            .padding(.leading, 20)
+                            .padding(.bottom, 20)
+                            .disabled(currentIndex == 0)
                             Spacer()
                             Button {
                                 cameraCapture()
                             } label: {
-                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
-                                    .resizable()
+//                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+//                                    .resizable()
+//                                    .frame(width: 60, height: 60)
+                                Text("\(self.currentIndex)")
                                     .frame(width: 60, height: 60)
+    //                                .foregroundColor(.white)
+                                    .border(Color.black, width: 2)
                             }
                             .padding(.bottom, 20)
                             Spacer()
-                        }
-                        .overlay(
-                            reverseOrientationStack {
-                                Spacer()
-                                Button(action: {
-                                    showARCameraLearnMoreSheet = true
-                                }) {
-                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
-                                        .resizable()
-                                        .frame(width: 20, height: 20)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
+                            Button {
+                                /// TODO: Find the total number of captures in the dataset and disable the button accordingly
+                                self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
+                            } label: {
+                                Image(systemName: TestCameraViewConstants.Images.nextIcon)
+                                    .resizable()
+                                    .frame(width: 30, height: 30)
                             }
-                        )
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 20)
+                            .disabled(currentIndex >= totalCaptures - 1)
+                        }
+//                        .overlay(
+//                            reverseOrientationStack {
+//                                Spacer()
+//                                Button(action: {
+//                                    showARCameraLearnMoreSheet = true
+//                                }) {
+//                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
+//                                        .resizable()
+//                                        .frame(width: 20, height: 20)
+//                                }
+//                                .padding(.horizontal, 20)
+//                                .padding(.bottom, 20)
+//                            }
+//                        )
                     }
                 }
             }
@@ -126,9 +161,11 @@ struct TestCameraView: View {
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
                 let datasetDecoder = try initializeDatasetDecoder()
+                self.totalCaptures = datasetDecoder.totalFrames
                 let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
+                self.captureLocation = datasetCaptureData.location
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -149,26 +186,37 @@ struct TestCameraView: View {
         }, message: {
             Text(managerConfigureStatusViewModel.errorMessage)
         })
-//        .fullScreenCover(isPresented: $showAnnotationView) {
-//            if let captureLocation {
-//                AnnotationView(selectedClasses: selectedClasses, captureLocation: captureLocation)
-//            } else {
-//                InvalidContentView(
-//                    title: ARCameraViewConstants.Texts.invalidContentViewTitle,
-//                    message: ARCameraViewConstants.Texts.invalidContentViewMessage
-//                )
-//            }
-//        }
+        .fullScreenCover(isPresented: $showAnnotationView) {
+            if let captureLocation {
+                AnnotationView(selectedClasses: selectedClasses, captureLocation: captureLocation)
+            } else {
+                InvalidContentView(
+                    title: ARCameraViewConstants.Texts.invalidContentViewTitle,
+                    message: ARCameraViewConstants.Texts.invalidContentViewMessage
+                )
+            }
+        }
         .onChange(of: showAnnotationView, initial: false) { oldValue, newValue in
-            // If the AnnotationView is dismissed, reconfigure the manager for a new session
-//            if (oldValue == true && newValue == false) {
-//                do {
-////                    captureLocation = nil
-////                    try manager.resume()
-//                } catch {
-//                    managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
-//                }
-//            }
+            // If the AnnotationView is dismissed, clear capture history and move to the next capture data
+            Task {
+                if (oldValue == true && newValue == false) {
+                    await sharedAppData.refreshQueue()
+                    self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
+                }
+            }
+        }
+        .onChange(of: currentIndex) { oldValue, newValue in
+            do {
+                guard let datasetDecoder = sharedAppData.currentDatasetDecoder else {
+                    throw TestCameraViewError.captureDataUnavailable
+                }
+                let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+                self.datasetCaptureData = datasetCaptureData
+                self.captureLocation = datasetCaptureData.location
+                try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+            } catch {
+                managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+            }
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
             ARCameraLearnMoreSheetView()
@@ -200,9 +248,10 @@ struct TestCameraView: View {
     }
     
     private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
-        Task {
-            await sharedAppData.appendCaptureDataToQueue(captureImageData)
-        }
+        // We do not need capture history in this test flow.
+//        Task {
+//            await sharedAppData.appendCaptureDataToQueue(captureImageData)
+//        }
     }
     
     private func cameraCapture() {
