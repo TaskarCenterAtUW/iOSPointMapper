@@ -112,11 +112,11 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         
         guard captureDataHistory.count > 1 else {
             self.isProcessing = false
-            guard captureDataHistory.count == 1 else {
-                throw SegmentationAnnotationPipelineError.imageHistoryEmpty
-            }
-            let mainSegmentationLabelImage = captureDataHistory[0].captureImageDataResults.segmentationLabelImage
-            return [mainSegmentationLabelImage]
+//            guard captureDataHistory.count == 1 else {
+//                throw SegmentationAnnotationPipelineError.imageHistoryEmpty
+//            }
+//            let mainSegmentationLabelImage = captureDataHistory[0].captureImageDataResults.segmentationLabelImage
+            return [currentCaptureData.captureImageDataResults.segmentationLabelImage]
         }
         
         /**

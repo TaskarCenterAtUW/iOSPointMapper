@@ -248,9 +248,10 @@ struct TestCameraView: View {
     }
     
     private func cameraOutputImageCallback(_ captureImageData: (any CaptureImageDataProtocol)) {
-        Task {
-            await sharedAppData.appendCaptureDataToQueue(captureImageData)
-        }
+        // We do not need capture history in this test flow.
+//        Task {
+//            await sharedAppData.appendCaptureDataToQueue(captureImageData)
+//        }
     }
     
     private func cameraCapture() {
