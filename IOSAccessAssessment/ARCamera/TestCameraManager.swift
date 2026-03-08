@@ -53,6 +53,7 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
     @Published var isConfigured: Bool = false
     
     // Latest processed results
+    var captureImageDataID: UUID?
     var cameraImageResults: ARCameraImageResults?
     var cameraMeshResults: ARCameraMeshResults?
     var cameraCache: ARCameraCache = ARCameraCache()
@@ -130,6 +131,7 @@ extension TestCameraManager {
         let cameraIntrinsics = datasetCaptureData.captureImageData.cameraIntrinsics
         let cameraImage = datasetCaptureData.captureImageData.cameraImage
         let depthImage = datasetCaptureData.captureImageData.depthImage
+        let frameId = datasetCaptureData.captureImageData.id
         
         Task {
             do {
@@ -145,7 +147,7 @@ extension TestCameraManager {
                     detectedFeatureMap: cameraImageResults.detectedFeatureMap
                 )
                 let captureImageData = CaptureImageData(
-                    id: UUID(),
+                    id: frameId,
                     timestamp: Date().timeIntervalSince1970,
                     cameraImage: cameraImageResults.cameraImage,
                     cameraTransform: cameraImageResults.cameraTransform,
@@ -164,6 +166,7 @@ extension TestCameraManager {
                     results.depthImage = depthImage
                     results.confidenceImage = nil
                     self.cameraImageResults = results
+                    self.captureImageDataID = frameId
                     self.outputConsumer?.cameraImage(
                         self, metalContext: metalContext,
                         cameraImage: cameraImageResults.cameraImage,
@@ -363,7 +366,8 @@ extension TestCameraManager {
         guard let cameraImage = self.cameraImageResults?.cameraImage,
               let cameraTransform = self.cameraImageResults?.cameraTransform,
               let cameraIntrinsics = self.cameraImageResults?.cameraIntrinsics,
-              let originalImageSize = self.cameraImageResults?.originalImageSize
+              let originalImageSize = self.cameraImageResults?.originalImageSize,
+              let frameId = self.captureImageDataID
         else {
             throw ARCameraManagerError.cameraImageResultsUnavailable
         }
@@ -387,7 +391,7 @@ extension TestCameraManager {
         )
         
         let captureImageData = CaptureImageData(
-            id: UUID(),
+            id: frameId,
             timestamp: Date().timeIntervalSince1970,
             cameraImage: cameraImageResults.cameraImage,
             cameraTransform: cameraImageResults.cameraTransform,
