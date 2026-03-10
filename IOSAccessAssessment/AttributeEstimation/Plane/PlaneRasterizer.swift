@@ -49,7 +49,7 @@ struct PlaneRasterizer {
             let path = createPath(points: [vector.0, vector.1], size: size)
             context.addPath(path.cgPath)
             /// Add circle for second point
-            let circlePath = createCircle(point: vector.1, size: size, radius: 6.0)
+            let circlePath = createCircle(point: vector.1, size: size, radius: 20.0)
             context.addPath(circlePath.cgPath)
             context.setStrokeColor(colors[index].cgColor)
             context.setLineWidth(linesConfig.width)
@@ -59,6 +59,9 @@ struct PlaneRasterizer {
         for (vectorStart, vectorEnd) in projectedPlane.additionalVectors {
             let path = createPath(points: [vectorStart, vectorEnd], size: size)
             context.addPath(path.cgPath)
+            /// Add circle for second point
+            let circlePath = createCircle(point: vectorEnd, size: size, radius: 20.0)
+            context.addPath(circlePath.cgPath)
             context.setStrokeColor(additionalLineColor)
             context.setLineWidth(linesConfig.width)
             context.strokePath()

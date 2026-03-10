@@ -384,7 +384,7 @@ struct WorldPointsProcessor {
         }
         let longitudinalVector = simd_float3(plane.firstVector)
         let lateralVector = simd_float3(plane.secondVector)
-        let normalVector = simd_float3(plane.normalVector)
+//        let normalVector = simd_float3(plane.normalVector)
         let origin = simd_float3(plane.origin)
         var worldPoints: [WorldPoint] = []
         for i in 0..<pointCount {

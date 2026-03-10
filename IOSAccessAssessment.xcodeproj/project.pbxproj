@@ -139,6 +139,7 @@
 		A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */; };
 		A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */; };
 		A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */; };
+		A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -340,6 +341,7 @@
 		A3EE6E4B2F580E2800F515E6 /* DatasetLister.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetLister.swift; sourceTree = "<group>"; };
 		A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraManager.swift; sourceTree = "<group>"; };
 		A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraViewController.swift; sourceTree = "<group>"; };
+		A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APITransmissionHelpers.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -720,6 +722,7 @@
 			isa = PBXGroup;
 			children = (
 				A35E05152EDEA04B003C26CF /* APITransmissionController.swift */,
+				A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */,
 			);
 			path = Transmission;
 			sourceTree = "<group>";
@@ -1391,6 +1394,7 @@
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
+				A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */,
 				A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */,
 				A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,

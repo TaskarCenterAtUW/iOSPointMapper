@@ -593,7 +593,7 @@ extension AnnotationImageManager {
         size: CGSize,
         updateFeatureResults: AnnotationImageFeatureUpdateResults?
     ) -> CIImage? {
-        guard let plane = updateFeatureResults?.plane,
+        guard //let plane = updateFeatureResults?.plane,
               let projectedPlane = updateFeatureResults?.projectedPlane else {
             return nil
         }
