@@ -37,7 +37,7 @@ struct Plane: Sendable, CustomStringConvertible {
     var origin: simd_float3
     
     var description: String {
-        return "Plane(firstVector: \(firstVector), secondVector: \(secondVector), normalVector: \(normalVector), d: \(d), origin: \(origin))"
+        return "Plane(firstVector: \(firstVector), \nsecondVector: \(secondVector), \nnormalVector: \(normalVector), \nd: \(d), \norigin: \(origin))"
     }
 }
 
@@ -51,7 +51,7 @@ struct ProjectedPlane: Sendable, CustomStringConvertible {
     var additionalVectors: [(SIMD2<Float>, SIMD2<Float>)]
     
     var description: String {
-        return "ProjectedPlane(origin: \(origin), firstVector: \(firstVector), secondVector: \(secondVector), normalVector: \(normalVector), additionalVectorsCount: \(additionalVectors.count))"
+        return "ProjectedPlane(firstVector: \(firstVector), \nsecondVector: \(secondVector), \nnormalVector: \(normalVector), additionalVectorsCount: \(additionalVectors.count), \norigin: \(origin))"
     }
 }
 
@@ -101,7 +101,7 @@ struct PlaneProcessor {
             throw PlaneProcessorError.invalidPlaneData
         }
         
-        /// Eigen values in ascending order
+        /// Eigen values in a are in ascending order
         let firstK = 2
         let firstEigenVector = simd_normalize(simd_float3(a[firstK * 3 + 0], a[firstK * 3 + 1], a[firstK * 3 + 2]))
         let secondK = 1
@@ -187,6 +187,7 @@ extension PlaneProcessor {
             d: plane.d,
             origin: plane.origin
         )
+//        print(plane, "\nCamera Transform: \(cameraTransform), \nView vector: \(viewVector), \n\(alignedPlane)")
         return alignedPlane
     }
     
