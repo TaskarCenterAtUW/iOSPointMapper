@@ -198,7 +198,7 @@ extension PlaneProcessor {
         let horizontalVector2 = simd_normalize(simd_float3(vector2.x, 0, vector2.z))
         let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
         let angle = acos(dotProduct)
-        let angleDegrees = angle * (180.0 / .pi)
+//        let angleDegrees = angle * (180.0 / .pi)
 //        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
 //        print("Angle between projected vectors: \(finalAngleDegrees) degrees")
         return abs(dotProduct)
@@ -265,13 +265,16 @@ extension PlaneProcessor {
         Function to project a 3D vector originating from a 3D point to 2D pixel coordinates.
      
         Ensures that the projected points are valid and within the image bounds by returning points at the corners of the image
+     
+        NOTE: lengthThreshold is in pixel space.
      */
     private func getProjectedVector(
         origin: simd_float3,
         vector: simd_float3,
         viewMatrix: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
-        imageSize: CGSize
+        imageSize: CGSize,
+        lengthThreshold: Float = 500.0
     ) throws -> (SIMD2<Float>, SIMD2<Float>) {
         /// First, project the two endpoints of the vector
         let points = [origin, origin + vector, origin - vector]
@@ -327,7 +330,16 @@ extension PlaneProcessor {
               let secondProjectedPoint = candidates.last else {
             throw PlaneProcessorError.invalidProjectionData
         }
-        return (firstProjectedPoint, secondProjectedPoint)
+        /// If length is more than length threshold, truncate to the threshold length
+        if getPixelDistance(firstProjectedPoint, secondProjectedPoint) < lengthThreshold {
+            return (firstProjectedPoint, secondProjectedPoint)
+        }
+        let direction = simd_normalize(secondProjectedPoint - firstProjectedPoint)
+        let midpoint = (firstProjectedPoint + secondProjectedPoint) / 2
+        let truncatedFirstPoint = midpoint - direction * lengthThreshold / 2
+        let truncatedSecondPoint = midpoint + direction * lengthThreshold / 2
+        return (truncatedFirstPoint, truncatedSecondPoint)
+//        return (firstProjectedPoint, secondProjectedPoint)
     }
     
     /**
@@ -363,5 +375,9 @@ extension PlaneProcessor {
         let u = fx * xn + cx
         let v = fy * yn + cy
         return SIMD2<Float>(u.rounded(), v.rounded())
+    }
+    
+    private func getPixelDistance(_ p1: SIMD2<Float>, _ p2: SIMD2<Float>) -> Float {
+        return simd_length(p1 - p2)
     }
 }

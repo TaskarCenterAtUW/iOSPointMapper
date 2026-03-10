@@ -22,56 +22,6 @@ enum APITransmissionError: Error, LocalizedError {
     }
 }
 
-struct APITransmissionResults: @unchecked Sendable {
-    let accessibilityFeatures: [MappedAccessibilityFeature]?
-    
-    let failedFeatureUploads: Int
-    let totalFeatureUploads: Int
-    
-    let isFailedCaptureUpload: Bool
-    
-    init(
-        accessibilityFeatures: [MappedAccessibilityFeature],
-        activeFeatures: [MappedAccessibilityFeature]? = nil,
-        failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0,
-        isFailedCaptureUpload: Bool = false
-    ) {
-        self.accessibilityFeatures = accessibilityFeatures
-        self.failedFeatureUploads = failedFeatureUploads
-        self.totalFeatureUploads = totalFeatureUploads
-        self.isFailedCaptureUpload = isFailedCaptureUpload
-    }
-    
-    init(failedFeatureUploads: Int, totalFeatureUploads: Int) {
-        self.accessibilityFeatures = nil
-        self.failedFeatureUploads = failedFeatureUploads
-        self.totalFeatureUploads = totalFeatureUploads
-        self.isFailedCaptureUpload = false
-    }
-    
-    /// Clone method for overwriting isFailedCaptureUpload
-    init(from other: APITransmissionResults, isFailedCaptureUpload: Bool) {
-        self.accessibilityFeatures = other.accessibilityFeatures
-        self.failedFeatureUploads = other.failedFeatureUploads
-        self.totalFeatureUploads = other.totalFeatureUploads
-        self.isFailedCaptureUpload = isFailedCaptureUpload
-    }
-}
-
-class IntIdGenerator {
-    private var currentId: Int
-    
-    init(startingId: Int = 0) {
-        self.currentId = startingId
-    }
-    
-    func nextId() -> Int {
-        currentId -= 1
-        return currentId
-    }
-}
-
-
 class APITransmissionController: ObservableObject {
     private var idGenerator: IntIdGenerator = IntIdGenerator()
     public var capturedFrameIds: Set<UUID> = []
@@ -212,8 +162,9 @@ extension APITransmissionController {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
         /// Map Accessibility Features to OSW Elements
-        var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
-        var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+//        var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
+//        var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+        var featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: accessibilityFeatureClass,
             captureData: captureData, captureLocation: captureLocation,
@@ -223,27 +174,33 @@ extension APITransmissionController {
             let oswElement = featureToPoint(feature, additonalTags: additionalTags)
             guard let oswElement else { continue }
             let osmOldId = oswElement.id
-            featureOSMOldIdToFeatureMap[osmOldId] = feature
-            featureOSMOldIdToOSWElementMap[osmOldId] = oswElement
+//            featureOSMOldIdToFeatureMap[osmOldId] = feature
+//            featureOSMOldIdToOSWElementMap[osmOldId] = oswElement
+            featureCache.addEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
         }
         /// Prepare upload operations from the OSW Elements, and perform upload
-        let uploadOperations: [ChangesetDiffOperation] = featureOSMOldIdToOSWElementMap.values.map { .create($0) }
+//        let uploadOperations: [ChangesetDiffOperation] = featureOSMOldIdToOSWElementMap.values.map { .create($0) }
+        let uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElements().map { .create($0) }
         let uploadedElements = try await ChangesetService.shared.performUploadAsync(
             workspaceId: workspaceId, changesetId: changesetId,
             operations: uploadOperations,
             accessToken: accessToken
         )
-        /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
-        let featureToOriginalPointMap: [String: OSWPoint] = featureOSMOldIdToOSWElementMap.compactMapValues {
-            $0 as? OSWPoint
-        }
-        guard !featureToOriginalPointMap.isEmpty else {
+        guard featureCache.getOSWPoints().count > 0 else {
             return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
-        let uploadedOSWElements = getUploadedOSWPoints(
-            from: uploadedElements,
-            featureOSMIdToOriginalPointMap: featureToOriginalPointMap
-        )
+        /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
+//        let featureToOriginalPointMap: [String: OSWPoint] = featureOSMOldIdToOSWElementMap.compactMapValues {
+//            $0 as? OSWPoint
+//        }
+//        guard !featureToOriginalPointMap.isEmpty else {
+//            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+//        }
+//        let uploadedOSWElements = getUploadedOSWPoints(
+//            from: uploadedElements,
+//            featureOSMIdToOriginalPointMap: featureToOriginalPointMap
+//        )
+        let uploadedOSWElements = getUploadedOSWPoints(from: uploadedElements, featureCache: featureCache)
         guard !uploadedOSWElements.isEmpty else {
             return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
@@ -253,7 +210,8 @@ extension APITransmissionController {
         let mappedAccessibilityFeatures: [MappedAccessibilityFeature] = uploadedOSWElements.compactMap { oswElement in
             let osmNewId = oswElement.id
             guard let osmOldId = uploadedOldToNewIdMap.first(where: { $0.value == osmNewId })?.key else { return nil }
-            guard let matchedFeature = featureOSMOldIdToFeatureMap[osmOldId] else { return nil }
+//            guard let matchedFeature = featureOSMOldIdToFeatureMap[osmOldId] else { return nil }
+            guard let matchedFeature = featureCache.getEntry(osmOldId: osmOldId)?.feature else { return nil }
             return MappedAccessibilityFeature(
                 id: matchedFeature.id,
                 accessibilityFeature: matchedFeature,
@@ -307,6 +265,35 @@ extension APITransmissionController {
             )
         }
         return oswPoints
+    }
+    
+    private func getUploadedOSWPoints(
+        from uploadedElements: UploadedOSMResponseElements,
+        featureCache: APIFeatureCache
+    ) -> [OSWPoint] {
+        let cachedOSWPoints = featureCache.getOSWPoints()
+        var uploadedOSWPoints: [OSWPoint?] = Array(repeating: nil, count: cachedOSWPoints.count)
+        uploadedElements.nodes.forEach { uploadedNode in
+            let uploadedNodeData = uploadedNode.value
+            let uploadedNodeOSMOldId = uploadedNodeData.oldId
+            guard let nodeIndex = cachedOSWPoints.firstIndex(where: { $0.id == uploadedNodeOSMOldId }) else {
+                return
+            }
+            guard let matchedCachedEntry = featureCache.getEntry(osmOldId: uploadedNodeOSMOldId),
+                  let matchedOriginalOSWPoint = matchedCachedEntry.oswElement as? OSWPoint else {
+                return
+            }
+            let uploadedOSWPoint = OSWPoint(
+                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                oswElementClass: matchedOriginalOSWPoint.oswElementClass,
+                latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
+                attributeValues: matchedOriginalOSWPoint.attributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
+                additionalTags: matchedOriginalOSWPoint.additionalTags
+            )
+            uploadedOSWPoints[nodeIndex] = uploadedOSWPoint
+        }
+        return uploadedOSWPoints.compactMap { $0 }
     }
 }
 
@@ -417,6 +404,7 @@ extension APITransmissionController {
         guard let featureLocations: [CLLocationCoordinate2D] = feature.locationDetails?.coordinates.first else {
             return nil
         }
+        print("Feature locations for feature \(feature.id): \(featureLocations)")
         featureLocations.forEach { location in
             let oswPointId = String(idGenerator.nextId())
 //            oswPointIds.append(oswPointId)

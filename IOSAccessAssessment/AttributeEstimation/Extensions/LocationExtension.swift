@@ -180,6 +180,7 @@ extension AttributeEstimationPipeline {
         }
         /// Sort world endpoints based on location deltas  by distance from the camera, so that the closer endpoint is used as the first location for the line string. This is a heuristic to improve location accuracy, especially for longer line strings where depth estimation can be noisier.
         let sortedEndpointsWithDeltas = zip(worldEndpoints, locationDeltas).sorted { simd_length($0.1) < simd_length($1.1) }
+        print("Sorted endpoints based on distance from camera: \(sortedEndpointsWithDeltas)")
         worldEndpoints = sortedEndpointsWithDeltas.map { $0.0 }
         locationDeltas = sortedEndpointsWithDeltas.map { $0.1 }
         let locationCoordinates: [CLLocationCoordinate2D] = worldEndpoints.map { worldEndpoint in
@@ -189,6 +190,7 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
+        print("Location co-ordinates for line string endpoints: \(locationCoordinates)")
         let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = locationDeltas.map { simd_length($0) }.reduce(0, +) / Float(locationDeltas.count)
