@@ -10,7 +10,7 @@ import CoreLocation
 
 struct APIFeatureCacheEntry: @unchecked Sendable {
     let osmOldId: String
-    let feature: any AccessibilityFeatureProtocol
+    let feature: (any AccessibilityFeatureProtocol)?
     let oswElement: any OSWElement
 }
 
@@ -30,7 +30,7 @@ class APIFeatureCache {
         return cacheEntry.first { $0.osmOldId == osmOldId }
     }
     
-    func addEntry(osmOldId: String, feature: any AccessibilityFeatureProtocol, oswElement: any OSWElement) {
+    func addEntry(osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, oswElement: any OSWElement) {
         let entry = APIFeatureCacheEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
         cacheEntry.append(entry)
     }
