@@ -377,7 +377,6 @@ extension APITransmissionController {
         guard oswElementClass.geometry == .linestring else {
             return nil
         }
-//        var oswPointIds: [String] = []
         var oswPoints: [OSWPoint] = []
         guard let featureLocations: [CLLocationCoordinate2D] = feature.locationDetails?.coordinates.first else {
             return nil
@@ -405,37 +404,6 @@ extension APITransmissionController {
             additionalTags: additionalTags
         )
         return oswLineString
-    }
-    
-    private func getUploadedOSWLineStrings(
-        from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToOriginalLineStringMap: [String: OSWLineString]
-    ) -> [OSWLineString] {
-        let oswLineStrings: [OSWLineString] = uploadedElements.ways.compactMap { uploadedWay in
-            let uploadedWayData = uploadedWay.value
-            let uploadedWayOSMOldId = uploadedWayData.oldId
-            guard let matchedOriginalOSWLineString = featureOSMIdToOriginalLineStringMap[uploadedWayOSMOldId] else {
-                return nil
-            }
-            /// First, map the nodes to the points
-            let featureOSMIdToOriginalPointMap = matchedOriginalOSWLineString.points.map {
-                ($0.id, $0)
-            }
-            let oswPoints: [OSWPoint] = getUploadedOSWPoints(
-                from: uploadedElements,
-                featureOSMIdToOriginalPointMap: Dictionary(uniqueKeysWithValues: featureOSMIdToOriginalPointMap)
-            )
-            /// Lastly, create the linestring
-            return OSWLineString(
-                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
-                oswElementClass: matchedOriginalOSWLineString.oswElementClass,
-                attributeValues: matchedOriginalOSWLineString.attributeValues,
-                experimentalAttributeValues: matchedOriginalOSWLineString.experimentalAttributeValues,
-                points: oswPoints,
-                additionalTags: matchedOriginalOSWLineString.additionalTags
-            )
-        }
-        return oswLineStrings
     }
     
     private func getUploadedOSWLineStrings(
@@ -496,8 +464,7 @@ extension APITransmissionController {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
         /// Map Accessibility Features to OSW Elements
-        var featureOSMOldIdToFeatureMap: [String: any AccessibilityFeatureProtocol] = [:]
-        var featureOSMOldIdToOSWElementMap: [String: any OSWElement] = [:]
+        let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: accessibilityFeatureClass,
             captureData: captureData, captureLocation: captureLocation,
@@ -507,26 +474,22 @@ extension APITransmissionController {
             let oswElement = featureToPolygon(feature, additonalTags: additionalTags)
             guard let oswElement else { continue }
             let osmOldId = oswElement.id
-            featureOSMOldIdToFeatureMap[osmOldId] = feature
-            featureOSMOldIdToOSWElementMap[osmOldId] = oswElement
+            featureCache.addEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
         }
         /// Prepare upload operations from the OSW Elements, and perform upload
-        let uploadOperations: [ChangesetDiffOperation] = featureOSMOldIdToOSWElementMap.values.map { .create($0) }
+        let uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElements().map { .create($0) }
         let uploadedElements = try await ChangesetService.shared.performUploadAsync(
             workspaceId: workspaceId, changesetId: changesetId,
             operations: uploadOperations,
             accessToken: accessToken
         )
-        /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
-        let featureToOriginalPolygonMap: [String: OSWPolygon] = featureOSMOldIdToOSWElementMap.compactMapValues {
-            $0 as? OSWPolygon
-        }
-        guard !featureToOriginalPolygonMap.isEmpty else {
+        guard featureCache.getOSWPolygons().count > 0 else {
             return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
+        /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
         let uploadedOSWElements = getUploadedPolygons(
             from: uploadedElements,
-            featureOSMIdToOriginalPolygonMap: featureToOriginalPolygonMap
+            featureCache: featureCache
         )
         guard !uploadedOSWElements.isEmpty else {
             return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
@@ -537,7 +500,7 @@ extension APITransmissionController {
         let mappedAccessibilityFeatures: [MappedAccessibilityFeature] = uploadedOSWElements.compactMap { oswElement in
             let osmNewId = oswElement.id
             guard let osmOldId = uploadedOldToNewIdMap.first(where: { $0.value == osmNewId })?.key else { return nil }
-            guard let matchedFeature = featureOSMOldIdToFeatureMap[osmOldId] else { return nil }
+            guard let matchedFeature = featureCache.getEntry(osmOldId: osmOldId)?.feature else { return nil }
             return MappedAccessibilityFeature(
                 id: matchedFeature.id,
                 accessibilityFeature: matchedFeature,
@@ -611,52 +574,59 @@ extension APITransmissionController {
     
     private func getUploadedPolygons(
         from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToOriginalPolygonMap: [String: OSWPolygon]
+        featureCache: APIFeatureCache
     ) -> [OSWPolygon] {
-        let oswPolygons: [OSWPolygon] = uploadedElements.relations.compactMap { uploadedRelation -> OSWPolygon? in
-            let uploadedRelationData = uploadedRelation.value
+        let cachedOSWPolygons = featureCache.getOSWPolygons()
+        var uploadedOSWPolygons: [OSWPolygon?] = Array(repeating: nil, count: cachedOSWPolygons.count)
+        uploadedElements.relations.forEach { relation in
+            let uploadedRelationData = relation.value
             let uploadedRelationOSMOldId = uploadedRelationData.oldId
-            guard let matchedOriginalOSWPolygon = featureOSMIdToOriginalPolygonMap[uploadedRelationOSMOldId] else {
-                return nil
+            guard let polygonIndex = cachedOSWPolygons.firstIndex(where: { $0.id == uploadedRelationOSMOldId }) else {
+                return
             }
-            /// First, map the nodes to the points
-            let featureOSMIdToOriginalPointMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWPoint? in
+            guard let matchedCachedEntry = featureCache.getEntry(osmOldId: uploadedRelationOSMOldId),
+                  let matchedOriginalOSWPolygon = matchedCachedEntry.oswElement as? OSWPolygon else {
+                return
+            }
+            /// First, create a new feature cache for the point members of the polygon
+            let pointsCache: APIFeatureCache = APIFeatureCache()
+            matchedOriginalOSWPolygon.members.forEach { member in
                 let element = member.element
-                guard let point = element as? OSWPoint else { return nil }
-                return point
-            }.reduce(into: [:]) { result, entry in
-                result[entry.id] = entry
+                guard let point = element as? OSWPoint else { return }
+                pointsCache.addEntry(osmOldId: point.id, feature: nil, oswElement: point)
             }
+            /// Then, get the uploaded points from the uploaded elements response
             let oswPoints: [OSWPoint] = getUploadedOSWPoints(
                 from: uploadedElements,
-                featureOSMIdToOriginalPointMap: featureOSMIdToOriginalPointMap
+                featureCache: pointsCache
             )
-            /// Second, map the ways to the linestrings
-            let featureOSMIdToOriginalLineStringMap = matchedOriginalOSWPolygon.members.compactMap { member -> OSWLineString? in
+            /// Second, create a new feature cache for the linestring members of the polygon
+            let lineStringsCache: APIFeatureCache = APIFeatureCache()
+            matchedOriginalOSWPolygon.members.forEach { member in
                 let element = member.element
-                guard let lineString = element as? OSWLineString else { return nil }
-                return lineString
-            }.reduce(into: [:]) { result, entry in
-                result[entry.id] = entry
+                guard let lineString = element as? OSWLineString else { return }
+                lineStringsCache.addEntry(osmOldId: lineString.id, feature: nil, oswElement: lineString)
             }
+            /// Then, get the uploaded linestrings from the uploaded elements response
             let oswLineStrings: [OSWLineString] = getUploadedOSWLineStrings(
                 from: uploadedElements,
-                featureOSMIdToOriginalLineStringMap: featureOSMIdToOriginalLineStringMap
+                featureCache: lineStringsCache
             )
             /// Lastly, create the polygon
             let oswElements: [any OSWElement] = oswPoints + oswLineStrings
             let oswMembers: [OSWRelationMember] = oswElements.map {
                 OSWRelationMember(element: $0)
             }
-            return OSWPolygon(
+            let uploadedOSWPolygon = OSWPolygon(
                 id: uploadedRelationData.newId, version: uploadedRelationData.newVersion,
                 oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
                 attributeValues: matchedOriginalOSWPolygon.attributeValues,
                 experimentalAttributeValues: matchedOriginalOSWPolygon.experimentalAttributeValues,
                 additionalTags: matchedOriginalOSWPolygon.additionalTags,
-                members: oswMembers,
+                members: oswMembers
             )
+            uploadedOSWPolygons[polygonIndex] = uploadedOSWPolygon
         }
-        return oswPolygons
+        return uploadedOSWPolygons.compactMap { $0 }
     }
 }
