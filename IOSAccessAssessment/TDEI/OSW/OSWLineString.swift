@@ -16,6 +16,7 @@ struct OSWLineString: OSWElement {
     let oswElementClass: OSWElementClass
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     var additionalTags: [String : String] = [:]
     
@@ -25,6 +26,7 @@ struct OSWLineString: OSWElement {
         id: String, version: String,
         oswElementClass: OSWElementClass,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = nil,
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?],
         points: [OSWPoint],
         additionalTags: [String : String] = [:]
@@ -33,6 +35,7 @@ struct OSWLineString: OSWElement {
         self.version = version
         self.oswElementClass = oswElementClass
         self.attributeValues = attributeValues
+        self.calculatedAttributeValues = calculatedAttributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
         self.points = points
         self.additionalTags = additionalTags
@@ -45,9 +48,15 @@ struct OSWLineString: OSWElement {
         }
         let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
         let experimentalAttributeTags = getTagsFromAttributeValues(attributeValues: experimentalAttributeValues)
+        var calculatedAttributeTags: [String: String] = [:]
+        if let calculatedAttributeValues {
+            calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
+        }
         let tags = identifyingFieldTags.merging(attributeTags) { _, new in
             return new
         }.merging(experimentalAttributeTags) { _, new in
+            return new
+        }.merging(calculatedAttributeTags) { _, new in
             return new
         }.merging(additionalTags) { _, new in
             return new
@@ -56,12 +65,16 @@ struct OSWLineString: OSWElement {
     }
     
     private func getTagsFromAttributeValues(
-        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        isCalculated: Bool = false
     ) -> [String: String] {
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
-            let attributeTagKey = attributeKey.osmTagKey
+            var attributeTagKey = attributeKey.osmTagKey
+            if isCalculated {
+                attributeTagKey = "\(APIConstants.TagKeys.calculatedTagPrefix):\(attributeTagKey)"
+            }
             let attributeValue = attributeKeyValuePair.value
             let attributeTagValue = attributeKey.getOSMTagFromValue(attributeValue: attributeValue)
             guard let attributeTagValue else { return }

@@ -19,8 +19,29 @@ struct OSWPoint: OSWElement {
     var longitude: CLLocationDegrees
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+    var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     var additionalTags: [String : String] = [:]
+    
+    init(
+        id: String, version: String,
+        oswElementClass: OSWElementClass,
+        latitude: CLLocationDegrees, longitude: CLLocationDegrees,
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = nil,
+        experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?],
+        additionalTags: [String : String] = [:]
+    ) {
+        self.id = id
+        self.version = version
+        self.oswElementClass = oswElementClass
+        self.latitude = latitude
+        self.longitude = longitude
+        self.attributeValues = attributeValues
+        self.calculatedAttributeValues = calculatedAttributeValues
+        self.experimentalAttributeValues = experimentalAttributeValues
+        self.additionalTags = additionalTags
+    }
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
@@ -29,9 +50,15 @@ struct OSWPoint: OSWElement {
         }
         let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
         let experimentalAttributeTags = getTagsFromAttributeValues(attributeValues: experimentalAttributeValues)
+        var calculatedAttributeTags: [String: String] = [:]
+        if let calculatedAttributeValues {
+            calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
+        }
         let tags = identifyingFieldTags.merging(attributeTags) { _, new in
             return new
         }.merging(experimentalAttributeTags) { _, new in
+            return new
+        }.merging(calculatedAttributeTags) { _, new in
             return new
         }.merging(additionalTags) { _, new in
             return new
@@ -40,12 +67,16 @@ struct OSWPoint: OSWElement {
     }
     
     private func getTagsFromAttributeValues(
-        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        isCalculated: Bool = false
     ) -> [String: String] {
         var attributeTags: [String: String] = [:]
         attributeValues.forEach { attributeKeyValuePair in
             let attributeKey = attributeKeyValuePair.key
-            let attributeTagKey = attributeKey.osmTagKey
+            var attributeTagKey = attributeKey.osmTagKey
+            if isCalculated {
+                attributeTagKey = "\(APIConstants.TagKeys.calculatedTagPrefix):\(attributeTagKey)"
+            }
             let attributeValue = attributeKeyValuePair.value
             let attributeTagValue = attributeKey.getOSMTagFromValue(attributeValue: attributeValue)
             guard let attributeTagValue else { return }
