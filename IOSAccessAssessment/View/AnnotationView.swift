@@ -225,6 +225,7 @@ class APITransmissionStatusViewModel: ObservableObject {
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     let captureLocation: CLLocationCoordinate2D
+    let apiTransmissionController: APITransmissionController
     
     @EnvironmentObject var userStateViewModel: UserStateViewModel
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
@@ -235,8 +236,6 @@ struct AnnotationView: View {
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
     @StateObject var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
-    
-    let apiTransmissionController: APITransmissionController = APITransmissionController()
     
     @StateObject private var managerStatusViewModel = AnnotationViewStatusViewModel()
     @StateObject private var apiTransmissionStatusViewModel = APITransmissionStatusViewModel()

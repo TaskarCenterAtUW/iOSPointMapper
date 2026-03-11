@@ -103,6 +103,7 @@ struct ARCameraView: View {
     @State private var showARCameraLearnMoreSheet = false
     
     @State private var showAnnotationView = false
+    @StateObject private var apiTransmissionController: APITransmissionController = APITransmissionController()
     
     var body: some View {
         Group {
@@ -178,7 +179,10 @@ struct ARCameraView: View {
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation {
-                AnnotationView(selectedClasses: selectedClasses, captureLocation: captureLocation)
+                AnnotationView(
+                    selectedClasses: selectedClasses, captureLocation: captureLocation,
+                    apiTransmissionController: apiTransmissionController
+                )
             } else {
                 InvalidContentView(
                     title: ARCameraViewConstants.Texts.invalidContentViewTitle,
