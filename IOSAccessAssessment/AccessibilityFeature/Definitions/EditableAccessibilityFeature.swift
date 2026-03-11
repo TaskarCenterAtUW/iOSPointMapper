@@ -98,7 +98,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute,
-        isCalculated: Bool
+        isCalculated: Bool = false
     ) throws {
         guard attribute.isCompatible(with: value) else {
             throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)

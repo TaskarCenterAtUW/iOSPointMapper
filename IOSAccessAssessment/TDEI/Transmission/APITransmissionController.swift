@@ -126,7 +126,6 @@ class APITransmissionController: ObservableObject {
     private func getAdditionalTags(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         captureData: CaptureData,
-        captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
     ) -> [String: String] {
         var enhancedAnalysisMode: Bool = false
@@ -138,8 +137,6 @@ class APITransmissionController: ObservableObject {
         }
         return [
             APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
-            APIConstants.TagKeys.captureLatitudeKey: String(captureLocation.latitude),
-            APIConstants.TagKeys.captureLongitudeKey: String(captureLocation.longitude),
             APIConstants.TagKeys.enhancedAnalysisModeKey: String(enhancedAnalysisMode)
         ]
     }
@@ -165,8 +162,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: accessibilityFeatureClass,
-            captureData: captureData, captureLocation: captureLocation,
-            mappingData: mappingData
+            captureData: captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPoint(feature, additionalTags: additionalTags)
@@ -216,6 +212,10 @@ extension APITransmissionController {
         guard let featureLocation = feature.getLastLocationCoordinate() else {
             return nil
         }
+        /// Add location as additional tags as well
+        var additionalTags = additionalTags
+        additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
+        additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
         let oswPoint = OSWPoint(
             id: String(idGenerator.nextId()),
             version: "1",
@@ -227,28 +227,6 @@ extension APITransmissionController {
             additionalTags: additionalTags
         )
         return oswPoint
-    }
-    
-    private func getUploadedOSWPoints(
-        from uploadedElements: UploadedOSMResponseElements,
-        featureOSMIdToOriginalPointMap: [String: OSWPoint]
-    ) -> [OSWPoint] {
-        let oswPoints: [OSWPoint] = uploadedElements.nodes.compactMap { uploadedNode in
-            let uploadedNodeData = uploadedNode.value
-            let uploadedNodeOSMOldId = uploadedNodeData.oldId
-            guard let matchedOriginalOSWPoint = featureOSMIdToOriginalPointMap[uploadedNodeOSMOldId] else {
-                return nil
-            }
-            return OSWPoint(
-                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
-                oswElementClass: matchedOriginalOSWPoint.oswElementClass,
-                latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
-                attributeValues: matchedOriginalOSWPoint.attributeValues,
-                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
-                additionalTags: matchedOriginalOSWPoint.additionalTags
-            )
-        }
-        return oswPoints
     }
     
     private func getUploadedOSWPoints(
@@ -309,8 +287,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: accessibilityFeatureClass,
-            captureData: captureData, captureLocation: captureLocation,
-            mappingData: mappingData
+            captureData: captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToLineString(feature, additionalTags: additionalTags)
@@ -383,13 +360,16 @@ extension APITransmissionController {
         }
         featureLocations.forEach { location in
             let oswPointId = String(idGenerator.nextId())
-//            oswPointIds.append(oswPointId)
+            var pointAdditionalTags: [String: String] = [:]
+            pointAdditionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(location.latitude)
+            pointAdditionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(location.longitude)
             let point = OSWPoint(
                 id: oswPointId, version: "1",
                 oswElementClass: oswElementClass,
                 latitude: location.latitude, longitude: location.longitude,
                 attributeValues: [:],
                 experimentalAttributeValues: [:],
+                additionalTags: pointAdditionalTags
             )
             oswPoints.append(point)
         }
@@ -466,8 +446,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: accessibilityFeatureClass,
-            captureData: captureData, captureLocation: captureLocation,
-            mappingData: mappingData
+            captureData: captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPolygon(feature, additonalTags: additionalTags)
@@ -532,12 +511,16 @@ extension APITransmissionController {
             var oswPoints: [OSWPoint] = []
             locationArray.forEach { location in
                 let oswPointId = String(idGenerator.nextId())
+                var pointAdditionalTags: [String: String] = [:]
+                pointAdditionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(location.latitude)
+                pointAdditionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(location.longitude)
                 let point = OSWPoint(
                     id: oswPointId, version: "1",
                     oswElementClass: oswElementClass,
                     latitude: location.latitude, longitude: location.longitude,
                     attributeValues: [:],
-                    experimentalAttributeValues: [:]
+                    experimentalAttributeValues: [:],
+                    additionalTags: pointAdditionalTags
                 )
                 oswPoints.append(point)
             }

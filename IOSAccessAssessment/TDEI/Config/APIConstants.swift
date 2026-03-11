@@ -30,7 +30,11 @@ struct APIConstants {
         static let sessionIdKey = "\(appTagPrefix):sessionId"
         static let captureIdKey = "\(appTagPrefix):captureId"
         
-        /// Tags used for post-hoc analysis
+        /// Tags for original location tracking
+        static let calculatedLatitudeKey = "\(appTagPrefix):calculatedLatitude"
+        static let calculatedLongitudeKey = "\(appTagPrefix):calculatedLongitude"
+        
+        /// Other tags used for post-hoc analysis
         static let captureLatitudeKey = "\(appTagPrefix):captureLatitude"
         static let captureLongitudeKey = "\(appTagPrefix):captureLongitude"
         static let lidarDepthKey = "\(appTagPrefix):lidarDepth"
