@@ -212,6 +212,11 @@ extension APITransmissionController {
         guard let featureLocation = feature.getLastLocationCoordinate() else {
             return nil
         }
+        /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property
+        var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+        if let editableFeature = feature as? EditableAccessibilityFeature {
+            calculatedAttributeValues = editableFeature.calculatedAttributeValues
+        }
         /// Add location as additional tags as well
         var additionalTags = additionalTags
         additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
@@ -223,6 +228,7 @@ extension APITransmissionController {
             latitude: featureLocation.latitude,
             longitude: featureLocation.longitude,
             attributeValues: feature.attributeValues,
+            calculatedAttributeValues: calculatedAttributeValues,
             experimentalAttributeValues: feature.experimentalAttributeValues,
             additionalTags: additionalTags
         )
@@ -250,6 +256,7 @@ extension APITransmissionController {
                 oswElementClass: matchedOriginalOSWPoint.oswElementClass,
                 latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
                 attributeValues: matchedOriginalOSWPoint.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWPoint.calculatedAttributeValues,
                 experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
                 additionalTags: matchedOriginalOSWPoint.additionalTags
             )
@@ -368,16 +375,23 @@ extension APITransmissionController {
                 oswElementClass: oswElementClass,
                 latitude: location.latitude, longitude: location.longitude,
                 attributeValues: [:],
+                calculatedAttributeValues: [:],
                 experimentalAttributeValues: [:],
                 additionalTags: pointAdditionalTags
             )
             oswPoints.append(point)
+        }
+        /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property to the linestring
+        var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+        if let editableFeature = feature as? EditableAccessibilityFeature {
+            calculatedAttributeValues = editableFeature.calculatedAttributeValues
         }
         let oswLineString = OSWLineString(
             id: String(idGenerator.nextId()),
             version: "1",
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
+            calculatedAttributeValues: calculatedAttributeValues,
             experimentalAttributeValues: feature.experimentalAttributeValues,
             points: oswPoints,
             additionalTags: additionalTags
@@ -416,6 +430,7 @@ extension APITransmissionController {
                 id: uploadedWayData.newId, version: uploadedWayData.newVersion,
                 oswElementClass: matchedOriginalOSWLineString.oswElementClass,
                 attributeValues: matchedOriginalOSWLineString.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWLineString.calculatedAttributeValues,
                 experimentalAttributeValues: matchedOriginalOSWLineString.experimentalAttributeValues,
                 points: oswPoints,
                 additionalTags: matchedOriginalOSWLineString.additionalTags
@@ -519,6 +534,7 @@ extension APITransmissionController {
                     oswElementClass: oswElementClass,
                     latitude: location.latitude, longitude: location.longitude,
                     attributeValues: [:],
+                    calculatedAttributeValues: [:],
                     experimentalAttributeValues: [:],
                     additionalTags: pointAdditionalTags
                 )
@@ -532,6 +548,7 @@ extension APITransmissionController {
                     version: "1",
                     oswElementClass: oswElementClass,
                     attributeValues: [:],
+                    calculatedAttributeValues: [:],
                     experimentalAttributeValues: [:],
                     points: oswPoints
                 )
@@ -548,8 +565,8 @@ extension APITransmissionController {
             oswElementClass: oswElementClass,
             attributeValues: feature.attributeValues,
             experimentalAttributeValues: feature.experimentalAttributeValues,
+            members: oswMembers,
             additionalTags: additonalTags,
-            members: oswMembers
         )
         return oswPolygon
     }
@@ -604,8 +621,8 @@ extension APITransmissionController {
                 oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
                 attributeValues: matchedOriginalOSWPolygon.attributeValues,
                 experimentalAttributeValues: matchedOriginalOSWPolygon.experimentalAttributeValues,
+                members: oswMembers,
                 additionalTags: matchedOriginalOSWPolygon.additionalTags,
-                members: oswMembers
             )
             uploadedOSWPolygons[polygonIndex] = uploadedOSWPolygon
         }
