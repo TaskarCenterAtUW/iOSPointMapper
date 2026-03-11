@@ -224,14 +224,13 @@ extension AttributeEstimationPipeline {
             )
         }
         let crossVector = simd_normalize(finalPlane.secondVector)
-        print("Cross Vector: \(crossVector)")
         let gravityVector = SIMD3<Float>(0, 1, 0)
         let rise = simd_dot(crossVector, gravityVector)
         let crossHorizontalVector = crossVector - (rise * gravityVector)
-        print("Cross Horizontal Vector: \(crossHorizontalVector)")
         let run = simd_length(crossHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
+//        print("Cross vector: \(crossVector), \nCross Horizontal Vector: \(crossHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError

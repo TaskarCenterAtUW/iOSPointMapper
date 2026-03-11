@@ -174,7 +174,7 @@ struct WorldPointsProcessor {
             }
         }
 //        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
-        debugWorldPoints(worldPoints)
+//        debugWorldPoints(worldPoints)
         return worldPoints
     }
     
