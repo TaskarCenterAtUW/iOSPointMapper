@@ -95,13 +95,15 @@ struct WorldPointsProcessor {
         let segmentationLabelTexture = try segmentationLabelImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
         let resizedDepthImage = depthImage.resized(to: segmentationLabelImage.extent.size)
         let depthTexture = try resizedDepthImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
         var targetValueVar = targetValue
         var params = WorldPointsParams(

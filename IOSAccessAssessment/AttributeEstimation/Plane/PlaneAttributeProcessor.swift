@@ -102,6 +102,9 @@ struct PlaneAttributeProcessor {
             }
         }
         let binCount = Int(ceil((sMax - sMin) / binSize))
+        guard binCount > 0 else {
+            return ProjectedPointBins(binCount: 0, bins: [])
+        }
         
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw PlaneAttributeProcessorError.metalPipelineCreationError
