@@ -188,10 +188,11 @@ extension AttributeEstimationPipeline {
         let runningVector = simd_normalize(finalPlane.firstVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
         let rise = simd_dot(runningVector, gravityVector)
-        let runningHorizontalVector = simd_normalize(runningVector - (rise * gravityVector))
+        let runningHorizontalVector = runningVector - (rise * gravityVector)
         let run = simd_length(runningHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
+//        print("Running vector: \(runningVector), \nRunning Horizontal Vector: \(runningHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
@@ -225,10 +226,11 @@ extension AttributeEstimationPipeline {
         let crossVector = simd_normalize(finalPlane.secondVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
         let rise = simd_dot(crossVector, gravityVector)
-        let crossHorizontalVector = simd_normalize(crossVector - (rise * gravityVector))
+        let crossHorizontalVector = crossVector - (rise * gravityVector)
         let run = simd_length(crossHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
+//        print("Cross vector: \(crossVector), \nCross Horizontal Vector: \(crossHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError

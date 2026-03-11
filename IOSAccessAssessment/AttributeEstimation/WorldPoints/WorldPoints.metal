@@ -87,6 +87,7 @@ kernel void computeWorldPoints(
     );
     atomic_fetch_add_explicit(&debugCounts[wrotePoint], 1u, memory_order_relaxed);
     
+    
     uint idx = atomic_fetch_add_explicit(pointCount, 1u, memory_order_relaxed);
     points[idx].p = worldPoint;
 }

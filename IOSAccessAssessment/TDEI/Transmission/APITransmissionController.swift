@@ -381,7 +381,6 @@ extension APITransmissionController {
         guard let featureLocations: [CLLocationCoordinate2D] = feature.locationDetails?.coordinates.first else {
             return nil
         }
-        print("Feature locations for feature \(feature.id): \(featureLocations)")
         featureLocations.forEach { location in
             let oswPointId = String(idGenerator.nextId())
 //            oswPointIds.append(oswPointId)

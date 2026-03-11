@@ -42,7 +42,7 @@ inline float2 projectWorldPointToPixel(
     float2 pixelCoordRounded = round(pixelCoord);
     return pixelCoordRounded;
 }
-    
+
 // Map float <-> uint to preserve total ordering for atomics (handles negatives)
 inline uint float_to_ordered_uint(float f) {
     uint u = as_type<uint>(f);

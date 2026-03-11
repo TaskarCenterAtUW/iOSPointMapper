@@ -95,13 +95,15 @@ struct WorldPointsProcessor {
         let segmentationLabelTexture = try segmentationLabelImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
         let resizedDepthImage = depthImage.resized(to: segmentationLabelImage.extent.size)
         let depthTexture = try resizedDepthImage.toMTLTexture(
             device: self.device, commandBuffer: commandBuffer, pixelFormat: .r32Float,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
         var targetValueVar = targetValue
         var params = WorldPointsParams(
@@ -172,7 +174,7 @@ struct WorldPointsProcessor {
             }
         }
 //        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
-        
+//        debugWorldPoints(worldPoints)
         return worldPoints
     }
     
@@ -268,7 +270,7 @@ struct WorldPointsProcessor {
                 worldPoints.append(worldPoint)
             }
         }
-        
+        debugWorldPoints(worldPoints)
         return worldPoints
     }
     
@@ -394,4 +396,33 @@ struct WorldPointsProcessor {
         }
         return worldPoints
     }
+}
+
+extension WorldPointsProcessor {
+    private func debugWorldPoints(_ worldPoints: [WorldPoint]) {
+        debugAxis(worldPoints, axisIndex: 0, axisLabel: "X")
+        debugAxis(worldPoints, axisIndex: 1, axisLabel: "Y")
+        debugAxis(worldPoints, axisIndex: 2, axisLabel: "Z")
+    }
+    
+    private func debugAxis(_ worldPoints: [WorldPoint], axisIndex: Int, axisLabel: String) {
+        /// Debug axis
+        var minVal: Float = .greatestFiniteMagnitude
+        var maxVal: Float = -.greatestFiniteMagnitude
+        var sumVal: Float = 0
+        var sumOfSquaresVal: Float = 0
+        for point in worldPoints {
+            let val = point.p[axisIndex]
+            minVal = min(minVal, val)
+            maxVal = max(maxVal, val)
+            sumVal += val
+            sumOfSquaresVal += val * val
+        }
+        let count = Float(worldPoints.count)
+        let meanVal = sumVal / count
+        let varianceVal = (sumOfSquaresVal / count) - (meanVal * meanVal)
+        let stddevVal = sqrt(varianceVal)
+        print("World Points \(axisLabel)-axis stats: count=\(worldPoints.count), min=\(minVal), max=\(maxVal), mean=\(meanVal), stddev=\(stddevVal)")
+    }
+
 }
