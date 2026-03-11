@@ -26,6 +26,7 @@ struct APIConstants {
     
     enum TagKeys {
         static let appTagPrefix = "ios.pointmapper"
+        static let calculatedTagPrefix = "\(appTagPrefix):calculated"
         /// Tags used to track capture-specific information
         static let sessionIdKey = "\(appTagPrefix):sessionId"
         static let captureIdKey = "\(appTagPrefix):captureId"
