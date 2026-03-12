@@ -32,6 +32,20 @@ struct MeshPlyContents {
     var colorB8: Int
 }
 
+enum MeshEncoderError: Error, LocalizedError {
+    case modelEntityHasNoModel
+    case noVertexOrIndexData
+    
+    var errorDescription: String? {
+        switch self {
+        case .modelEntityHasNoModel:
+            return "ModelEntity has no model."
+        case .noVertexOrIndexData:
+            return "No vertex or index data found in ModelEntity."
+        }
+    }
+}
+
 class MeshEncoder {
     private var baseDirectory: URL
 
@@ -40,26 +54,13 @@ class MeshEncoder {
         try FileManager.default.createDirectory(at: self.baseDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
 
-    func save(meshBundle: MeshBundle, fileName: String = "mesh") {
-        print("Saving mesh to PLY file: \(fileName).ply")
+    func save(meshBundle: MeshBundle, fileName: String = "mesh") throws {
         var ply: String
-        
         let modelEntity = meshBundle.modelEntity
-        do {
-            let modelPly: MeshPlyContents = try getPlyForEntity(modelEntity, vertexColor: UIColor.white)
-            ply = generatePlyContent([modelPly], includeColor: true)
-        } catch {
-            print("Error encoding full mesh to PLY: \(error.localizedDescription)")
-            return
-        }
-        
-        do {
-            let path = baseDirectory.appendingPathComponent(fileName, isDirectory: false).appendingPathExtension("ply")
-            
-            try ply.data(using: .utf8)?.write(to: path, options: .atomic)
-        } catch {
-            print("Error writing PLY file: \(error.localizedDescription)")
-        }
+        let modelPly: MeshPlyContents = try getPlyForEntity(modelEntity, vertexColor: UIColor.white)
+        ply = generatePlyContent([modelPly], includeColor: true)
+        let path = baseDirectory.appendingPathComponent(fileName, isDirectory: false).appendingPathExtension("ply")
+        try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
     
     func getPlyForEntity(
@@ -68,8 +69,7 @@ class MeshEncoder {
         vertexColor: UIColor? = nil
     ) throws -> MeshPlyContents {
         guard let model = entity.model else {
-            print("ModelEntity has no model.")
-            throw NSError(domain: "MeshEncoder", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelEntity has no model."])
+            throw MeshEncoderError.modelEntityHasNoModel
         }
         let contents = model.mesh.contents
         
@@ -129,8 +129,7 @@ class MeshEncoder {
         }
         
         guard !positions.isEmpty, !indices.isEmpty else {
-            print("No vertex or index data found in ModelEntity.")
-            throw NSError(domain: "MeshEncoder", code: 2, userInfo: [NSLocalizedDescriptionKey: "No vertex or index data found in ModelEntity."])
+            throw MeshEncoderError.noVertexOrIndexData
         }
         
         return MeshPlyContents(
@@ -195,7 +194,7 @@ class MeshEncoder {
 }
 
 extension MeshEncoder {
-    func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) {
+    func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
         
         var plyContents: [MeshPlyContents] = []
@@ -216,12 +215,8 @@ extension MeshEncoder {
         }
         
         let ply = generatePlyContent(plyContents, includeColor: true)
-        do {
-            let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
-            try ply.data(using: .utf8)?.write(to: path, options: .atomic)
-        } catch {
-            print("Error writing PLY file: \(error.localizedDescription)")
-        }
+        let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
+        try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
     
     func getPlyForAnchor(

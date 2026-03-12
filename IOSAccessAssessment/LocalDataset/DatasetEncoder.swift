@@ -183,7 +183,7 @@ class DatasetEncoder {
             try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
         }
         if let meshAnchors = meshAnchors {
-            self.meshEncoder.save(meshAnchors: meshAnchors, frameNumber: frameNumber)
+            try self.meshEncoder.save(meshAnchors: meshAnchors, frameNumber: frameNumber)
         }
         
         /// TODO: Add error handling for each encoder
