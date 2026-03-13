@@ -27,6 +27,7 @@ struct MeshBundle {
 struct MeshPlyContents {
     var positions: [SIMD3<Float>]
     var indices: [UInt32]
+    var classifications: [UInt8]? = nil
     var colorR8: Int
     var colorG8: Int
     var colorB8: Int
@@ -140,6 +141,7 @@ class MeshEncoder {
     
     func generatePlyContent(
         _ plyContents: [MeshPlyContents],
+        includeClassification: Bool = false,
         includeColor: Bool = true
     ) -> String {
         var ply = ""
@@ -155,6 +157,9 @@ class MeshEncoder {
         if includeColor {
             ply += "property uchar red\nproperty uchar green\nproperty uchar blue\n"
         }
+        if includeClassification {
+            ply += "property uchar classification\n"
+        }
         ply += "end_header\n"
         
         for content in plyContents {
@@ -163,31 +168,46 @@ class MeshEncoder {
             }
         }
         
-        if includeColor {
-            for content in plyContents {
-                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-                let faceCount = content.indices.count / 3
-                print("Face Count: \(faceCount)")
-                for f in stride(from: 0, to: content.indices.count, by: 3) {
-                    let i0 = content.indices[f]
-                    let i1 = content.indices[f + 1]
-                    let i2 = content.indices[f + 2]
-                    ply += "3 \(i0) \(i1) \(i2) \(content.colorR8) \(content.colorG8) \(content.colorB8)\n"
+        for content in plyContents {
+            let faceCount = content.indices.count / 3
+            for f in stride(from: 0, to: content.indices.count, by: 3) {
+                let i0 = content.indices[f]
+                let i1 = content.indices[f + 1]
+                let i2 = content.indices[f + 2]
+                var faceLine = "3 \(i0) \(i1) \(i2)"
+                if includeColor {
+                    faceLine += " \(content.colorR8) \(content.colorG8) \(content.colorB8)"
                 }
-            }
-        } else {
-            for content in plyContents {
-                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-                let faceCount = content.indices.count / 3
-                print("Face Count: \(faceCount)")
-                for f in stride(from: 0, to: content.indices.count, by: 3) {
-                    let i0 = content.indices[f]
-                    let i1 = content.indices[f + 1]
-                    let i2 = content.indices[f + 2]
-                    ply += "3 \(i0) \(i1) \(i2)\n"
-                }
+                faceLine += "\n"
+                ply += faceLine
             }
         }
+        
+//        if includeColor {
+//            for content in plyContents {
+//                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
+//                let faceCount = content.indices.count / 3
+//                print("Face Count: \(faceCount)")
+//                for f in stride(from: 0, to: content.indices.count, by: 3) {
+//                    let i0 = content.indices[f]
+//                    let i1 = content.indices[f + 1]
+//                    let i2 = content.indices[f + 2]
+//                    ply += "3 \(i0) \(i1) \(i2) \(content.colorR8) \(content.colorG8) \(content.colorB8)\n"
+//                }
+//            }
+//        } else {
+//            for content in plyContents {
+//                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
+//                let faceCount = content.indices.count / 3
+//                print("Face Count: \(faceCount)")
+//                for f in stride(from: 0, to: content.indices.count, by: 3) {
+//                    let i0 = content.indices[f]
+//                    let i1 = content.indices[f + 1]
+//                    let i2 = content.indices[f + 2]
+//                    ply += "3 \(i0) \(i1) \(i2)\n"
+//                }
+//            }
+//        }
         
         return ply
     }
@@ -233,6 +253,7 @@ extension MeshEncoder {
         g8 = Int(g * 255)
         b8 = Int(b * 255)
         
+        // --- Vertices (positions) ---
         let vertexCount = geometry.vertices.count
         var positions: [SIMD3<Float>] = []
         positions.reserveCapacity(vertexCount)
@@ -264,9 +285,25 @@ extension MeshEncoder {
             }
         }
         
+        // --- Classifications (optional) ---
+        let classifications = geometry.classification
+        var classificationValues: [UInt8] = []
+        if let classifications {
+            let classificationCount = classifications.count
+            
+            let classificationBuffer = classifications.buffer.contents()
+            
+            for i in 0..<classificationCount {
+                let ptr = classificationBuffer.advanced(by: i)
+                let value = ptr.assumingMemoryBound(to: UInt8.self).pointee
+                classificationValues.append(value)
+            }
+        }
+        
         return MeshPlyContents(
             positions: positions,
             indices: indices,
+            classifications: classifications != nil ? classificationValues : nil,
             colorR8: r8,
             colorG8: g8,
             colorB8: b8
