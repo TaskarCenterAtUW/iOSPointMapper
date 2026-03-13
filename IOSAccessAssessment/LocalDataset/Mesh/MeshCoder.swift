@@ -312,8 +312,6 @@ struct MeshPlyContentsHeaderConfig: Sendable {
     let vertexCount: Int
     let faceCount: Int
     
-    let vertexStartIndex: Int
-    let faceStartIndex: Int
     let headerEndIndex: Int
     /// Vertex
     let vertexSize: Int
@@ -359,6 +357,7 @@ class MeshDecoder {
     func getMeshFromPlyContent(_ content: String) throws -> MeshPlyContents {
         var lines = content.split(whereSeparator: \.isNewline).map { String($0) }
         let headerConfig = try parseHeader(content)
+        print("Parsed Header \(headerConfig)")
         
         /// Parse vertices
         var positions: [SIMD3<Float>] = []
@@ -376,8 +375,48 @@ class MeshDecoder {
         
         /// Parse faces (indices)
         var faces: [UInt32] = []
-        var classifications: [UInt8]? = nil
+        var classifications: [UInt8]? = headerConfig.includeClassification ? [] : nil
+        var colorR8 = 255, colorG8 = 255, colorB8 = 255
         
+        faces.reserveCapacity(headerConfig.faceCount * 3)
+        if headerConfig.includeClassification {
+            classifications?.reserveCapacity(headerConfig.faceCount)
+        }
+        
+        let faceStartIndex = headerConfig.headerEndIndex + 1 + headerConfig.vertexCount
+        let faceEndIndex = faceStartIndex + headerConfig.faceCount
+        for i in faceStartIndex..<faceEndIndex {
+            let parts = lines[i].split(separator: " ")
+            if parts.count >= 4, let vertexCount = Int(parts[0]), vertexCount == 3,
+               let i0 = UInt32(parts[1]), let i1 = UInt32(parts[2]), let i2 = UInt32(parts[3]) {
+                faces.append(contentsOf: [i0, i1, i2])
+                if headerConfig.includeClassification, headerConfig.classificationColIndex < parts.count,
+                   let classificationValue = UInt8(parts[headerConfig.classificationColIndex]) {
+                    classifications?.append(classificationValue)
+                }
+                if headerConfig.includeColor {
+                    if headerConfig.includeRed, headerConfig.redColIndex < parts.count,
+                       let r = Int(parts[headerConfig.redColIndex]) {
+                        colorR8 = r
+                    }
+                    if headerConfig.includeGreen, headerConfig.greenColIndex < parts.count,
+                       let g = Int(parts[headerConfig.greenColIndex]) {
+                        colorG8 = g
+                    }
+                    if headerConfig.includeBlue, headerConfig.blueColIndex < parts.count,
+                       let b = Int(parts[headerConfig.blueColIndex]) {
+                        colorB8 = b
+                    }
+                }
+            }
+        }
+        
+        return MeshPlyContents(
+            positions: positions,
+            indices: faces,
+            classifications: classifications,
+            colorR8: colorR8, colorG8: colorG8, colorB8: colorB8
+        )
     }
     
     /**
@@ -392,8 +431,6 @@ class MeshDecoder {
         var vertexCount = 0
         var faceCount = 0
         
-        var vertexStartIndex = -1
-        var faceStartIndex = -1
         var headerEndIndex = -1
         
         var vertexSize = -1 // should be filled before color and classification parsing
@@ -405,7 +442,7 @@ class MeshDecoder {
         var includeClassification = false
         var classificationColIndex = -1
         
-        var currentFaceIndex = 0
+        var currentFaceIndex = 1 // 1 to cover the vertex count at index 0, then incremented as we parse vertex properties. Used to assign color/classification column indices.
         
         /// Parse header
         for (i, line) in lines.enumerated() {
@@ -420,8 +457,6 @@ class MeshDecoder {
                 if parts.count == 3, let count = Int(parts[2]) {
                     faceCount = count
                 }
-                faceStartIndex = i
-                vertexStartIndex = faceStartIndex - vertexCount - 1
             }
             if line.contains("property float x") {
                 xColIndex = vertexSize
@@ -473,8 +508,6 @@ class MeshDecoder {
         return MeshPlyContentsHeaderConfig(
             vertexCount: vertexCount,
             faceCount: faceCount,
-            vertexStartIndex: vertexStartIndex,
-            faceStartIndex: faceStartIndex,
             headerEndIndex: headerEndIndex,
             vertexSize: vertexSize,
             xColIndex: xColIndex,
