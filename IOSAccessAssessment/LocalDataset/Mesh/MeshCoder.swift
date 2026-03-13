@@ -320,11 +320,8 @@ struct MeshPlyContentsHeaderConfig: Sendable {
     let zColIndex: Int
     /// Color
     let includeColor: Bool
-    let includeRed: Bool
     let redColIndex: Int
-    let includeGreen: Bool
     let greenColIndex: Int
-    let includeBlue: Bool
     let blueColIndex: Int
     /// Classification
     let includeClassification: Bool
@@ -355,7 +352,7 @@ class MeshDecoder {
     }
     
     func getMeshFromPlyContent(_ content: String) throws -> MeshPlyContents {
-        var lines = content.split(whereSeparator: \.isNewline).map { String($0) }
+        let lines = content.split(whereSeparator: \.isNewline).map { String($0) }
         let headerConfig = try parseHeader(content)
         print("Parsed Header \(headerConfig)")
         
@@ -395,15 +392,15 @@ class MeshDecoder {
                     classifications?.append(classificationValue)
                 }
                 if headerConfig.includeColor {
-                    if headerConfig.includeRed, headerConfig.redColIndex < parts.count,
+                    if headerConfig.redColIndex != -1, headerConfig.redColIndex < parts.count,
                        let r = Int(parts[headerConfig.redColIndex]) {
                         colorR8 = r
                     }
-                    if headerConfig.includeGreen, headerConfig.greenColIndex < parts.count,
+                    if headerConfig.greenColIndex != -1, headerConfig.greenColIndex < parts.count,
                        let g = Int(parts[headerConfig.greenColIndex]) {
                         colorG8 = g
                     }
-                    if headerConfig.includeBlue, headerConfig.blueColIndex < parts.count,
+                    if headerConfig.blueColIndex != -1, headerConfig.blueColIndex < parts.count,
                        let b = Int(parts[headerConfig.blueColIndex]) {
                         colorB8 = b
                     }
@@ -426,7 +423,7 @@ class MeshDecoder {
         Assumes that the vertex indices always precede color and classification properties in the file.
      */
     private func parseHeader(_ content: String) throws -> MeshPlyContentsHeaderConfig {
-        var lines = content.split(whereSeparator: \.isNewline).map { String($0) }
+        let lines = content.split(whereSeparator: \.isNewline).map { String($0) }
         
         var vertexCount = 0
         var faceCount = 0
@@ -437,12 +434,11 @@ class MeshDecoder {
         var xColIndex = -1, yColIndex = -1, zColIndex = -1
         
         var includeColor = false
-        var includeRed = false, includeGreen = false, includeBlue = false
         var redColIndex = -1, greenColIndex = -1, blueColIndex = -1
         var includeClassification = false
         var classificationColIndex = -1
         
-        var currentFaceIndex = 1 // 1 to cover the vertex count at index 0, then incremented as we parse vertex properties. Used to assign color/classification column indices.
+        var currentFaceIndex = 0 // 0 to cover the vertex count at index 0, then incremented as we parse vertex properties. Used to assign color/classification column indices.
         
         /// Parse header
         for (i, line) in lines.enumerated() {
@@ -459,42 +455,39 @@ class MeshDecoder {
                 }
             }
             if line.contains("property float x") {
-                xColIndex = vertexSize
                 vertexSize += 1
                 currentFaceIndex += 1
+                xColIndex = vertexSize
             }
             if line.contains("property float y") {
-                yColIndex = vertexSize
                 vertexSize += 1
                 currentFaceIndex += 1
+                yColIndex = vertexSize
             }
             if line.contains("property float z") {
-                zColIndex = vertexSize
                 vertexSize += 1
                 currentFaceIndex += 1
+                zColIndex = vertexSize
             }
             if line.contains("property uchar red") {
                 includeColor = true
-                includeRed = true
-                redColIndex = currentFaceIndex
                 currentFaceIndex += 1
+                redColIndex = currentFaceIndex
             }
             if line.contains("property uchar green") {
                 includeColor = true
-                includeGreen = true
-                greenColIndex = currentFaceIndex
                 currentFaceIndex += 1
+                greenColIndex = currentFaceIndex
             }
             if line.contains("property uchar blue") {
                 includeColor = true
-                includeBlue = true
-                blueColIndex = currentFaceIndex
                 currentFaceIndex += 1
+                blueColIndex = currentFaceIndex
             }
             if line.contains("property uchar classification") {
                 includeClassification = true
-                classificationColIndex = currentFaceIndex
                 currentFaceIndex += 1
+                classificationColIndex = currentFaceIndex
             }
             if line == "end_header" {
                 headerEndIndex = i
@@ -514,11 +507,8 @@ class MeshDecoder {
             yColIndex: yColIndex,
             zColIndex: zColIndex,
             includeColor: includeColor,
-            includeRed: includeRed,
             redColIndex: redColIndex,
-            includeGreen: includeGreen,
             greenColIndex: greenColIndex,
-            includeBlue: includeBlue,
             blueColIndex: blueColIndex,
             includeClassification: includeClassification,
             classificationColIndex: classificationColIndex

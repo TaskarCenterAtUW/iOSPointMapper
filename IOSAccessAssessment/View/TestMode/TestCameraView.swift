@@ -163,7 +163,9 @@ struct TestCameraView: View {
             do {
                 let datasetDecoder = try initializeDatasetDecoder()
                 self.totalCaptures = datasetDecoder.totalFrames
-                let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+                let datasetCaptureData = try loadData(
+                    datasetDecoder: datasetDecoder, enhancedAnalysisMode: userStateViewModel.isEnhancedAnalysisEnabled
+                )
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
@@ -214,7 +216,9 @@ struct TestCameraView: View {
                 guard let datasetDecoder = sharedAppData.currentDatasetDecoder else {
                     throw TestCameraViewError.captureDataUnavailable
                 }
-                let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+                let datasetCaptureData = try loadData(
+                    datasetDecoder: datasetDecoder, enhancedAnalysisMode: userStateViewModel.isEnhancedAnalysisEnabled
+                )
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
                 try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
@@ -232,8 +236,8 @@ struct TestCameraView: View {
         return try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
     }
     
-    private func loadData(datasetDecoder: DatasetDecoder) throws -> DatasetCaptureData {
-        let datasetCaptureData = try datasetDecoder.loadData(index: currentIndex)
+    private func loadData(datasetDecoder: DatasetDecoder, enhancedAnalysisMode: Bool) throws -> DatasetCaptureData {
+        let datasetCaptureData = try datasetDecoder.loadData(index: currentIndex, enhancedAnalysisMode: enhancedAnalysisMode)
         return datasetCaptureData
     }
     

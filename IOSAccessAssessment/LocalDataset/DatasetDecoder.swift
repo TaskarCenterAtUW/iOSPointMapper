@@ -41,6 +41,7 @@ struct DatasetCaptureBaseData: CaptureDataProtocol {
 
 struct DatasetCaptureData {
     let captureImageData: DatasetCaptureBaseData
+    let captureMeshData: MeshPlyContents?
     let location: CLLocationCoordinate2D?
 }
 
@@ -65,6 +66,7 @@ class DatasetDecoder {
     public let locationPath: URL
 //    public let headingPath: URL
     public let otherDetailsPath: URL
+    public let meshPath: URL
     
     private let rgbDecoder: RGBDecoder
     private let depthDecoder: DepthDecoder
@@ -73,6 +75,7 @@ class DatasetDecoder {
     private let locationDecoder: LocationDecoder
 //    private let headingDecoder: HeadingDecoder
     private let otherDetailsDecoder: OtherDetailsDecoder
+    private let meshDecoder: MeshDecoder
     
     init(workspaceId: String, changesetId: String) throws {
         self.workspaceId = workspaceId
@@ -90,6 +93,7 @@ class DatasetDecoder {
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
 //        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
+        self.meshPath = datasetDirectory.appendingPathComponent("mesh", isDirectory: true)
         
         self.rgbDecoder = RGBDecoder(inDirectory: self.rgbFilePath)
         self.depthDecoder = DepthDecoder(inDirectory: self.depthFilePath)
@@ -98,6 +102,7 @@ class DatasetDecoder {
         self.locationDecoder = try LocationDecoder(path: self.locationPath)
 //        self.headingDecoder = HeadingDecoder(url: self.headingPath)
         self.otherDetailsDecoder = try OtherDetailsDecoder(path: self.otherDetailsPath)
+        self.meshDecoder = MeshDecoder(inDirectory: self.meshPath)
         
         self.totalFrames = self.cameraIntrinsicsDecoder.results.count
     }
@@ -117,7 +122,7 @@ class DatasetDecoder {
         return directory
     }
     
-    func loadData(index: Int) throws -> DatasetCaptureData {
+    func loadData(index: Int, enhancedAnalysisMode: Bool = false) throws -> DatasetCaptureData {
         /// Use the camera intrinsics data as the source of truth for getting the frame for a specific index
         let cameraIntrinsicsResults = self.cameraIntrinsicsDecoder.results
         guard index < cameraIntrinsicsResults.count else {
@@ -140,6 +145,11 @@ class DatasetDecoder {
         guard let otherDetailsData = otherDetailsDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
+        var meshData: MeshPlyContents? = nil
+        if enhancedAnalysisMode {
+            /// In enhanced analysis mode, we also load the mesh data for the frame if it exists.
+            meshData = try? meshDecoder.load(frameNumber: frameNumber)
+        }
         
         let datasetCaptureBaseData = DatasetCaptureBaseData(
             id: frameNumber, timestamp: cameraIntrinsicsResults[index].timestamp,
@@ -150,6 +160,7 @@ class DatasetDecoder {
         let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
         let datasetCaptureData = DatasetCaptureData(
             captureImageData: datasetCaptureBaseData,
+            captureMeshData: meshData,
             location: location
         )
         return datasetCaptureData
