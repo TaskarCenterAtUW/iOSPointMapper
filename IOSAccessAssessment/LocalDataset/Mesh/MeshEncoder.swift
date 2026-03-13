@@ -27,9 +27,24 @@ struct MeshBundle {
 struct MeshPlyContents {
     var positions: [SIMD3<Float>]
     var indices: [UInt32]
+    var classifications: [UInt8]? = nil
     var colorR8: Int
     var colorG8: Int
     var colorB8: Int
+}
+
+enum MeshEncoderError: Error, LocalizedError {
+    case modelEntityHasNoModel
+    case noVertexOrIndexData
+    
+    var errorDescription: String? {
+        switch self {
+        case .modelEntityHasNoModel:
+            return "ModelEntity has no model."
+        case .noVertexOrIndexData:
+            return "No vertex or index data found in ModelEntity."
+        }
+    }
 }
 
 class MeshEncoder {
@@ -40,26 +55,13 @@ class MeshEncoder {
         try FileManager.default.createDirectory(at: self.baseDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
 
-    func save(meshBundle: MeshBundle, fileName: String = "mesh") {
-        print("Saving mesh to PLY file: \(fileName).ply")
+    func save(meshBundle: MeshBundle, fileName: String = "mesh") throws {
         var ply: String
-        
         let modelEntity = meshBundle.modelEntity
-        do {
-            let modelPly: MeshPlyContents = try getPlyForEntity(modelEntity, vertexColor: UIColor.white)
-            ply = generatePlyContent([modelPly], includeColor: true)
-        } catch {
-            print("Error encoding full mesh to PLY: \(error.localizedDescription)")
-            return
-        }
-        
-        do {
-            let path = baseDirectory.appendingPathComponent(fileName, isDirectory: false).appendingPathExtension("ply")
-            
-            try ply.data(using: .utf8)?.write(to: path, options: .atomic)
-        } catch {
-            print("Error writing PLY file: \(error.localizedDescription)")
-        }
+        let modelPly: MeshPlyContents = try getPlyForEntity(modelEntity, vertexColor: UIColor.white)
+        ply = generatePlyContent([modelPly], includeColor: true)
+        let path = baseDirectory.appendingPathComponent(fileName, isDirectory: false).appendingPathExtension("ply")
+        try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
     
     func getPlyForEntity(
@@ -68,8 +70,7 @@ class MeshEncoder {
         vertexColor: UIColor? = nil
     ) throws -> MeshPlyContents {
         guard let model = entity.model else {
-            print("ModelEntity has no model.")
-            throw NSError(domain: "MeshEncoder", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelEntity has no model."])
+            throw MeshEncoderError.modelEntityHasNoModel
         }
         let contents = model.mesh.contents
         
@@ -129,8 +130,7 @@ class MeshEncoder {
         }
         
         guard !positions.isEmpty, !indices.isEmpty else {
-            print("No vertex or index data found in ModelEntity.")
-            throw NSError(domain: "MeshEncoder", code: 2, userInfo: [NSLocalizedDescriptionKey: "No vertex or index data found in ModelEntity."])
+            throw MeshEncoderError.noVertexOrIndexData
         }
         
         return MeshPlyContents(
@@ -141,7 +141,8 @@ class MeshEncoder {
     
     func generatePlyContent(
         _ plyContents: [MeshPlyContents],
-        includeColor: Bool = true
+        includeColor: Bool = true,
+        includeClassification: Bool = false,
     ) -> String {
         var ply = ""
         ply += "ply\nformat ascii 1.0\n"
@@ -156,6 +157,9 @@ class MeshEncoder {
         if includeColor {
             ply += "property uchar red\nproperty uchar green\nproperty uchar blue\n"
         }
+        if includeClassification {
+            ply += "property uchar classification\n"
+        }
         ply += "end_header\n"
         
         for content in plyContents {
@@ -164,29 +168,27 @@ class MeshEncoder {
             }
         }
         
-        if includeColor {
-            for content in plyContents {
-                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-                let faceCount = content.indices.count / 3
-                print("Face Count: \(faceCount)")
-                for f in stride(from: 0, to: content.indices.count, by: 3) {
-                    let i0 = content.indices[f]
-                    let i1 = content.indices[f + 1]
-                    let i2 = content.indices[f + 2]
-                    ply += "3 \(i0) \(i1) \(i2) \(content.colorR8) \(content.colorG8) \(content.colorB8)\n"
+        for content in plyContents {
+//            let faceCount = content.indices.count / 3
+            for f in stride(from: 0, to: content.indices.count, by: 3) {
+                let i0 = content.indices[f]
+                let i1 = content.indices[f + 1]
+                let i2 = content.indices[f + 2]
+                var faceLine = "3 \(i0) \(i1) \(i2)"
+                if includeColor {
+                    faceLine += " \(content.colorR8) \(content.colorG8) \(content.colorB8)"
                 }
+                if includeClassification, let classifications = content.classifications,
+                   f < (classifications.count * 3) {
+                    let classificationIndex = f / 3
+                    let classificationValue = classifications[classificationIndex]
+                    faceLine += " \(classificationValue)"
+                }
+                faceLine += "\n"
+                ply += faceLine
             }
-        } else {
-            for content in plyContents {
-                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-                let faceCount = content.indices.count / 3
-                print("Face Count: \(faceCount)")
-                for f in stride(from: 0, to: content.indices.count, by: 3) {
-                    let i0 = content.indices[f]
-                    let i1 = content.indices[f + 1]
-                    let i2 = content.indices[f + 2]
-                    ply += "3 \(i0) \(i1) \(i2)\n"
-                }
+            if content.classifications == nil && includeClassification {
+                print("Warning: Classification data is missing for some content, but includeClassification is true.")
             }
         }
         
@@ -195,7 +197,7 @@ class MeshEncoder {
 }
 
 extension MeshEncoder {
-    func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) {
+    func save(meshAnchors: [ARMeshAnchor], frameNumber: UUID) throws {
         let filename = String(frameNumber.uuidString)
         
         var plyContents: [MeshPlyContents] = []
@@ -208,6 +210,7 @@ extension MeshEncoder {
             let rebasedContent = MeshPlyContents(
                 positions: content.positions,
                 indices: rebasedIndices,
+                classifications: content.classifications,
                 colorR8: content.colorR8,
                 colorG8: content.colorG8,
                 colorB8: content.colorB8
@@ -215,13 +218,9 @@ extension MeshEncoder {
             plyContents.append(rebasedContent)
         }
         
-        let ply = generatePlyContent(plyContents, includeColor: true)
-        do {
-            let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
-            try ply.data(using: .utf8)?.write(to: path, options: .atomic)
-        } catch {
-            print("Error writing PLY file: \(error.localizedDescription)")
-        }
+        let ply = generatePlyContent(plyContents, includeColor: true, includeClassification: true)
+        let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
+        try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
     
     func getPlyForAnchor(
@@ -238,6 +237,7 @@ extension MeshEncoder {
         g8 = Int(g * 255)
         b8 = Int(b * 255)
         
+        // --- Vertices (positions) ---
         let vertexCount = geometry.vertices.count
         var positions: [SIMD3<Float>] = []
         positions.reserveCapacity(vertexCount)
@@ -269,9 +269,25 @@ extension MeshEncoder {
             }
         }
         
+        // --- Classifications (optional) ---
+        let classifications = geometry.classification
+        var classificationValues: [UInt8] = []
+        if let classifications {
+            let classificationCount = classifications.count
+            
+            let classificationBuffer = classifications.buffer.contents()
+            
+            for i in 0..<classificationCount {
+                let ptr = classificationBuffer.advanced(by: i)
+                let value = ptr.assumingMemoryBound(to: UInt8.self).pointee
+                classificationValues.append(value)
+            }
+        }
+        
         return MeshPlyContents(
             positions: positions,
             indices: indices,
+            classifications: classifications != nil ? classificationValues : nil,
             colorR8: r8,
             colorG8: g8,
             colorB8: b8

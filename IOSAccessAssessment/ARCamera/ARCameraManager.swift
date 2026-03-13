@@ -557,7 +557,7 @@ extension ARCameraManager {
                     self.outputConsumer?.cameraOutputMesh(
                         self, metalContext: metalContext,
                         meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: anchors.compactMap { $0 as? ARMeshAnchor },
+                        for: cameraMeshResults.meshAnchors,
                         cameraTransform: cameraMeshResults.cameraTransform,
                         cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
                         segmentationLabelImage: cameraMeshResults.segmentationLabelImage,

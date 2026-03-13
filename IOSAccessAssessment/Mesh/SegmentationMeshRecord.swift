@@ -111,7 +111,7 @@ final class SegmentationMeshRecord {
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
-    ) throws {        
+    ) throws {
         let meshGPUAnchors = meshGPUSnapshot.anchors
         
         let totalFaceCount = meshGPUAnchors.reduce(0) { $0 + $1.value.faceCount }
@@ -316,6 +316,9 @@ final class SegmentationMeshRecord {
         return texture
     }
     
+    /**
+        Function to set up the AccessibilityFeatureMeshClassificationParams struct based on the provided AccessibilityFeatureClass.
+     */
     static func getAccessibilityFeatureMeshClassificationParams(
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> AccessibilityFeatureMeshClassificationParams {
