@@ -118,8 +118,8 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
     
     // Mesh-related properties
 //    private var anchorEntity: AnchorEntity = AnchorEntity(world: .zero)
-//    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
-//    private var meshOtherDetails: MeshOtherDetails? = nil
+    private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
+    private var meshOtherDetails: MeshOtherDetails? = nil
     
     init(arSessionCameraProcessingDelegate: TestCameraProcessingDelegate) {
         self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
@@ -329,14 +329,57 @@ final class TestCameraViewController: UIViewController, TestCameraProcessingOutp
                            segmentationLabelImage: CIImage,
                            accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
-        /// Nothing for now
+        var totalVertexCount = 0
+        for accessibilityFeatureClass in accessibilityFeatureClasses {
+            guard Constants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
+                print("Invalid segmentation class: \(accessibilityFeatureClass)")
+                continue
+            }
+            if let existingMeshRecord = meshRecords[accessibilityFeatureClass] {
+                // Update existing mesh entity
+                do {
+                    try existingMeshRecord.replace(
+                        meshGPUSnapshot: meshGPUSnapshot,
+                        segmentationImage: segmentationLabelImage,
+                        cameraTransform: cameraTransform,
+                        cameraIntrinsics: cameraIntrinsics
+                    )
+                    totalVertexCount += existingMeshRecord.vertexCount
+                } catch {
+                    print("Error updating mesh entity: \(error.localizedDescription)")
+                }
+            } else {
+                // Create new mesh entity
+                do {
+                    let meshRecord = try SegmentationMeshRecord(
+                        metalContext,
+                        meshGPUSnapshot: meshGPUSnapshot,
+                        segmentationImage: segmentationLabelImage,
+                        cameraTransform: cameraTransform,
+                        cameraIntrinsics: cameraIntrinsics,
+                        accessibilityFeatureClass: accessibilityFeatureClass
+                    )
+                    meshRecords[accessibilityFeatureClass] = meshRecord
+                    totalVertexCount += meshRecord.vertexCount
+                } catch {
+                    print("Error creating mesh entity: \(error.localizedDescription)")
+                }
+            }
+        }
+        self.meshOtherDetails = MeshOtherDetails (
+            vertexStride: meshGPUSnapshot.vertexStride,
+            vertexOffset: meshGPUSnapshot.vertexOffset,
+            indexStride: meshGPUSnapshot.indexStride,
+            classificationStride: meshGPUSnapshot.classificationStride,
+            totalVertexCount: totalVertexCount
+        )
     }
     
     func getMeshRecordDetails() -> (
         records: [AccessibilityFeatureClass: SegmentationMeshRecord],
         otherDetails: MeshOtherDetails?
     ) {
-        return ([:], nil)
+        return (meshRecords, meshOtherDetails)
     }
 }
 

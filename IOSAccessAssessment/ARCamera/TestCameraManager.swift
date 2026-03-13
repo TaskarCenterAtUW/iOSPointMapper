@@ -14,7 +14,7 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
     var selectedClasses: [AccessibilityFeatureClass] = []
     var segmentationPipeline: SegmentationARPipeline? = nil
     /// Whether to enable enhanced analysis (e.g., anchor-based analysis) or not.
-//    var isEnhancedAnalysisEnabled: Bool = false
+    var isEnhancedAnalysisEnabled: Bool = false
     var metalContext: MetalContext? = nil
     var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     /// Mesh update callbacks not in use for now, as creating snapshots in real-time is expensive.
@@ -25,8 +25,8 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
 //    var imageResolution: CGSize = .zero
     @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
     
-//    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
-//    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
 //    
 //    var frameRate: Int = 15
 //    var lastFrameTime: TimeInterval = 0
@@ -65,6 +65,7 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
     func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
         metalContext: MetalContext?,
+        isEnhancedAnalysisEnabled: Bool,
         cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     ) throws {
         self.selectedClasses = selectedClasses
@@ -74,17 +75,17 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
             throw ARCameraManagerError.metalDeviceUnavailable
         }
         self.metalContext = metalContext
-//        self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
-//        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
+        self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
+        self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
 //        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
-//        Task {
-//            await MainActor.run {
-//                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
-//            }
-//        }
+        Task {
+            await MainActor.run {
+                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
+            }
+        }
     }
     
     func setVideoFormatImageResolution(_ imageResolution: CGSize) {
@@ -336,6 +337,70 @@ extension TestCameraManager {
 // Functions to handle the mesh processing pipeline
 extension TestCameraManager {
     /// Do nothing for now
+    func handleSessionMeshUpdate(datasetCaptureData: DatasetCaptureData) {
+        guard isEnhancedAnalysisEnabled else {
+            return
+        }
+        guard let captureMeshData = datasetCaptureData.captureMeshData else {
+            return
+        }
+        guard isConfigured else {
+            return
+        }
+        guard let metalContext = metalContext else {
+            return
+        }
+        Task {
+            do {
+                let cameraMeshResults = try await self.processMeshAnchors(captureMeshData: captureMeshData)
+                await MainActor.run {
+                    self.cameraMeshResults = cameraMeshResults
+                    self.outputConsumer?.cameraOutputMesh(
+                        self, metalContext: metalContext,
+                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
+                        for: cameraMeshResults.meshAnchors,
+                        cameraTransform: cameraMeshResults.cameraTransform,
+                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                        accessibilityFeatureClasses: self.selectedClasses
+                    )
+                }
+            } catch {
+                print("Error processing anchors: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func processMeshAnchors(captureMeshData: MeshPlyContents) async throws -> ARCameraMeshResults {
+        guard let meshGPUSnapshotGenerator = meshGPUSnapshotGenerator else {
+            throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
+        }
+        guard let cameraImageResults = cameraImageResults else {
+            throw ARCameraManagerError.cameraImageResultsUnavailable
+        }
+        
+        let segmentationLabelImage = cameraImageResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        
+        let cameraTransform = cameraImageResults.cameraTransform
+        let cameraIntrinsics = cameraImageResults.cameraIntrinsics
+        
+        try meshGPUSnapshotGenerator.snapshotContents(from: captureMeshData)
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
+            throw ARCameraManagerError.meshSnapshotProcessingFailed
+        }
+        return ARCameraMeshResults(
+            meshGPUSnapshot: meshGPUSnapshot,
+            meshAnchors: [],
+            segmentationLabelImage: backedSegmentationLabelImage,
+            cameraTransform: cameraTransform,
+            cameraIntrinsics: cameraIntrinsics,
+            lastUpdated: Date().timeIntervalSince1970
+        )
+    }
 }
 
 // Functions to orient and fix the camera and depth frames
@@ -403,6 +468,63 @@ extension TestCameraManager {
             captureImageDataResults: captureImageDataResults
         )
         return captureImageData
+    }
+    
+    @MainActor
+    private func performFinalSessionMeshUpdate(
+        captureImageData: CaptureImageData
+    ) async throws -> CaptureImageAndMeshData {
+        /// NOTE: The redundancy is intentional to keep the two methods separate for now.
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let metalContext = self.metalContext,
+              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
+            throw ARCameraManagerError.finalSessionNotConfigured
+        }
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
+        /// Process the latest mesh anchors
+        let segmentationLabelImage = captureImageData.captureImageDataResults.segmentationLabelImage
+        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+            colorSpace: segmentationMaskColorSpace
+        )
+        outputConsumer?.cameraOutputMesh(
+            self, metalContext: metalContext,
+            meshGPUSnapshot: meshGPUSnapshot,
+            for: cameraMeshResults?.meshAnchors,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            segmentationLabelImage: backedSegmentationLabelImage,
+            accessibilityFeatureClasses: self.selectedClasses
+        )
+        guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+        }
+        guard let cameraMeshOtherDetails = cameraMeshRecordDetails.otherDetails,
+              cameraMeshOtherDetails.totalVertexCount > 0 else {
+            throw ARCameraManagerError.finalSessionNoSegmentationMesh
+        }
+        let cameraMeshRecords = cameraMeshRecordDetails.records
+        
+        let cameraMeshSnapshot: CapturedMeshSnapshot = capturedMeshSnapshotGenerator.snapshotSegmentationRecords(
+            from: cameraMeshRecords,
+            vertexStride: cameraMeshOtherDetails.vertexStride,
+            vertexOffset: cameraMeshOtherDetails.vertexOffset,
+            indexStride: cameraMeshOtherDetails.indexStride,
+            classificationStride: cameraMeshOtherDetails.classificationStride,
+            totalVertexCount: cameraMeshOtherDetails.totalVertexCount
+        )
+        let captureMeshDataResults = CaptureMeshDataResults(
+            segmentedMesh: cameraMeshSnapshot,
+            meshAnchors: cameraMeshResults?.meshAnchors,
+        )
+        
+        let captureData = CaptureImageAndMeshData(
+            captureImageData: captureImageData,
+            captureMeshDataResults: captureMeshDataResults
+        )
+        return captureData
     }
     
     @MainActor
