@@ -24,7 +24,7 @@ struct MeshBundle {
     var assignedColor: UIColor = .green
 }
 
-struct MeshPlyContents {
+struct MeshPlyContents: Sendable {
     var positions: [SIMD3<Float>]
     var indices: [UInt32]
     var classifications: [UInt8]? = nil
@@ -33,9 +33,11 @@ struct MeshPlyContents {
     var colorB8: Int
 }
 
-enum MeshEncoderError: Error, LocalizedError {
+enum MeshCoderError: Error, LocalizedError {
     case modelEntityHasNoModel
     case noVertexOrIndexData
+    case invalidFilePath(String)
+    case invalidFileData
     
     var errorDescription: String? {
         switch self {
@@ -43,12 +45,16 @@ enum MeshEncoderError: Error, LocalizedError {
             return "ModelEntity has no model."
         case .noVertexOrIndexData:
             return "No vertex or index data found in ModelEntity."
+        case .invalidFilePath(let path):
+            return "Invalid file path: \(path)"
+        case .invalidFileData:
+            return "Invalid file data."
         }
     }
 }
 
 class MeshEncoder {
-    private var baseDirectory: URL
+    private let baseDirectory: URL
 
     init(outDirectory: URL) throws {
         self.baseDirectory = outDirectory
@@ -70,7 +76,7 @@ class MeshEncoder {
         vertexColor: UIColor? = nil
     ) throws -> MeshPlyContents {
         guard let model = entity.model else {
-            throw MeshEncoderError.modelEntityHasNoModel
+            throw MeshCoderError.modelEntityHasNoModel
         }
         let contents = model.mesh.contents
         
@@ -130,7 +136,7 @@ class MeshEncoder {
         }
         
         guard !positions.isEmpty, !indices.isEmpty else {
-            throw MeshEncoderError.noVertexOrIndexData
+            throw MeshCoderError.noVertexOrIndexData
         }
         
         return MeshPlyContents(
@@ -223,6 +229,13 @@ extension MeshEncoder {
         try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
     
+    func save(meshPlyContents: MeshPlyContents, frameNumber: UUID) throws {
+        let filename = String(frameNumber.uuidString)
+        let ply = generatePlyContent([meshPlyContents], includeColor: true, includeClassification: meshPlyContents.classifications != nil)
+        let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
+        try ply.data(using: .utf8)?.write(to: path, options: .atomic)
+    }
+    
     func getPlyForAnchor(
         meshAnchor: ARMeshAnchor,
         vertexColor: UIColor = .white
@@ -291,6 +304,191 @@ extension MeshEncoder {
             colorR8: r8,
             colorG8: g8,
             colorB8: b8
+        )
+    }
+}
+
+struct MeshPlyContentsHeaderConfig: Sendable {
+    let vertexCount: Int
+    let faceCount: Int
+    
+    let vertexStartIndex: Int
+    let faceStartIndex: Int
+    let headerEndIndex: Int
+    /// Vertex
+    let vertexSize: Int
+    let xColIndex: Int
+    let yColIndex: Int
+    let zColIndex: Int
+    /// Color
+    let includeColor: Bool
+    let includeRed: Bool
+    let redColIndex: Int
+    let includeGreen: Bool
+    let greenColIndex: Int
+    let includeBlue: Bool
+    let blueColIndex: Int
+    /// Classification
+    let includeClassification: Bool
+    let classificationColIndex: Int
+}
+
+class MeshDecoder {
+    private let baseDirectory: URL
+    
+    init(inDirectory: URL) {
+        self.baseDirectory = inDirectory
+    }
+    
+    /**
+     Since we cannot generate ARMeshAnchors from PLY files, this function will return the raw vertex and index data contained in the PLY. The caller can then decide how to use this data (e.g. create custom mesh anchors, post-process it, etc.).
+     */
+    func load(frameNumber: UUID) throws -> MeshPlyContents {
+        let filename = String(frameNumber.uuidString)
+        let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
+        guard FileManager.default.fileExists(atPath: path.path) else {
+            throw MeshCoderError.invalidFilePath(path.path)
+        }
+        guard let data = try? Data(contentsOf: path),
+              let text = String(data: data, encoding: .utf8) else {
+            throw MeshCoderError.invalidFileData
+        }
+        return try getMeshFromPlyContent(text)
+    }
+    
+    func getMeshFromPlyContent(_ content: String) throws -> MeshPlyContents {
+        var lines = content.split(whereSeparator: \.isNewline).map { String($0) }
+        let headerConfig = try parseHeader(content)
+        
+        /// Parse vertices
+        var positions: [SIMD3<Float>] = []
+        positions.reserveCapacity(headerConfig.vertexCount)
+        
+        let vertexStartIndex = headerConfig.headerEndIndex + 1
+        let vertexEndIndex = vertexStartIndex + headerConfig.vertexCount
+        for i in vertexStartIndex..<vertexEndIndex {
+            let parts = lines[i].split(separator: " ")
+            if parts.count >= 3, let x = Float(parts[0]), let y = Float(parts[1]), let z = Float(parts[2]) {
+                positions.append(SIMD3(x, y, z))
+            }
+            /// NOTE: Not throwing error for malformed vertex lines, just skipping them. Could be made stricter if desired.
+        }
+        
+        /// Parse faces (indices)
+        var faces: [UInt32] = []
+        var classifications: [UInt8]? = nil
+        
+    }
+    
+    /**
+        Parses the header of the PLY content to extract metadata like vertex count, face count, column indices for position/color/classification, etc. This information is crucial for correctly interpreting the vertex and face data in the body of the PLY file.
+     
+        - NOTE:
+        Assumes that the vertex indices always precede color and classification properties in the file.
+     */
+    private func parseHeader(_ content: String) throws -> MeshPlyContentsHeaderConfig {
+        var lines = content.split(whereSeparator: \.isNewline).map { String($0) }
+        
+        var vertexCount = 0
+        var faceCount = 0
+        
+        var vertexStartIndex = -1
+        var faceStartIndex = -1
+        var headerEndIndex = -1
+        
+        var vertexSize = -1 // should be filled before color and classification parsing
+        var xColIndex = -1, yColIndex = -1, zColIndex = -1
+        
+        var includeColor = false
+        var includeRed = false, includeGreen = false, includeBlue = false
+        var redColIndex = -1, greenColIndex = -1, blueColIndex = -1
+        var includeClassification = false
+        var classificationColIndex = -1
+        
+        var currentFaceIndex = 0
+        
+        /// Parse header
+        for (i, line) in lines.enumerated() {
+            if line.starts(with: "element vertex") {
+                let parts = line.split(separator: " ")
+                if parts.count == 3, let count = Int(parts[2]) {
+                    vertexCount = count
+                }
+            }
+            if line.starts(with: "element face") {
+                let parts = line.split(separator: " ")
+                if parts.count == 3, let count = Int(parts[2]) {
+                    faceCount = count
+                }
+                faceStartIndex = i
+                vertexStartIndex = faceStartIndex - vertexCount - 1
+            }
+            if line.contains("property float x") {
+                xColIndex = vertexSize
+                vertexSize += 1
+                currentFaceIndex += 1
+            }
+            if line.contains("property float y") {
+                yColIndex = vertexSize
+                vertexSize += 1
+                currentFaceIndex += 1
+            }
+            if line.contains("property float z") {
+                zColIndex = vertexSize
+                vertexSize += 1
+                currentFaceIndex += 1
+            }
+            if line.contains("property uchar red") {
+                includeColor = true
+                includeRed = true
+                redColIndex = currentFaceIndex
+                currentFaceIndex += 1
+            }
+            if line.contains("property uchar green") {
+                includeColor = true
+                includeGreen = true
+                greenColIndex = currentFaceIndex
+                currentFaceIndex += 1
+            }
+            if line.contains("property uchar blue") {
+                includeColor = true
+                includeBlue = true
+                blueColIndex = currentFaceIndex
+                currentFaceIndex += 1
+            }
+            if line.contains("property uchar classification") {
+                includeClassification = true
+                classificationColIndex = currentFaceIndex
+                currentFaceIndex += 1
+            }
+            if line == "end_header" {
+                headerEndIndex = i
+                break
+            }
+        }
+        if vertexCount == 0 || faceCount == 0 || headerEndIndex == -1 {
+            throw MeshCoderError.invalidFileData
+        }
+        
+        return MeshPlyContentsHeaderConfig(
+            vertexCount: vertexCount,
+            faceCount: faceCount,
+            vertexStartIndex: vertexStartIndex,
+            faceStartIndex: faceStartIndex,
+            headerEndIndex: headerEndIndex,
+            vertexSize: vertexSize,
+            xColIndex: xColIndex,
+            yColIndex: yColIndex,
+            zColIndex: zColIndex,
+            includeColor: includeColor,
+            includeRed: includeRed,
+            redColIndex: redColIndex,
+            includeGreen: includeGreen,
+            greenColIndex: greenColIndex,
+            includeBlue: includeBlue,
+            blueColIndex: blueColIndex,
+            includeClassification: includeClassification,
+            classificationColIndex: classificationColIndex
         )
     }
 }
