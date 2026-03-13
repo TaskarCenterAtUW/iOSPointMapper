@@ -141,8 +141,8 @@ class MeshEncoder {
     
     func generatePlyContent(
         _ plyContents: [MeshPlyContents],
+        includeColor: Bool = true,
         includeClassification: Bool = false,
-        includeColor: Bool = true
     ) -> String {
         var ply = ""
         ply += "ply\nformat ascii 1.0\n"
@@ -169,7 +169,7 @@ class MeshEncoder {
         }
         
         for content in plyContents {
-            let faceCount = content.indices.count / 3
+//            let faceCount = content.indices.count / 3
             for f in stride(from: 0, to: content.indices.count, by: 3) {
                 let i0 = content.indices[f]
                 let i1 = content.indices[f + 1]
@@ -178,36 +178,19 @@ class MeshEncoder {
                 if includeColor {
                     faceLine += " \(content.colorR8) \(content.colorG8) \(content.colorB8)"
                 }
+                if includeClassification, let classifications = content.classifications,
+                   f < (classifications.count * 3) {
+                    let classificationIndex = f / 3
+                    let classificationValue = classifications[classificationIndex]
+                    faceLine += " \(classificationValue)"
+                }
                 faceLine += "\n"
                 ply += faceLine
             }
+            if content.classifications == nil && includeClassification {
+                print("Warning: Classification data is missing for some content, but includeClassification is true.")
+            }
         }
-        
-//        if includeColor {
-//            for content in plyContents {
-//                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-//                let faceCount = content.indices.count / 3
-//                print("Face Count: \(faceCount)")
-//                for f in stride(from: 0, to: content.indices.count, by: 3) {
-//                    let i0 = content.indices[f]
-//                    let i1 = content.indices[f + 1]
-//                    let i2 = content.indices[f + 2]
-//                    ply += "3 \(i0) \(i1) \(i2) \(content.colorR8) \(content.colorG8) \(content.colorB8)\n"
-//                }
-//            }
-//        } else {
-//            for content in plyContents {
-//                print("Mesh Color: \(content.colorR8), \(content.colorG8), \(content.colorB8)")
-//                let faceCount = content.indices.count / 3
-//                print("Face Count: \(faceCount)")
-//                for f in stride(from: 0, to: content.indices.count, by: 3) {
-//                    let i0 = content.indices[f]
-//                    let i1 = content.indices[f + 1]
-//                    let i2 = content.indices[f + 2]
-//                    ply += "3 \(i0) \(i1) \(i2)\n"
-//                }
-//            }
-//        }
         
         return ply
     }
@@ -227,6 +210,7 @@ extension MeshEncoder {
             let rebasedContent = MeshPlyContents(
                 positions: content.positions,
                 indices: rebasedIndices,
+                classifications: content.classifications,
                 colorR8: content.colorR8,
                 colorG8: content.colorG8,
                 colorB8: content.colorB8
@@ -234,7 +218,7 @@ extension MeshEncoder {
             plyContents.append(rebasedContent)
         }
         
-        let ply = generatePlyContent(plyContents, includeColor: true)
+        let ply = generatePlyContent(plyContents, includeColor: true, includeClassification: true)
         let path = baseDirectory.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
         try ply.data(using: .utf8)?.write(to: path, options: .atomic)
     }
