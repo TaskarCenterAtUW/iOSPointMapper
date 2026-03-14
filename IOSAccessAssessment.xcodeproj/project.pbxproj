@@ -130,7 +130,7 @@
 		A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */; };
 		A3E161D22F3A8AF6002D4D08 /* CenterCropTransformUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E161D12F3A8AEF002D4D08 /* CenterCropTransformUtils.swift */; };
 		A3E161D42F3A9922002D4D08 /* CenterCropTransformUtils.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */; };
-		A3E162782F3AFC66002D4D08 /* MeshEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */; };
+		A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshCoder.swift */; };
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
 		A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E452F57FE6200F515E6 /* AppMode.swift */; };
@@ -331,7 +331,7 @@
 		A3DC22FA2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DimensionBasedMaskFilter.swift; sourceTree = "<group>"; };
 		A3E161D12F3A8AEF002D4D08 /* CenterCropTransformUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtils.swift; sourceTree = "<group>"; };
 		A3E161D32F3A991E002D4D08 /* CenterCropTransformUtils.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CenterCropTransformUtils.metal; sourceTree = "<group>"; };
-		A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshEncoder.swift; sourceTree = "<group>"; };
+		A3E162772F3AFC63002D4D08 /* MeshCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshCoder.swift; sourceTree = "<group>"; };
 		A3E6D2312F4649AD00DAF88E /* PngDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngDecoder.h; sourceTree = "<group>"; };
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
 		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
@@ -1031,7 +1031,7 @@
 		A3E162762F3AFC51002D4D08 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
-				A3E162772F3AFC63002D4D08 /* MeshEncoder.swift */,
+				A3E162772F3AFC63002D4D08 /* MeshCoder.swift */,
 			);
 			path = Mesh;
 			sourceTree = "<group>";
@@ -1286,7 +1286,7 @@
 				A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */,
 				A308015E2EC09BB700B1BA3A /* CocoCustom35ClassConfig.swift in Sources */,
 				A308015F2EC09BB700B1BA3A /* MapillaryCustom11ClassConfig.swift in Sources */,
-				A3E162782F3AFC66002D4D08 /* MeshEncoder.swift in Sources */,
+				A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */,
 				A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */,
 				A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */,
 				A30801602EC09BB700B1BA3A /* VOCClassConfig.swift in Sources */,

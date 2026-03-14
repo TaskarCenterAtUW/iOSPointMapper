@@ -12,6 +12,7 @@ import RealityKit
  */
 final class MeshGPUSnapshotGenerator: NSObject {
     // MARK: These constants can be made configurable later
+    // But make sure that the snapshot from MeshPlyContents extension continues to use the original constants.
     private let defaultBufferSize: Int = 1024
     private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
     private let vertexOffset: Int = 0
@@ -170,5 +171,64 @@ final class MeshGPUSnapshotGenerator: NSObject {
         meshGPUAnchor.faceCount = faces.count
         meshGPUAnchor.generation += 1
         return meshGPUAnchor
+    }
+}
+
+/**
+ Extension to generate snapshot from MeshPlyContents.
+ 
+ struct MeshPlyContents: Sendable {
+     var positions: [SIMD3<Float>]
+     var indices: [UInt32]
+     var classifications: [UInt8]? = nil
+     var colorR8: Int
+     var colorG8: Int
+     var colorB8: Int
+ }
+ */
+extension MeshGPUSnapshotGenerator {
+    /**
+     Uses MeshPlyContents to create a snapshot that can be used for GPU processing.
+     This is useful for testing and visualization purposes where we want to bypass ARKit and directly feed in mesh data.
+     
+     This method overwrites any previous snapshot since MeshPlyContents represents a complete mesh state rather than incremental updates.
+     
+     - NOTE:
+     MeshPlyContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
+     */
+    func snapshotContents(from mesh: MeshPlyContents) throws {
+        let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.positions.count * vertexElemSize, options: .storageModeShared)
+        let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.indices.count * indexElemSize, options: .storageModeShared)
+        let classificationBuffer: MTLBuffer? = mesh.classifications != nil ? try MetalBufferUtils.makeBuffer(device: device, length: mesh.classifications!.count * classificationElemSize, options: .storageModeShared) : nil
+        let anchorTransform = matrix_identity_float4x4 // Using identity transform since MeshPlyContents already represents a complete mesh state without any specific anchor association
+        var meshGPUAnchor = MeshGPUAnchor(
+            vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: classificationBuffer, anchorTransform: anchorTransform
+        )
+        
+        // Assign vertex buffer
+        let vertexByteCount = mesh.positions.count * vertexElemSize
+        try MetalBufferUtils.copyContiguous(srcPtr: mesh.positions, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        
+        // Assign index buffer
+        let indexByteCount = mesh.indices.count * indexElemSize
+        try MetalBufferUtils.copyContiguous(srcPtr: mesh.indices, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        
+        // Assign classification buffer (if available)
+        if let classifications = mesh.classifications, let classificationBuffer = meshGPUAnchor.classificationBuffer {
+            let classificationByteCount = classifications.count * classificationElemSize
+            try MetalBufferUtils.copyContiguous(srcPtr: classifications, dst: classificationBuffer, byteCount: classificationByteCount)
+        }
+        
+        meshGPUAnchor.vertexCount = mesh.positions.count
+        meshGPUAnchor.indexCount = mesh.indices.count
+        meshGPUAnchor.faceCount = mesh.indices.count / 3 // Assuming triangles
+        meshGPUAnchor.generation = 0 // Starting generation at 0 for new snapshot
+        
+        currentSnapshot = MeshGPUSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            anchors: [UUID(): meshGPUAnchor] // Using a dummy UUID since this snapshot is not associated with any specific ARMeshAnchor
+        )
     }
 }

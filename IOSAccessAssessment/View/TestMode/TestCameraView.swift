@@ -163,16 +163,19 @@ struct TestCameraView: View {
             do {
                 let datasetDecoder = try initializeDatasetDecoder()
                 self.totalCaptures = datasetDecoder.totalFrames
-                let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+                let datasetCaptureData = try loadData(
+                    datasetDecoder: datasetDecoder, enhancedAnalysisMode: userStateViewModel.isEnhancedAnalysisEnabled
+                )
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
+                    isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled,
                     cameraOutputImageCallback: cameraOutputImageCallback
                 )
-                try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+                manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -214,10 +217,12 @@ struct TestCameraView: View {
                 guard let datasetDecoder = sharedAppData.currentDatasetDecoder else {
                     throw TestCameraViewError.captureDataUnavailable
                 }
-                let datasetCaptureData = try loadData(datasetDecoder: datasetDecoder)
+                let datasetCaptureData = try loadData(
+                    datasetDecoder: datasetDecoder, enhancedAnalysisMode: userStateViewModel.isEnhancedAnalysisEnabled
+                )
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
-                try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+                manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -232,8 +237,8 @@ struct TestCameraView: View {
         return try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
     }
     
-    private func loadData(datasetDecoder: DatasetDecoder) throws -> DatasetCaptureData {
-        let datasetCaptureData = try datasetDecoder.loadData(index: currentIndex)
+    private func loadData(datasetDecoder: DatasetDecoder, enhancedAnalysisMode: Bool) throws -> DatasetCaptureData {
+        let datasetCaptureData = try datasetDecoder.loadData(index: currentIndex, enhancedAnalysisMode: enhancedAnalysisMode)
         return datasetCaptureData
     }
     
