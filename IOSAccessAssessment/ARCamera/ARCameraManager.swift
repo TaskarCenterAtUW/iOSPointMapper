@@ -733,14 +733,14 @@ extension ARCameraManager {
     }
 }
 
+struct CapturedMeshDependencies {
+    let capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator
+    let metalContext: MetalContext
+    let meshGPUSnapshot: MeshGPUSnapshot
+}
+
 // Functions to perform final session update
 extension ARCameraManager {
-    struct MeshDependencies {
-        let capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator
-        let metalContext: MetalContext
-        let meshGPUSnapshot: MeshGPUSnapshot
-    }
-    
     /**
      Combines the two methods below for convenience.
      */
@@ -762,7 +762,7 @@ extension ARCameraManager {
     
     @MainActor
     private func getFinalSessionUpdateDependencies(
-    ) throws -> MeshDependencies {
+    ) throws -> CapturedMeshDependencies {
         guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
               let metalContext = self.metalContext,
               let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
@@ -771,7 +771,7 @@ extension ARCameraManager {
         guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
             throw ARCameraManagerError.finalSessionMeshUnavailable
         }
-        return MeshDependencies(
+        return CapturedMeshDependencies(
             capturedMeshSnapshotGenerator: capturedMeshSnapshotGenerator,
             metalContext: metalContext,
             meshGPUSnapshot: meshGPUSnapshot

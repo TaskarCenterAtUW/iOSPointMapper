@@ -114,13 +114,26 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
 //    func setMeshFrameRate(_ meshFrameRate: Int) {
 //        self.meshFrameRate = meshFrameRate
 //    }
+    
+    func handleSessionUpdate(datasetCaptureData: DatasetCaptureData) {
+        Task {
+            do {
+                try await handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+                if isEnhancedAnalysisEnabled {
+                    try await handleSessionMeshUpdate(datasetCaptureData: datasetCaptureData)
+                }
+            } catch {
+                print("Error handling session update: \(error.localizedDescription)")
+            }
+        }
+    }
 }
 
 /**
     Handles processing of camera frames from ARSession, including segmentation and alignment of detected features.
  */
 extension TestCameraManager {
-    func handleSessionFrameUpdate(datasetCaptureData: DatasetCaptureData) throws {
+    func handleSessionFrameUpdate(datasetCaptureData: DatasetCaptureData) async throws {
         guard isConfigured else {
             return
         }
@@ -134,58 +147,52 @@ extension TestCameraManager {
         let depthImage = datasetCaptureData.captureImageData.depthImage
         let frameId = datasetCaptureData.captureImageData.id
         
-        Task {
-            do {
-                let cameraImageResults = try await self.processCameraImage(
-                    image: cameraImage, depthImage: depthImage,
-                    interfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation,
-                    cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
-                    originalSize: datasetCaptureData.captureImageData.originalSize
-                )
-                let captureImageDataResults = CaptureImageDataResults(
-                    segmentationLabelImage: cameraImageResults.segmentationLabelImage,
-                    segmentedClasses: cameraImageResults.segmentedClasses,
-                    detectedFeatureMap: cameraImageResults.detectedFeatureMap
-                )
-                let captureImageData = CaptureImageData(
-                    id: frameId,
-                    timestamp: Date().timeIntervalSince1970,
-                    cameraImage: cameraImageResults.cameraImage,
-                    cameraTransform: cameraImageResults.cameraTransform,
-                    cameraIntrinsics: cameraImageResults.cameraIntrinsics,
-                    interfaceOrientation: cameraImageResults.interfaceOrientation,
-                    originalSize: cameraImageResults.originalImageSize,
-                    depthImage: cameraImageResults.depthImage,
-                    confidenceImage: cameraImageResults.confidenceImage,
-                    captureImageDataResults: captureImageDataResults
-                )
-                let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
-                    currentInterfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation
-                )
-                await MainActor.run {
-                    var results = cameraImageResults
-                    results.depthImage = depthImage
-                    results.confidenceImage = nil
-                    self.cameraImageResults = results
-                    self.captureImageDataID = frameId
-                    self.outputConsumer?.cameraImage(
-                        self, metalContext: metalContext,
-                        cameraImage: cameraImageResults.cameraImage,
-                        imageOrientation: imageOrientation,
-                        for: nil
-                    )
-                    self.outputConsumer?.cameraOutputImage(
-                        self, metalContext: metalContext,
-                        segmentationImage: cameraImageResults.segmentationColorImage,
-                        segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
-                        for: nil
-                    )
-                    self.cameraOutputImageCallback?(captureImageData)
-                    self.interfaceOrientation = datasetCaptureData.captureImageData.interfaceOrientation
-                }
-            } catch {
-                print("Error processing camera image: \(error.localizedDescription)")
-            }
+        let cameraImageResults = try await self.processCameraImage(
+            image: cameraImage, depthImage: depthImage,
+            interfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation,
+            cameraTransform: cameraTransform, cameraIntrinsics: cameraIntrinsics,
+            originalSize: datasetCaptureData.captureImageData.originalSize
+        )
+        let captureImageDataResults = CaptureImageDataResults(
+            segmentationLabelImage: cameraImageResults.segmentationLabelImage,
+            segmentedClasses: cameraImageResults.segmentedClasses,
+            detectedFeatureMap: cameraImageResults.detectedFeatureMap
+        )
+        let captureImageData = CaptureImageData(
+            id: frameId,
+            timestamp: Date().timeIntervalSince1970,
+            cameraImage: cameraImageResults.cameraImage,
+            cameraTransform: cameraImageResults.cameraTransform,
+            cameraIntrinsics: cameraImageResults.cameraIntrinsics,
+            interfaceOrientation: cameraImageResults.interfaceOrientation,
+            originalSize: cameraImageResults.originalImageSize,
+            depthImage: cameraImageResults.depthImage,
+            confidenceImage: cameraImageResults.confidenceImage,
+            captureImageDataResults: captureImageDataResults
+        )
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: datasetCaptureData.captureImageData.interfaceOrientation
+        )
+        await MainActor.run {
+            var results = cameraImageResults
+            results.depthImage = depthImage
+            results.confidenceImage = nil
+            self.cameraImageResults = results
+            self.captureImageDataID = frameId
+            self.outputConsumer?.cameraImage(
+                self, metalContext: metalContext,
+                cameraImage: cameraImageResults.cameraImage,
+                imageOrientation: imageOrientation,
+                for: nil
+            )
+            self.outputConsumer?.cameraOutputImage(
+                self, metalContext: metalContext,
+                segmentationImage: cameraImageResults.segmentationColorImage,
+                segmentationBoundingFrameImage: cameraImageResults.segmentationBoundingFrameImage,
+                for: nil
+            )
+            self.cameraOutputImageCallback?(captureImageData)
+            self.interfaceOrientation = datasetCaptureData.captureImageData.interfaceOrientation
         }
     }
     
@@ -337,7 +344,7 @@ extension TestCameraManager {
 // Functions to handle the mesh processing pipeline
 extension TestCameraManager {
     /// Do nothing for now
-    func handleSessionMeshUpdate(datasetCaptureData: DatasetCaptureData) {
+    func handleSessionMeshUpdate(datasetCaptureData: DatasetCaptureData) async throws {
         guard isEnhancedAnalysisEnabled else {
             return
         }
@@ -350,24 +357,18 @@ extension TestCameraManager {
         guard let metalContext = metalContext else {
             return
         }
-        Task {
-            do {
-                let cameraMeshResults = try await self.processMeshAnchors(captureMeshData: captureMeshData)
-                await MainActor.run {
-                    self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraOutputMesh(
-                        self, metalContext: metalContext,
-                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: cameraMeshResults.meshAnchors,
-                        cameraTransform: cameraMeshResults.cameraTransform,
-                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClasses: self.selectedClasses
-                    )
-                }
-            } catch {
-                print("Error processing anchors: \(error.localizedDescription)")
-            }
+        let cameraMeshResults = try await self.processMeshAnchors(captureMeshData: captureMeshData)
+        await MainActor.run {
+            self.cameraMeshResults = cameraMeshResults
+            self.outputConsumer?.cameraOutputMesh(
+                self, metalContext: metalContext,
+                meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
+                for: cameraMeshResults.meshAnchors,
+                cameraTransform: cameraMeshResults.cameraTransform,
+                cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+                segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+                accessibilityFeatureClasses: self.selectedClasses
+            )
         }
     }
     
@@ -420,8 +421,34 @@ extension TestCameraManager {
     @MainActor
     func performFinalSessionUpdateIfPossible(
     ) async throws -> CaptureData {
+        if isEnhancedAnalysisEnabled {
+            let _ = try getFinalSessionUpdateDependencies()
+            let captureImageData = try await performFinalSessionFrameUpdate()
+            let captureData = try await performFinalSessionMeshUpdate(
+                captureImageData: captureImageData
+            )
+            return .imageAndMeshData(captureData)
+        }
         let captureData = try await performFinalSessionFrameUpdate()
         return .imageData(captureData)
+    }
+    
+    @MainActor
+    private func getFinalSessionUpdateDependencies(
+    ) throws -> CapturedMeshDependencies {
+        guard let capturedMeshSnapshotGenerator = self.capturedMeshSnapshotGenerator,
+              let metalContext = self.metalContext,
+              let meshGPUSnapshotGenerator = self.meshGPUSnapshotGenerator else {
+            throw ARCameraManagerError.finalSessionNotConfigured
+        }
+        guard let meshGPUSnapshot = meshGPUSnapshotGenerator.currentSnapshot else {
+            throw ARCameraManagerError.finalSessionMeshUnavailable
+        }
+        return CapturedMeshDependencies(
+            capturedMeshSnapshotGenerator: capturedMeshSnapshotGenerator,
+            metalContext: metalContext,
+            meshGPUSnapshot: meshGPUSnapshot
+        )
     }
     
     @MainActor

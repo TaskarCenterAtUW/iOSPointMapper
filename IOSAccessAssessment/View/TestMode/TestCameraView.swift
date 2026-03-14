@@ -172,9 +172,10 @@ struct TestCameraView: View {
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
+                    isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled,
                     cameraOutputImageCallback: cameraOutputImageCallback
                 )
-                try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+                manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -221,7 +222,7 @@ struct TestCameraView: View {
                 )
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
-                try manager.handleSessionFrameUpdate(datasetCaptureData: datasetCaptureData)
+                manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
