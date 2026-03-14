@@ -381,10 +381,10 @@ extension TestCameraManager {
         }
         
         let segmentationLabelImage = cameraImageResults.segmentationLabelImage
-        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
-            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
-            colorSpace: segmentationMaskColorSpace
-        )
+//        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+//            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+//            colorSpace: segmentationMaskColorSpace
+//        )
         
         let cameraTransform = cameraImageResults.cameraTransform
         let cameraIntrinsics = cameraImageResults.cameraIntrinsics
@@ -396,7 +396,7 @@ extension TestCameraManager {
         return ARCameraMeshResults(
             meshGPUSnapshot: meshGPUSnapshot,
             meshAnchors: [],
-            segmentationLabelImage: backedSegmentationLabelImage,
+            segmentationLabelImage: segmentationLabelImage,
             cameraTransform: cameraTransform,
             cameraIntrinsics: cameraIntrinsics,
             lastUpdated: Date().timeIntervalSince1970
@@ -512,17 +512,17 @@ extension TestCameraManager {
         }
         /// Process the latest mesh anchors
         let segmentationLabelImage = captureImageData.captureImageDataResults.segmentationLabelImage
-        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
-            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
-            colorSpace: segmentationMaskColorSpace
-        )
+//        let backedSegmentationLabelImage = try self.backCIImageWithPixelBuffer(
+//            segmentationLabelImage, context: rawContext, pixelFormatType: segmentationMaskPixelFormatType,
+//            colorSpace: segmentationMaskColorSpace
+//        )
         outputConsumer?.cameraOutputMesh(
             self, metalContext: metalContext,
             meshGPUSnapshot: meshGPUSnapshot,
             for: cameraMeshResults?.meshAnchors,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
-            segmentationLabelImage: backedSegmentationLabelImage,
+            segmentationLabelImage: segmentationLabelImage,
             accessibilityFeatureClasses: self.selectedClasses
         )
         guard let cameraMeshRecordDetails = outputConsumer?.getMeshRecordDetails() else {
