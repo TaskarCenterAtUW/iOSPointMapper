@@ -493,9 +493,9 @@ struct AnnotationView: View {
             let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
             try segmentationAnnontationPipeline.configure()
             try attributeEstimationPipeline.configure(
-                captureImageData: currentCaptureDataRecord.imageData
+                captureImageData: currentCaptureDataRecord.imageData,
                 /// TODO: MESH PROCESSING: Enable mesh data processing
-                , captureMeshData: captureMeshData
+                captureMeshData: captureMeshData
             )
             try manager.configure(
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,

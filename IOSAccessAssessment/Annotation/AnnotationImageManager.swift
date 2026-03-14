@@ -255,6 +255,22 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
             size: captureImageData.originalSize,
             updateFeatureResults: updateFeatureResults
         )
+//        let overlay3Image: CIImage? = try {
+//            if isEnhancedAnalysisEnabled,
+//               let captureMeshData = self.captureMeshData {
+//                let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
+//                    captureImageData: captureImageData,
+//                    captureMeshData: captureMeshData,
+//                    accessibilityFeatureClass: accessibilityFeatureClass
+//                )
+//                return try getMeshOverlayOutputImage(
+//                    captureMeshData: captureMeshData,
+//                    polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
+//                    accessibilityFeatureClass: accessibilityFeatureClass
+//                )
+//            }
+//            return nil
+//        }()
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
