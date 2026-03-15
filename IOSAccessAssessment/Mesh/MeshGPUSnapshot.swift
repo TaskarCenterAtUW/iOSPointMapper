@@ -197,6 +197,8 @@ extension MeshGPUSnapshotGenerator {
      MeshPlyContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
      */
     func snapshotContents(from mesh: MeshPlyContents) throws {
+//        let vertexElemSize = MemoryLayout<SIMD3<Float>>.stride
+//        let indexElemSize = MemoryLayout<UInt32>.stride
         let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.positions.count * vertexElemSize, options: .storageModeShared)
         let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.indices.count * indexElemSize, options: .storageModeShared)
         let classificationBuffer: MTLBuffer? = mesh.classifications != nil ? try MetalBufferUtils.makeBuffer(device: device, length: mesh.classifications!.count * classificationElemSize, options: .storageModeShared) : nil
@@ -207,16 +209,28 @@ extension MeshGPUSnapshotGenerator {
         
         // Assign vertex buffer
         let vertexByteCount = mesh.positions.count * vertexElemSize
-        try MetalBufferUtils.copyContiguous(srcPtr: mesh.positions, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+//        try MetalBufferUtils.copyContiguous(srcPtr: mesh.positions, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        try mesh.positions.withUnsafeBytes { srcPtr in
+            guard let srcBaseAddress = srcPtr.baseAddress else { return }
+            try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        }
         
         // Assign index buffer
         let indexByteCount = mesh.indices.count * indexElemSize
-        try MetalBufferUtils.copyContiguous(srcPtr: mesh.indices, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+//        try MetalBufferUtils.copyContiguous(srcPtr: mesh.indices, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        try mesh.indices.withUnsafeBytes { srcPtr in
+            guard let srcBaseAddress = srcPtr.baseAddress else { return }
+            try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        }
         
         // Assign classification buffer (if available)
         if let classifications = mesh.classifications, let classificationBuffer = meshGPUAnchor.classificationBuffer {
             let classificationByteCount = classifications.count * classificationElemSize
-            try MetalBufferUtils.copyContiguous(srcPtr: classifications, dst: classificationBuffer, byteCount: classificationByteCount)
+//            try MetalBufferUtils.copyContiguous(srcPtr: classifications, dst: classificationBuffer, byteCount: classificationByteCount)
+            try classifications.withUnsafeBytes { srcPtr in
+                guard let srcBaseAddress = srcPtr.baseAddress else { return }
+                try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: classificationBuffer, byteCount: classificationByteCount)
+            }
         }
         
         meshGPUAnchor.vertexCount = mesh.positions.count
