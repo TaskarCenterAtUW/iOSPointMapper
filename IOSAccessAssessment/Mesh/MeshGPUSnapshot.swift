@@ -195,13 +195,10 @@ extension MeshGPUSnapshotGenerator {
      
      - NOTE:
      MeshPlyContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
-     - NOTE:
-     Temporarily removing the assumptions
      */
     func snapshotContents(from mesh: MeshPlyContents) throws {
-        let vertexElemSize = MemoryLayout<SIMD3<Float>>.stride
-        let indexElemSize = MemoryLayout<UInt32>.stride
-        
+//        let vertexElemSize = MemoryLayout<SIMD3<Float>>.stride
+//        let indexElemSize = MemoryLayout<UInt32>.stride
         let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.positions.count * vertexElemSize, options: .storageModeShared)
         let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.indices.count * indexElemSize, options: .storageModeShared)
         let classificationBuffer: MTLBuffer? = mesh.classifications != nil ? try MetalBufferUtils.makeBuffer(device: device, length: mesh.classifications!.count * classificationElemSize, options: .storageModeShared) : nil
@@ -234,44 +231,6 @@ extension MeshGPUSnapshotGenerator {
                 guard let srcBaseAddress = srcPtr.baseAddress else { return }
                 try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: classificationBuffer, byteCount: classificationByteCount)
             }
-        }
-        
-        // Print vertices and indices for validation
-        let vertexData = meshGPUAnchor.vertexBuffer.contents().bindMemory(to: SIMD3<Float>.self, capacity: mesh.positions.count)
-        let indexData = meshGPUAnchor.indexBuffer.contents().bindMemory(to: UInt32.self, capacity: mesh.indices.count)
-        print("Vertex Data (First 10):")
-        for i in 0..<min(10, mesh.positions.count) {
-            print(vertexData[i])
-        }
-        print("Index Data (First 10 faces):")
-        for i in stride(from: 0, to: min(30, mesh.indices.count), by: 3) {
-            print(indexData[i], indexData[i + 1], indexData[i + 2])
-        }
-        print("Classification Data (First 10):")
-        if let classificationBuffer = meshGPUAnchor.classificationBuffer {
-            let classificationData = classificationBuffer.contents().bindMemory(to: UInt8.self, capacity: mesh.classifications?.count ?? 0)
-            for i in 0..<min(10, mesh.classifications?.count ?? 0) {
-                print(classificationData[i])
-            }
-        } else {
-            print("No classification data available.")
-        }
-        print("Vertex Data (Last 10):")
-        for i in max(0, mesh.positions.count - 10)..<mesh.positions.count {
-            print(vertexData[i])
-        }
-        print("Index Data (Last 10 faces):")
-        for i in stride(from: max(0, mesh.indices.count - 30), to: mesh.indices.count, by: 3) {
-            print(indexData[i], indexData[i + 1], indexData[i + 2])
-        }
-        print("Classification Data (Last 10):")
-        if let classificationBuffer = meshGPUAnchor.classificationBuffer {
-            let classificationData = classificationBuffer.contents().bindMemory(to: UInt8.self, capacity: mesh.classifications?.count ?? 0)
-            for i in max(0, (mesh.classifications?.count ?? 0) - 10)..<(mesh.classifications?.count ?? 0) {
-                print(classificationData[i])
-            }
-        } else {
-            print("No classification data available.")
         }
         
         meshGPUAnchor.vertexCount = mesh.positions.count

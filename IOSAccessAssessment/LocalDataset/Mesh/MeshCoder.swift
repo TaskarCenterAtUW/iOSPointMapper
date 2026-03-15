@@ -11,7 +11,8 @@ import ARKit
 import RealityKit
 
 struct MeshPlyContents: Sendable {
-    var positions: [SIMD3<Float>]
+//    var positions: [SIMD3<Float>]
+    var positions: [packed_float3]
     var indices: [UInt32]
     var classifications: [UInt8]? = nil
     var colorR8: Int
@@ -102,7 +103,8 @@ class MeshEncoder {
         
         // --- Vertices (positions) ---
         let vertexCount = geometry.vertices.count
-        var positions: [SIMD3<Float>] = []
+//        var positions: [SIMD3<Float>] = []
+        var positions: [packed_float3] = []
         positions.reserveCapacity(vertexCount)
         
         let vertexBuffer = geometry.vertices.buffer.contents()
@@ -113,7 +115,8 @@ class MeshEncoder {
             let ptr = vertexBuffer.advanced(by: vertexOffset + i * vertexStride)
             let local = ptr.assumingMemoryBound(to: SIMD3<Float>.self).pointee
             let world = transform * SIMD4<Float>(local, 1.0)
-            positions.append(SIMD3(world.x, world.y, world.z))
+//            positions.append(SIMD3(world.x, world.y, world.z))
+            positions.append(packed_float3(x: world.x, y: world.y, z: world.z))
         }
         
         // --- Indices ---
@@ -168,7 +171,7 @@ class MeshEncoder {
         
         let totalVertices = plyContents.reduce(0) { $0 + $1.positions.count }
         let totalFaces = plyContents.reduce(0) { $0 + ($1.indices.count / 3) }
-        print("Total Faces: \(totalFaces), Total Vertices: \(totalVertices)")
+//        print("Total Faces: \(totalFaces), Total Vertices: \(totalVertices)")
         ply += "element vertex \(totalVertices)\n"
         ply += "property float x\nproperty float y\nproperty float z\n"
         ply += "element face \(totalFaces)\nproperty list uchar int vertex_indices\n"
@@ -262,7 +265,8 @@ class MeshDecoder {
         let headerConfig = try parseHeader(content)
         
         /// Parse vertices
-        var positions: [SIMD3<Float>] = []
+//        var positions: [SIMD3<Float>] = []
+        var positions: [packed_float3] = []
         positions.reserveCapacity(headerConfig.vertexCount)
         
         let vertexStartIndex = headerConfig.headerEndIndex + 1
@@ -270,7 +274,8 @@ class MeshDecoder {
         for i in vertexStartIndex..<vertexEndIndex {
             let parts = lines[i].split(separator: " ")
             if parts.count >= 3, let x = Float(parts[0]), let y = Float(parts[1]), let z = Float(parts[2]) {
-                positions.append(SIMD3(x, y, z))
+//                positions.append(SIMD3(x, y, z))
+                positions.append(packed_float3(x: x, y: y, z: z))
             }
             else {
                 throw MeshCoderError.invalidMeshVertexData
@@ -322,7 +327,7 @@ class MeshDecoder {
             }
         }
         
-        print("Number of vertices and faces parsed: \(positions.count) vertices, \(faces.count / 3) faces")
+//        print("Number of vertices and faces parsed: \(positions.count) vertices, \(faces.count / 3) faces")
         
         return MeshPlyContents(
             positions: positions,
