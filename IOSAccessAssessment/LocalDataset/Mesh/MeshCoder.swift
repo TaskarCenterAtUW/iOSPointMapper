@@ -24,6 +24,8 @@ enum MeshCoderError: Error, LocalizedError {
     case noVertexOrIndexData
     case invalidFilePath(String)
     case invalidFileData
+    case invalidMeshVertexData
+    case invalidMeshIndexData
     
     var errorDescription: String? {
         switch self {
@@ -35,6 +37,10 @@ enum MeshCoderError: Error, LocalizedError {
             return "Invalid file path: \(path)"
         case .invalidFileData:
             return "Invalid file data."
+        case .invalidMeshVertexData:
+            return "Invalid vertex data in mesh."
+        case .invalidMeshIndexData:
+            return "Invalid index data in mesh."
         }
     }
 }
@@ -238,7 +244,7 @@ class MeshDecoder {
     /**
      Since we cannot generate ARMeshAnchors from PLY files, this function will return the raw vertex and index data contained in the PLY. The caller can then decide how to use this data (e.g. create custom mesh anchors, post-process it, etc.).
      */
-    func load(frameNumber: UUID) throws -> MeshPlyContents {
+    func load(frameNumber: UUID, defaultClassificationValue: Int = 0) throws -> MeshPlyContents {
         let filename = String(frameNumber.uuidString)
         let path = self.baseDirectory.absoluteURL.appendingPathComponent(filename, isDirectory: false).appendingPathExtension("ply")
         guard FileManager.default.fileExists(atPath: path.path) else {
@@ -248,10 +254,10 @@ class MeshDecoder {
               let text = String(data: data, encoding: .utf8) else {
             throw MeshCoderError.invalidFileData
         }
-        return try getMeshFromPlyContent(text)
+        return try getMeshFromPlyContent(text, defaultClassificationValue: defaultClassificationValue)
     }
     
-    func getMeshFromPlyContent(_ content: String) throws -> MeshPlyContents {
+    func getMeshFromPlyContent(_ content: String, defaultClassificationValue: Int = 0) throws -> MeshPlyContents {
         let lines = content.split(whereSeparator: \.isNewline).map { String($0) }
         let headerConfig = try parseHeader(content)
         
@@ -266,7 +272,9 @@ class MeshDecoder {
             if parts.count >= 3, let x = Float(parts[0]), let y = Float(parts[1]), let z = Float(parts[2]) {
                 positions.append(SIMD3(x, y, z))
             }
-            /// NOTE: Not throwing error for malformed vertex lines, just skipping them. Could be made stricter if desired.
+            else {
+                throw MeshCoderError.invalidMeshVertexData
+            }
         }
         
         /// Parse faces (indices)
@@ -286,9 +294,13 @@ class MeshDecoder {
             if parts.count >= 4, let vertexCount = Int(parts[0]), vertexCount == 3,
                let i0 = UInt32(parts[1]), let i1 = UInt32(parts[2]), let i2 = UInt32(parts[3]) {
                 faces.append(contentsOf: [i0, i1, i2])
-                if headerConfig.includeClassification, headerConfig.classificationColIndex < parts.count,
-                   let classificationValue = UInt8(parts[headerConfig.classificationColIndex]) {
-                    classifications?.append(classificationValue)
+                if headerConfig.includeClassification {
+                    if headerConfig.classificationColIndex < parts.count,
+                       let classificationValue = UInt8(parts[headerConfig.classificationColIndex]) {
+                        classifications?.append(classificationValue)
+                    } else {
+                        classifications?.append(UInt8(defaultClassificationValue))
+                    }
                 }
                 if headerConfig.includeColor {
                     if headerConfig.redColIndex != -1, headerConfig.redColIndex < parts.count,
@@ -305,7 +317,12 @@ class MeshDecoder {
                     }
                 }
             }
+            else {
+                throw MeshCoderError.invalidMeshIndexData
+            }
         }
+        
+        print("Number of vertices and faces parsed: \(positions.count) vertices, \(faces.count / 3) faces")
         
         return MeshPlyContents(
             positions: positions,
