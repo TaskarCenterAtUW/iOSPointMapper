@@ -121,6 +121,9 @@ final class CapturedMeshSnapshotHelper {
         let indexStride: Int = capturedMeshSnapshot.indexStride
         let indexData: Data = featureCapturedMeshSnapshot.indexData
         let indexCount: Int = featureCapturedMeshSnapshot.indexCount
+        /// The Segmentation Mesh Record from which the CapturedMeshAnchorSnapshot is created
+        /// always has the .triangle topology, which means every 3 indices form a triangle polygon.
+        ///  Hence, the vertex count should be equal to the index count, and both should be multiples of 3.
         guard vertexCount > 0, vertexCount == indexCount else {
             throw CapturedMeshSnapshotError.invalidMeshData
         }
@@ -166,10 +169,74 @@ final class CapturedMeshSnapshotHelper {
         return polygons
     }
     
-//    static func readFeatureSnapshot(
-//        capturedMeshSnapshot: CapturedMeshSnapshot,
-//        accessibilityFeatureClass: AccessibilityFeatureClass
-//    ) -> MeshContents {
-//        
-//    }
+    static func readFeatureSnapshot(
+        capturedMeshSnapshot: CapturedMeshSnapshot,
+        accessibilityFeatureClass: AccessibilityFeatureClass
+    ) throws -> MeshContents {
+        guard let featureCapturedMeshSnapshot = capturedMeshSnapshot.anchors[accessibilityFeatureClass] else {
+            throw CapturedMeshSnapshotError.meshClassNotFound(accessibilityFeatureClass)
+        }
+        
+        let vertexStride: Int = capturedMeshSnapshot.vertexStride
+        let vertexOffset: Int = capturedMeshSnapshot.vertexOffset
+        let vertexData: Data = featureCapturedMeshSnapshot.vertexData
+        let vertexCount: Int = featureCapturedMeshSnapshot.vertexCount
+        let indexStride: Int = capturedMeshSnapshot.indexStride
+        let indexData: Data = featureCapturedMeshSnapshot.indexData
+        let indexCount: Int = featureCapturedMeshSnapshot.indexCount
+        /// The Segmentation Mesh Record from which the CapturedMeshAnchorSnapshot is created
+        /// always has the .triangle topology, which means every 3 indices form a triangle polygon.
+        ///  Hence, the vertex count should be equal to the index count, and both should be multiples of 3.
+        guard vertexCount > 0, vertexCount == indexCount else {
+            throw CapturedMeshSnapshotError.invalidMeshData
+        }
+        
+        var positions: [packed_float3] = []
+        positions.reserveCapacity(vertexCount)
+        try vertexData.withUnsafeBytes { ptr in
+            guard let baseAddress = ptr.baseAddress else {
+                throw CapturedMeshSnapshotError.invalidVertexData
+            }
+            if vertexStride == MemoryLayout<packed_float3>.stride {
+                try positions.withUnsafeMutableBytes { posPtr in
+                    guard let posBaseAddress = posPtr.baseAddress else {
+                        throw CapturedMeshSnapshotError.invalidVertexData
+                    }
+                    let posPointer = posBaseAddress.advanced(by: vertexOffset)
+                    posPtr.copyMemory(from: UnsafeRawBufferPointer(start: posPointer, count: vertexCount * vertexStride))
+                }
+            } else {
+                for i in 0..<vertexCount {
+                    let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)
+                    let vertexPointer = vertexAddress.assumingMemoryBound(to: packed_float3.self)
+                    positions.append(vertexPointer.pointee)
+                }
+            }
+        }
+        
+        var indices: [UInt32] = []
+        indices.reserveCapacity(indexCount)
+        try indexData.withUnsafeBytes { ptr in
+            guard let baseAddress = ptr.baseAddress else {
+                throw CapturedMeshSnapshotError.invalidIndexData
+            }
+            if indexStride == MemoryLayout<UInt32>.stride {
+                indices.withUnsafeMutableBytes { indexPtr in
+                    indexPtr.copyMemory(from: UnsafeRawBufferPointer.init(start: baseAddress, count: indexCount * indexStride))
+                }
+            } else {
+                for i in 0..<indexCount {
+                    let indexAddress = baseAddress.advanced(by: i * indexStride)
+                    let indexPointer = indexAddress.assumingMemoryBound(to: UInt32.self)
+                    indices.append(indexPointer.pointee)
+                }
+            }
+        }
+        
+        let colorR8 = 255, colorG8 = 255, colorB8 = 255
+        return MeshContents(
+            positions: positions, indices: indices, classifications: nil,
+            colorR8: colorR8, colorG8: colorG8, colorB8: colorB8
+        )
+    }
 }
