@@ -90,13 +90,13 @@ class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        let meshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
         var meshContents: MeshContents? = nil
         var plane: Plane? = nil
         switch(oswElementClass) {
         case .Sidewalk:
-            if meshEnabled {
+            if isMeshEnabled {
                 meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
                 plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, meshContents: meshContents)
             } else {
@@ -121,7 +121,6 @@ class AttributeEstimationPipeline: ObservableObject {
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         let locationRequestResult = try self.calculateLocation(
             deviceLocation: deviceLocation,
             accessibilityFeature: accessibilityFeature
