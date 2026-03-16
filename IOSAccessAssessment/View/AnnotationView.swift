@@ -520,6 +520,7 @@ struct AnnotationView: View {
             var lastEstimationError: Error? = nil
             accessibilityFeatures.forEach { accessibilityFeature in
                 do {
+                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
                     try attributeEstimationPipeline.processLocationRequest(
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
@@ -527,6 +528,7 @@ struct AnnotationView: View {
                     try attributeEstimationPipeline.processAttributeRequest(
                         accessibilityFeature: accessibilityFeature
                     )
+                    attributeEstimationPipeline.clearPrerequisites()
                 } catch {
                     lastEstimationError = error
                 }
@@ -567,10 +569,13 @@ struct AnnotationView: View {
                     accessibilityFeatures.append(oldFeature)
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
                 }
+                /// MARK: Temporary code for visualization
                 if currentClass.attributes.contains(where: {
                     $0 == .width || $0 == .runningSlope || $0 == .crossSlope
                 }) {
-                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(accessibilityFeature: currentFeature)
+                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(
+                        accessibilityFeature: currentFeature, worldPoints: nil
+                    )
                     let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
                         accessibilityFeature: currentFeature, plane: plane
                     )

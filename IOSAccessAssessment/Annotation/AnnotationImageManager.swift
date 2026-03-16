@@ -570,7 +570,7 @@ extension AnnotationImageManager {
               let captureMeshData = self.captureMeshData else {
             throw AnnotationImageManagerError.captureDataNotAvailable
         }
-        let meshPolygons = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
+        let meshPolygons: [MeshPolygon] = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
             capturedMeshSnapshot: captureMeshData.captureMeshDataResults.segmentedMesh,
             accessibilityFeatureClass: accessibilityFeatureClass
         )

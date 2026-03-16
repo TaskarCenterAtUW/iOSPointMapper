@@ -7,114 +7,47 @@
 import SwiftUI
 import CoreLocation
 
-/**
- Extension for utilities related to world point extraction and plane calculation.
- */
 extension AttributeEstimationPipeline {
-    func getWorldPoints(
+    func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
-    ) throws -> [WorldPoint] {
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
-        }
-        guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-        }
-        let worldPoints = try worldPointsProcessor.getWorldPoints(
-            segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
-            depthImage: depthMapProcessor.depthImage,
-            targetValue: accessibilityFeature.accessibilityFeatureClass.labelValue,
-            cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics
-        )
-        return worldPoints
+    ) throws -> AccessibilityFeatureAttribute.Value {
+//        let isMeshEnabled: Bool = captureMeshData != nil
+//        if isMeshEnabled {
+//            return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
+//        }
+        return try self.calculateWidthFromImage(accessibilityFeature: accessibilityFeature)
     }
     
-    /**
-     Intermediary method to calculate the plane of the feature given the accessibility feature.
-     */
-    func calculateAlignedPlane(
-        accessibilityFeature: EditableAccessibilityFeature,
-        worldPoints: [WorldPoint]? = nil
-    ) throws -> Plane {
-        guard let planeProcessorLocal = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+    func calculateRunningSlope(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = captureMeshData != nil
+        if isMeshEnabled {
+            return try self.calculateRunningSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        var plane: Plane
-        let worldPointsLocal: [WorldPoint] = try worldPoints ?? self.getWorldPoints(
-            accessibilityFeature: accessibilityFeature
-        )
-        plane = try planeProcessorLocal.fitPlanePCA(worldPoints: worldPointsLocal)
-        let alignedPlane = try planeProcessorLocal.alignPlaneWithViewDirection(
-            plane: plane,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-        )
-        return alignedPlane
+        return try self.calculateRunningSlopeFromImage(accessibilityFeature: accessibilityFeature)
     }
     
-    func calculateProjectedPlane(
-        accessibilityFeature: EditableAccessibilityFeature,
-        plane: Plane
-    ) throws -> ProjectedPlane {
-        guard let planeProcessor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+    func calculateCrossSlope(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = captureMeshData != nil
+        if isMeshEnabled {
+            return try self.calculateCrossSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        
-        let projectedPlane = try planeProcessor.projectPlane(
-            plane: plane,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-        )
-        return projectedPlane
-    }
-    
-    func getProjectedPointsOnPlane(
-        worldPoints: [WorldPoint],
-        plane: Plane
-    ) throws -> [ProjectedPoint] {
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-        }
-        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-            worldPoints: worldPoints, plane: plane,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-        )
-        
-        return projectedPoints
+        return try self.calculateCrossSlopeFromImage(accessibilityFeature: accessibilityFeature)
     }
 }
 
 /**
- Extension for attribute calculation with rudimentary methods.
- TODO: Improve upon these methods with more robust implementations.
+ Extension for attribute calculation with plane-fitting approach.
  */
 extension AttributeEstimationPipeline {
-    func calculateWidth(
-        accessibilityFeature: EditableAccessibilityFeature,
-        worldPoints: [WorldPoint]? = nil,
-        alignedPlane: Plane? = nil
+    func calculateWidthFromImage(
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-        }
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
         }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
@@ -122,25 +55,14 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        let worldPointsLocal: [WorldPoint] = try worldPoints ?? self.getWorldPoints(
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let finalPlane: Plane
-        if let alignedPlane = alignedPlane {
-            finalPlane = alignedPlane
-        } else {
-            let plane = try calculateAlignedPlane(
-                accessibilityFeature: accessibilityFeature, worldPoints: worldPointsLocal
-            )
-            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
-                plane: plane,
-                cameraTransform: captureImageData.cameraTransform,
-                cameraIntrinsics: captureImageData.cameraIntrinsics,
-                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-            )
-        }
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
         let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-            worldPoints: worldPointsLocal, plane: finalPlane,
+            worldPoints: worldPoints, plane: alignedPlane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
@@ -162,37 +84,22 @@ extension AttributeEstimationPipeline {
      
         Assumes that the plane being calculated has its first vector aligned with the direction of travel.
      */
-    func calculateRunningSlope(
-        accessibilityFeature: EditableAccessibilityFeature,
-        worldPoints: [WorldPoint]? = nil,
-        alignedPlane: Plane? = nil
+    func calculateRunningSlopeFromImage(
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
-        }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        let finalPlane: Plane
-        if let alignedPlane = alignedPlane {
-            finalPlane = alignedPlane
-        } else {
-            let plane = try calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
-            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
-                plane: plane,
-                cameraTransform: captureImageData.cameraTransform,
-                cameraIntrinsics: captureImageData.cameraIntrinsics,
-                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-            )
-        }
-        let runningVector = simd_normalize(finalPlane.firstVector)
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let runningVector = simd_normalize(alignedPlane.firstVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
         let rise = simd_dot(runningVector, gravityVector)
         let runningHorizontalVector = runningVector - (rise * gravityVector)
         let run = simd_length(runningHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
-//        print("Running vector: \(runningVector), \nRunning Horizontal Vector: \(runningHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
@@ -200,37 +107,106 @@ extension AttributeEstimationPipeline {
         return runningSlopeAttributeValue
     }
     
-    func calculateCrossSlope(
-        accessibilityFeature: EditableAccessibilityFeature,
-        worldPoints: [WorldPoint]? = nil,
-        alignedPlane: Plane? = nil
+    func calculateCrossSlopeFromImage(
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
-        }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        let finalPlane: Plane
-        if let alignedPlane = alignedPlane {
-            finalPlane = alignedPlane
-        } else {
-            let plane = try calculateAlignedPlane(accessibilityFeature: accessibilityFeature)
-            finalPlane = try planeFitProcesor.alignPlaneWithViewDirection(
-                plane: plane,
-                cameraTransform: captureImageData.cameraTransform,
-                cameraIntrinsics: captureImageData.cameraIntrinsics,
-                imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-            )
-        }
-        let crossVector = simd_normalize(finalPlane.secondVector)
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let crossVector = simd_normalize(alignedPlane.secondVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
         let rise = simd_dot(crossVector, gravityVector)
         let crossHorizontalVector = crossVector - (rise * gravityVector)
         let run = simd_length(crossHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
-//        print("Cross vector: \(crossVector), \nCross Horizontal Vector: \(crossHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
+        
+        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return crossSlopeAttributeValue
+    }
+}
+
+extension AttributeEstimationPipeline {
+//    func calculateWidthFromMesh(
+//        accessibilityFeature: EditableAccessibilityFeature
+//    ) throws -> AccessibilityFeatureAttribute.Value {
+//        guard let worldPointsProcessor = self.worldPointsProcessor else {
+//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+//        }
+//        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
+//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+//        }
+//        guard let captureImageData = self.captureImageData else {
+//            throw AttributeEstimationPipelineError.missingCaptureData
+//        }
+//        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+//            accessibilityFeature: accessibilityFeature
+//        )
+//        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+//            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+//        )
+//        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+//            worldPoints: worldPoints, plane: alignedPlane,
+//            cameraTransform: captureImageData.cameraTransform,
+//            cameraIntrinsics: captureImageData.cameraIntrinsics,
+//            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+//        )
+//        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+//        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: projectedPointBins)
+//        let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
+//            return partialResult + Double(binWidth.width)
+//        } / Double(binWidths.count)
+//        
+//        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
+//            throw AttributeEstimationPipelineError.attributeAssignmentError
+//        }
+//        return widthAttributeValue
+//    }
+    
+    func calculateRunningSlopeFromMesh(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+        )
+        let runningVector = simd_normalize(alignedPlane.firstVector)
+        let gravityVector = SIMD3<Float>(0, 1, 0)
+        let rise = simd_dot(runningVector, gravityVector)
+        let runningHorizontalVector = runningVector - (rise * gravityVector)
+        let run = simd_length(runningHorizontalVector)
+        let slopeRadians = atan2(rise, run)
+        let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
+        
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return runningSlopeAttributeValue
+    }
+    
+    func calculateCrossSlopeFromMesh(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+        )
+        let crossVector = simd_normalize(alignedPlane.secondVector)
+        let gravityVector = SIMD3<Float>(0, 1, 0)
+        let rise = simd_dot(crossVector, gravityVector)
+        let crossHorizontalVector = crossVector - (rise * gravityVector)
+        let run = simd_length(crossHorizontalVector)
+        let slopeRadians = atan2(rise, run)
+        let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
         
         guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
