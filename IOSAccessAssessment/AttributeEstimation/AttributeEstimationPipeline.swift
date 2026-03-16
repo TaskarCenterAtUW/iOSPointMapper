@@ -37,14 +37,20 @@ struct LocationRequestResult: Sendable {
     let lidarDepth: Float
 }
 
-struct AttributeRequestResult: Sendable {
-    let plane: Plane?
-}
-
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
 class AttributeEstimationPipeline: ObservableObject {
+    struct PrerequisiteCache: Sendable {
+        var worldPoints: [WorldPoint]? = nil
+        var alignedPlane: Plane? = nil
+        
+        init(worldPoints: [WorldPoint]? = nil, alignedPlane: Plane? = nil) {
+            self.worldPoints = worldPoints
+            self.alignedPlane = alignedPlane
+        }
+    }
+    
     enum Constants {
         enum Texts {
             static let depthMapProcessorKey = "Depth Map Processor"
@@ -62,6 +68,8 @@ class AttributeEstimationPipeline: ObservableObject {
     var planeAttributeProcessor: PlaneAttributeProcessor?
     var captureImageData: (any CaptureImageDataProtocol)?
     var captureMeshData: (any CaptureMeshDataProtocol)?
+    
+    var prerequisiteCache = PrerequisiteCache()
     
     /// TODO: MESH PROCESSING: Add mesh data processing components when needed.
     func configure(
@@ -82,6 +90,24 @@ class AttributeEstimationPipeline: ObservableObject {
         self.captureMeshData = captureMeshData
     }
     
+    func setPrerequisites(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws {
+        let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        switch(oswElementClass) {
+        case .Sidewalk:
+            let worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+            let plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, worldPoints: worldPoints)
+            self.prerequisiteCache = PrerequisiteCache(worldPoints: worldPoints, alignedPlane: plane)
+        default:
+            self.prerequisiteCache = PrerequisiteCache()
+        }
+    }
+    
+    func clearPrerequisites() {
+        self.prerequisiteCache = PrerequisiteCache()
+    }
+    
     func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
@@ -90,14 +116,9 @@ class AttributeEstimationPipeline: ObservableObject {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         switch(oswElementClass) {
         case .Sidewalk:
-            let worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-            let plane = try self.calculateAlignedPlane(
-                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
-            )
             locationRequestResult = try self.calculateLocationForLineString(
                 deviceLocation: deviceLocation,
-                accessibilityFeature: accessibilityFeature,
-                alignedPlane: plane, worldPoints: worldPoints
+                accessibilityFeature: accessibilityFeature
             )
         case .Building:
             locationRequestResult = try self.calculateLocationForPolygon(
@@ -150,33 +171,33 @@ class AttributeEstimationPipeline: ObservableObject {
         var attributeAssignmentFlagError = false
         
         /// If the attributes include width, runningSlope or crossSlope, pre-calculate the fitting plane for efficiency
-        var worldPoints: [WorldPoint]? = nil
-        var plane: Plane? = nil
-        if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
-            $0 == .width || $0 == .runningSlope || $0 == .crossSlope
-        }) {
-            worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-            plane = try self.calculateAlignedPlane(
-                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
-            )
-        }
+//        var worldPoints: [WorldPoint]? = nil
+//        var plane: Plane? = nil
+//        if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
+//            $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+//        }) {
+//            worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+//            plane = try self.calculateAlignedPlane(
+//                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+//            )
+//        }
         
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
             do {
                 switch attribute {
                 case .width:
                     let widthAttributeValue = try self.calculateWidth(
-                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature
                     )
                     try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .width, isCalculated: true)
                 case .runningSlope:
                     let runningSlopeAttributeValue = try self.calculateRunningSlope(
-                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature
                     )
                     try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlope, isCalculated: true)
                 case .crossSlope:
                     let crossSlopeAttributeValue = try self.calculateCrossSlope(
-                        accessibilityFeature: accessibilityFeature, worldPoints: worldPoints, alignedPlane: plane
+                        accessibilityFeature: accessibilityFeature
                     )
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlope, isCalculated: true)
                 case .widthLegacy:

@@ -36,8 +36,7 @@ extension AttributeEstimationPipeline {
     
     func calculateLocationForLineString(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature,
-        alignedPlane: Plane? = nil, worldPoints: [WorldPoint]? = nil
+        accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
@@ -49,27 +48,23 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
+        let worldPoints = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
         do {
-            if let alignedPlane, let worldPoints {
-                return try getLocationForLineStringFromPlane(
-                    depthMapProcessor: depthMapProcessor,
-                    localizationProcessor: localizationProcessor,
-                    captureImageData: captureImageDataConcrete,
-                    deviceLocation: deviceLocation,
-                    accessibilityFeature: accessibilityFeature,
-                    plane: alignedPlane, worldPoints: worldPoints
-                )
-            } else {
-                return try getLocationFromTrapezoid(
-                    depthMapProcessor: depthMapProcessor,
-                    localizationProcessor: localizationProcessor,
-                    captureImageData: captureImageDataConcrete,
-                    deviceLocation: deviceLocation,
-                    accessibilityFeature: accessibilityFeature
-                )
-            }
+            return try getLocationForLineStringFromPlane(
+                depthMapProcessor: depthMapProcessor,
+                localizationProcessor: localizationProcessor,
+                captureImageData: captureImageDataConcrete,
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature,
+                plane: alignedPlane, worldPoints: worldPoints
+            )
         } catch {
-            return try getLocationFromCentroid(
+            return try getLocationFromTrapezoid(
                 depthMapProcessor: depthMapProcessor,
                 localizationProcessor: localizationProcessor,
                 captureImageData: captureImageDataConcrete,
@@ -197,26 +192,24 @@ extension AttributeEstimationPipeline {
         )
     }
     
-    func getLocationFromTrapezoid(
+    func getLocationFromPolygon(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
-        guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
-              trapezoidBoundPoints.count == 4 else {
+        let polygonPoints = accessibilityFeature.contourDetails.normalizedPoints
+        let leftMostPoint = polygonPoints.min { $0.x < $1.x }
+        let rightMostPoint = polygonPoints.max { $0.x < $1.x }
+        guard let leftMostPoint, let rightMostPoint else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
-        let bottomCenter = simd_float2(
-            x: (trapezoidBoundPoints[0].x + trapezoidBoundPoints[3].x) / 2,
-            y: (trapezoidBoundPoints[0].y + trapezoidBoundPoints[3].y) / 2
+        let centerPoint = simd_float2(
+            x: (leftMostPoint.x + rightMostPoint.x) / 2,
+            y: (leftMostPoint.y + rightMostPoint.y) / 2
         )
-        let topCenter = simd_float2(
-            x: (trapezoidBoundPoints[1].x + trapezoidBoundPoints[2].x) / 2,
-            y: (trapezoidBoundPoints[1].y + trapezoidBoundPoints[2].y) / 2
-        )
-        let points = [topCenter, bottomCenter] /// Flipped because of image coordinate system
+        let points = [leftMostPoint, centerPoint, rightMostPoint] /// Closing the polygon
         let pointDepthValues = try depthMapProcessor.getFeatureDepthsAtNormalizedPoints(points)
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
@@ -246,25 +239,29 @@ extension AttributeEstimationPipeline {
             coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
         )
     }
-    
-    func getLocationFromPolygon(
+}
+
+extension AttributeEstimationPipeline {
+    func getLocationFromTrapezoid(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
-        let polygonPoints = accessibilityFeature.contourDetails.normalizedPoints
-        let leftMostPoint = polygonPoints.min { $0.x < $1.x }
-        let rightMostPoint = polygonPoints.max { $0.x < $1.x }
-        guard let leftMostPoint, let rightMostPoint else {
+        guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
+              trapezoidBoundPoints.count == 4 else {
             throw AttributeEstimationPipelineError.invalidAttributeData
         }
-        let centerPoint = simd_float2(
-            x: (leftMostPoint.x + rightMostPoint.x) / 2,
-            y: (leftMostPoint.y + rightMostPoint.y) / 2
+        let bottomCenter = simd_float2(
+            x: (trapezoidBoundPoints[0].x + trapezoidBoundPoints[3].x) / 2,
+            y: (trapezoidBoundPoints[0].y + trapezoidBoundPoints[3].y) / 2
         )
-        let points = [leftMostPoint, centerPoint, rightMostPoint] /// Closing the polygon
+        let topCenter = simd_float2(
+            x: (trapezoidBoundPoints[1].x + trapezoidBoundPoints[2].x) / 2,
+            y: (trapezoidBoundPoints[1].y + trapezoidBoundPoints[2].y) / 2
+        )
+        let points = [topCenter, bottomCenter] /// Flipped because of image coordinate system
         let pointDepthValues = try depthMapProcessor.getFeatureDepthsAtNormalizedPoints(points)
         let pointsWithDepth: [PointWithDepth] = zip(points, pointDepthValues).map {
             return PointWithDepth(point: CGPoint(x: CGFloat($0.0.x), y: CGFloat($0.0.y)), depth: $0.1)
