@@ -372,7 +372,7 @@ extension TestCameraManager {
         }
     }
     
-    private func processMeshAnchors(captureMeshData: MeshPlyContents) async throws -> ARCameraMeshResults {
+    private func processMeshAnchors(captureMeshData: MeshContents) async throws -> ARCameraMeshResults {
         guard let meshGPUSnapshotGenerator = meshGPUSnapshotGenerator else {
             throw ARCameraManagerError.meshSnapshotGeneratorUnavailable
         }

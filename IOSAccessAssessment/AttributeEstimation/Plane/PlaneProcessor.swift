@@ -101,7 +101,7 @@ struct PlaneProcessor {
             throw PlaneProcessorError.invalidPlaneData
         }
         
-        /// Eigen values in a are in ascending order
+        /// Eigen values are in ascending order
         let firstK = 2
         let firstEigenVector = simd_normalize(simd_float3(a[firstK * 3 + 0], a[firstK * 3 + 1], a[firstK * 3 + 2]))
         let secondK = 1

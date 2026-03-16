@@ -170,18 +170,6 @@ class AttributeEstimationPipeline: ObservableObject {
     ) throws {
         var attributeAssignmentFlagError = false
         
-        /// If the attributes include width, runningSlope or crossSlope, pre-calculate the fitting plane for efficiency
-//        var worldPoints: [WorldPoint]? = nil
-//        var plane: Plane? = nil
-//        if accessibilityFeature.accessibilityFeatureClass.attributes.contains(where: {
-//            $0 == .width || $0 == .runningSlope || $0 == .crossSlope
-//        }) {
-//            worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-//            plane = try self.calculateAlignedPlane(
-//                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
-//            )
-//        }
-        
         for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
             do {
                 switch attribute {

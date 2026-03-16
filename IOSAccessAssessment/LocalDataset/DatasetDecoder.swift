@@ -41,7 +41,7 @@ struct DatasetCaptureBaseData: CaptureDataProtocol {
 
 struct DatasetCaptureData {
     let captureImageData: DatasetCaptureBaseData
-    let captureMeshData: MeshPlyContents?
+    let captureMeshData: MeshContents?
     let location: CLLocationCoordinate2D?
 }
 
@@ -145,10 +145,10 @@ class DatasetDecoder {
         guard let otherDetailsData = otherDetailsDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
-        var meshData: MeshPlyContents? = nil
+        var meshContents: MeshContents? = nil
         if enhancedAnalysisMode {
             /// In enhanced analysis mode, we also load the mesh data for the frame if it exists.
-            meshData = try? meshDecoder.load(frameNumber: frameNumber)
+            meshContents = try? meshDecoder.load(frameNumber: frameNumber)
         }
         
         let datasetCaptureBaseData = DatasetCaptureBaseData(
@@ -160,7 +160,7 @@ class DatasetDecoder {
         let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
         let datasetCaptureData = DatasetCaptureData(
             captureImageData: datasetCaptureBaseData,
-            captureMeshData: meshData,
+            captureMeshData: meshContents,
             location: location
         )
         return datasetCaptureData

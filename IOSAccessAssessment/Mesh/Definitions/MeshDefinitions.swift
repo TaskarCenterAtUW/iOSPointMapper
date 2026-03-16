@@ -8,6 +8,33 @@
 import Foundation
 import simd
 
+struct MeshContents: Sendable {
+    var positions: [packed_float3]
+    var indices: [UInt32]
+    var classifications: [UInt8]? = nil
+    var colorR8: Int
+    var colorG8: Int
+    var colorB8: Int
+}
+
+struct MeshPolygon: Sendable {
+    let v0: simd_float3
+    let v1: simd_float3
+    let v2: simd_float3
+    
+    let index0: Int
+    let index1: Int
+    let index2: Int
+    
+    var centroid: simd_float3 {
+        return (v0 + v1 + v2) / 3.0
+    }
+    
+    var vertices: [simd_float3] {
+        return [v0, v1, v2]
+    }
+}
+
 /**
     Enum representing the dimensions of a mesh.
  */
@@ -33,22 +60,3 @@ enum MeshDimension: CaseIterable, Codable, Sendable {
         }
     }
 }
-
-struct MeshPolygon: Sendable {
-    let v0: simd_float3
-    let v1: simd_float3
-    let v2: simd_float3
-    
-    let index0: Int
-    let index1: Int
-    let index2: Int
-    
-    var centroid: simd_float3 {
-        return (v0 + v1 + v2) / 3.0
-    }
-    
-    var vertices: [simd_float3] {
-        return [v0, v1, v2]
-    }
-}
-

@@ -18,9 +18,6 @@ extension AttributeEstimationPipeline {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
         }
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
-        }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
         }
@@ -59,12 +56,6 @@ extension AttributeEstimationPipeline {
     func calculateRunningSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
-        }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
@@ -78,7 +69,6 @@ extension AttributeEstimationPipeline {
         let run = simd_length(runningHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
-//        print("Running vector: \(runningVector), \nRunning Horizontal Vector: \(runningHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
@@ -89,12 +79,6 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let planeFitProcesor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
-        }
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
@@ -108,7 +92,6 @@ extension AttributeEstimationPipeline {
         let run = simd_length(crossHorizontalVector)
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
-//        print("Cross vector: \(crossVector), \nCross Horizontal Vector: \(crossHorizontalVector), \nRise: \(rise), Run: \(run), Slope Degrees: \(slopeDegrees)")
         
         guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError

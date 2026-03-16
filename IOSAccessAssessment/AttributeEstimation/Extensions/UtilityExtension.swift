@@ -99,3 +99,9 @@ extension AttributeEstimationPipeline {
         return projectedPoints
     }
 }
+
+/**
+ Extension for utilities related to mesh polygon extraction and plane calculation.
+ */
+extension AttributeEstimationPipeline {
+}

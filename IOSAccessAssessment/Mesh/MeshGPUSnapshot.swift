@@ -12,7 +12,7 @@ import RealityKit
  */
 final class MeshGPUSnapshotGenerator: NSObject {
     // MARK: These constants can be made configurable later
-    // But make sure that the snapshot from MeshPlyContents extension continues to use the original constants.
+    // But make sure that the snapshot from MeshContents extension continues to use the original constants.
     private let defaultBufferSize: Int = 1024
     private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
     private let vertexOffset: Int = 0
@@ -175,34 +175,25 @@ final class MeshGPUSnapshotGenerator: NSObject {
 }
 
 /**
- Extension to generate snapshot from MeshPlyContents.
- 
- struct MeshPlyContents: Sendable {
-     var positions: [SIMD3<Float>]
-     var indices: [UInt32]
-     var classifications: [UInt8]? = nil
-     var colorR8: Int
-     var colorG8: Int
-     var colorB8: Int
- }
+ Extension to generate snapshot from MeshContents.
  */
 extension MeshGPUSnapshotGenerator {
     /**
-     Uses MeshPlyContents to create a snapshot that can be used for GPU processing.
+     Uses MeshContents to create a snapshot that can be used for GPU processing.
      This is useful for testing and visualization purposes where we want to bypass ARKit and directly feed in mesh data.
      
-     This method overwrites any previous snapshot since MeshPlyContents represents a complete mesh state rather than incremental updates.
+     This method overwrites any previous snapshot since MeshContents represents a complete mesh state rather than incremental updates.
      
      - NOTE:
-     MeshPlyContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
+     MeshContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
      */
-    func snapshotContents(from mesh: MeshPlyContents) throws {
+    func snapshotContents(from mesh: MeshContents) throws {
 //        let vertexElemSize = MemoryLayout<SIMD3<Float>>.stride
 //        let indexElemSize = MemoryLayout<UInt32>.stride
         let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.positions.count * vertexElemSize, options: .storageModeShared)
         let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.indices.count * indexElemSize, options: .storageModeShared)
         let classificationBuffer: MTLBuffer? = mesh.classifications != nil ? try MetalBufferUtils.makeBuffer(device: device, length: mesh.classifications!.count * classificationElemSize, options: .storageModeShared) : nil
-        let anchorTransform = matrix_identity_float4x4 // Using identity transform since MeshPlyContents already represents a complete mesh state without any specific anchor association
+        let anchorTransform = matrix_identity_float4x4 // Using identity transform since MeshContents already represents a complete mesh state without any specific anchor association
         var meshGPUAnchor = MeshGPUAnchor(
             vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: classificationBuffer, anchorTransform: anchorTransform
         )

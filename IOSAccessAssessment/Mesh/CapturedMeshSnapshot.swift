@@ -103,6 +103,9 @@ final class CapturedMeshSnapshotGenerator {
     Can be used for processing the mesh snapshot, even outside the main actor.
  */
 final class CapturedMeshSnapshotHelper {
+    /**
+     TODO: Instead of simd3<Float>, use packed simd types that match the vertex format in the snapshot to avoid unnecessary conversions.
+     */
     static func readFeatureSnapshot(
         capturedMeshSnapshot: CapturedMeshSnapshot,
         accessibilityFeatureClass: AccessibilityFeatureClass
@@ -162,4 +165,11 @@ final class CapturedMeshSnapshotHelper {
         }
         return polygons
     }
+    
+//    static func readFeatureSnapshot(
+//        capturedMeshSnapshot: CapturedMeshSnapshot,
+//        accessibilityFeatureClass: AccessibilityFeatureClass
+//    ) -> MeshContents {
+//        
+//    }
 }
