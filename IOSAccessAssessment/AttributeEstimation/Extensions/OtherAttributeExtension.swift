@@ -7,12 +7,31 @@
 import SwiftUI
 import CoreLocation
 
-/**
- Extension for attribute calculation with rudimentary methods.
- TODO: Improve upon these methods with more robust implementations.
- */
 extension AttributeEstimationPipeline {
     func calculateWidth(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return try self.calculateWidthFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateRunningSlope(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return try self.calculateRunningSlopeFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateCrossSlope(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return try self.calculateCrossSlopeFromImage(accessibilityFeature: accessibilityFeature)
+    }
+}
+
+/**
+ Extension for attribute calculation with plane-fitting approach.
+ */
+extension AttributeEstimationPipeline {
+    func calculateWidthFromImage(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
@@ -53,7 +72,7 @@ extension AttributeEstimationPipeline {
      
         Assumes that the plane being calculated has its first vector aligned with the direction of travel.
      */
-    func calculateRunningSlope(
+    func calculateRunningSlopeFromImage(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
@@ -76,7 +95,7 @@ extension AttributeEstimationPipeline {
         return runningSlopeAttributeValue
     }
     
-    func calculateCrossSlope(
+    func calculateCrossSlopeFromImage(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(

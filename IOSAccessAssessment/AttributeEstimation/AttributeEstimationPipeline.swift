@@ -44,11 +44,7 @@ class AttributeEstimationPipeline: ObservableObject {
     struct PrerequisiteCache: Sendable {
         var worldPoints: [WorldPoint]? = nil
         var alignedPlane: Plane? = nil
-        
-        init(worldPoints: [WorldPoint]? = nil, alignedPlane: Plane? = nil) {
-            self.worldPoints = worldPoints
-            self.alignedPlane = alignedPlane
-        }
+        var meshContents: MeshContents? = nil
     }
     
     enum Constants {
@@ -94,43 +90,42 @@ class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        let meshEnabled: Bool = captureMeshData != nil
+        var worldPoints: [WorldPoint]? = nil
+        var meshContents: MeshContents? = nil
+        var plane: Plane? = nil
         switch(oswElementClass) {
         case .Sidewalk:
-            let worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-            let plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, worldPoints: worldPoints)
-            self.prerequisiteCache = PrerequisiteCache(worldPoints: worldPoints, alignedPlane: plane)
+            if meshEnabled {
+                meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
+                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, meshContents: meshContents)
+            } else {
+                worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, worldPoints: worldPoints)
+            }
         default:
-            self.prerequisiteCache = PrerequisiteCache()
+            break
         }
+        self.prerequisiteCache.worldPoints = worldPoints
+        self.prerequisiteCache.meshContents = meshContents
+        self.prerequisiteCache.alignedPlane = plane
     }
     
     func clearPrerequisites() {
-        self.prerequisiteCache = PrerequisiteCache()
+        self.prerequisiteCache.worldPoints = nil
+        self.prerequisiteCache.meshContents = nil
+        self.prerequisiteCache.alignedPlane = nil
     }
     
     func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        var locationRequestResult: LocationRequestResult
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        switch(oswElementClass) {
-        case .Sidewalk:
-            locationRequestResult = try self.calculateLocationForLineString(
-                deviceLocation: deviceLocation,
-                accessibilityFeature: accessibilityFeature
-            )
-        case .Building:
-            locationRequestResult = try self.calculateLocationForPolygon(
-                deviceLocation: deviceLocation,
-                accessibilityFeature: accessibilityFeature
-            )
-        default:
-            locationRequestResult = try self.calculateLocationForPoint(
-                deviceLocation: deviceLocation,
-                accessibilityFeature: accessibilityFeature
-            )
-        }
+        let locationRequestResult = try self.calculateLocation(
+            deviceLocation: deviceLocation,
+            accessibilityFeature: accessibilityFeature
+        )
         accessibilityFeature.setLocationDetails(coordinates: locationRequestResult.coordinates)
         /// Set Lidar Depth as experimental attribute
         if let lidarDepthAttributeValue = AccessibilityFeatureAttribute.lidarDepth.valueFromDouble(

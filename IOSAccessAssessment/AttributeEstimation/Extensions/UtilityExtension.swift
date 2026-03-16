@@ -130,6 +130,6 @@ extension AttributeEstimationPipeline {
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
         )
-        return plane
+        return alignedPlane
     }
 }

@@ -145,6 +145,7 @@ struct PlaneProcessor {
                 simd_float3(diff.y * diff.x, diff.y * diff.y, diff.y * diff.z) * weight,
                 simd_float3(diff.z * diff.x, diff.z * diff.y, diff.z * diff.z) * weight
             ])
+            covarianceMatrix += weightedOuterProduct
         }
         covarianceMatrix = simd_float3x3(rows: [
             covarianceMatrix[0] / Float(points.count),

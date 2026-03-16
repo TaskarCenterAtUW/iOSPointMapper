@@ -7,11 +7,37 @@
 import SwiftUI
 import CoreLocation
 
+extension AttributeEstimationPipeline {
+    func calculateLocation(
+        deviceLocation: CLLocationCoordinate2D,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> LocationRequestResult {
+        let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        switch(oswElementClass) {
+        case .Sidewalk:
+            return try self.calculateLocationFromImageForLineString(
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        case .Building:
+            return try self.calculateLocationFromImageForPolygon(
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        default:
+            return try self.calculateLocationFromImageForPoint(
+                deviceLocation: deviceLocation,
+                accessibilityFeature: accessibilityFeature
+            )
+        }
+    }
+}
+
 /**
  Extension for additional location processing methods.
  */
 extension AttributeEstimationPipeline {
-    func calculateLocationForPoint(
+    func calculateLocationFromImageForPoint(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
@@ -25,7 +51,7 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
-        return try getLocationFromCentroid(
+        return try getLocationFromImageByCentroid(
             depthMapProcessor: depthMapProcessor,
             localizationProcessor: localizationProcessor,
             captureImageData: captureImageDataConcrete,
@@ -34,7 +60,7 @@ extension AttributeEstimationPipeline {
         )
     }
     
-    func calculateLocationForLineString(
+    func calculateLocationFromImageForLineString(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
@@ -55,7 +81,7 @@ extension AttributeEstimationPipeline {
             accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
         )
         do {
-            return try getLocationForLineStringFromPlane(
+            return try getLocationFromImageForLineStringByPlane(
                 depthMapProcessor: depthMapProcessor,
                 localizationProcessor: localizationProcessor,
                 captureImageData: captureImageDataConcrete,
@@ -64,7 +90,7 @@ extension AttributeEstimationPipeline {
                 plane: alignedPlane, worldPoints: worldPoints
             )
         } catch {
-            return try getLocationFromTrapezoid(
+            return try getLocationFromImageForLineStringByTrapezoid(
                 depthMapProcessor: depthMapProcessor,
                 localizationProcessor: localizationProcessor,
                 captureImageData: captureImageDataConcrete,
@@ -74,7 +100,7 @@ extension AttributeEstimationPipeline {
         }
     }
     
-    func calculateLocationForPolygon(
+    func calculateLocationFromImageForPolygon(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
@@ -89,7 +115,7 @@ extension AttributeEstimationPipeline {
         }
         let captureImageDataConcrete = CaptureImageData(captureImageData)
         do {
-            return try getLocationFromPolygon(
+            return try getLocationFromImageByPolygon(
                 depthMapProcessor: depthMapProcessor,
                 localizationProcessor: localizationProcessor,
                 captureImageData: captureImageDataConcrete,
@@ -97,7 +123,7 @@ extension AttributeEstimationPipeline {
                 accessibilityFeature: accessibilityFeature
             )
         } catch {
-            return try getLocationFromCentroid(
+            return try getLocationFromImageByCentroid(
                 depthMapProcessor: depthMapProcessor,
                 localizationProcessor: localizationProcessor,
                 captureImageData: captureImageDataConcrete,
@@ -106,8 +132,10 @@ extension AttributeEstimationPipeline {
             )
         }
     }
-    
-    func getLocationFromCentroid(
+}
+
+extension AttributeEstimationPipeline {
+    func getLocationFromImageByCentroid(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
@@ -137,7 +165,7 @@ extension AttributeEstimationPipeline {
         )
     }
     
-    func getLocationForLineStringFromPlane(
+    func getLocationFromImageForLineStringByPlane(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
@@ -192,7 +220,7 @@ extension AttributeEstimationPipeline {
         )
     }
     
-    func getLocationFromPolygon(
+    func getLocationFromImageByPolygon(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
@@ -239,10 +267,8 @@ extension AttributeEstimationPipeline {
             coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
         )
     }
-}
-
-extension AttributeEstimationPipeline {
-    func getLocationFromTrapezoid(
+    
+    func getLocationFromImageForLineStringByTrapezoid(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
