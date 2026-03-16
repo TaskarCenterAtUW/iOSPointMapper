@@ -78,30 +78,23 @@ extension AttributeEstimationPipeline {
         )
         return projectedPlane
     }
-    
-    func getProjectedPointsOnPlane(
-        worldPoints: [WorldPoint],
-        plane: Plane
-    ) throws -> [ProjectedPoint] {
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
-        guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-        }
-        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-            worldPoints: worldPoints, plane: plane,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-        )
-        
-        return projectedPoints
-    }
 }
 
 /**
  Extension for utilities related to mesh polygon extraction and plane calculation.
  */
 extension AttributeEstimationPipeline {
+    func getMeshPolygons(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> MeshContents {
+        guard let captureMeshData = self.captureMeshData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let capturedMeshSnapshot = captureMeshData.captureMeshDataResults.segmentedMesh
+        let meshContents: MeshContents = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
+            capturedMeshSnapshot: capturedMeshSnapshot,
+            accessibilityFeatureClass: accessibilityFeature.accessibilityFeatureClass
+        )
+        return meshContents
+    }
 }

@@ -191,8 +191,8 @@ final class CapturedMeshSnapshotHelper {
             throw CapturedMeshSnapshotError.invalidMeshData
         }
         
-        var positions: [packed_float3] = []
-        positions.reserveCapacity(vertexCount)
+        var positions: [packed_float3] = [packed_float3](repeating: packed_float3(), count: vertexCount)
+//        positions.reserveCapacity(vertexCount)
         try vertexData.withUnsafeBytes { ptr in
             guard let baseAddress = ptr.baseAddress else {
                 throw CapturedMeshSnapshotError.invalidVertexData
@@ -202,33 +202,38 @@ final class CapturedMeshSnapshotHelper {
                     guard let posBaseAddress = posPtr.baseAddress else {
                         throw CapturedMeshSnapshotError.invalidVertexData
                     }
-                    let posPointer = posBaseAddress.advanced(by: vertexOffset)
-                    posPtr.copyMemory(from: UnsafeRawBufferPointer(start: posPointer, count: vertexCount * vertexStride))
+                    let srcPtr = baseAddress.advanced(by: vertexOffset)
+                    posBaseAddress.copyMemory(from: srcPtr, byteCount: vertexCount * vertexStride)
                 }
             } else {
                 for i in 0..<vertexCount {
                     let vertexAddress = baseAddress.advanced(by: i * vertexStride + vertexOffset)
                     let vertexPointer = vertexAddress.assumingMemoryBound(to: packed_float3.self)
-                    positions.append(vertexPointer.pointee)
+//                    positions.append(vertexPointer.pointee)
+                    positions[i] = vertexPointer.pointee
                 }
             }
         }
         
-        var indices: [UInt32] = []
-        indices.reserveCapacity(indexCount)
+        var indices: [UInt32] = [UInt32](repeating: 0, count: indexCount)
+//        indices.reserveCapacity(indexCount)
         try indexData.withUnsafeBytes { ptr in
             guard let baseAddress = ptr.baseAddress else {
                 throw CapturedMeshSnapshotError.invalidIndexData
             }
             if indexStride == MemoryLayout<UInt32>.stride {
-                indices.withUnsafeMutableBytes { indexPtr in
-                    indexPtr.copyMemory(from: UnsafeRawBufferPointer.init(start: baseAddress, count: indexCount * indexStride))
+                try indices.withUnsafeMutableBytes { indexPtr in
+                    guard let indexBaseAddress = indexPtr.baseAddress else {
+                        throw CapturedMeshSnapshotError.invalidIndexData
+                    }
+                    indexBaseAddress.copyMemory(from: baseAddress, byteCount: indexCount * indexStride)
                 }
             } else {
                 for i in 0..<indexCount {
                     let indexAddress = baseAddress.advanced(by: i * indexStride)
                     let indexPointer = indexAddress.assumingMemoryBound(to: UInt32.self)
-                    indices.append(indexPointer.pointee)
+//                    indices.append(indexPointer.pointee)
+                    indices[i] = indexPointer.pointee
                 }
             }
         }
