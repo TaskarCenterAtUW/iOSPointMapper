@@ -11,6 +11,7 @@ import CoreImage
 enum PlaneProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     case invalidPointData
+    case invalidMeshData
     case invalidPlaneData
     case invalidProjectionData
     
@@ -20,6 +21,8 @@ enum PlaneProcessorError: Error, LocalizedError {
             return "PlaneFit Initialization Error: \(message)"
         case .invalidPointData:
             return "The calculated point data is invalid."
+        case .invalidMeshData:
+            return "The provided mesh data is invalid."
         case .invalidPlaneData:
             return "The calculated plane data is invalid."
         case .invalidProjectionData:
@@ -119,6 +122,70 @@ struct PlaneProcessor {
         )
         return plane
     }
+    
+    func fitPlanePCA(points: [WorldPoint], weights: [Float]? = nil) throws -> Plane {
+        guard points.count>=3 else {
+            throw PlaneProcessorError.invalidPointData
+        }
+        var weightsLocal: [Float] = weights ?? [Float](repeating: 1.0, count: points.count)
+        if weightsLocal.count != points.count {
+            throw PlaneProcessorError.invalidPointData
+        }
+        
+        /// Compute weighted mean
+        let W = weightsLocal.reduce(0, +)
+        let pointMean = zip(points, weightsLocal).reduce(simd_float3(0,0,0)) { $0 + $1.0.p * $1.1 } / max(W, 1e-6)
+        
+        /// Compute covariance matrix
+        var covarianceMatrix = simd_float3x3(0)
+        for (point, weight) in zip(points, weightsLocal) {
+            let diff = point.p - pointMean
+            let weightedOuterProduct = simd_float3x3(rows: [
+                simd_float3(diff.x * diff.x, diff.x * diff.y, diff.x * diff.z) * weight,
+                simd_float3(diff.y * diff.x, diff.y * diff.y, diff.y * diff.z) * weight,
+                simd_float3(diff.z * diff.x, diff.z * diff.y, diff.z * diff.z) * weight
+            ])
+        }
+        covarianceMatrix = simd_float3x3(rows: [
+            covarianceMatrix[0] / Float(points.count),
+            covarianceMatrix[1] / Float(points.count),
+            covarianceMatrix[2] / Float(points.count),
+        ])
+        var a = [
+            covarianceMatrix[0][0], covarianceMatrix[0][1], covarianceMatrix[0][2],
+            covarianceMatrix[1][0], covarianceMatrix[1][1], covarianceMatrix[1][2],
+            covarianceMatrix[2][0], covarianceMatrix[2][1], covarianceMatrix[2][2]
+        ]
+        var eigenvalues = [Float](repeating: 0, count: 3)
+        var jobz: Character = "V" /* 'V' */, uplo: Character = "U" /* 'L' */
+        var n = Int32(3), lda = Int32(3), info = Int32(0)
+        var lwork: Int32 = 8
+        var work = [Float](repeating: 0, count: Int(lwork))
+        /// TODO: Deprecated. Replace with newer Accelerate APIs.
+        ssyev_(&jobz, &uplo, &n, &a, &lda, &eigenvalues, &work, &lwork, &info)
+        
+        guard info == 0 else {
+            throw PlaneProcessorError.invalidPlaneData
+        }
+        
+        /// Eigen values are in ascending order
+        let firstK = 2
+        let firstEigenVector = simd_normalize(simd_float3(a[firstK * 3 + 0], a[firstK * 3 + 1], a[firstK * 3 + 2]))
+        let secondK = 1
+        let secondEigenVector = simd_normalize(simd_float3(a[secondK * 3 + 0], a[secondK * 3 + 1], a[secondK * 3 + 2]))
+        let normalK = 0
+        let normalVector = simd_normalize(simd_float3(a[normalK * 3 + 0], a[normalK * 3 + 1], a[normalK * 3 + 2]))
+        let d = -simd_dot(normalVector, pointMean)
+        
+        let plane = Plane(
+            firstVector: firstEigenVector,
+            secondVector: secondEigenVector,
+            normalVector: normalVector,
+            d: d,
+            origin: pointMean
+        )
+        return plane
+    }
 }
 
 /**
@@ -198,7 +265,7 @@ extension PlaneProcessor {
         let horizontalVector1 = simd_normalize(simd_float3(vector1.x, 0, vector1.z))
         let horizontalVector2 = simd_normalize(simd_float3(vector2.x, 0, vector2.z))
         let dotProduct = simd_dot(horizontalVector1, horizontalVector2)
-        let angle = acos(dotProduct)
+//        let angle = acos(dotProduct)
 //        let angleDegrees = angle * (180.0 / .pi)
 //        let finalAngleDegrees = min(angleDegrees, 180.0 - angleDegrees)
 //        print("Angle between projected vectors: \(finalAngleDegrees) degrees")

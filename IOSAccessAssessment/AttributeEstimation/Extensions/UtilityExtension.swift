@@ -84,7 +84,7 @@ extension AttributeEstimationPipeline {
  Extension for utilities related to mesh polygon extraction and plane calculation.
  */
 extension AttributeEstimationPipeline {
-    func getMeshPolygons(
+    func getMeshContents(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> MeshContents {
         guard let captureMeshData = self.captureMeshData else {
@@ -96,5 +96,40 @@ extension AttributeEstimationPipeline {
             accessibilityFeatureClass: accessibilityFeature.accessibilityFeatureClass
         )
         return meshContents
+    }
+    
+    func calculateAlignedPlane(
+        accessibilityFeature: EditableAccessibilityFeature,
+        meshContents: MeshContents? = nil
+    ) throws -> Plane {
+        guard let planeProcessorLocal = self.planeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let captureMeshData = self.captureMeshData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        var plane: Plane
+        let meshContentsLocal: MeshContents = try meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        /// Using the vertices of the mesh polygons as points to fit the plane.
+        let meshTrianges: [MeshPolygon] = meshContentsLocal.triangles
+        let worldPointsFromMesh: [WorldPoint] = meshTrianges.map { triangle in
+            return WorldPoint(p: triangle.centroid)
+        }
+        let areasFromMesh: [Float] = meshTrianges.map { triangle in
+            return triangle.area
+        }
+        plane = try planeProcessorLocal.fitPlanePCA(points: worldPointsFromMesh, weights: areasFromMesh)
+        let alignedPlane = try planeProcessorLocal.alignPlaneWithViewDirection(
+            plane: plane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        return plane
     }
 }

@@ -15,6 +15,29 @@ struct MeshContents: Sendable {
     var colorR8: Int
     var colorG8: Int
     var colorB8: Int
+    
+    var triangles: [MeshPolygon] {
+        var result: [MeshPolygon] = []
+        for i in stride(from: 0, to: indices.count, by: 3) {
+            let i0 = Int(indices[i])
+            let i1 = Int(indices[i + 1])
+            let i2 = Int(indices[i + 2])
+            let vertices = [i0, i1, i2].map { i in
+                let packed_v = positions[i]
+                return simd_float3(packed_v.x, packed_v.y, packed_v.z)
+            }
+            let polygon = MeshPolygon(
+                v0: vertices[0],
+                v1: vertices[1],
+                v2: vertices[2],
+                index0: Int(indices[i]),
+                index1: Int(indices[i + 1]),
+                index2: Int(indices[i + 2])
+            )
+            result.append(polygon)
+        }
+        return result
+    }
 }
 
 struct MeshPolygon: Sendable {
@@ -32,6 +55,13 @@ struct MeshPolygon: Sendable {
     
     var vertices: [simd_float3] {
         return [v0, v1, v2]
+    }
+    
+    var area: Float {
+        let edge1 = v1 - v0
+        let edge2 = v2 - v0
+        let crossProduct = simd_cross(edge1, edge2)
+        return simd_length(crossProduct) / 2.0
     }
 }
 
