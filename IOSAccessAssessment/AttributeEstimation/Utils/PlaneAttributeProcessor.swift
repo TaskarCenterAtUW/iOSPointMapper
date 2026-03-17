@@ -51,7 +51,7 @@ struct PlaneAttributeProcessor {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     
-    private let pipeline: MTLComputePipelineState
+    private let binPointPipeline: MTLComputePipelineState
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
@@ -67,11 +67,11 @@ struct PlaneAttributeProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binProjectedPoints"),
-              let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+        guard let binPointKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binProjectedPoints"),
+              let binPointPipeline = try? device.makeComputePipelineState(function: binPointKernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
-        self.pipeline = pipeline
+        self.binPointPipeline = binPointPipeline
     }
     
     /**
@@ -143,7 +143,7 @@ struct PlaneAttributeProcessor {
             options: .storageModeShared
         )
         
-        let threadGroupSizeWidth = min(self.pipeline.maxTotalThreadsPerThreadgroup, 256)
+        let threadGroupSizeWidth = min(self.binPointPipeline.maxTotalThreadsPerThreadgroup, 256)
         
         /**
          Initialize point count to zero.
@@ -157,7 +157,7 @@ struct PlaneAttributeProcessor {
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw PlaneAttributeProcessorError.metalPipelineCreationError
         }
-        commandEncoder.setComputePipelineState(self.pipeline)
+        commandEncoder.setComputePipelineState(self.binPointPipeline)
         commandEncoder.setBuffer(projectedPointsBuffer, offset: 0, index: 0)
         commandEncoder.setBytes(&projectedPointCount, length: MemoryLayout<UInt32>.size, index: 1)
         commandEncoder.setBytes(&params, length: MemoryLayout<ProjectedPointBinningParams>.size, index: 2)
@@ -191,6 +191,19 @@ struct PlaneAttributeProcessor {
             binCount: binCount, bins: bins
         )
     }
+    
+    /**
+     Compute the width of the plane by calculating the width for each projected point bin and then aggregating the results.
+     The width of each projected point bin is calculated by getting all the mesh triangles that intersect with the 's' range of the bin and then calculating the width of the 't' values for those triangles.
+     */
+//    func computeWidthForMeshByBin(
+//        meshTriangles: [MeshPolygon],
+//        projectedPointBins: ProjectedPointBins,
+//        minCount: Int = 10,
+//        trimLow: Float = 0.05, trimHigh: Float = 0.95
+//    ) -> [BinWidth] {
+//        
+//    }
     
     /**
         Compute the width of the plane by analyzing the binned projected point values.

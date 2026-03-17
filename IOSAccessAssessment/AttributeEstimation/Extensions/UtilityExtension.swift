@@ -102,7 +102,7 @@ extension AttributeEstimationPipeline {
     
     func calculateAlignedPlane(
         accessibilityFeature: EditableAccessibilityFeature,
-        meshTriangles: [MeshPolygon]? = nil
+        meshPolygons: [MeshPolygon]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
@@ -112,13 +112,13 @@ extension AttributeEstimationPipeline {
         }
         var plane: Plane
         /// Using the vertices of the mesh polygons as points to fit the plane.
-        let meshTrianglesLocal: [MeshPolygon] = try meshTriangles ?? self.getMeshContents(
+        let meshPolygonsLocal: [MeshPolygon] = try meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
-        ).triangles
-        let worldPointsFromMesh: [WorldPoint] = meshTrianglesLocal.map { triangle in
+        ).polygons
+        let worldPointsFromMesh: [WorldPoint] = meshPolygonsLocal.map { triangle in
             return WorldPoint(p: triangle.centroid)
         }
-        let areasFromMesh: [Float] = meshTrianglesLocal.map { triangle in
+        let areasFromMesh: [Float] = meshPolygonsLocal.map { triangle in
             return triangle.area
         }
         plane = try planeProcessorLocal.fitPlanePCA(points: worldPointsFromMesh, weights: areasFromMesh)
