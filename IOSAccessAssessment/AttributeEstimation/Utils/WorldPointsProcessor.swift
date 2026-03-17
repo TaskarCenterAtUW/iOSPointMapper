@@ -375,10 +375,7 @@ struct WorldPointsProcessor {
     
     func unprojectPointsFromPlaneCPU(
         projectedPoints: [ProjectedPoint],
-        plane: Plane,
-        cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3,
-        imageSize: CGSize
+        plane: Plane
     ) throws -> [WorldPoint] {
         let pointCount = projectedPoints.count
         if pointCount == 0 {

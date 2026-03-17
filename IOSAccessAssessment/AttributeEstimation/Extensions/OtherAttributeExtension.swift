@@ -11,7 +11,7 @@ extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
         }
@@ -21,7 +21,7 @@ extension AttributeEstimationPipeline {
     func calculateRunningSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateRunningSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
@@ -31,7 +31,7 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateCrossSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
