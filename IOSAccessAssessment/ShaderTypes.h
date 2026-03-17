@@ -109,7 +109,7 @@ typedef struct ProjectedPointBinningParams {
     MTL_UINT maxValuesPerBin;
 } ProjectedPointBinningParams;
 
-typedef struct MeshTriangleBinningParams {
+typedef struct MeshProjectedPointBinningParams {
     float sMin;
     float sMax;
     float sBinSize;
@@ -119,4 +119,4 @@ typedef struct MeshTriangleBinningParams {
     MTL_FLOAT3      lateralVector;
     MTL_FLOAT3      normalVector;
     MTL_FLOAT3      origin;
-} MeshTriangleBinningParams;
+} MeshProjectedPointBinningParams;

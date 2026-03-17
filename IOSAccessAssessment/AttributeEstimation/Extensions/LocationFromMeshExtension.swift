@@ -24,14 +24,11 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
         }
         let meshPolygons: [MeshPolygon] = meshContents.polygons
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
-        )
         let worldPointsFromMesh: [WorldPoint] = meshPolygons.map { triangle in
             return WorldPoint(p: triangle.centroid)
         }
         let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-            worldPoints: worldPointsFromMesh, plane: alignedPlane,
+            worldPoints: worldPointsFromMesh, plane: plane,
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
@@ -39,13 +36,13 @@ extension AttributeEstimationPipeline {
         let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
         /// Then, get the actual bins from the mesh triangles themselves
         let meshTriangles: [MeshTriangle] = meshContents.triangles
-        let meshTriangleBins = try planeAttributeProcessor.binMeshTriangles(
+        let meshProjectedPointBins = try planeAttributeProcessor.binMeshTriangles(
             meshTriangles: meshTriangles, initialProjectedPointBins: projectedPointBins,
-            plane: alignedPlane
+            plane: plane
         )
         
         let projectedEndpoints: (ProjectedPoint, ProjectedPoint) = try planeAttributeProcessor.getEndpointsFromBins(
-            projectedPointBins: meshTriangleBins
+            projectedPointBins: meshProjectedPointBins
         )
         var worldEndpoints: [WorldPoint] = try worldPointsProcessor.unprojectPointsFromPlaneCPU(
             projectedPoints: [projectedEndpoints.0, projectedEndpoints.1], plane: plane

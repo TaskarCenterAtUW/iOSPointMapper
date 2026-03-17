@@ -348,7 +348,7 @@ extension PlaneAttributeProcessor {
             )
         }
         /// Set up parameters for the compute shader
-        var params = MeshTriangleBinningParams(
+        var params = MeshProjectedPointBinningParams(
             sMin: sMin, sMax: sMax, sBinSize: binSize,
             binCount: UInt32(binCount), maxTrianglesPerBin: UInt32(maxTrianglesPerBin),
             longitudinalVector: plane.firstVector, lateralVector: plane.secondVector,
@@ -383,7 +383,7 @@ extension PlaneAttributeProcessor {
         commandEncoder.setBuffer(binFromSValuesBuffer, offset: 0, index: 1)
         commandEncoder.setBuffer(binToSValuesBuffer, offset: 0, index: 2)
         commandEncoder.setBytes(&triangleCount, length: MemoryLayout<UInt32>.size, index: 3)
-        commandEncoder.setBytes(&params, length: MemoryLayout<MeshTriangleBinningParams>.size, index: 4)
+        commandEncoder.setBytes(&params, length: MemoryLayout<MeshProjectedPointBinningParams>.size, index: 4)
         commandEncoder.setBuffer(binTriangleCountsBuffer, offset: 0, index: 5)
         commandEncoder.setBuffer(binValuesBuffer, offset: 0, index: 6)
         
