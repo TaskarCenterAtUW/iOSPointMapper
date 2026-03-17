@@ -11,10 +11,10 @@ extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-//        let isMeshEnabled: Bool = captureMeshData != nil
-//        if isMeshEnabled {
-//            return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
-//        }
+        let isMeshEnabled: Bool = captureMeshData != nil
+        if isMeshEnabled {
+            return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
+        }
         return try self.calculateWidthFromImage(accessibilityFeature: accessibilityFeature)
     }
     
