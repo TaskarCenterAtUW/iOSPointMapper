@@ -622,15 +622,6 @@
 			path = UI;
 			sourceTree = "<group>";
 		};
-		A3247B2B2F312E8200F915A9 /* WorldPoints */ = {
-			isa = PBXGroup;
-			children = (
-				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
-				A364B5DC2F259AF900325E5C /* WorldPoints.metal */,
-			);
-			path = WorldPoints;
-			sourceTree = "<group>";
-		};
 		A3247B2C2F31325600F915A9 /* Archive */ = {
 			isa = PBXGroup;
 			children = (
@@ -687,8 +678,7 @@
 			isa = PBXGroup;
 			children = (
 				A3431E002F26FA0C00B96610 /* Extensions */,
-				A364B5D72F259A7800325E5C /* Plane */,
-				A3247B2B2F312E8200F915A9 /* WorldPoints */,
+				A3EE6EF62F69159D00F515E6 /* Utils */,
 				A35E050E2EDE35ED003C26CF /* Localization */,
 				A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */,
 			);
@@ -749,17 +739,6 @@
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
-			sourceTree = "<group>";
-		};
-		A364B5D72F259A7800325E5C /* Plane */ = {
-			isa = PBXGroup;
-			children = (
-				A37C3C172F3141F9001F4248 /* Plane.metal */,
-				A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */,
-				A364B5D82F259AD600325E5C /* PlaneProcessor.swift */,
-				A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */,
-			);
-			path = Plane;
 			sourceTree = "<group>";
 		};
 		A364B5E02F26E0F400325E5C /* Metal */ = {
@@ -1056,6 +1035,19 @@
 				A3EE6E492F580D6000F515E6 /* TestCameraView.swift */,
 			);
 			path = TestMode;
+			sourceTree = "<group>";
+		};
+		A3EE6EF62F69159D00F515E6 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A37C3C172F3141F9001F4248 /* Plane.metal */,
+				A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */,
+				A364B5D82F259AD600325E5C /* PlaneProcessor.swift */,
+				A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */,
+				A364B5DC2F259AF900325E5C /* WorldPoints.metal */,
+				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 		A3F38C4A2D38A2BF00900547 /* DepthEstimation */ = {

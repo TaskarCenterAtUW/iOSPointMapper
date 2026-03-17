@@ -91,6 +91,8 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         let capturedMeshSnapshot = captureMeshData.captureMeshDataResults.segmentedMesh
+        /// WARNING: We are using the mesh corresponding to the entire class, not the specific feature.
+        /// We will have to refine this in the future to get the mesh corresponding to the specific feature, especially when there are multiple instances of the same class.
         let meshContents: MeshContents = try CapturedMeshSnapshotHelper.readFeatureSnapshot(
             capturedMeshSnapshot: capturedMeshSnapshot,
             accessibilityFeatureClass: accessibilityFeature.accessibilityFeatureClass
@@ -100,7 +102,7 @@ extension AttributeEstimationPipeline {
     
     func calculateAlignedPlane(
         accessibilityFeature: EditableAccessibilityFeature,
-        meshContents: MeshContents? = nil
+        meshTriangles: [MeshPolygon]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {
             throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
@@ -108,19 +110,15 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        guard let captureMeshData = self.captureMeshData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
         var plane: Plane
-        let meshContentsLocal: MeshContents = try meshContents ?? self.getMeshContents(
-            accessibilityFeature: accessibilityFeature
-        )
         /// Using the vertices of the mesh polygons as points to fit the plane.
-        let meshTrianges: [MeshPolygon] = meshContentsLocal.triangles
-        let worldPointsFromMesh: [WorldPoint] = meshTrianges.map { triangle in
+        let meshTrianglesLocal: [MeshPolygon] = try meshTriangles ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        ).triangles
+        let worldPointsFromMesh: [WorldPoint] = meshTrianglesLocal.map { triangle in
             return WorldPoint(p: triangle.centroid)
         }
-        let areasFromMesh: [Float] = meshTrianges.map { triangle in
+        let areasFromMesh: [Float] = meshTrianglesLocal.map { triangle in
             return triangle.area
         }
         plane = try planeProcessorLocal.fitPlanePCA(points: worldPointsFromMesh, weights: areasFromMesh)

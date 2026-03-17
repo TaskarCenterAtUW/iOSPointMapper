@@ -132,50 +132,55 @@ extension AttributeEstimationPipeline {
 }
 
 extension AttributeEstimationPipeline {
-//    func calculateWidthFromMesh(
-//        accessibilityFeature: EditableAccessibilityFeature
-//    ) throws -> AccessibilityFeatureAttribute.Value {
-//        guard let worldPointsProcessor = self.worldPointsProcessor else {
-//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-//        }
-//        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
-//        }
-//        guard let captureImageData = self.captureImageData else {
-//            throw AttributeEstimationPipelineError.missingCaptureData
-//        }
-//        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
-//            accessibilityFeature: accessibilityFeature
-//        )
-//        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-//            accessibilityFeature: accessibilityFeature, meshContents: meshContents
-//        )
-//        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-//            worldPoints: worldPoints, plane: alignedPlane,
-//            cameraTransform: captureImageData.cameraTransform,
-//            cameraIntrinsics: captureImageData.cameraIntrinsics,
-//            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-//        )
-//        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+    /// TODO
+    func calculateWidthFromMesh(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let worldPointsProcessor = self.worldPointsProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+        }
+        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let meshTriangles: [MeshPolygon] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        ).triangles
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshTriangles: meshTriangles
+        )
+        let worldPointsFromMesh: [WorldPoint] = meshTriangles.map { triangle in
+            return WorldPoint(p: triangle.centroid)
+        }
+        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+            worldPoints: worldPointsFromMesh, plane: alignedPlane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+        let binEndpoints = try planeAttributeProcessor.getEndpointsFromBins(projectedPointBins: projectedPointBins)
 //        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: projectedPointBins)
 //        let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
 //            return partialResult + Double(binWidth.width)
 //        } / Double(binWidths.count)
 //        
-//        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
-//            throw AttributeEstimationPipelineError.attributeAssignmentError
-//        }
-//        return widthAttributeValue
-//    }
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(0)) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return widthAttributeValue
+    }
     
     func calculateRunningSlopeFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+        let meshTriangles: [MeshPolygon] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
-        )
+        ).triangles
         let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+            accessibilityFeature: accessibilityFeature, meshTriangles: meshTriangles
         )
         let runningVector = simd_normalize(alignedPlane.firstVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
@@ -194,11 +199,11 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlopeFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+        let meshTriangles: [MeshPolygon] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
-        )
+        ).triangles
         let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+            accessibilityFeature: accessibilityFeature, meshTriangles: meshTriangles
         )
         let crossVector = simd_normalize(alignedPlane.secondVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)

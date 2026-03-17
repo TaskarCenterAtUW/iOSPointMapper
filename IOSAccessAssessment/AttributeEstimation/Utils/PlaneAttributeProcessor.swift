@@ -81,7 +81,7 @@ struct PlaneAttributeProcessor {
             - projectedPoints: An array of ProjectedPoint to be binned.
             - binSize: The size of each bin along the 's' axis. Default is 0.25.
      
-        - Returns: A ProjectedPointBinValues containing the binned values.
+        - Returns: A ProjectedPointBinValues object containing the binned values.
      */
     func binProjectedPoints(
         projectedPoints: [ProjectedPoint],

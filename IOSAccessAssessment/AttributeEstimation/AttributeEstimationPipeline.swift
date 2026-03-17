@@ -45,6 +45,7 @@ class AttributeEstimationPipeline: ObservableObject {
         var worldPoints: [WorldPoint]? = nil
         var alignedPlane: Plane? = nil
         var meshContents: MeshContents? = nil
+        var meshTriangles: [MeshPolygon]? = nil
     }
     
     enum Constants {
@@ -93,12 +94,14 @@ class AttributeEstimationPipeline: ObservableObject {
         let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
         var meshContents: MeshContents? = nil
+        var meshTriangles: [MeshPolygon]? = nil
         var plane: Plane? = nil
         switch(oswElementClass) {
         case .Sidewalk:
             if isMeshEnabled {
                 meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
-                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, meshContents: meshContents)
+                meshTriangles = meshContents?.triangles
+                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, meshTriangles: meshTriangles)
             } else {
                 worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
                 plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, worldPoints: worldPoints)
@@ -108,12 +111,14 @@ class AttributeEstimationPipeline: ObservableObject {
         }
         self.prerequisiteCache.worldPoints = worldPoints
         self.prerequisiteCache.meshContents = meshContents
+        self.prerequisiteCache.meshTriangles = meshTriangles
         self.prerequisiteCache.alignedPlane = plane
     }
     
     func clearPrerequisites() {
         self.prerequisiteCache.worldPoints = nil
         self.prerequisiteCache.meshContents = nil
+        self.prerequisiteCache.meshTriangles = nil
         self.prerequisiteCache.alignedPlane = nil
     }
     
