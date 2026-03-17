@@ -12,9 +12,16 @@ extension AttributeEstimationPipeline {
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         switch(oswElementClass) {
         case .Sidewalk:
+            if isMeshEnabled {
+                return try self.calculateLocationFromMeshForLineString(
+                    deviceLocation: deviceLocation,
+                    accessibilityFeature: accessibilityFeature
+                )
+            }
             return try self.calculateLocationFromImageForLineString(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
@@ -131,5 +138,38 @@ extension AttributeEstimationPipeline {
                 accessibilityFeature: accessibilityFeature
             )
         }
+    }
+}
+
+extension AttributeEstimationPipeline {
+    func calculateLocationFromMeshForLineString(
+        deviceLocation: CLLocationCoordinate2D,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> LocationRequestResult {
+        guard let depthMapProcessor = self.depthMapProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+        }
+        guard let localizationProcessor = self.localizationProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let captureImageDataConcrete = CaptureImageData(captureImageData)
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+        return try getLocationFromMeshForLineStringByPlane(
+            depthMapProcessor: depthMapProcessor,
+            localizationProcessor: localizationProcessor,
+            captureImageData: captureImageDataConcrete,
+            deviceLocation: deviceLocation,
+            accessibilityFeature: accessibilityFeature,
+            plane: alignedPlane, meshContents: meshContents
+        )
     }
 }

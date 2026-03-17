@@ -72,7 +72,7 @@ kernel void binMeshTriangles(
     constant float* binFromSValues [[buffer(1)]],
     constant float* binToSValues [[buffer(2)]],
     constant uint& triangleCount [[buffer(3)]],
-    constant MeshTriangleBinningParams& params [[buffer(4)]],
+    constant MeshProjectedPointBinningParams& params [[buffer(4)]],
     device atomic_uint* binTriangleCounts [[buffer(5)]],
     device float* binTValues [[buffer(6)]],
     uint2 id [[thread_position_in_grid]]

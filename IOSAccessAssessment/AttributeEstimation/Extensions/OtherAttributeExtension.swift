@@ -11,7 +11,7 @@ extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
         }
@@ -21,7 +21,7 @@ extension AttributeEstimationPipeline {
     func calculateRunningSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateRunningSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
@@ -31,7 +31,7 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlope(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let isMeshEnabled: Bool = captureMeshData != nil
+        let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
             return try self.calculateCrossSlopeFromMesh(accessibilityFeature: accessibilityFeature)
         }
@@ -165,11 +165,13 @@ extension AttributeEstimationPipeline {
         let meshTriangles: [MeshTriangle] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).triangles
-        let meshTriangleBins = try planeAttributeProcessor.binMeshTriangles(
+        let meshProjectedPointBins = try planeAttributeProcessor.binMeshTriangles(
             meshTriangles: meshTriangles, initialProjectedPointBins: projectedPointBins,
             plane: alignedPlane
         )
-        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: meshTriangleBins, minCount: 10)
+        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(
+            projectedPointBins: meshProjectedPointBins, minCount: 10
+        )
         let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
             return partialResult + Double(binWidth.width)
         } / Double(binWidths.count)

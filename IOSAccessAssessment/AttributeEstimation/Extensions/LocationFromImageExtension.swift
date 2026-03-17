@@ -63,10 +63,7 @@ extension AttributeEstimationPipeline {
             projectedPointBins: projectedPointBins
         )
         var worldEndpoints: [WorldPoint] = try worldPointsProcessor.unprojectPointsFromPlaneCPU(
-            projectedPoints: [projectedEndpoints.0, projectedEndpoints.1], plane: plane,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+            projectedPoints: [projectedEndpoints.0, projectedEndpoints.1], plane: plane
         )
         var locationDeltas: [SIMD2<Float>] = worldEndpoints.map { worldEndpoint in
             return localizationProcessor.calculateDelta(
