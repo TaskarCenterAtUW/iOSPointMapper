@@ -24,7 +24,7 @@ struct Constants {
     }
     
     struct WorkspaceConstants {
-        static let primaryWorkspaceIds: [String] = ["1570"]
+        static let primaryWorkspaceIds: [String] = ["1595"]
 //        ["1463"]
 //        ["288", "349", "1411"]
 //      "252", "322", "368", "374", "378", "381", "384", "323", "369", "156", "375", "379"]

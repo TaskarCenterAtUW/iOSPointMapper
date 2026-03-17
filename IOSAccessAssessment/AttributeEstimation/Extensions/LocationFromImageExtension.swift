@@ -121,7 +121,7 @@ extension AttributeEstimationPipeline {
                 cameraIntrinsics: captureImageData.cameraIntrinsics
             )
         }
-        let locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
+        var locationCoordinates: [CLLocationCoordinate2D] = pointsWithDepth.map { pointWithDepth in
             return localizationProcessor.calculateLocation(
                 point: pointWithDepth.point, depth: pointWithDepth.depth,
                 imageSize: captureImageData.originalSize,

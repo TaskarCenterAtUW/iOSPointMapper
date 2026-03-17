@@ -109,7 +109,7 @@ struct OSWPolygon: OSWElement {
      */
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = members.map {
+        let membersXML = getUniqueMembers().map {
             $0.element.toOSMCreateXML(changesetId: changesetId)
         }.joined(separator: "\n")
         let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
@@ -131,7 +131,7 @@ struct OSWPolygon: OSWElement {
      */
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = members.map {
+        let membersXML = getUniqueMembers().map {
             $0.element.toOSMModifyXML(changesetId: changesetId)
         }.joined(separator: "\n")
         let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
@@ -163,5 +163,17 @@ struct OSWPolygon: OSWElement {
     
     var shortDescription: String {
         return "OSWPolygon(id: \(id))"
+    }
+    
+    private func getUniqueMembers() -> [OSWRelationMember] {
+        var uniqueMembers: [OSWRelationMember] = []
+        var seenMemberIds: Set<String> = Set()
+        self.members.forEach { member in
+            if !seenMemberIds.contains(member.element.id) {
+                uniqueMembers.append(member)
+                seenMemberIds.insert(member.element.id)
+            }
+        }
+        return uniqueMembers
     }
 }

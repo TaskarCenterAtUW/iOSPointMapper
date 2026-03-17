@@ -543,6 +543,10 @@ extension APITransmissionController {
             if locationArray.count <= 2 {
                 oswElements.append(contentsOf: oswPoints)
             } else {
+                /// Close the polygon by adding the first point at the end if it's not already closed
+                if let firstOSWPoint = oswPoints.first {
+                    oswPoints.append(firstOSWPoint)
+                }
                 let oswLineString = OSWLineString(
                     id: String(idGenerator.nextId()),
                     version: "1",
