@@ -141,6 +141,8 @@
 		A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */; };
 		A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */; };
 		A3EE6E542F67A41100F515E6 /* UtilityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */; };
+		A3EE6EFC2F69285600F515E6 /* LocationFromImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */; };
+		A3EE6EFE2F69287F00F515E6 /* LocationFromMeshExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -344,6 +346,8 @@
 		A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraViewController.swift; sourceTree = "<group>"; };
 		A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APITransmissionHelpers.swift; sourceTree = "<group>"; };
 		A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityExtension.swift; sourceTree = "<group>"; };
+		A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromImageExtension.swift; sourceTree = "<group>"; };
+		A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromMeshExtension.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -648,6 +652,8 @@
 				A3247B2C2F31325600F915A9 /* Archive */,
 				A3431E052F26FA9C00B96610 /* OtherAttributeExtension.swift */,
 				A3431E012F26FA2700B96610 /* LocationExtension.swift */,
+				A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */,
+				A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */,
 				A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */,
 			);
 			path = Extensions;
@@ -1330,6 +1336,7 @@
 				A37E72182ED95D0600CFE4EF /* CapturedMeshDefinitions.swift in Sources */,
 				A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */,
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
+				A3EE6EFC2F69285600F515E6 /* LocationFromImageExtension.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */,
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
@@ -1339,6 +1346,7 @@
 				DAA7F8CA2CA76550003666D8 /* CVPixelBufferUtils.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */,
+				A3EE6EFE2F69287F00F515E6 /* LocationFromMeshExtension.swift in Sources */,
 				A3FE16652E18C54000DAE5BE /* CameraTransformCoder.swift in Sources */,
 				A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,

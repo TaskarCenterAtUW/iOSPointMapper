@@ -144,6 +144,7 @@ extension AttributeEstimationPipeline {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
+        /// First, get the reference bins from mesh triangle centroids
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons
@@ -160,7 +161,15 @@ extension AttributeEstimationPipeline {
             imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
         )
         let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
-        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: projectedPointBins, minCount: 10)
+        /// Then, get the actual bins from the mesh triangles themselves
+        let meshTriangles: [MeshTriangle] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        ).triangles
+        let meshTriangleBins = try planeAttributeProcessor.binMeshTriangles(
+            meshTriangles: meshTriangles, initialProjectedPointBins: projectedPointBins,
+            plane: alignedPlane
+        )
+        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: meshTriangleBins, minCount: 10)
         let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
             return partialResult + Double(binWidth.width)
         } / Double(binWidths.count)
