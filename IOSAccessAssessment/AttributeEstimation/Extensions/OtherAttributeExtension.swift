@@ -11,10 +11,10 @@ extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-//        let isMeshEnabled: Bool = captureMeshData != nil
-//        if isMeshEnabled {
-//            return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
-//        }
+        let isMeshEnabled: Bool = captureMeshData != nil
+        if isMeshEnabled {
+            return try self.calculateWidthFromMesh(accessibilityFeature: accessibilityFeature)
+        }
         return try self.calculateWidthFromImage(accessibilityFeature: accessibilityFeature)
     }
     
@@ -132,50 +132,62 @@ extension AttributeEstimationPipeline {
 }
 
 extension AttributeEstimationPipeline {
-//    func calculateWidthFromMesh(
-//        accessibilityFeature: EditableAccessibilityFeature
-//    ) throws -> AccessibilityFeatureAttribute.Value {
-//        guard let worldPointsProcessor = self.worldPointsProcessor else {
-//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
-//        }
-//        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-//            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
-//        }
-//        guard let captureImageData = self.captureImageData else {
-//            throw AttributeEstimationPipelineError.missingCaptureData
-//        }
-//        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
-//            accessibilityFeature: accessibilityFeature
-//        )
-//        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-//            accessibilityFeature: accessibilityFeature, meshContents: meshContents
-//        )
-//        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
-//            worldPoints: worldPoints, plane: alignedPlane,
-//            cameraTransform: captureImageData.cameraTransform,
-//            cameraIntrinsics: captureImageData.cameraIntrinsics,
-//            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
-//        )
-//        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
-//        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: projectedPointBins)
-//        let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
-//            return partialResult + Double(binWidth.width)
-//        } / Double(binWidths.count)
-//        
-//        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
-//            throw AttributeEstimationPipelineError.attributeAssignmentError
-//        }
-//        return widthAttributeValue
-//    }
+    func calculateWidthFromMesh(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let worldPointsProcessor = self.worldPointsProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+        }
+        guard let planeAttributeProcessor = self.planeAttributeProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+        }
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        /// First, get the reference bins from mesh triangle centroids
+        let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        ).polygons
+        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+        let worldPointsFromMesh: [WorldPoint] = meshPolygons.map { triangle in
+            return WorldPoint(p: triangle.centroid)
+        }
+        let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
+            worldPoints: worldPointsFromMesh, plane: alignedPlane,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.captureImageDataResults.segmentationLabelImage.extent.size
+        )
+        let projectedPointBins = try planeAttributeProcessor.binProjectedPoints(projectedPoints: projectedPoints)
+        /// Then, get the actual bins from the mesh triangles themselves
+        let meshTriangles: [MeshTriangle] = try self.prerequisiteCache.meshTriangles ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        ).triangles
+        let meshTriangleBins = try planeAttributeProcessor.binMeshTriangles(
+            meshTriangles: meshTriangles, initialProjectedPointBins: projectedPointBins,
+            plane: alignedPlane
+        )
+        let binWidths: [BinWidth] = planeAttributeProcessor.computeWidthByBin(projectedPointBins: meshTriangleBins, minCount: 10)
+        let averageWidth = binWidths.reduce(0.0) { partialResult, binWidth in
+            return partialResult + Double(binWidth.width)
+        } / Double(binWidths.count)
+        
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return widthAttributeValue
+    }
     
     func calculateRunningSlopeFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+        let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
-        )
+        ).polygons
         let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         let runningVector = simd_normalize(alignedPlane.firstVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)
@@ -194,11 +206,11 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlopeFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+        let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
-        )
+        ).polygons
         let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
-            accessibilityFeature: accessibilityFeature, meshContents: meshContents
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         let crossVector = simd_normalize(alignedPlane.secondVector)
         let gravityVector = SIMD3<Float>(0, 1, 0)

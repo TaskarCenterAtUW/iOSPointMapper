@@ -16,7 +16,7 @@ struct MeshContents: Sendable {
     var colorG8: Int
     var colorB8: Int
     
-    var triangles: [MeshPolygon] {
+    var polygons: [MeshPolygon] {
         var result: [MeshPolygon] = []
         for i in stride(from: 0, to: indices.count, by: 3) {
             let i0 = Int(indices[i])
@@ -33,6 +33,20 @@ struct MeshContents: Sendable {
                 index0: Int(indices[i]),
                 index1: Int(indices[i + 1]),
                 index2: Int(indices[i + 2])
+            )
+            result.append(polygon)
+        }
+        return result
+    }
+    
+    var triangles: [MeshTriangle] {
+        var result: [MeshTriangle] = []
+        for i in stride(from: 0, to: indices.count, by: 3) {
+            let i0 = Int(indices[i])
+            let i1 = Int(indices[i + 1])
+            let i2 = Int(indices[i + 2])
+            let polygon = MeshTriangle(
+                a: positions[i0], b: positions[i1], c: positions[i2]
             )
             result.append(polygon)
         }
