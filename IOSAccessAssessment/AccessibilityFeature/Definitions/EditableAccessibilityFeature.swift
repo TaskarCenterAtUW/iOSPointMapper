@@ -16,7 +16,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
-    var locationDetails: LocationDetails?
+    var locationDetails: OSMLocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:]
@@ -45,7 +45,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
-        coordinates: [[CLLocationCoordinate2D]]?,
+        locationDetails: OSMLocationDetails?,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
@@ -56,27 +56,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.calculatedAttributeValues = calculatedAttributeValues
         self.attributeValues = attributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
-        
-        guard let coordinates else { return }
-        self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
-            from: coordinates, for: accessibilityFeatureClass
-        )
-    }
-    
-    static func getLocationDetails(
-        from coordinates: [[CLLocationCoordinate2D]], for accessibilityFeatureClass: AccessibilityFeatureClass
-    ) -> LocationDetails? {
-        let oswElementClass = accessibilityFeatureClass.oswPolicy.oswElementClass
-        switch(oswElementClass.geometry) {
-        case .point:
-            guard let firstCoordinate = coordinates.first?.first else { return nil }
-            return LocationDetails(coordinates: [[firstCoordinate]])
-        case .linestring:
-            guard let firstLineCoordinates = coordinates.first else { return nil }
-            return LocationDetails(coordinates: [firstLineCoordinates])
-        case .polygon:
-            return LocationDetails(coordinates: coordinates)
-        }
+        self.locationDetails = locationDetails
     }
     
     func setAnnotationOption(_ option: AnnotationOption) {
@@ -85,14 +65,12 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     
     func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
         guard let locationDetails else { return nil }
-        guard let lastCoordinate = locationDetails.coordinates.last?.last else { return nil }
+        guard let lastCoordinate = locationDetails.locations.last?.coordinates.last else { return nil }
         return lastCoordinate
     }
     
-    func setLocationDetails(coordinates: [[CLLocationCoordinate2D]]) {
-        self.locationDetails = EditableAccessibilityFeature.getLocationDetails(
-            from: coordinates, for: accessibilityFeatureClass
-        )
+    func setLocationDetails(locationDetails: OSMLocationDetails) {
+        self.locationDetails = locationDetails
     }
     
     func setAttributeValue(

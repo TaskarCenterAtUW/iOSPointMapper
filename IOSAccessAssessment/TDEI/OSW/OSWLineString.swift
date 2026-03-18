@@ -86,7 +86,7 @@ struct OSWLineString: OSWElement {
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
         let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = points.map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
+        let nodesXML = getUniquePoints().map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
         return """
         \(nodesXML)
         <way id="\(id)" changeset="\(changesetId)">
@@ -103,7 +103,7 @@ struct OSWLineString: OSWElement {
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
         let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = points.map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
+        let nodesXML = getUniquePoints().map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
         return """
         \(nodesXML)
         <way id="\(id)" version="\(version)" changeset="\(changesetId)">
@@ -130,5 +130,17 @@ struct OSWLineString: OSWElement {
     
     var shortDescription: String {
         return "OSWLineString(id: \(id))"
+    }
+    
+    private func getUniquePoints() -> [OSWPoint] {
+        var uniquePoints: [OSWPoint] = []
+        var seenPointIds: Set<String> = Set()
+        self.points.forEach { point in
+            if !seenPointIds.contains(point.id) {
+                uniquePoints.append(point)
+                seenPointIds.insert(point.id)
+            }
+        }
+        return uniquePoints
     }
 }

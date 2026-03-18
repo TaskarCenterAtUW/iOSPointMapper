@@ -32,7 +32,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
 }
 
 struct LocationRequestResult: Sendable {
-    let coordinates: [[CLLocationCoordinate2D]]
+    let locationDetails: OSMLocationDetails
     let locationDelta: SIMD2<Float>
     let lidarDepth: Float
 }
@@ -135,7 +135,7 @@ class AttributeEstimationPipeline: ObservableObject {
             deviceLocation: deviceLocation,
             accessibilityFeature: accessibilityFeature
         )
-        accessibilityFeature.setLocationDetails(coordinates: locationRequestResult.coordinates)
+        accessibilityFeature.setLocationDetails(locationDetails: locationRequestResult.locationDetails)
         /// Set Lidar Depth as experimental attribute
         if let lidarDepthAttributeValue = AccessibilityFeatureAttribute.lidarDepth.valueFromDouble(
             Double(locationRequestResult.lidarDepth)

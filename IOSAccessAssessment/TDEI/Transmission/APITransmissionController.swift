@@ -362,10 +362,11 @@ extension APITransmissionController {
             return nil
         }
         var oswPoints: [OSWPoint] = []
-        guard let featureLocations: [CLLocationCoordinate2D] = feature.locationDetails?.coordinates.first else {
+        guard let featureLocationElement: OSMLocationElement = feature.locationDetails?.locations.first,
+              featureLocationElement.isWay else {
             return nil
         }
-        featureLocations.forEach { location in
+        featureLocationElement.coordinates.forEach { location in
             let oswPointId = String(idGenerator.nextId())
             var pointAdditionalTags: [String: String] = [:]
             pointAdditionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(location.latitude)
@@ -380,6 +381,12 @@ extension APITransmissionController {
                 additionalTags: pointAdditionalTags
             )
             oswPoints.append(point)
+        }
+        if featureLocationElement.isClosed {
+            /// If the linestring is closed, add the first point at the end to ensure it's represented as a closed linestring in OSM
+            if let firstOSWPoint = oswPoints.first {
+                oswPoints.append(firstOSWPoint)
+            }
         }
         /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property to the linestring
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
@@ -517,14 +524,19 @@ extension APITransmissionController {
         }
         
         var oswElements: [any OSWElement] = []
-        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
-              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
+//        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
+//              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
+//            return nil
+//        }
+        guard let featureLocationDetails: OSMLocationDetails = feature.locationDetails,
+              !featureLocationDetails.locations.isEmpty else {
             return nil
         }
-        featureLocationArrays.forEach { locationArray in
-            guard !locationArray.isEmpty else { return }
+        featureLocationDetails.locations.forEach { locationElement in
+//        featureLocationArrays.forEach { locationArray in
+            guard !locationElement.coordinates.isEmpty else { return }
             var oswPoints: [OSWPoint] = []
-            locationArray.forEach { location in
+            locationElement.coordinates.forEach { location in
                 let oswPointId = String(idGenerator.nextId())
                 var pointAdditionalTags: [String: String] = [:]
                 pointAdditionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(location.latitude)
@@ -540,9 +552,15 @@ extension APITransmissionController {
                 )
                 oswPoints.append(point)
             }
-            if locationArray.count <= 2 {
+            if !locationElement.isWay && locationElement.coordinates.count <= 2 {
                 oswElements.append(contentsOf: oswPoints)
             } else {
+                if locationElement.isClosed {
+                    /// If the linestring is closed, add the first point at the end to ensure it's represented as a closed linestring in OSM
+                    if let firstOSWPoint = oswPoints.first {
+                        oswPoints.append(firstOSWPoint)
+                    }
+                }
                 let oswLineString = OSWLineString(
                     id: String(idGenerator.nextId()),
                     version: "1",

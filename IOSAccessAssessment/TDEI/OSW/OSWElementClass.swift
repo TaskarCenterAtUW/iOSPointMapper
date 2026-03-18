@@ -98,11 +98,11 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 name: "Building",
                 description: "This field is used to mark a given entity as a building",
                 parent: nil,
-                geometry: .polygon,
+                geometry: .linestring,
                 identifyingFields: [
                     IdentifyingField(field: .building, value: "yes"),
                     /// Temporary hard-coding to ensure correct polygon geometry. Should later be inferred from mapped data.
-                    IdentifyingField(field: .custom("Type", "type"), value: "multipolygon")
+//                    IdentifyingField(field: .custom("Type", "type"), value: "multipolygon")
                 ]
             )
         case .Pole:

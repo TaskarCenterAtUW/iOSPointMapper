@@ -69,6 +69,7 @@ struct TestCameraView: View {
     
     @StateObject private var manager: TestCameraManager = TestCameraManager()
     @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
+    @State private var cameraHintDefaultText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
 //    var locationManager: LocationManager = LocationManager()
@@ -176,6 +177,10 @@ struct TestCameraView: View {
                     cameraOutputImageCallback: cameraOutputImageCallback
                 )
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
+                
+                /// For easier testing
+                cameraHintDefaultText = datasetCaptureData.captureImageData.id.uuidString
+                setHintText(datasetCaptureData.captureImageData.id.uuidString)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -223,6 +228,10 @@ struct TestCameraView: View {
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
+                
+                /// For easier testing
+                cameraHintDefaultText = datasetCaptureData.captureImageData.id.uuidString
+                setHintText(datasetCaptureData.captureImageData.id.uuidString)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -329,7 +338,7 @@ struct TestCameraView: View {
         cameraHintText = text
         Task {
             try await Task.sleep(for: .seconds(2))
-            cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
+            cameraHintText = cameraHintDefaultText
         }
     }
 }

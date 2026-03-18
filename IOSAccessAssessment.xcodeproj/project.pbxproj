@@ -143,6 +143,7 @@
 		A3EE6E542F67A41100F515E6 /* UtilityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */; };
 		A3EE6EFC2F69285600F515E6 /* LocationFromImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */; };
 		A3EE6EFE2F69287F00F515E6 /* LocationFromMeshExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */; };
+		A3EE6F002F6A29F500F515E6 /* OSMLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFF2F6A29F300F515E6 /* OSMLocation.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -348,6 +349,7 @@
 		A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityExtension.swift; sourceTree = "<group>"; };
 		A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromImageExtension.swift; sourceTree = "<group>"; };
 		A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromMeshExtension.swift; sourceTree = "<group>"; };
+		A3EE6EFF2F6A29F300F515E6 /* OSMLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMLocation.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -735,6 +737,7 @@
 				A35E051B2EDFB093003C26CF /* OSMNode.swift */,
 				A35E051D2EDFB099003C26CF /* OSMWay.swift */,
 				A329434F2EE80EC200C4C1BC /* OSMRelation.swift */,
+				A3EE6EFF2F6A29F300F515E6 /* OSMLocation.swift */,
 			);
 			path = OSM;
 			sourceTree = "<group>";
@@ -1358,6 +1361,7 @@
 				A337CF692EDFC9F20032EE51 /* ChangesetViewModel.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
 				A3A45F0C2EE7A4F40029F5AE /* ContourDetectionPolicy.swift in Sources */,
+				A3EE6F002F6A29F500F515E6 /* OSMLocation.swift in Sources */,
 				A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
 				A37C3C1A2F3144F7001F4248 /* PlaneAttributeProcessor.swift in Sources */,
