@@ -58,7 +58,7 @@ extension AttributeEstimationPipeline {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
         )
         let projectedPoints = try worldPointsProcessor.projectPointsToPlane(
@@ -90,7 +90,7 @@ extension AttributeEstimationPipeline {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
         )
         let runningVector = simd_normalize(alignedPlane.firstVector)
@@ -113,7 +113,7 @@ extension AttributeEstimationPipeline {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
         )
         let crossVector = simd_normalize(alignedPlane.secondVector)
@@ -148,7 +148,7 @@ extension AttributeEstimationPipeline {
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         let worldPointsFromMesh: [WorldPoint] = meshPolygons.map { triangle in
@@ -188,7 +188,7 @@ extension AttributeEstimationPipeline {
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         let runningVector = simd_normalize(alignedPlane.firstVector)
@@ -211,7 +211,7 @@ extension AttributeEstimationPipeline {
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         let crossVector = simd_normalize(alignedPlane.secondVector)
