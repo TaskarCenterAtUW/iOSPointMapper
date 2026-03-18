@@ -42,11 +42,12 @@ class DatasetLister {
             throw DatasetDecoderError.directoryRetrievalFailed
         }
         let contents = try FileManager.default.contentsOfDirectory(at: documentsDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
-        let workspaceDirectories = contents.filter { content in
+        var workspaceDirectories = contents.filter { content in
             var isDirectory: ObjCBool = false
             let exists = FileManager.default.fileExists(atPath: content.path, isDirectory: &isDirectory)
             return exists && isDirectory.boolValue && content.lastPathComponent.allSatisfy { $0.isNumber }
         }
+        workspaceDirectories = workspaceDirectories.sorted { $0.lastPathComponent < $1.lastPathComponent }
         return workspaceDirectories
     }
     
@@ -88,6 +89,7 @@ class DatasetLister {
                 }
             }
         }
+        finalChangesetDirectories = finalChangesetDirectories.sorted { $0.lastPathComponent < $1.lastPathComponent }
         return finalChangesetDirectories
     }
 }
