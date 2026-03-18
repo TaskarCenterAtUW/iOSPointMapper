@@ -20,7 +20,7 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     
     var selectedAnnotationOption: String
     
-    var locationDetails: LocationDetails?
+    var locationDetails: OSMLocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]

@@ -12,7 +12,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
     
-    var locationDetails: LocationDetails?
+    var locationDetails: OSMLocationDetails?
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     
@@ -34,7 +34,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     init(
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        coordinates: [[CLLocationCoordinate2D]]?,
+        locationDetails: OSMLocationDetails?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:],
         oswElement: any OSWElement
@@ -44,38 +44,17 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         self.attributeValues = attributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
         self.oswElement = oswElement
-        guard let coordinates else { return }
-        self.locationDetails = MappedAccessibilityFeature.getLocationDetails(
-            from: coordinates, for: accessibilityFeatureClass
-        )
-    }
-    
-    static func getLocationDetails(
-        from coordinates: [[CLLocationCoordinate2D]], for accessibilityFeatureClass: AccessibilityFeatureClass
-    ) -> LocationDetails? {
-        let oswElementClass = accessibilityFeatureClass.oswPolicy.oswElementClass
-        switch(oswElementClass.geometry) {
-        case .point:
-            guard let firstCoordinate = coordinates.first?.first else { return nil }
-            return LocationDetails(coordinates: [[firstCoordinate]])
-        case .linestring:
-            guard let firstLineCoordinates = coordinates.first else { return nil }
-            return LocationDetails(coordinates: [firstLineCoordinates])
-        case .polygon:
-            return LocationDetails(coordinates: coordinates)
-        }
+        self.locationDetails = locationDetails
     }
     
     func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
         guard let locationDetails else { return nil }
-        guard let lastCoordinate = locationDetails.coordinates.last?.last else { return nil }
+        guard let lastCoordinate = locationDetails.locations.last?.coordinates.last else { return nil }
         return lastCoordinate
     }
     
-    mutating func setLocationDetails(coordinates: [[CLLocationCoordinate2D]]) {
-        self.locationDetails = MappedAccessibilityFeature.getLocationDetails(
-            from: coordinates, for: accessibilityFeatureClass
-        )
+    mutating func setLocationDetails(locationDetails: OSMLocationDetails) {
+        self.locationDetails = locationDetails
     }
     
     mutating func setAttributeValue(

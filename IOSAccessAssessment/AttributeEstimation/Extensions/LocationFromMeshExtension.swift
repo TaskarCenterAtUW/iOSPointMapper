@@ -64,11 +64,12 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        let coordinates: [[CLLocationCoordinate2D]] = [locationCoordinates]
+        let locationElement = OSMLocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
+        let locationDetails = OSMLocationDetails(locations: [locationElement])
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = locationDeltas.map { simd_length($0) }.reduce(0, +) / Float(locationDeltas.count)
         return LocationRequestResult(
-            coordinates: coordinates, locationDelta: locationDelta, lidarDepth: lidarDepth
+            locationDetails: locationDetails, locationDelta: locationDelta, lidarDepth: lidarDepth
         )
     }
 }
