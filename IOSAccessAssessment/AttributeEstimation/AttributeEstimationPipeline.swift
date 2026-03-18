@@ -43,10 +43,11 @@ struct LocationRequestResult: Sendable {
 class AttributeEstimationPipeline: ObservableObject {
     struct PrerequisiteCache: Sendable {
         var worldPoints: [WorldPoint]? = nil
-        var alignedPlane: Plane? = nil
+        var pointAlignedPlane: Plane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
         var meshTriangles: [MeshTriangle]? = nil
+        var meshAlignedPlane: Plane? = nil
     }
     
     enum Constants {
@@ -94,37 +95,45 @@ class AttributeEstimationPipeline: ObservableObject {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
+        var pointAlignedPlane: Plane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
         var meshTriangles: [MeshTriangle]? = nil
-        var plane: Plane? = nil
+        var meshAlignedPlane: Plane? = nil
         switch(oswElementClass) {
         case .Sidewalk:
             if isMeshEnabled {
                 meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
                 meshPolygons = meshContents?.polygons
                 meshTriangles = meshContents?.triangles
-                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons)
-            } else {
-                worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-                plane = try self.calculateAlignedPlane(accessibilityFeature: accessibilityFeature, worldPoints: worldPoints)
+                meshAlignedPlane = try self.calculateAlignedPlane(
+                    accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+                )
             }
+            /// TODO: We can actually, eventually, comment this out since we don't need world points if mesh data is available.
+            /// But we will have to ensure that none of the attribute calculations rely on world points in that case, which may require some refactoring, so leaving it for now.
+            worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+            pointAlignedPlane = try self.calculateAlignedPlane(
+                accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+            )
         default:
             break
         }
         self.prerequisiteCache.worldPoints = worldPoints
+        self.prerequisiteCache.pointAlignedPlane = pointAlignedPlane
         self.prerequisiteCache.meshContents = meshContents
         self.prerequisiteCache.meshPolygons = meshPolygons
         self.prerequisiteCache.meshTriangles = meshTriangles
-        self.prerequisiteCache.alignedPlane = plane
+        self.prerequisiteCache.meshAlignedPlane = meshAlignedPlane
     }
     
     func clearPrerequisites() {
         self.prerequisiteCache.worldPoints = nil
+        self.prerequisiteCache.pointAlignedPlane = nil
         self.prerequisiteCache.meshContents = nil
         self.prerequisiteCache.meshPolygons = nil
         self.prerequisiteCache.meshTriangles = nil
-        self.prerequisiteCache.alignedPlane = nil
+        self.prerequisiteCache.meshAlignedPlane = nil
     }
     
     func processLocationRequest(
@@ -201,6 +210,15 @@ class AttributeEstimationPipeline: ObservableObject {
                 case .crossSlopeLegacy:
                     let crossSlopeAttributeValue = try self.calculateCrossSlopeLegacy(accessibilityFeature: accessibilityFeature)
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlopeLegacy, isCalculated: true)
+                case .widthFromImage:
+                    let widthAttributeValue = try self.calculateWidthFromImage(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(widthAttributeValue, for: .widthFromImage, isCalculated: true)
+                case .runningSlopeFromImage:
+                    let runningSlopeAttributeValue = try self.calculateRunningSlopeFromImage(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(runningSlopeAttributeValue, for: .runningSlopeFromImage, isCalculated: true)
+                case .crossSlopeFromImage:
+                    let crossSlopeAttributeValue = try self.calculateCrossSlopeFromImage(accessibilityFeature: accessibilityFeature)
+                    try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlopeFromImage, isCalculated: true)
                 default:
                     continue
                 }

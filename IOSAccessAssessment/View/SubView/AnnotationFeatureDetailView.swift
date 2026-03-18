@@ -211,6 +211,29 @@ struct AnnotationFeatureDetailView: View {
                             .focused($focusedField, equals: .crossSlopeLegacy)
                     }
                 }
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.widthFromImage))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.widthFromImage.displayName)) {
+                        numberTextFieldView(attribute: .widthFromImage)
+                            .focused($focusedField, equals: .widthFromImage)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.runningSlopeFromImage))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.runningSlopeFromImage.displayName)) {
+                        numberTextFieldView(attribute: .runningSlopeFromImage)
+                            .focused($focusedField, equals: .runningSlopeFromImage)
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.crossSlopeFromImage))
+                {
+                    Section(header: Text(AccessibilityFeatureAttribute.crossSlopeFromImage.displayName)) {
+                        numberTextFieldView(attribute: .crossSlopeFromImage)
+                            .focused($focusedField, equals: .crossSlopeFromImage)
+                    }
+                }
             }
         }
         .onAppear {

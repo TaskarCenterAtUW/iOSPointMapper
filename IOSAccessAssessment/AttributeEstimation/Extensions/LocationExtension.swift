@@ -84,7 +84,7 @@ extension AttributeEstimationPipeline {
         let worldPoints = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let alignedPlane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
         )
         do {
@@ -160,7 +160,7 @@ extension AttributeEstimationPipeline {
             accessibilityFeature: accessibilityFeature
         )
         let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
-        let alignedPlane: Plane = try self.prerequisiteCache.alignedPlane ?? self.calculateAlignedPlane(
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
         return try getLocationFromMeshForLineStringByPlane(
