@@ -290,6 +290,7 @@ extension APITransmissionController {
             accessibilityFeatures = [firstFeature]
             totalFeatures = 1
         }
+        let isClosedLineString = accessibilityFeatureClass.oswPolicy.oswElementClass == .Building
         /// Map Accessibility Features to OSW Elements
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
