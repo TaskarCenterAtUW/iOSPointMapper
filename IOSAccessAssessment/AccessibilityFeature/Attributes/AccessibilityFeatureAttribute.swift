@@ -31,6 +31,9 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     case widthLegacy
     case runningSlopeLegacy
     case crossSlopeLegacy
+    case widthFromImage
+    case runningSlopeFromImage
+    case crossSlopeFromImage
     
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
@@ -106,21 +109,39 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
             )
         case .widthLegacy:
             return Metadata(
-                id: 10, name: "Width Legacy", unit: UnitLength.meters,
+                id: 15, name: "Width Legacy", unit: UnitLength.meters,
                 valueType: .length(Measurement(value: 0, unit: .meters)),
                 osmTagKey: "width_legacy"
             )
         case .runningSlopeLegacy:
             return Metadata(
-                id: 20, name: "Running Slope Legacy", unit: UnitAngle.degrees,
+                id: 25, name: "Running Slope Legacy", unit: UnitAngle.degrees,
                 valueType: .angle(Measurement(value: 0, unit: .degrees)),
                 osmTagKey: "incline_legacy"
             )
         case .crossSlopeLegacy:
             return Metadata(
-                id: 30, name: "Cross Slope Legacy", unit: UnitAngle.degrees,
+                id: 35, name: "Cross Slope Legacy", unit: UnitAngle.degrees,
                 valueType: .angle(Measurement(value: 0, unit: .degrees)),
                 osmTagKey: "cross_slope_legacy"
+            )
+        case .widthFromImage:
+            return Metadata(
+                id: 16, name: "Width from Image", unit: UnitLength.meters,
+                valueType: .length(Measurement(value: 0, unit: .meters)),
+                osmTagKey: "width_from_image"
+            )
+        case .runningSlopeFromImage:
+            return Metadata(
+                id: 26, name: "Running Slope from Image", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "running_slope_from_image"
+            )
+        case .crossSlopeFromImage:
+            return Metadata(
+                id: 36, name: "Cross Slope from Image", unit: UnitAngle.degrees,
+                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                osmTagKey: "cross_slope_from_image"
             )
         }
     }
@@ -181,6 +202,12 @@ extension AccessibilityFeatureAttribute {
             return true
         case (.crossSlopeLegacy, .angle):
             return true
+        case (.widthFromImage, .length):
+            return true
+        case (.runningSlopeFromImage, .angle):
+            return true
+        case (.crossSlopeFromImage, .angle):
+            return true
         default:
             return false
         }
@@ -235,6 +262,12 @@ extension AccessibilityFeatureAttribute {
             return .angle(Measurement(value: value, unit: .degrees))
         case .crossSlopeLegacy:
             return .angle(Measurement(value: value, unit: .degrees))
+        case .widthFromImage:
+            return .length(Measurement(value: value, unit: .meters))
+        case .runningSlopeFromImage:
+            return .angle(Measurement(value: value, unit: .degrees))
+        case .crossSlopeFromImage:
+            return .angle(Measurement(value: value, unit: .degrees))
         }
     }
     
@@ -271,6 +304,12 @@ extension AccessibilityFeatureAttribute {
         case (.runningSlopeLegacy, .angle(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.crossSlopeLegacy, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case (.widthFromImage, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case (.runningSlopeFromImage, .angle(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case (.crossSlopeFromImage, .angle(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         default:
             return nil
