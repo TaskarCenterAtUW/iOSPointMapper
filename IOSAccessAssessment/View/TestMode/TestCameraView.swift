@@ -74,6 +74,7 @@ struct TestCameraView: View {
     
 //    var locationManager: LocationManager = LocationManager()
     @State private var captureLocation: CLLocationCoordinate2D?
+    @State private var captureHeading: CLLocationDirection?
     
     @State private var showARCameraLearnMoreSheet = false
     

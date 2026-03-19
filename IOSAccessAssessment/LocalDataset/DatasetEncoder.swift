@@ -42,7 +42,7 @@ class DatasetEncoder {
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
-//    public let headingPath: URL
+    public let headingPath: URL
     public let accessibilityFeaturePath: URL
     public let otherDetailsPath: URL
     public let meshPath: URL
@@ -54,7 +54,7 @@ class DatasetEncoder {
     private let cameraIntrinsicsEncoder: CameraIntrinsicsEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
-//    private let headingEncoder: HeadingEncoder
+    private let headingEncoder: HeadingEncoder
     private let accessibilityFeatureEncoder: AccessibilityFeatureEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
     private let meshEncoder: MeshEncoder
@@ -77,7 +77,7 @@ class DatasetEncoder {
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
-//        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
+        self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.accessibilityFeaturePath = datasetDirectory.appendingPathComponent("features", isDirectory: true)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         self.meshPath = datasetDirectory.appendingPathComponent("mesh", isDirectory: true)
@@ -89,7 +89,7 @@ class DatasetEncoder {
         self.cameraIntrinsicsEncoder = try CameraIntrinsicsEncoder(url: self.cameraIntrinsicsPath)
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
-//        self.headingEncoder = HeadingEncoder(url: self.headingPath)
+        self.headingEncoder = try HeadingEncoder(url: self.headingPath)
         self.accessibilityFeatureEncoder = try AccessibilityFeatureEncoder(outDirectory: self.accessibilityFeaturePath)
         self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
         self.meshEncoder = try MeshEncoder(outDirectory: self.meshPath)
@@ -115,7 +115,8 @@ class DatasetEncoder {
     public func addCaptureData(
         captureImageData: any CaptureImageDataProtocol,
         captureMeshData: (any CaptureMeshDataProtocol)? = nil,
-        location: CLLocationCoordinate2D?
+        location: CLLocationCoordinate2D?,
+        heading: CLLocationDirection?
     ) throws {
         let otherDetailsData = OtherDetailsData(
             timestamp: captureImageData.timestamp,
@@ -132,7 +133,7 @@ class DatasetEncoder {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             location: location,
-//            heading: captureImageData.heading,
+            heading: heading,
             otherDetails: otherDetailsData,
             meshAnchors: meshAnchors,
             timestamp: captureImageData.timestamp
@@ -146,7 +147,7 @@ class DatasetEncoder {
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         location: CLLocationCoordinate2D?,
-//        heading: CLHeading?,
+        heading: CLLocationDirection?,
         otherDetails: OtherDetailsData?,
         meshAnchors: [ARMeshAnchor]? = nil,
         timestamp: TimeInterval = Date().timeIntervalSince1970
@@ -172,12 +173,12 @@ class DatasetEncoder {
         if let location = location {
             let latitude = location.latitude
             let longitude = location.longitude
-    //        let magneticHeading = heading?.magneticHeading ?? 0.0
-    //        let trueHeading = heading?.trueHeading ?? 0.0
             let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
-    //        let headingData = HeadingData(timestamp: timestamp, magneticHeading: magneticHeading, trueHeading: trueHeading)
             try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
-    //        self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
+        }
+        if let heading = heading {
+            let headingData = HeadingData(timestamp: timestamp, trueHeading: heading)
+            try self.headingEncoder.add(headingData: headingData, frameNumber: frameNumber)
         }
         if let otherDetailsData = otherDetails {
             try self.otherDetailsEncoder.add(otherDetails: otherDetailsData, frameNumber: frameNumber)
@@ -200,7 +201,7 @@ class DatasetEncoder {
         try self.cameraIntrinsicsEncoder.done()
         try self.cameraTransformEncoder.done()
         try self.locationEncoder.done()
-//        self.headingEncoder.done()
+        try self.headingEncoder.done()
         try self.accessibilityFeatureEncoder.done()
     }
 }

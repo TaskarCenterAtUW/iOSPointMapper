@@ -64,4 +64,9 @@ class LocationManager {
         let location = try getLocation()
         return location.coordinate
     }
+    
+    func getHeadingDegrees() throws -> CLLocationDirection {
+        let heading = try getHeading()
+        return heading.trueHeading
+    }
 }

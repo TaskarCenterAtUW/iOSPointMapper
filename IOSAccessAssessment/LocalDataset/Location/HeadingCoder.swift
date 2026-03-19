@@ -9,7 +9,7 @@ import Foundation
 
 struct HeadingData {
     let timestamp: TimeInterval
-    let magneticHeading: Double
+//    let magneticHeading: Double
     let trueHeading: Double
 //    let headingAccuracy: Double
 }
@@ -43,7 +43,7 @@ class HeadingEncoder {
         FileManager.default.createFile(atPath: self.path.absoluteString,  contents:Data("".utf8), attributes: nil)
         try "".write(to: self.path, atomically: true, encoding: .utf8)
         self.fileHandle = try FileHandle(forWritingTo: self.path)
-        guard let header = "timestamp, frame, magnetic_heading, true_heading\n".data(using: .utf8) else {
+        guard let header = "timestamp, frame, true_heading\n".data(using: .utf8) else {
             throw HeadingCoderError.fileCreationFailed
         }
 //            , heading_accuracy\n"
@@ -52,7 +52,7 @@ class HeadingEncoder {
 
     func add(headingData: HeadingData, frameNumber: UUID) throws {
         let frameNumber = String(frameNumber.uuidString)
-        let line = "\(headingData.timestamp), \(frameNumber) \(headingData.magneticHeading), \(headingData.trueHeading)\n"
+        let line = "\(headingData.timestamp), \(frameNumber), \(headingData.trueHeading)\n"
 //        , \(headingData.headingAccuracy)\n"
         guard let lineData = line.data(using: .utf8) else {
             throw HeadingCoderError.dataWriteFailed
@@ -68,7 +68,7 @@ class HeadingEncoder {
 struct HeadingOutputData {
     let timestamp: TimeInterval
     let frame: UUID
-    let magneticHeading: Double
+//    let magneticHeading: Double
     let trueHeading: Double
 }
 
@@ -91,7 +91,7 @@ class HeadingDecoder {
         let fileLines = fileContents.components(separatedBy: .newlines).filter {
             !$0.trimmingCharacters(in: .whitespaces).isEmpty
         }
-        let expectedHeader = "timestamp, frame, magnetic_heading, true_heading"
+        let expectedHeader = "timestamp, frame, true_heading"
         guard let headerLine = fileLines.first?.trimmingCharacters(in: .whitespacesAndNewlines),
               headerLine == expectedHeader else {
             throw HeadingCoderError.fileReadFailed
@@ -99,12 +99,12 @@ class HeadingDecoder {
         let columnNames = headerLine.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         let timestampIndex = columnNames.firstIndex(of: "timestamp")
         let frameIndex = columnNames.firstIndex(of: "frame")
-        let magneticHeadingIndex = columnNames.firstIndex(of: "magnetic_heading")
+//        let magneticHeadingIndex = columnNames.firstIndex(of: "magnetic_heading")
         let trueHeadingIndex = columnNames.firstIndex(of: "true_heading")
-        guard let timestampIndex, let frameIndex, let magneticHeadingIndex, let trueHeadingIndex else {
+        guard let timestampIndex, let frameIndex, let trueHeadingIndex else {
             throw LocationCoderError.fileReadFailed
         }
-        let maxIndex = max(timestampIndex, frameIndex, magneticHeadingIndex, trueHeadingIndex)
+        let maxIndex = max(timestampIndex, frameIndex, trueHeadingIndex)
         var headingDataList: [HeadingOutputData] = []
         for line in fileLines.dropFirst() {
             let columns = line.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -113,11 +113,10 @@ class HeadingDecoder {
             }
             if let timestamp = TimeInterval(columns[timestampIndex]),
                let frameNumber = UUID(uuidString: columns[frameIndex]),
-               let magneticHeading = Double(columns[magneticHeadingIndex]),
                let trueHeading = Double(columns[trueHeadingIndex]) {
                 let headingData = HeadingOutputData(
                     timestamp: timestamp, frame: frameNumber,
-                    magneticHeading: magneticHeading, trueHeading: trueHeading
+                    trueHeading: trueHeading
                 )
                 headingDataList.append(headingData)
             }
