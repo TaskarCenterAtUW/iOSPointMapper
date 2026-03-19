@@ -74,7 +74,7 @@ class DatasetDecoder {
     private let cameraIntrinsicsDecoder: CameraIntrinsicsDecoder
     private let cameraTransformDecoder: CameraTransformDecoder
     private let locationDecoder: LocationDecoder
-    private let headingDecoder: HeadingDecoder
+    private let headingDecoder: HeadingDecoder?
     private let otherDetailsDecoder: OtherDetailsDecoder
     private let meshDecoder: MeshDecoder
     
@@ -101,7 +101,12 @@ class DatasetDecoder {
         self.cameraIntrinsicsDecoder = try CameraIntrinsicsDecoder(path: self.cameraIntrinsicsPath)
         self.cameraTransformDecoder = try CameraTransformDecoder(path: self.cameraTransformPath)
         self.locationDecoder = try LocationDecoder(path: self.locationPath)
-        self.headingDecoder = try HeadingDecoder(url: self.headingPath)
+        do {
+            self.headingDecoder = try HeadingDecoder(url: self.headingPath)
+        } catch {
+            print("Heading data not found, proceeding without it.")
+            self.headingDecoder = nil
+        }
         self.otherDetailsDecoder = try OtherDetailsDecoder(path: self.otherDetailsPath)
         self.meshDecoder = MeshDecoder(inDirectory: self.meshPath)
         
@@ -143,9 +148,7 @@ class DatasetDecoder {
         guard let locationData = locationDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
-        guard let headingData = headingDecoder.load(index: index, frameNumber: frameNumber) else {
-            throw DatasetDecoderError.indexDataNotFound(index)
-        }
+        let headingData = headingDecoder?.load(index: index, frameNumber: frameNumber)
         guard let otherDetailsData = otherDetailsDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
@@ -162,7 +165,7 @@ class DatasetDecoder {
             depthImage: depthImage, confidenceImage: nil
         )
         let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
-        let heading = headingData.trueHeading
+        let heading = headingData?.trueHeading
         let datasetCaptureData = DatasetCaptureData(
             captureImageData: datasetCaptureBaseData,
             captureMeshData: meshContents,
