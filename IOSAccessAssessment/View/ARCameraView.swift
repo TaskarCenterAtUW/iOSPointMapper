@@ -99,6 +99,7 @@ struct ARCameraView: View {
     
     var locationManager: LocationManager = LocationManager()
     @State private var captureLocation: CLLocationCoordinate2D?
+    @State private var captureHeading: CLLocationDirection?
     
     @State private var showARCameraLearnMoreSheet = false
     
@@ -197,6 +198,7 @@ struct ARCameraView: View {
                     do {
                         await sharedAppData.refreshQueue()
                         captureLocation = nil
+                        captureHeading = nil
                         try manager.resume()
                     } catch {
                         managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
@@ -248,11 +250,13 @@ struct ARCameraView: View {
                     }
                 }
                 captureLocation = try locationManager.getLocationCoordinate()
+                captureHeading = try locationManager.getHeadingDegrees()
                 try manager.pause()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
                 addCaptureDataToCurrentDataset(
-                    captureImageData: captureData.imageData, captureMeshData: captureData.meshData, location: captureLocation
+                    captureImageData: captureData.imageData, captureMeshData: captureData.meshData,
+                    location: captureLocation, heading: captureHeading
                 )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
@@ -273,14 +277,16 @@ struct ARCameraView: View {
     private func addCaptureDataToCurrentDataset(
         captureImageData: any CaptureImageDataProtocol,
         captureMeshData: (any CaptureMeshDataProtocol)? = nil,
-        location: CLLocationCoordinate2D?
+        location: CLLocationCoordinate2D?,
+        heading: CLLocationDirection?
     ) {
         Task {
             do {
                 try sharedAppData.currentDatasetEncoder?.addCaptureData(
                     captureImageData: captureImageData,
                     captureMeshData: captureMeshData,
-                    location: captureLocation
+                    location: captureLocation,
+                    heading: captureHeading
                 )
             } catch {
                 print("Error adding capture data to dataset encoder: \(error)")

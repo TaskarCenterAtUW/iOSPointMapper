@@ -74,6 +74,7 @@ struct TestCameraView: View {
     
 //    var locationManager: LocationManager = LocationManager()
     @State private var captureLocation: CLLocationCoordinate2D?
+    @State private var captureHeading: CLLocationDirection?
     
     @State private var showARCameraLearnMoreSheet = false
     
@@ -170,6 +171,7 @@ struct TestCameraView: View {
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
+                self.captureHeading = datasetCaptureData.heading
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -227,6 +229,7 @@ struct TestCameraView: View {
                 )
                 self.datasetCaptureData = datasetCaptureData
                 self.captureLocation = datasetCaptureData.location
+                self.captureHeading = datasetCaptureData.heading
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
                 
                 /// For easier testing
@@ -293,11 +296,13 @@ struct TestCameraView: View {
                     }
                 }
                 let captureLocation = datadatasetCaptureData.location
+                let captureHeading = datadatasetCaptureData.heading
                 try manager.pause()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
                 addCaptureDataToCurrentDataset(
-                    captureImageData: captureData.imageData, captureMeshData: captureData.meshData, location: captureLocation
+                    captureImageData: captureData.imageData, captureMeshData: captureData.meshData,
+                    location: captureLocation, heading: captureHeading
                 )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
@@ -318,14 +323,16 @@ struct TestCameraView: View {
     private func addCaptureDataToCurrentDataset(
         captureImageData: any CaptureImageDataProtocol,
         captureMeshData: (any CaptureMeshDataProtocol)? = nil,
-        location: CLLocationCoordinate2D?
+        location: CLLocationCoordinate2D?,
+        heading: CLLocationDirection?
     ) {
         Task {
             do {
                 try sharedAppData.currentDatasetEncoder?.addCaptureData(
                     captureImageData: captureImageData,
                     captureMeshData: captureMeshData,
-                    location: location
+                    location: location,
+                    heading: heading
                 )
             } catch {
                 print("Error adding capture data to dataset encoder: \(error)")
