@@ -54,9 +54,12 @@ class ChangesetService {
     func openChangeset(
         workspaceId: String,
         accessToken: String,
+        environment: APIEnvironment? = nil,
         completion: @escaping (Result<String, Error>) -> Void
     ) {
-        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/create") else {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.createChangeset(selectedEnvironment) else {
+            completion(.failure(NSError(domain: "Invalid url", code: -1)))
             return
         }
         
@@ -104,10 +107,12 @@ class ChangesetService {
         workspaceId: String, changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String,
+        environment: APIEnvironment? = nil,
         completion: @escaping (Result<UploadedOSMResponseElements, Error>) -> Void
     ) {
-        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/upload") else {
-            completion(.failure(NSError(domain: "Invalid state", code: -2)))
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.uploadChanges(selectedEnvironment, changesetId) else {
+            completion(.failure(NSError(domain: "Invalid url", code: -1)))
             return
         }
 
@@ -171,9 +176,12 @@ class ChangesetService {
     func closeChangeset(
         changesetId: String,
         accessToken: String,
+        environment: APIEnvironment? = nil,
         completion: @escaping (Result<Void, Error>) -> Void
     ) {
-        guard let url = URL(string: "\(APIConstants.Constants.workspacesOSMBaseUrl)/changeset/\(changesetId)/close") else {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.closeChangeset(selectedEnvironment, changesetId) else {
+            completion(.failure(NSError(domain: "Invalid url", code: -1)))
             return
         }
         
@@ -206,10 +214,11 @@ extension ChangesetService {
      */
     func openChangesetAsync(
         workspaceId: String,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
-            openChangeset(workspaceId: workspaceId, accessToken: accessToken) { result in
+            openChangeset(workspaceId: workspaceId, accessToken: accessToken, environment: environment) { result in
                 switch result {
                 case .success(let changesetId):
                     continuation.resume(returning: changesetId)
@@ -233,12 +242,13 @@ extension ChangesetService {
         workspaceId: String,
         changesetId: String,
         operations: [ChangesetDiffOperation],
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> UploadedOSMResponseElements {
         return try await withCheckedThrowingContinuation { continuation in
             performUpload(
                 workspaceId: workspaceId, changesetId: changesetId, operations: operations,
-                accessToken: accessToken
+                accessToken: accessToken, environment: environment
             ) { result in
                 switch result {
                 case .success(let uploadedElements):
@@ -255,10 +265,11 @@ extension ChangesetService {
      */
     func closeChangesetAsync(
         changesetId: String,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws {
         return try await withCheckedThrowingContinuation { continuation in
-            closeChangeset(changesetId: changesetId, accessToken: accessToken) { result in
+            closeChangeset(changesetId: changesetId, accessToken: accessToken, environment: environment) { result in
                 switch result {
                 case .success():
                     continuation.resume()

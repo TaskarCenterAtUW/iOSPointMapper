@@ -464,7 +464,8 @@ struct SetupView: View {
                 }
                 
                 let openedChangesetId = try await ChangesetService.shared.openChangesetAsync(
-                    workspaceId: workspaceId, accessToken: accessToken
+                    workspaceId: workspaceId, accessToken: accessToken,
+                    environment: userStateViewModel.selectedEnvironment
                 )
                 workspaceViewModel.updateChangeset(id: openedChangesetId)
                 changesetOpenViewModel.isChangesetOpened = true

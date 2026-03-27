@@ -236,7 +236,8 @@ struct WorkspaceSelectionView: View {
             }
             var workspaces = try await WorkspaceService.shared.fetchWorkspaces(
                 location: nil, radius: 2000,
-                accessToken: accessToken
+                accessToken: accessToken,
+                environment: userState.selectedEnvironment
             )
             // MARK: Eventually, we should ensure that even primary workspaces have externalAppAccess enabled
             let primaryWorkspaces = workspaces.filter { workspace in

@@ -20,4 +20,29 @@ struct APIEndpoint {
         let baseURL = URL(string: environment.loginBaseURL)
         return baseURL?.appending(path: "authenticate")
     }
+    
+    static let refreshToken = { (environment: APIEnvironment) in
+        let baseURL = URL(string: environment.loginBaseURL)
+        return baseURL?.appending(path: "refresh-token")
+    }
+    
+    static let getWorkspaces = { (environment: APIEnvironment) in
+        let baseURL = URL(string: environment.workspaceBaseURL)
+        return baseURL?.appending(path: "workspaces/mine")
+    }
+    
+    static let createChangeset = { (environment: APIEnvironment) in
+        let baseURL = URL(string: environment.osmBaseURL)
+        return baseURL?.appending(path: "changeset/create")
+    }
+    
+    static let uploadChanges = { (environment: APIEnvironment, changesetId: String) in
+        let baseURL = URL(string: environment.osmBaseURL)
+        return baseURL?.appending(path: "changeset/\(changesetId)/upload")
+    }
+    
+    static let closeChangeset = { (environment: APIEnvironment, changesetId: String) in
+        let baseURL = URL(string: environment.osmBaseURL)
+        return baseURL?.appending(path: "changeset/\(changesetId)/close")
+    }
 }

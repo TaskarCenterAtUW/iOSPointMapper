@@ -65,7 +65,7 @@ class UserStateViewModel: ObservableObject {
     }
     
     func login(username: String, password: String) async throws -> AuthResponse {
-        let response = try await authService.login(username: username, password: password)
+        let response = try await authService.login(username: username, password: password, environment: selectedEnvironment)
         authService.storeUsername(username: username)
         if let _ = authService.getAccessToken(),
            let _ = authService.getExpirationDate() {
@@ -77,7 +77,7 @@ class UserStateViewModel: ObservableObject {
     }
     
     func callRefreshToken() async throws -> AuthResponse {
-        let response = try await authService.callRefreshToken()
+        let response = try await authService.callRefreshToken(environment: selectedEnvironment)
         return response
     }
     

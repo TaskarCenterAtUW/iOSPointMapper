@@ -33,26 +33,27 @@ class AuthService {
     
     private let keychainService = KeychainService()
     
-    func login(username: String, password: String) async throws -> AuthResponse {
-        guard let request = createLoginRequest(username: username, password: password) else {
+    func login(username: String, password: String, environment: APIEnvironment? = nil) async throws -> AuthResponse {
+        guard let request = createLoginRequest(username: username, password: password, environment: environment) else {
             throw NetworkError.invalidURL
         }
         return try await performRequestAsync(with: request)
     }
     
-    func callRefreshToken() async throws -> AuthResponse {
+    func callRefreshToken(environment: APIEnvironment? = nil) async throws -> AuthResponse {
         guard let refreshToken = keychainService.getValue(for: .refreshToken) else {
             throw NetworkError.noData
         }
-        guard let request = createRefreshRequest(refreshToken: refreshToken) else {
+        guard let request = createRefreshRequest(refreshToken: refreshToken, environment: environment) else {
             throw NetworkError.invalidURL
         }
         
         return try await performRequestAsync(with: request)
     }
     
-    private func createLoginRequest(username: String, password: String) -> URLRequest? {
-        guard let url = URL(string: APIConstants.Constants.tdeiCoreAuthUrl) else { return nil }
+    private func createLoginRequest(username: String, password: String, environment: APIEnvironment?) -> URLRequest? {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.login(selectedEnvironment) else { return nil }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -66,8 +67,9 @@ class AuthService {
         return request
     }
     
-    private func createRefreshRequest(refreshToken: String) -> URLRequest? {
-        guard let url = URL(string: APIConstants.Constants.tdeiCoreRefreshAuthUrl) else { return nil }
+    private func createRefreshRequest(refreshToken: String, environment: APIEnvironment?) -> URLRequest? {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.refreshToken(selectedEnvironment) else { return nil }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

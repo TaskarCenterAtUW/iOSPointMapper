@@ -67,6 +67,16 @@ class APIFeatureCache {
     }
 }
 
+struct APITransmissionInputs {
+    let workspaceId: String
+    let changesetId: String
+    let accessibilityFeatureClass: AccessibilityFeatureClass
+    let captureLocation: CLLocationCoordinate2D
+    let mappingData: MappingData
+    let accessToken: String
+    let environment: APIEnvironment? = nil
+}
+
 struct APITransmissionResults: @unchecked Sendable {
     let accessibilityFeatures: [MappedAccessibilityFeature]?
     

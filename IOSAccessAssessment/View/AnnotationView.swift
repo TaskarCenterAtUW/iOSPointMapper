@@ -666,7 +666,8 @@ struct AnnotationView: View {
             captureData: currentCaptureDataRecord,
             captureLocation: captureLocation,
             mappingData: sharedAppData.mappingData,
-            accessToken: accessToken
+            accessToken: accessToken,
+            environment: userStateViewModel.selectedEnvironment
         )
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
             throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)

@@ -34,7 +34,8 @@ class APITransmissionController: ObservableObject {
         captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> APITransmissionResults {
         idGenerator = IntIdGenerator()
         var isFailedCaptureUpload = false
@@ -99,7 +100,8 @@ class APITransmissionController: ObservableObject {
         captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws {
         let additionalTags: [String: String] = [
             APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
@@ -154,7 +156,8 @@ extension APITransmissionController {
         captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> APITransmissionResults {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
@@ -278,7 +281,8 @@ extension APITransmissionController {
         captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> APITransmissionResults {
         var accessibilityFeatures = accessibilityFeatures
         var totalFeatures = accessibilityFeatures.count
@@ -460,7 +464,8 @@ extension APITransmissionController {
         captureData: CaptureData,
         captureLocation: CLLocationCoordinate2D,
         mappingData: MappingData,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> APITransmissionResults {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
