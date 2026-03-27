@@ -46,6 +46,7 @@
 		A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943562EE81BF700C4C1BC /* OSWLineString.swift */; };
 		A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943582EE8204400C4C1BC /* OSWPolygon.swift */; };
 		A337CF692EDFC9F20032EE51 /* ChangesetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */; };
+		A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
 		A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */; };
@@ -248,6 +249,7 @@
 		A32943562EE81BF700C4C1BC /* OSWLineString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWLineString.swift; sourceTree = "<group>"; };
 		A32943582EE8204400C4C1BC /* OSWPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolygon.swift; sourceTree = "<group>"; };
 		A337CF682EDFC9EF0032EE51 /* ChangesetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetViewModel.swift; sourceTree = "<group>"; };
+		A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3431E012F26FA2700B96610 /* LocationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationExtension.swift; sourceTree = "<group>"; };
 		A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherAttributeExtensionLegacy.swift; sourceTree = "<group>"; };
@@ -430,19 +432,12 @@
 			isa = PBXGroup;
 			children = (
 				A3FE166A2E18DD2A00DAE5BE /* Info.plist */,
-				CAA947772CDE7001000C6918 /* Auth */,
 				A39C9F392DD9B01200455E45 /* TDEI */,
-				A305B05A2E1887AE00ECCF9B /* LocalDataset */,
-				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
-				DAA7F8C52CA6858C003666D8 /* Location */,
-				A34B70CC2DDFE638007B191F /* ARCamera */,
 				A30801512EC0984F00B1BA3A /* AccessibilityFeature */,
-				A35E050B2EDE359C003C26CF /* AttributeEstimation */,
+				A305B05A2E1887AE00ECCF9B /* LocalDataset */,
+				A34B70CC2DDFE638007B191F /* ARCamera */,
 				A3E84ECE2DDAC7980096A645 /* Annotation */,
-				DAA7F8C62CA76514003666D8 /* Image */,
-				A3DA4DA62EB9320E005BB812 /* Mesh */,
-				A364B5E02F26E0F400325E5C /* Metal */,
-				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
+				A33EB5AE2F761C83008ABFB7 /* ComputerVision */,
 				55659C092BB785EA0094DF01 /* MachineLearning */,
 				55659C0E2BB786240094DF01 /* View */,
 				55659C0B2BB786050094DF01 /* Shared */,
@@ -484,9 +479,10 @@
 		55659C092BB785EA0094DF01 /* MachineLearning */ = {
 			isa = PBXGroup;
 			children = (
+				A33EB5AD2F761BFC008ABFB7 /* ModelZoo */,
 				A3A413AB2ECF948E0039298C /* Clustering */,
-				A3A413A82ECF947C0039298C /* DepthEstimation */,
-				A3A413A72ECF94690039298C /* SemanticSegmentation */,
+				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
+				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 			);
 			path = MachineLearning;
 			sourceTree = "<group>";
@@ -561,6 +557,7 @@
 			isa = PBXGroup;
 			children = (
 				A38338C32EDAF25400F1A402 /* Attributes */,
+				A35E050B2EDE359C003C26CF /* AttributeEstimation */,
 				A30801662EC0AE6B00B1BA3A /* Components */,
 				A30801622EC0A89E00B1BA3A /* Definitions */,
 				A30801552EC09BA200B1BA3A /* Config */,
@@ -648,6 +645,32 @@
 			path = Others;
 			sourceTree = "<group>";
 		};
+		A33EB5AC2F761B5D008ABFB7 /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
+			);
+			path = Definitions;
+			sourceTree = "<group>";
+		};
+		A33EB5AD2F761BFC008ABFB7 /* ModelZoo */ = {
+			isa = PBXGroup;
+			children = (
+				A3A413A82ECF947C0039298C /* DepthEstimation */,
+				A3A413A72ECF94690039298C /* SemanticSegmentation */,
+			);
+			path = ModelZoo;
+			sourceTree = "<group>";
+		};
+		A33EB5AE2F761C83008ABFB7 /* ComputerVision */ = {
+			isa = PBXGroup;
+			children = (
+				DAA7F8C62CA76514003666D8 /* Image */,
+				A3DA4DA62EB9320E005BB812 /* Mesh */,
+			);
+			path = ComputerVision;
+			sourceTree = "<group>";
+		};
 		A3431E002F26FA0C00B96610 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -678,6 +701,7 @@
 			isa = PBXGroup;
 			children = (
 				A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */,
+				A3DA4DB02EB99A5A005BB812 /* MetalBufferUtils.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -696,6 +720,7 @@
 		A35E050E2EDE35ED003C26CF /* Localization */ = {
 			isa = PBXGroup;
 			children = (
+				A35E05092EDE2999003C26CF /* LocationManager.swift */,
 				A35E050C2EDE35DE003C26CF /* LocalizationProcessor.swift */,
 			);
 			path = Localization;
@@ -706,6 +731,7 @@
 			children = (
 				A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */,
 				A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */,
+				A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */,
 			);
 			path = Config;
 			sourceTree = "<group>";
@@ -748,22 +774,6 @@
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
-			sourceTree = "<group>";
-		};
-		A364B5E02F26E0F400325E5C /* Metal */ = {
-			isa = PBXGroup;
-			children = (
-				A364B5E12F26E12300325E5C /* Utils */,
-			);
-			path = Metal;
-			sourceTree = "<group>";
-		};
-		A364B5E12F26E12300325E5C /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				A3DA4DB02EB99A5A005BB812 /* MetalBufferUtils.swift */,
-			);
-			path = Utils;
 			sourceTree = "<group>";
 		};
 		A37E3E352EED60C100B07B77 /* CHelpers */ = {
@@ -884,6 +894,8 @@
 		A39C9F392DD9B01200455E45 /* TDEI */ = {
 			isa = PBXGroup;
 			children = (
+				CAA947772CDE7001000C6918 /* Auth */,
+				A33EB5AC2F761B5D008ABFB7 /* Definitions */,
 				A3A739432DD4BA330073C7D2 /* Helpers */,
 				A35E051F2EDFB0AD003C26CF /* OSM */,
 				A3A45F0F2EE7BD9C0029F5AE /* OSW */,
@@ -1079,7 +1091,6 @@
 		CAA947772CDE7001000C6918 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				CAF812BB2CF78F7C00D44B84 /* NetworkError.swift */,
 				CAA9477A2CDE70D5000C6918 /* KeychainService.swift */,
 				CAA947782CDE7007000C6918 /* AuthService.swift */,
 			);
@@ -1104,14 +1115,6 @@
 				A37E720F2ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift */,
 			);
 			path = Segmentation;
-			sourceTree = "<group>";
-		};
-		DAA7F8C52CA6858C003666D8 /* Location */ = {
-			isa = PBXGroup;
-			children = (
-				A35E05092EDE2999003C26CF /* LocationManager.swift */,
-			);
-			path = Location;
 			sourceTree = "<group>";
 		};
 		DAA7F8C62CA76514003666D8 /* Image */ = {
@@ -1279,6 +1282,7 @@
 				A3FE166C2E1C29CB00DAE5BE /* OtherDetailsCoder.swift in Sources */,
 				DAA7F8CC2CA77FA5003666D8 /* GrayscaleToColorFilter.swift in Sources */,
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
+				A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */,
 				A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */,
 				A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,

@@ -6,6 +6,7 @@
 //
 
 struct APIConstants {
+    /// TODO: Replace APIConstants.Constants with configurations stored in APIEnvironment. 
     enum Constants {
         // For the URLs, we only use staging for now
         static let baseUrl = "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"

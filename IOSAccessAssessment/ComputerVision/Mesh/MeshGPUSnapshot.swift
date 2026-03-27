@@ -1,0 +1,239 @@
+//
+//  MeshSnapshot.swift
+//  IOSAccessAssessment
+//
+//  Created by Himanshu on 11/3/25.
+//
+import ARKit
+import RealityKit
+
+/**
+ Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
+ */
+final class MeshGPUSnapshotGenerator: NSObject {
+    // MARK: These constants can be made configurable later
+    // But make sure that the snapshot from MeshContents extension continues to use the original constants.
+    private let defaultBufferSize: Int = 1024
+    private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
+    private let vertexOffset: Int = 0
+    private let indexElemSize: Int = MemoryLayout<UInt32>.stride
+    private let classificationElemSize: Int = MemoryLayout<UInt8>.stride
+    /**
+     Number of generations to keep missing anchors
+     
+     We can presumably keep this value high because the segmentation-based filtering takes care of removing polygons that are no longer relevant.
+     However, for performance reasons, we don't want to keep it too high, as the filtering function will have to go through too many anchors.
+     
+     TODO: Instead of having a fixed threshold, we can consider a more adaptive approach where we don't remove the anchor if it's representative transform
+     is still within the camera view frustum.
+     */
+    private let anchorLifetimeThreshold: Int = 10
+    
+    private let device: MTLDevice
+    var currentSnapshot: MeshGPUSnapshot?
+    
+    init(device: MTLDevice) {
+        self.device = device
+    }
+    
+    func reset() {
+        currentSnapshot = nil
+    }
+    
+    func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
+        return currentSnapshot?.anchors[anchorId]
+    }
+    
+    func snapshotAnchors(_ anchors: [ARAnchor]) throws {
+        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        let meshAnchorIds: Set<UUID> = Set(meshAnchors.map { $0.identifier })
+        var meshGPUAnchors: [UUID: MeshGPUAnchor] = [:]
+        
+        // First, update missing anchors from previous snapshot
+        let missingAnchorIds: Set<UUID> = Set(
+            currentSnapshot?.anchors.keys.filter { !meshAnchorIds.contains($0) } ?? []
+        )
+        for missingId in missingAnchorIds {
+            guard var existingAnchor = currentSnapshot?.anchors[missingId] else {
+                continue
+            }
+            existingAnchor.generation += 1
+            guard existingAnchor.generation < anchorLifetimeThreshold else {
+                print("Removing anchor \(missingId) after exceeding lifetime threshold")
+                continue
+            }
+            meshGPUAnchors[missingId] = existingAnchor
+        }
+        
+        // Next, add/update current anchors
+        for (_, meshAnchor) in meshAnchors.enumerated() {
+            let meshGPUAnchor = try createSnapshot(meshAnchor: meshAnchor)
+            meshGPUAnchors[meshAnchor.identifier] = meshGPUAnchor
+        }
+        
+        currentSnapshot = MeshGPUSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            anchors: meshGPUAnchors
+        )
+    }
+    
+    func removeAnchors(_ anchors: [ARAnchor]) {
+        let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
+        var meshGPUAnchors = currentSnapshot?.anchors ?? [:]
+        for (_, meshAnchor) in meshAnchors.enumerated() {
+            meshGPUAnchors.removeValue(forKey: meshAnchor.identifier)
+        }
+        currentSnapshot = MeshGPUSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            anchors: meshGPUAnchors
+        )
+    }
+    
+    /**
+    Create or update the GPU snapshot for the given ARMeshAnchor
+     
+     TODO: Check possibility of blitting directly to MTLBuffer using a blit command encoder for better performance
+     */
+    func createSnapshot(meshAnchor: ARMeshAnchor) throws -> MeshGPUAnchor {
+        let geometry = meshAnchor.geometry
+        let vertices = geometry.vertices               // ARGeometrySource (format .float3)
+        let faces = geometry.faces                  // ARGeometryElement
+        let classifications = geometry.classification
+        let anchorTransform = meshAnchor.transform
+        
+        var meshGPUAnchor: MeshGPUAnchor = try currentSnapshot?.anchors[meshAnchor.identifier] ?? {
+            let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
+            let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: defaultBufferSize, options: .storageModeShared)
+            return MeshGPUAnchor(
+                vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: nil, anchorTransform: anchorTransform
+            )
+        }()
+        
+        // Assign vertex buffer
+        // MARK: This code assumes the vertex format will always be only Float3
+        let vertexElemSize = MemoryLayout<Float>.stride * 3
+        let vertexByteCount = vertices.count * vertexElemSize
+        try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.vertexBuffer, requiredBytes: vertexByteCount)
+        
+        let vertexSrcPtr = vertices.buffer.contents().advanced(by: vertices.offset)
+        if (vertices.stride == vertexElemSize) {
+            try MetalBufferUtils.copyContiguous(srcPtr: vertexSrcPtr, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        } else {
+            try MetalBufferUtils.copyStrided(count: vertices.count, srcPtr: vertexSrcPtr, srcStride: vertices.stride,
+                            dst: meshGPUAnchor.vertexBuffer, elemSize: vertexElemSize)
+        }
+        
+        // Assign index buffer
+        // MARK: This code assumes the index type will always be only UInt32
+        let indexTypeSize = MemoryLayout<UInt32>.stride
+        let indexByteCount = faces.count * faces.bytesPerIndex * faces.indexCountPerPrimitive
+        try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.indexBuffer, requiredBytes: indexByteCount)
+        
+        let indexSrcPtr = faces.buffer.contents()
+        if (faces.bytesPerIndex == indexTypeSize) {
+            try MetalBufferUtils.copyContiguous(srcPtr: indexSrcPtr, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        } else {
+            try MetalBufferUtils.copyStrided(count: faces.count * faces.indexCountPerPrimitive, srcPtr: indexSrcPtr, srcStride: faces.bytesPerIndex,
+                            dst: meshGPUAnchor.indexBuffer, elemSize: indexTypeSize)
+        }
+        
+        // Assign classification buffer (if available)
+        if let classifications = classifications {
+            // MARK: This code assumes the classification type will always be only UInt8
+            let classificationElemSize = MemoryLayout<UInt8>.stride
+            let classificationByteCount = classifications.count * classificationElemSize
+            if meshGPUAnchor.classificationBuffer == nil {
+                let newCapacity = MetalBufferUtils.nextCap(classificationByteCount)
+                meshGPUAnchor.classificationBuffer = try MetalBufferUtils.makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
+            } else {
+                try MetalBufferUtils.ensureCapacity(device: device, buf: &meshGPUAnchor.classificationBuffer!, requiredBytes: classificationByteCount)
+            }
+            let classificationSrcPtr = classifications.buffer.contents().advanced(by: classifications.offset)
+            if (classifications.stride == classificationElemSize) {
+                try MetalBufferUtils.copyContiguous(
+                    srcPtr: classificationSrcPtr, dst: meshGPUAnchor.classificationBuffer!, byteCount: classificationByteCount
+                )
+            } else {
+                try MetalBufferUtils.copyStrided(
+                    count: classifications.count, srcPtr: classificationSrcPtr, srcStride: classifications.stride,
+                    dst: meshGPUAnchor.classificationBuffer!, elemSize: classificationElemSize)
+            }
+        } else {
+            meshGPUAnchor.classificationBuffer = nil
+        }
+        
+        meshGPUAnchor.vertexCount = vertices.count
+        meshGPUAnchor.indexCount = faces.count * faces.indexCountPerPrimitive
+        meshGPUAnchor.faceCount = faces.count
+        meshGPUAnchor.generation += 1
+        return meshGPUAnchor
+    }
+}
+
+/**
+ Extension to generate snapshot from MeshContents.
+ */
+extension MeshGPUSnapshotGenerator {
+    /**
+     Uses MeshContents to create a snapshot that can be used for GPU processing.
+     This is useful for testing and visualization purposes where we want to bypass ARKit and directly feed in mesh data.
+     
+     This method overwrites any previous snapshot since MeshContents represents a complete mesh state rather than incremental updates.
+     
+     - NOTE:
+     MeshContents uses configurations that align with the assumptions made in the snapshot generation code (e.g. vertex format as Float3, index format as UInt32, classification format as UInt8).
+     */
+    func snapshotContents(from mesh: MeshContents) throws {
+//        let vertexElemSize = MemoryLayout<SIMD3<Float>>.stride
+//        let indexElemSize = MemoryLayout<UInt32>.stride
+        let vertexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.positions.count * vertexElemSize, options: .storageModeShared)
+        let indexBuffer = try MetalBufferUtils.makeBuffer(device: device, length: mesh.indices.count * indexElemSize, options: .storageModeShared)
+        let classificationBuffer: MTLBuffer? = mesh.classifications != nil ? try MetalBufferUtils.makeBuffer(device: device, length: mesh.classifications!.count * classificationElemSize, options: .storageModeShared) : nil
+        let anchorTransform = matrix_identity_float4x4 // Using identity transform since MeshContents already represents a complete mesh state without any specific anchor association
+        var meshGPUAnchor = MeshGPUAnchor(
+            vertexBuffer: vertexBuffer, indexBuffer: indexBuffer, classificationBuffer: classificationBuffer, anchorTransform: anchorTransform
+        )
+        
+        // Assign vertex buffer
+        let vertexByteCount = mesh.positions.count * vertexElemSize
+//        try MetalBufferUtils.copyContiguous(srcPtr: mesh.positions, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        try mesh.positions.withUnsafeBytes { srcPtr in
+            guard let srcBaseAddress = srcPtr.baseAddress else { return }
+            try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: meshGPUAnchor.vertexBuffer, byteCount: vertexByteCount)
+        }
+        
+        // Assign index buffer
+        let indexByteCount = mesh.indices.count * indexElemSize
+//        try MetalBufferUtils.copyContiguous(srcPtr: mesh.indices, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        try mesh.indices.withUnsafeBytes { srcPtr in
+            guard let srcBaseAddress = srcPtr.baseAddress else { return }
+            try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: meshGPUAnchor.indexBuffer, byteCount: indexByteCount)
+        }
+        
+        // Assign classification buffer (if available)
+        if let classifications = mesh.classifications, let classificationBuffer = meshGPUAnchor.classificationBuffer {
+            let classificationByteCount = classifications.count * classificationElemSize
+//            try MetalBufferUtils.copyContiguous(srcPtr: classifications, dst: classificationBuffer, byteCount: classificationByteCount)
+            try classifications.withUnsafeBytes { srcPtr in
+                guard let srcBaseAddress = srcPtr.baseAddress else { return }
+                try MetalBufferUtils.copyContiguous(srcPtr: srcBaseAddress, dst: classificationBuffer, byteCount: classificationByteCount)
+            }
+        }
+        
+        meshGPUAnchor.vertexCount = mesh.positions.count
+        meshGPUAnchor.indexCount = mesh.indices.count
+        meshGPUAnchor.faceCount = mesh.indices.count / 3 // Assuming triangles
+        meshGPUAnchor.generation = 0 // Starting generation at 0 for new snapshot
+        
+        currentSnapshot = MeshGPUSnapshot(
+            vertexStride: vertexElemSize, vertexOffset: vertexOffset,
+            indexStride: indexElemSize,
+            classificationStride: classificationElemSize,
+            anchors: [UUID(): meshGPUAnchor] // Using a dummy UUID since this snapshot is not associated with any specific ARMeshAnchor
+        )
+    }
+}
