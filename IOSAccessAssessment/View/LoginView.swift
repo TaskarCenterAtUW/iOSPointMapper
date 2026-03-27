@@ -14,7 +14,7 @@ struct LoginView: View {
     @State private var isLoading: Bool = false
     @EnvironmentObject var userState: UserStateViewModel
     
-    private let authService = AuthService()
+    private let authService = AuthService.shared
     
     var body: some View {
         VStack(spacing: 30) {

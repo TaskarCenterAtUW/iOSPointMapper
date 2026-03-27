@@ -19,17 +19,6 @@ enum APIEnvironment: String, CaseIterable {
         return .staging
     }
     
-    var workspaceBaseURL: String {
-        switch self {
-//        case .development:
-//            return "https://api.workspaces-dev.sidewalks.washington.edu/api/v1"
-        case .staging:
-            return "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
-//        case .production:
-//            return "https://api.workspaces.sidewalks.washington.edu/api/v1"
-        }
-    }
-    
     var loginBaseURL: String {
         switch self {
 //        case .development:
@@ -38,6 +27,17 @@ enum APIEnvironment: String, CaseIterable {
             return "https://tdei-gateway-stage.azurewebsites.net/api/v1"
 //        case .production:
 //            return "https://tdei-gateway-prod.azurewebsites.net/api/v1"
+        }
+    }
+    
+    var workspaceBaseURL: String {
+        switch self {
+//        case .development:
+//            return "https://api.workspaces-dev.sidewalks.washington.edu/api/v1"
+        case .staging:
+            return "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
+//        case .production:
+//            return "https://api.workspaces.sidewalks.washington.edu/api/v1"
         }
     }
     
