@@ -33,45 +33,27 @@ class AuthService {
     
     private let keychainService = KeychainService()
     
-    func login(
-        username: String, password: String,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
-        guard let request = createLoginRequest(username: username, password: password) else {
-            completion(.failure(.invalidURL))
-            return
+    func login(username: String, password: String, environment: APIEnvironment? = nil) async throws -> AuthResponse {
+        guard let request = createLoginRequest(username: username, password: password, environment: environment) else {
+            throw NetworkError.invalidURL
         }
-        
-        performRequest(with: request, completion: completion)
+        return try await performRequestAsync(with: request)
     }
     
-    func logout() {
-        keychainService.removeValue(for: .accessToken)
-        keychainService.removeValue(for: .expirationDate)
-        keychainService.removeValue(for: .refreshToken)
-        keychainService.removeValue(for: .refreshExpirationDate)
-    }
-    
-    func callRefreshToken(completion: @escaping (Result<AuthResponse, NetworkError>) -> Void) {
+    func callRefreshToken(environment: APIEnvironment? = nil) async throws -> AuthResponse {
         guard let refreshToken = keychainService.getValue(for: .refreshToken) else {
-            print("No refresh token found.")
-            return
+            throw NetworkError.noData
+        }
+        guard let request = createRefreshRequest(refreshToken: refreshToken, environment: environment) else {
+            throw NetworkError.invalidURL
         }
         
-        guard let request = createRefreshRequest(refreshToken: refreshToken) else {
-            print("Invalid URL for refresh token.")
-            return
-        }
-        
-        performRequest(with: request, completion: completion)
+        return try await performRequestAsync(with: request)
     }
     
-    func storeUsername(username: String) {
-        keychainService.setValue(username, for: .username)
-    }
-    
-    private func createLoginRequest(username: String, password: String) -> URLRequest? {
-        guard let url = URL(string: APIConstants.Constants.tdeiCoreAuthUrl) else { return nil }
+    private func createLoginRequest(username: String, password: String, environment: APIEnvironment?) -> URLRequest? {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.login(selectedEnvironment) else { return nil }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -85,8 +67,9 @@ class AuthService {
         return request
     }
     
-    private func createRefreshRequest(refreshToken: String) -> URLRequest? {
-        guard let url = URL(string: APIConstants.Constants.tdeiCoreRefreshAuthUrl) else { return nil }
+    private func createRefreshRequest(refreshToken: String, environment: APIEnvironment?) -> URLRequest? {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.refreshToken(selectedEnvironment) else { return nil }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -96,76 +79,44 @@ class AuthService {
         return request
     }
     
-    private func performRequest(
-        with request: URLRequest,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error {
-                completion(.failure(.serverError(message: error.localizedDescription)))
-                return
-            }
-            guard let self = self else { return }
-            
-            guard let data else {
-                completion(.failure(.noData))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.invalidResponse))
-                return
-            }
-            
-            self.handleResponse(data: data,
-                                httpResponse: httpResponse,
-                                completion: completion)
-        }.resume()
-    }
-
-    private func handleResponse(
-        data: Data,
-        httpResponse: HTTPURLResponse,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
+    private func performRequestAsync(with request: URLRequest) async throws -> AuthResponse {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.invalidResponse
+        }
+        
         if (200...299).contains(httpResponse.statusCode) {
-            decodeSuccessResponse(data: data,
-                                  completion: completion)
+            return try decodeSuccessResponseAsync(data: data)
         } else {
-            decodeErrorResponse(data: data,
-                                statusCode: httpResponse.statusCode,
-                                completion: completion)
+            try decodeErrorResponseAsync(data: data, statusCode: httpResponse.statusCode)
         }
-    }
-
-    private func decodeSuccessResponse(
-        data: Data,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
-        do {
-            let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
-            storeAuthData(authResponse: authResponse)
-            completion(.success(authResponse))
-        } catch {
-            completion(.failure(.decodingError))
-        }
+        throw NetworkError.unknownError
     }
     
-    private func decodeErrorResponse(
-        data: Data,
-        statusCode: Int,
-        completion: @escaping (Result<AuthResponse, NetworkError>) -> Void
-    ) {
-        do {
-            let errorResponse = try JSONDecoder().decode(ErrorResponse.self, from: data)
-            let errorMessage = errorResponse.message
-                .appending(": ")
-                .appending(errorResponse.errors?.joined(separator: "\n") ?? "")
-            
-            completion(.failure(.serverError(message: errorMessage)))
-        } catch {
-            completion(.failure(.decodingError))
-        }
+    private func decodeSuccessResponseAsync(data: Data) throws -> AuthResponse {
+        let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+        storeAuthData(authResponse: authResponse)
+        return authResponse
+    }
+    
+    private func decodeErrorResponseAsync(data: Data, statusCode: Int) throws {
+        let errorResponse = try JSONDecoder().decode(ErrorResponse.self, from: data)
+        let errorMessage = errorResponse.message
+            .appending(": ")
+            .appending(errorResponse.errors?.joined(separator: "\n") ?? "")
+        throw NetworkError.serverError(message: errorMessage)
+    }
+    
+    func logout() {
+        keychainService.removeValue(for: .accessToken)
+        keychainService.removeValue(for: .expirationDate)
+        keychainService.removeValue(for: .refreshToken)
+        keychainService.removeValue(for: .refreshExpirationDate)
+    }
+    
+    func storeUsername(username: String) {
+        keychainService.setValue(username, for: .username)
     }
     
     private func storeAuthData(authResponse: AuthResponse) {

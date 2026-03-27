@@ -61,13 +61,15 @@ class WorkspaceService {
     
     func fetchWorkspaces(
         location: CLLocationCoordinate2D?, radius: Int = 2000,
-        accessToken: String
+        accessToken: String,
+        environment: APIEnvironment? = nil
     ) async throws -> [Workspace] {
-        guard let base = URL(string: APIConstants.Constants.workspacesAPIBaseUrl)
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let url = APIEndpoint.getWorkspaces(selectedEnvironment)
         else {
             throw APIError.invalidURL
         }
-        var comps = URLComponents(url: base.appendingPathComponent("workspaces/mine"), resolvingAgainstBaseURL: false)
+        var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
         comps?.queryItems = [
             URLQueryItem(name: "radius", value: "\(radius)")
         ]

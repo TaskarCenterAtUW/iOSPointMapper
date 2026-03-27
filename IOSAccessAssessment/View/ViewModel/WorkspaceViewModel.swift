@@ -12,6 +12,7 @@ import Foundation
  
     TODO: Utilize UserDefaults or Keychain to persist the selected workspace across app launches
  */
+@MainActor
 class WorkspaceViewModel: ObservableObject {
     @Published var isWorkspaceSelected: Bool = false
     

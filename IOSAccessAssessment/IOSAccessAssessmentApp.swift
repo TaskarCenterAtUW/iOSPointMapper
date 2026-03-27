@@ -35,8 +35,6 @@ class LoginStatusViewModel: ObservableObject {
 struct IOSAccessAssessmentApp: App {
     @StateObject private var userState = UserStateViewModel()
     @StateObject private var workspaceViewModel = WorkspaceViewModel()
-    private let authService = AuthService()
-    
     @StateObject private var loginStatusViewModel = LoginStatusViewModel()
     
     init() {
@@ -101,15 +99,13 @@ struct IOSAccessAssessmentApp: App {
         try Tips.configure()
     }
     
-    /// TODO: Handle refresh token failure case
     private func callRefreshToken() {
-        authService.callRefreshToken() { result in
-            switch result {
-            case .success(_):
-                print("Refresh token successful")
-            case .failure(_):
+        Task {
+            do {
+                let _ = try await userState.callRefreshToken()
+            } catch let error {
                 DispatchQueue.main.async {
-                    loginStatusViewModel.update(isFailed: true, errorMessage: AppConstants.Texts.refreshTokenFailedMessageKey)
+                    loginStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
                 }
             }
         }

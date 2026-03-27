@@ -7,7 +7,15 @@
 
 import Foundation
 
+@MainActor
 class UserStateViewModel: ObservableObject {
+    @Published var selectedEnvironment: APIEnvironment = .staging {
+        didSet {
+            environmentService.environment = selectedEnvironment
+        }
+    }
+    private let environmentService: EnvironmentService = EnvironmentService.shared
+    
     @Published var isAuthenticated: Bool = false
     private let authService: AuthService = AuthService.shared
         
@@ -40,6 +48,7 @@ class UserStateViewModel: ObservableObject {
     }
     
     init() {
+        self.selectedEnvironment = environmentService.environment
         self.isAuthenticated = authService.checkTokenValid()
         self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
         if let savedAppModeRawValue = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.appModeKey),
@@ -48,19 +57,36 @@ class UserStateViewModel: ObservableObject {
         } else {
             self.appMode = .standard
         }
-        print("UserStateViewModel initialized with isAuthenticated: \(isAuthenticated), isEnhancedAnalysisEnabled: \(isEnhancedAnalysisEnabled), appMode: \(appMode)")
     }
     
-    func getUsername() -> String? {
-        return authService.getUsername()
+    func updateEnvironment(to newEnvironment: APIEnvironment) {
+        selectedEnvironment = newEnvironment
+        environmentService.environment = newEnvironment
+    }
+    
+    func login(username: String, password: String) async throws -> AuthResponse {
+        let response = try await authService.login(username: username, password: password, environment: selectedEnvironment)
+        authService.storeUsername(username: username)
+        if let _ = authService.getAccessToken(),
+           let _ = authService.getExpirationDate() {
+            isAuthenticated = true
+            return response
+        } else {
+            throw NetworkError.unknownError
+        }
+    }
+    
+    func callRefreshToken() async throws -> AuthResponse {
+        let response = try await authService.callRefreshToken(environment: selectedEnvironment)
+        return response
     }
     
     func getAccessToken() -> String? {
         return authService.getAccessToken()
     }
     
-    func loginSuccess() {
-        isAuthenticated = true
+    func getUsername() -> String? {
+        return authService.getUsername()
     }
     
     func logout() {
