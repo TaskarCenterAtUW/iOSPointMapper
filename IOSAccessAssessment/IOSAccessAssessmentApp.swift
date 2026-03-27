@@ -35,8 +35,6 @@ class LoginStatusViewModel: ObservableObject {
 struct IOSAccessAssessmentApp: App {
     @StateObject private var userState = UserStateViewModel()
     @StateObject private var workspaceViewModel = WorkspaceViewModel()
-    private let authService = AuthService()
-    
     @StateObject private var loginStatusViewModel = LoginStatusViewModel()
     
     init() {
@@ -104,7 +102,7 @@ struct IOSAccessAssessmentApp: App {
     private func callRefreshToken() {
         Task {
             do {
-                let _ = try await authService.callRefreshTokenAsync()
+                let _ = try await userState.callRefreshToken()
             } catch let error {
                 DispatchQueue.main.async {
                     loginStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)

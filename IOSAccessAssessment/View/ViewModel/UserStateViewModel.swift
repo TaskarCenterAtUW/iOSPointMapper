@@ -52,7 +52,6 @@ class UserStateViewModel: ObservableObject {
         } else {
             self.appMode = .standard
         }
-        print("UserStateViewModel initialized with isAuthenticated: \(isAuthenticated), isEnhancedAnalysisEnabled: \(isEnhancedAnalysisEnabled), appMode: \(appMode)")
     }
     
     func updateEnvironment(to newEnvironment: APIEnvironment) {
@@ -60,8 +59,21 @@ class UserStateViewModel: ObservableObject {
         environmentService.environment = newEnvironment
     }
     
-    func loginSuccess() {
-        isAuthenticated = true
+    func login(username: String, password: String) async throws -> AuthResponse {
+        let response = try await authService.login(username: username, password: password)
+        authService.storeUsername(username: username)
+        if let _ = authService.getAccessToken(),
+           let _ = authService.getExpirationDate() {
+            isAuthenticated = true
+            return response
+        } else {
+            throw NetworkError.unknownError
+        }
+    }
+    
+    func callRefreshToken() async throws -> AuthResponse {
+        let response = try await authService.callRefreshToken()
+        return response
     }
     
     func getAccessToken() -> String? {

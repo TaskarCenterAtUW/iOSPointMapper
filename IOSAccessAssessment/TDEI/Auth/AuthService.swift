@@ -33,14 +33,14 @@ class AuthService {
     
     private let keychainService = KeychainService()
     
-    func loginAsync(username: String, password: String) async throws -> AuthResponse {
+    func login(username: String, password: String) async throws -> AuthResponse {
         guard let request = createLoginRequest(username: username, password: password) else {
             throw NetworkError.invalidURL
         }
         return try await performRequestAsync(with: request)
     }
     
-    func callRefreshTokenAsync() async throws -> AuthResponse {
+    func callRefreshToken() async throws -> AuthResponse {
         guard let refreshToken = keychainService.getValue(for: .refreshToken) else {
             throw NetworkError.noData
         }

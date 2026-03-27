@@ -14,8 +14,6 @@ struct LoginView: View {
     @State private var isLoading: Bool = false
     @EnvironmentObject var userState: UserStateViewModel
     
-    private let authService = AuthService.shared
-    
     var body: some View {
         VStack(spacing: 30) {
             Label("Login", systemImage: "lock.shield")
@@ -74,14 +72,7 @@ struct LoginView: View {
         
         Task {
             do {
-                let _ = try await authService.loginAsync(username: username, password: password)
-                authService.storeUsername(username: username)
-                if let _ = authService.getAccessToken(),
-                   let _ = authService.getExpirationDate() {
-                    userState.loginSuccess()
-                } else {
-                    self.errorMessage = "Failed to retrieve access token or expiration date."
-                }
+                let _ = try await userState.login(username: username, password: password)
             } catch let authError {
                 self.errorMessage = authError.localizedDescription
             }
