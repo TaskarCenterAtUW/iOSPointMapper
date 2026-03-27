@@ -7,8 +7,13 @@
 
 import Foundation
 
+@MainActor
 class UserStateViewModel: ObservableObject {
-    @Published var selectedEnvironment: APIEnvironment = .staging
+    @Published var selectedEnvironment: APIEnvironment = .staging {
+        didSet {
+            environmentService.environment = selectedEnvironment
+        }
+    }
     private let environmentService: EnvironmentService = EnvironmentService.shared
     
     @Published var isAuthenticated: Bool = false

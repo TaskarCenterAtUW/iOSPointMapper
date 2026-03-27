@@ -7,6 +7,22 @@
 
 import SwiftUI
 
+enum LoginViewConstants {
+    enum Texts {
+        static let loginViewTitle = "Login"
+        
+        /// Fields
+        static let usernamePlaceholder = "Username"
+        static let passwordPlaceholder = "Password"
+        static let tdeiEnvironmentLabel = "TDEI Environment:"
+        static let loginButtonTitle = "Login"
+    }
+    
+    enum Images {
+        static let loginIcon = "lock.shield"
+    }
+}
+
 struct LoginView: View {
     @State private var username: String = ""
     @State private var password: String = ""
@@ -16,26 +32,28 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            Label("Login", systemImage: "lock.shield")
+            Label(LoginViewConstants.Texts.loginViewTitle, systemImage: LoginViewConstants.Images.loginIcon)
                 .font(.largeTitle)
                 .bold()
             
-            TextField("Username", text: $username)
+            TextField(LoginViewConstants.Texts.usernamePlaceholder, text: $username)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .autocapitalization(.none)
                 .disableAutocorrection(true)
             
-            SecureField("Password", text: $password)
+            SecureField(LoginViewConstants.Texts.passwordPlaceholder, text: $password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
-            Menu {
-                ForEach(APIEnvironment.allCases, id: \.self) { environment in
-                    Text(environment.rawValue)
+            HStack {
+                Spacer()
+                Text(LoginViewConstants.Texts.tdeiEnvironmentLabel)
+                Picker(LoginViewConstants.Texts.tdeiEnvironmentLabel, selection: $userState.selectedEnvironment) {
+                    ForEach(APIEnvironment.allCases, id: \.self) { environment in
+                        Text(environment.rawValue).tag(environment)
+                    }
                 }
-            }
-            label: {
-                Text("TDEI: \(APIEnvironment.default.rawValue)")
-                    .foregroundStyle(.blue)
+                .pickerStyle(MenuPickerStyle())
+                Spacer()
             }
             
             if let errorMessage = errorMessage {
@@ -50,7 +68,7 @@ struct LoginView: View {
                     .progressViewStyle(CircularProgressViewStyle())
             } else {
                 Button(action: login) {
-                    Text("Login")
+                    Text(LoginViewConstants.Texts.loginButtonTitle)
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -73,8 +91,13 @@ struct LoginView: View {
         Task {
             do {
                 let _ = try await userState.login(username: username, password: password)
+                DispatchQueue.main.async {
+                    isLoading = false
+                }
             } catch let authError {
-                self.errorMessage = authError.localizedDescription
+                DispatchQueue.main.async {
+                    self.errorMessage = authError.localizedDescription
+                }
             }
         }
     }
