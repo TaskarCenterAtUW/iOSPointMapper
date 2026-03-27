@@ -71,10 +71,11 @@ struct APITransmissionInputs {
     let workspaceId: String
     let changesetId: String
     let accessibilityFeatureClass: AccessibilityFeatureClass
+    let captureData: CaptureData
     let captureLocation: CLLocationCoordinate2D
     let mappingData: MappingData
     let accessToken: String
-    let environment: APIEnvironment? = nil
+    let environment: APIEnvironment?
 }
 
 struct APITransmissionResults: @unchecked Sendable {

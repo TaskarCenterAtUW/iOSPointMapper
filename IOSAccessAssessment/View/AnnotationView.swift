@@ -658,16 +658,19 @@ struct AnnotationView: View {
         guard !featuresToUpload.isEmpty else {
             return nil
         }
-        let apiTransmissionResults = try await apiTransmissionController.uploadFeatures(
+        let apiTransmissionInputs = APITransmissionInputs(
             workspaceId: workspaceId,
             changesetId: changesetId,
             accessibilityFeatureClass: accessibilityFeatureClass,
-            accessibilityFeatures: featuresToUpload,
             captureData: currentCaptureDataRecord,
             captureLocation: captureLocation,
             mappingData: sharedAppData.mappingData,
             accessToken: accessToken,
             environment: userStateViewModel.selectedEnvironment
+        )
+        let apiTransmissionResults = try await apiTransmissionController.uploadFeatures(
+            accessibilityFeatures: featuresToUpload,
+            inputs: apiTransmissionInputs
         )
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {
             throw AnnotationViewError.apiTransmissionFailed(apiTransmissionResults)
