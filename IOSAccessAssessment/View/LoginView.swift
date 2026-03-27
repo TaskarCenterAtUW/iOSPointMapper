@@ -72,21 +72,18 @@ struct LoginView: View {
         errorMessage = nil
         isLoading = true
         
-        authService.login(username: username, password: password) { result in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                
-                switch result {
-                case .success(_):
-                    authService.storeUsername(username: username)
-                    
-                    if let _ = authService.getAccessToken(),
-                       let _ = authService.getExpirationDate() {
-                        userState.loginSuccess()
-                    }
-                case .failure(let authError):
-                    self.errorMessage = authError.localizedDescription
+        Task {
+            do {
+                let _ = try await authService.loginAsync(username: username, password: password)
+                authService.storeUsername(username: username)
+                if let _ = authService.getAccessToken(),
+                   let _ = authService.getExpirationDate() {
+                    userState.loginSuccess()
+                } else {
+                    self.errorMessage = "Failed to retrieve access token or expiration date."
                 }
+            } catch let authError {
+                self.errorMessage = authError.localizedDescription
             }
         }
     }

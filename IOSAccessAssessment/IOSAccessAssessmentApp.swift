@@ -101,15 +101,13 @@ struct IOSAccessAssessmentApp: App {
         try Tips.configure()
     }
     
-    /// TODO: Handle refresh token failure case
     private func callRefreshToken() {
-        authService.callRefreshToken() { result in
-            switch result {
-            case .success(_):
-                print("Refresh token successful")
-            case .failure(_):
+        Task {
+            do {
+                let _ = try await authService.callRefreshTokenAsync()
+            } catch let error {
                 DispatchQueue.main.async {
-                    loginStatusViewModel.update(isFailed: true, errorMessage: AppConstants.Texts.refreshTokenFailedMessageKey)
+                    loginStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
                 }
             }
         }

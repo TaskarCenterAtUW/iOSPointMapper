@@ -35,6 +35,9 @@ struct Constants {
     }
     
     struct UserDefaultsKeys {
+        /// Environment selection
+        static let selectedEnvironmentKey = "selectedEnvironment"
+        
         /// Workspace selection
         static let selectedWorkspaceIdKey = "selectedWorkspaceId"
         static let selectedWorkspaceTitleKey = "selectedWorkspaceTitle"

@@ -8,6 +8,9 @@
 import Foundation
 
 class UserStateViewModel: ObservableObject {
+    @Published var selectedEnvironment: APIEnvironment = .staging
+    private let environmentService: EnvironmentService = EnvironmentService.shared
+    
     @Published var isAuthenticated: Bool = false
     private let authService: AuthService = AuthService.shared
         
@@ -40,6 +43,7 @@ class UserStateViewModel: ObservableObject {
     }
     
     init() {
+        self.selectedEnvironment = environmentService.environment
         self.isAuthenticated = authService.checkTokenValid()
         self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
         if let savedAppModeRawValue = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.appModeKey),
@@ -51,16 +55,21 @@ class UserStateViewModel: ObservableObject {
         print("UserStateViewModel initialized with isAuthenticated: \(isAuthenticated), isEnhancedAnalysisEnabled: \(isEnhancedAnalysisEnabled), appMode: \(appMode)")
     }
     
-    func getUsername() -> String? {
-        return authService.getUsername()
+    func updateEnvironment(to newEnvironment: APIEnvironment) {
+        selectedEnvironment = newEnvironment
+        environmentService.environment = newEnvironment
+    }
+    
+    func loginSuccess() {
+        isAuthenticated = true
     }
     
     func getAccessToken() -> String? {
         return authService.getAccessToken()
     }
     
-    func loginSuccess() {
-        isAuthenticated = true
+    func getUsername() -> String? {
+        return authService.getUsername()
     }
     
     func logout() {

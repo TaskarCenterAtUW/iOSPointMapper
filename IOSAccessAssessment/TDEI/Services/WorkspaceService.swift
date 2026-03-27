@@ -67,7 +67,7 @@ class WorkspaceService {
         else {
             throw APIError.invalidURL
         }
-        var comps = URLComponents(url: base.appendingPathComponent("workspaces/mine"), resolvingAgainstBaseURL: false)
+        var comps = URLComponents(url: base.appending(path: "workspaces/mine"), resolvingAgainstBaseURL: false)
         comps?.queryItems = [
             URLQueryItem(name: "radius", value: "\(radius)")
         ]

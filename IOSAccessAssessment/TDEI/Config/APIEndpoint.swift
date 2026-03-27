@@ -17,6 +17,7 @@ import CoreLocation
  */
 struct APIEndpoint {
     static let login = { (environment: APIEnvironment) in
-        
+        let baseURL = URL(string: environment.loginBaseURL)
+        return baseURL?.appending(path: "authenticate")
     }
 }
