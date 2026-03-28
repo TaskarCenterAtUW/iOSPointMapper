@@ -664,12 +664,12 @@ struct AnnotationView: View {
             accessibilityFeatureClass: accessibilityFeatureClass,
             captureData: currentCaptureDataRecord,
             captureLocation: captureLocation,
-            mappingData: sharedAppData.mappingData,
             accessToken: accessToken,
             environment: userStateViewModel.selectedEnvironment
         )
         let apiTransmissionResults = try await apiTransmissionController.uploadFeatures(
             accessibilityFeatures: featuresToUpload,
+            mappingData: sharedAppData.mappingData,
             inputs: apiTransmissionInputs
         )
         guard let mappedAccessibilityFeatures = apiTransmissionResults.accessibilityFeatures else {

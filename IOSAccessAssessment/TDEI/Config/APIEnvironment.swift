@@ -10,7 +10,7 @@ import Foundation
 /**
  TODO: Use this to replace the environment-agnostic APIConstants
  */
-enum APIEnvironment: String, CaseIterable, Hashable {
+enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //    case development = "Development"
     case staging = "Staging"
 //    case production = "Production"

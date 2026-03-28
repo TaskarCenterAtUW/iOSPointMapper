@@ -97,7 +97,7 @@ struct ARCameraView: View {
     @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
-    var locationManager: LocationManager = LocationManager()
+    @StateObject private var locationManager: LocationManager = LocationManager()
     @State private var captureLocation: CLLocationCoordinate2D?
     @State private var captureHeading: CLLocationDirection?
     
@@ -155,6 +155,7 @@ struct ARCameraView: View {
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
+            locationManager.startLocationUpdates()
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
@@ -169,6 +170,15 @@ struct ARCameraView: View {
             }
         }
         .onDisappear {
+            locationManager.stopLocationUpdates()
+            print("ARCameraView disappeared, stopping location updates.")
+            Task {
+                do {
+                    try manager.pause()
+                } catch {
+                    print("Error pausing ARCameraManager: \(error)")
+                }
+            }
         }
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -205,6 +215,9 @@ struct ARCameraView: View {
                     }
                 }
             }
+        }
+        .onChange(of: manager.interfaceOrientation) { oldOrientation, newOrientation in
+            locationManager.updateOrientation(newOrientation)
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
             ARCameraLearnMoreSheetView()

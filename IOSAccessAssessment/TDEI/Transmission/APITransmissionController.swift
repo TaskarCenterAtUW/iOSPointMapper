@@ -28,6 +28,7 @@ class APITransmissionController: ObservableObject {
     
     func uploadFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         inputs: APITransmissionInputs
     ) async throws -> APITransmissionResults {
         idGenerator = IntIdGenerator()
@@ -45,16 +46,19 @@ class APITransmissionController: ObservableObject {
         case .point:
             apiTransmissionResults = try await uploadPoints(
                 accessibilityFeatures: accessibilityFeatures,
+                mappingData: mappingData,
                 inputs: inputs
             )
         case .linestring:
             apiTransmissionResults = try await uploadLineStrings(
                 accessibilityFeatures: accessibilityFeatures,
+                mappingData: mappingData,
                 inputs: inputs
             )
         case .polygon:
             apiTransmissionResults = try await uploadPolygons(
                 accessibilityFeatures: accessibilityFeatures,
+                mappingData: mappingData,
                 inputs: inputs
             )
         }
@@ -112,6 +116,7 @@ class APITransmissionController: ObservableObject {
 extension APITransmissionController {
     func uploadPoints(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         inputs: APITransmissionInputs
     ) async throws -> APITransmissionResults {
         let accessibilityFeatures = accessibilityFeatures
@@ -120,7 +125,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPoint(feature, additionalTags: additionalTags)
@@ -230,6 +235,7 @@ extension APITransmissionController {
 extension APITransmissionController {
     func uploadLineStrings(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         inputs: APITransmissionInputs
     ) async throws -> APITransmissionResults {
         var accessibilityFeatures = accessibilityFeatures
@@ -246,7 +252,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToLineString(feature, additionalTags: additionalTags)
@@ -258,7 +264,7 @@ extension APITransmissionController {
         var uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElements().map { .create($0) }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
         if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
-           let existingMappedFeature = inputs.mappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
+           let existingMappedFeature = mappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
             let existingOSWElement = existingMappedFeature.oswElement
             if var existingOSWLineString = existingOSWElement as? OSWLineString,
                let newOSWLineString = featureCache.getOSWLineStrings().first,
@@ -406,6 +412,7 @@ extension APITransmissionController {
 extension APITransmissionController {
     func uploadPolygons(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        mappingData: MappingData,
         inputs: APITransmissionInputs
     ) async throws -> APITransmissionResults {
         let accessibilityFeatures = accessibilityFeatures
@@ -414,7 +421,7 @@ extension APITransmissionController {
         let featureCache: APIFeatureCache = APIFeatureCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, mappingData: mappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPolygon(feature, additonalTags: additionalTags)

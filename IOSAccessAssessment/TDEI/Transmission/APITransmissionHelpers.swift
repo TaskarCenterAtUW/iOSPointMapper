@@ -73,7 +73,6 @@ struct APITransmissionInputs {
     let accessibilityFeatureClass: AccessibilityFeatureClass
     let captureData: CaptureData
     let captureLocation: CLLocationCoordinate2D
-    let mappingData: MappingData
     let accessToken: String
     let environment: APIEnvironment?
 }

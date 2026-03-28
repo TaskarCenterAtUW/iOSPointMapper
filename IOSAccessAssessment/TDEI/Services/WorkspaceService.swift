@@ -105,4 +105,10 @@ class WorkspaceService {
             throw APIError.decoding(error)
         }
     }
+    
+    func fetchOSMElements(
+        
+    ) async throws {
+        
+    }
 }

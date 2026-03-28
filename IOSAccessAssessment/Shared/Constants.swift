@@ -28,6 +28,9 @@ struct Constants {
 //        ["1463"]
 //        ["288", "349", "1411"]
 //      "252", "322", "368", "374", "378", "381", "384", "323", "369", "156", "375", "379"]
+        
+        static let fetchRadiusInMeters: Double = 100.0
+        static let fetchUpdateRadiusThresholdInMeters: Double = 50.0
     }
     
     struct OtherConstants {
