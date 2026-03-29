@@ -14,6 +14,10 @@ struct BBox {
     let maxLat: Double
     let minLon: Double
     let maxLon: Double
+    
+    func toQueryString() -> String {
+        return "\(minLat.roundedTo7Digits()),\(minLon.roundedTo7Digits()),\(maxLat.roundedTo7Digits()),\(maxLon.roundedTo7Digits())"
+    }
 }
 
 class LocationHelpers {

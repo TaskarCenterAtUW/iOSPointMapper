@@ -8,6 +8,7 @@
 protocol OSMElement: Sendable, Equatable {
     var id: String { get }
     var version: String { get }
+    var tags: [String: String] { get }
     
     func toOSMCreateXML(changesetId: String) -> String
     func toOSMModifyXML(changesetId: String) -> String

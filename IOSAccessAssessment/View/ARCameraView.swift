@@ -219,6 +219,8 @@ struct ARCameraView: View {
         .onChange(of: manager.interfaceOrientation) { oldOrientation, newOrientation in
             locationManager.updateOrientation(newOrientation)
         }
+        .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+        }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
             ARCameraLearnMoreSheetView()
                 .presentationDetents([.medium, .large])
