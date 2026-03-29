@@ -11,9 +11,9 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
     var currentElement = ""
     var parsedItems: [String] = []
     
-    var nodesWithAttributes: [String: OSMResponseNode] = [:]
-    var waysWithAttributes: [String: OSMResponseWay] = [:]
-    var relationsWithAttributes: [String: OSMResponseRelation] = [:]
+    var nodesWithAttributes: [String: OSMChangesetUploadResponseNode] = [:]
+    var waysWithAttributes: [String: OSMChangesetUploadResponseWay] = [:]
+    var relationsWithAttributes: [String: OSMChangesetUploadResponseRelation] = [:]
 
     func parse(data: Data) {
         let parser = XMLParser(data: data)
@@ -33,7 +33,7 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
                   let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
                 return
             }
-            nodesWithAttributes[oldId] = OSMResponseNode(
+            nodesWithAttributes[oldId] = OSMChangesetUploadResponseNode(
                 oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
             )
         }
@@ -43,7 +43,7 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
                   let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
                 return
             }
-            waysWithAttributes[oldId] = OSMResponseWay(
+            waysWithAttributes[oldId] = OSMChangesetUploadResponseWay(
                 oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
             )
         }
@@ -53,7 +53,7 @@ class ChangesetXMLParser: NSObject, XMLParserDelegate {
                   let newVersion = attributeDict[APIConstants.AttributeKeys.newVersion] else {
                 return
             }
-            relationsWithAttributes[oldId] = OSMResponseRelation(
+            relationsWithAttributes[oldId] = OSMChangesetUploadResponseRelation(
                 oldId: oldId, newId: newId, newVersion: newVersion, attributeDict: attributeDict
             )
         }
