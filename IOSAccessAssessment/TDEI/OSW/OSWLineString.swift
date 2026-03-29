@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 struct OSWLineString: OSWElement {
-    let elementOSMString: String = "way"
+    let osmElementType: OSMElementType = .way
     
     let id: String
     let version: String

@@ -7,18 +7,8 @@
 
 import Foundation
 
-enum OSMRelationMemberType: String, Sendable {
-    case node
-    case way
-    case relation
-    
-    var description: String {
-        return self.rawValue
-    }
-}
-
-struct OSMRelationMember: Sendable, Equatable, Hashable {
-    let type: OSMRelationMemberType
+struct OSMRelationMember: Sendable, Equatable, Hashable, Codable {
+    let type: OSMElementType
     let ref: String
     let role: String
     

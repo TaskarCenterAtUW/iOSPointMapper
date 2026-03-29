@@ -7,26 +7,6 @@
 
 import Foundation
 
-struct UploadedOSMResponseElements: Sendable {
-    let nodes: [String: OSMResponseNode]
-    let ways: [String: OSMResponseWay]
-    let relations: [String: OSMResponseRelation]
-    
-    var oldToNewIdMap: [String: String] {
-        let nodeMap = nodes.reduce(into: [String: String]()) { dict, pair in
-            dict[pair.value.oldId] = pair.value.newId
-        }
-        let wayMap = ways.reduce(into: [String: String]()) { dict, pair in
-            dict[pair.value.oldId] = pair.value.newId
-        }
-        let relationMap = relations.reduce(into: [String: String]()) { dict, pair in
-            dict[pair.value.oldId] = pair.value.newId
-        }
-        return nodeMap.merging(wayMap) { _, new in new }
-            .merging(relationMap) { _, new in new }
-    }
-}
-
 enum ChangesetDiffOperation {
     case create(any OSWElement)
     case modify(any OSWElement)
@@ -108,7 +88,7 @@ class ChangesetService {
         operations: [ChangesetDiffOperation],
         accessToken: String,
         environment: APIEnvironment? = nil,
-        completion: @escaping (Result<UploadedOSMResponseElements, Error>) -> Void
+        completion: @escaping (Result<OSMChangesetUploadResponseElements, Error>) -> Void
     ) {
         let selectedEnvironment = environment ?? EnvironmentService.shared.environment
         guard let url = APIEndpoint.uploadChanges(selectedEnvironment, changesetId) else {
@@ -165,7 +145,7 @@ class ChangesetService {
 //            print("Parsed Ways: ", parser.waysWithAttributes)
 //            print("Parsed Relations: ", parser.relationsWithAttributes)
 
-            completion(.success(UploadedOSMResponseElements(
+            completion(.success(OSMChangesetUploadResponseElements(
                 nodes: parser.nodesWithAttributes,
                 ways: parser.waysWithAttributes,
                 relations: parser.relationsWithAttributes
@@ -244,7 +224,7 @@ extension ChangesetService {
         operations: [ChangesetDiffOperation],
         accessToken: String,
         environment: APIEnvironment? = nil
-    ) async throws -> UploadedOSMResponseElements {
+    ) async throws -> OSMChangesetUploadResponseElements {
         return try await withCheckedThrowingContinuation { continuation in
             performUpload(
                 workspaceId: workspaceId, changesetId: changesetId, operations: operations,

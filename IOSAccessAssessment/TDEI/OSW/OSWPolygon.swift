@@ -23,12 +23,12 @@ struct OSWRelationMember: Sendable {
     }
     
     var toXML: String {
-        return "<member type=\"\(element.elementOSMString)\" ref=\"\(element.id)\" role=\"\(role)\" />"
+        return "<member type=\"\(element.osmElementType.rawValue)\" ref=\"\(element.id)\" role=\"\(role)\" />"
     }
 }
 
 struct OSWPolygon: OSWElement {
-    let elementOSMString: String = "relation"
+    let osmElementType: OSMElementType = .relation
     
     let id: String
     let version: String

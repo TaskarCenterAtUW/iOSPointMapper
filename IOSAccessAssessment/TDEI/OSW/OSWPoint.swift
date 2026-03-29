@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 struct OSWPoint: OSWElement {
-    let elementOSMString: String = "node"
+    let osmElementType: OSMElementType = .node
     
     let id: String
     let version: String

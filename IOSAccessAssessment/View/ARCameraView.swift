@@ -104,7 +104,7 @@ struct ARCameraView: View {
     @State private var showARCameraLearnMoreSheet = false
     
     @State private var showAnnotationView = false
-    @StateObject private var apiTransmissionController: APITransmissionController = APITransmissionController()
+    @StateObject private var apiChangesetUploadController: APIChangesetUploadController = APIChangesetUploadController()
     
     var body: some View {
         Group {
@@ -192,7 +192,7 @@ struct ARCameraView: View {
             if let captureLocation {
                 AnnotationView(
                     selectedClasses: selectedClasses, captureLocation: captureLocation,
-                    apiTransmissionController: apiTransmissionController
+                    apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {
                 InvalidContentView(

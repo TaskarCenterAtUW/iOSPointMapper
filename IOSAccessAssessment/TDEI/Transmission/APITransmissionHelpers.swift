@@ -8,15 +8,15 @@
 import SwiftUI
 import CoreLocation
 
-struct APIFeatureCacheEntry: @unchecked Sendable {
+struct APIChangesetUploadCacheEntry: @unchecked Sendable {
     let osmOldId: String
     let feature: (any AccessibilityFeatureProtocol)?
     let oswElement: any OSWElement
 }
 
-class APIFeatureCache {
-    /// OSM old ID to APIFeatureCacheEntry
-    var cacheEntry: [APIFeatureCacheEntry]
+class APIChangesetUploadCache {
+    /// OSM old ID to APIChangesetUploadCacheEntry
+    var cacheEntry: [APIChangesetUploadCacheEntry]
     
     init() {
         self.cacheEntry = []
@@ -26,12 +26,12 @@ class APIFeatureCache {
         return cacheEntry.firstIndex { $0.osmOldId == osmOldId }
     }
     
-    func getEntry(osmOldId: String) -> APIFeatureCacheEntry? {
+    func getEntry(osmOldId: String) -> APIChangesetUploadCacheEntry? {
         return cacheEntry.first { $0.osmOldId == osmOldId }
     }
     
     func addEntry(osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, oswElement: any OSWElement) {
-        let entry = APIFeatureCacheEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
+        let entry = APIChangesetUploadCacheEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
         cacheEntry.append(entry)
     }
     
@@ -67,7 +67,7 @@ class APIFeatureCache {
     }
 }
 
-struct APITransmissionInputs {
+struct APIChangesetUploadInputs {
     let workspaceId: String
     let changesetId: String
     let accessibilityFeatureClass: AccessibilityFeatureClass
@@ -77,7 +77,7 @@ struct APITransmissionInputs {
     let environment: APIEnvironment?
 }
 
-struct APITransmissionResults: @unchecked Sendable {
+struct APIChangesetUploadResults: @unchecked Sendable {
     let accessibilityFeatures: [MappedAccessibilityFeature]?
     
     let failedFeatureUploads: Int
@@ -105,7 +105,7 @@ struct APITransmissionResults: @unchecked Sendable {
     }
     
     /// Clone method for overwriting isFailedCaptureUpload
-    init(from other: APITransmissionResults, isFailedCaptureUpload: Bool) {
+    init(from other: APIChangesetUploadResults, isFailedCaptureUpload: Bool) {
         self.accessibilityFeatures = other.accessibilityFeatures
         self.failedFeatureUploads = other.failedFeatureUploads
         self.totalFeatureUploads = other.totalFeatureUploads
