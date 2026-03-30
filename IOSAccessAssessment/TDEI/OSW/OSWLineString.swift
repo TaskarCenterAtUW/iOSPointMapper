@@ -68,6 +68,7 @@ struct OSWLineString: OSWElement {
             }
             return OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
         }
+        self.additionalTags = osmWay.tags
     }
     
     var tags: [String: String] {

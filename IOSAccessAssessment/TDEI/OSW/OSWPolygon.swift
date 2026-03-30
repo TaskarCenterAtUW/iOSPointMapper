@@ -145,6 +145,7 @@ struct OSWPolygon: OSWElement {
             }
         }
         self.members = oswRelationMembers
+        self.additionalTags = osmRelation.tags
     }
     
     var tags: [String: String] {

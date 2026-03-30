@@ -367,13 +367,12 @@ struct ARCameraView: View {
                     accessToken: accessToken,
                     environment: userStateViewModel.selectedEnvironment
                 )
-                sharedAppData.currentMappingData.updateFeatures(
-                    with: mapData,
+                sharedAppData.currentMappingData.update(
+                    osmMapDataResponse: mapData,
                     accessibilityFeatureClasses: selectedClasses
                 )
             } catch {
-                /// TODO: Replace with an alert that either retries the fetch or dismissed the view.
-                setHintText(error.localizedDescription)
+                mappingDataStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
     }

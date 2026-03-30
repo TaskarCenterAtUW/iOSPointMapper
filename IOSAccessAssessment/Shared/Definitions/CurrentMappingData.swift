@@ -11,7 +11,8 @@ import CoreLocation
 enum CurrentMappingDataError: Error, LocalizedError {
 }
 
-class CurrentMappingData {
+class CurrentMappingData: CustomStringConvertible {
+    
     var featuresMap: [AccessibilityFeatureClass: [any OSWElement]] = [:]
 //    var otherFeatures: [OSWElement] = []
     
@@ -19,8 +20,23 @@ class CurrentMappingData {
         
     }
     
+    var description: String {
+        var description = "CurrentMappingData:\n"
+        for (featureClass, features) in featuresMap {
+            description += "- \(featureClass.name): \(features.count) features\n"
+        }
+        return description
+    }
+    
     init(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        print("Initialized features map with OSM data. \n\(description)")
+    }
+    
+    /// Note: Replaces the feature map instead of incrementally updating it.
+    func update(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
+        self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        print("Updated features map with new OSM data. \n\(description)")
     }
     
     func getFeatures(
