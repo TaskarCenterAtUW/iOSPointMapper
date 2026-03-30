@@ -43,6 +43,23 @@ struct OSWPoint: OSWElement {
         self.additionalTags = additionalTags
     }
     
+    init(
+        osmNode: OSMNode,
+        oswElementClass: OSWElementClass
+    ) {
+        self.id = osmNode.id
+        self.version = osmNode.version
+        self.oswElementClass = oswElementClass
+        self.latitude = osmNode.latitude
+        self.longitude = osmNode.longitude
+        self.attributeValues = [:]
+        self.calculatedAttributeValues = [:]
+        self.experimentalAttributeValues = [:]
+        /// NOTE: Some tags might actually correspond to attribute values, but these will be overwritten when the attribute values are set.
+        /// The OSM xml functions are designed such that attribute value tags take precedence over additional tags, so this should not cause any issues.
+        self.additionalTags = osmNode.tags
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .point {
@@ -54,14 +71,22 @@ struct OSWPoint: OSWElement {
         if let calculatedAttributeValues {
             calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
         }
-        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
-            return new
-        }.merging(experimentalAttributeTags) { _, new in
-            return new
-        }.merging(calculatedAttributeTags) { _, new in
-            return new
-        }.merging(additionalTags) { _, new in
-            return new
+        /**
+         The merging strategy for tags is to prioritize as follows (high to low):
+            1. Identifying Field Tags: These are derived from the OSWElementClass and are essential for defining the type of element.
+            2. Attribute Tags: These are derived from the attribute values of the element.
+            3. Experimental Attribute Tags: These are derived from the experimental attribute values and may represent new or in-testing features.
+            4. Calculated Attribute Tags: These are derived from calculated attribute values and may represent attributes that are not directly set but inferred from other data.
+            5. Additional Tags: These are any extra tags that may be added for specific use cases or to provide additional context.
+         */
+        let tags = identifyingFieldTags.merging(attributeTags) { old, new in
+            return old
+        }.merging(experimentalAttributeTags) { old, new in
+            return old
+        }.merging(calculatedAttributeTags) { old, new in
+            return old
+        }.merging(additionalTags) { old, new in
+            return old
         }
         return tags
     }

@@ -41,6 +41,34 @@ struct OSWLineString: OSWElement {
         self.additionalTags = additionalTags
     }
     
+    /**
+        Initializes an OSWLineString from an OSMWay and its associated OSMNodes.
+     
+        - Parameters:
+            - osmWay: The OSMWay object representing the way element from OpenStreetMap.
+            - osmElementClass: The OSWElementClass that defines the classification of the way element.
+            - osmNodes: An array of OSMNode objects that are associated with the OSMWay. These nodes generally represent the points that make up the way. But they may contain additional nodes that are not part of the way, so we filter them based on the node references in the OSMWay.
+     */
+    init(
+        osmWay: OSMWay,
+        oswElementClass: OSWElementClass,
+        osmNodes: [OSMNode]
+    ) {
+        self.id = osmWay.id
+        self.version = osmWay.version
+        self.oswElementClass = oswElementClass
+        self.attributeValues = [:]
+        self.calculatedAttributeValues = [:]
+        self.experimentalAttributeValues = [:]
+        let nodeRefs = osmWay.nodeRefs
+        self.points = osmNodes.compactMap { osmNode in
+            if !nodeRefs.contains(osmNode.id) {
+                return nil
+            }
+            return OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
+        }
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .linestring {
@@ -52,14 +80,22 @@ struct OSWLineString: OSWElement {
         if let calculatedAttributeValues {
             calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
         }
-        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
-            return new
-        }.merging(experimentalAttributeTags) { _, new in
-            return new
-        }.merging(calculatedAttributeTags) { _, new in
-            return new
-        }.merging(additionalTags) { _, new in
-            return new
+        /**
+         The merging strategy for tags is to prioritize as follows (high to low):
+            1. Identifying Field Tags: These are derived from the OSWElementClass and are essential for defining the type of element.
+            2. Attribute Tags: These are derived from the attribute values of the element.
+            3. Experimental Attribute Tags: These are derived from the experimental attribute values and may represent new or in-testing features.
+            4. Calculated Attribute Tags: These are derived from calculated attribute values and may represent attributes that are not directly set but inferred from other data.
+            5. Additional Tags: These are any extra tags that may be added for specific use cases or to provide additional context.
+         */
+        let tags = identifyingFieldTags.merging(attributeTags) { old, new in
+            return old
+        }.merging(experimentalAttributeTags) { old, new in
+            return old
+        }.merging(calculatedAttributeTags) { old, new in
+            return old
+        }.merging(additionalTags) { old, new in
+            return old
         }
         return tags
     }

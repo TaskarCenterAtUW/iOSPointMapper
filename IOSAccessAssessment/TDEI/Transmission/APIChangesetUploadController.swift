@@ -22,6 +22,18 @@ enum APIChangesetUploadError: Error, LocalizedError {
     }
 }
 
+/**
+    This controller is responsible for handling the upload of accessibility features as OSW elements to the OSW API, and mapping the response back to the accessibility features with their new ids and other details from OSM.
+ 
+    The general workflow for the upload is as follows:
+    1. Map the accessibility features to OSW elements based on their geometry type (point, linestring, polygon). This involves creating the corresponding OSW elements (OSWPoint, OSWLineString, OSWPolygon) and preparing any additional tags or properties that need to be uploaded along with the elements.
+    2. Prepare the upload operations (create, modify) for the OSW elements and perform the upload using the ChangesetService.
+    3. Handle the response from the upload to get the new ids and details for the uploaded OSW elements. This involves mapping the response back to the original accessibility features using a cache that keeps track of the mapping between the original features and the OSW elements.
+    4. Return the results of the upload, including the mapped accessibility features with their new ids and any failed uploads.
+
+    - TODO: Eventually, the methods here such as featureToPoint, featureToLineString, featureToPolygon can be moved to the AccessibilityFeatureProtocol as extension methods (or a dedicated helper class) since they are responsible for mapping an accessibility feature to an OSW element, which is a core responsibility of the accessibility feature model.
+ 
+ */
 class APIChangesetUploadController: ObservableObject {
     private var idGenerator: IntIdGenerator = IntIdGenerator()
     public var capturedFrameIds: Set<UUID> = []
@@ -477,16 +489,11 @@ extension APIChangesetUploadController {
         }
         
         var oswElements: [any OSWElement] = []
-//        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
-//              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
-//            return nil
-//        }
         guard let featureLocationDetails: OSMLocationDetails = feature.locationDetails,
               !featureLocationDetails.locations.isEmpty else {
             return nil
         }
         featureLocationDetails.locations.forEach { locationElement in
-//        featureLocationArrays.forEach { locationArray in
             guard !locationElement.coordinates.isEmpty else { return }
             var oswPoints: [OSWPoint] = []
             locationElement.coordinates.forEach { location in
