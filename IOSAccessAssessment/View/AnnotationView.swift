@@ -669,14 +669,14 @@ struct AnnotationView: View {
         )
         let apiChangesetUploadResults = try await apiChangesetUploadController.uploadFeatures(
             accessibilityFeatures: featuresToUpload,
-            mappingData: sharedAppData.mappingData,
+            liveMappingData: sharedAppData.liveMappingData,
             inputs: apiChangesetUploadInputs
         )
         guard let mappedAccessibilityFeatures = apiChangesetUploadResults.accessibilityFeatures else {
             throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
         }
-        sharedAppData.mappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
-        print("Mapping Data: \(sharedAppData.mappingData)")
+        sharedAppData.liveMappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
+        print("Live Mapping Data: \(sharedAppData.liveMappingData)")
         
         addFeaturesToCurrentDataset(
             captureImageData: currentCaptureDataRecord.imageData,

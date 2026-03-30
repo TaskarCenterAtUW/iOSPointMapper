@@ -107,11 +107,11 @@ class WorkspaceService {
     }
     
     func fetchMapData(
-        workspaceId: Int,
+        workspaceId: String,
         location: CLLocationCoordinate2D, radius: Double = 1000,
         accessToken: String,
         environment: APIEnvironment? = nil
-    ) async throws {
+    ) async throws -> OSMMapDataResponse {
         let selectedEnvironment = environment ?? EnvironmentService.shared.environment
         guard let urlEndpoint = APIEndpoint.getMapData(selectedEnvironment) else {
             throw APIError.invalidURL
@@ -126,7 +126,7 @@ class WorkspaceService {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("\(workspaceId)", forHTTPHeaderField: "X-Workspace")
+        request.setValue(workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -138,7 +138,14 @@ class WorkspaceService {
             throw APIError.badStatus(httpResponse.statusCode)
         }
         
-//        do {
-//            
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let mapData: OSMMapDataResponse = try decoder.decode(OSMMapDataResponse.self, from: data)
+            
+            return mapData
+        } catch {
+            throw APIError.decoding(error)
+        }
     }
 }

@@ -31,6 +31,7 @@ struct Constants {
         
         static let fetchRadiusInMeters: Double = 100.0
         static let fetchUpdateRadiusThresholdInMeters: Double = 50.0
+        static let updateElementDistanceThresholdInMeters: Double = 20.0
     }
     
     struct OtherConstants {

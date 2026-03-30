@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum OSMMapDataError: Error, LocalizedError {
+enum OSMMapDataResponseError: Error, LocalizedError {
     case invalidNodeCoordinates
     
     var errorDescription: String? {
@@ -84,7 +84,7 @@ struct OSMMapDataResponseElement: Codable {
 //    
     private func toOSMNode() throws -> OSMNode {
         guard let lat = lat, let lon = lon else {
-            throw OSMMapDataError.invalidNodeCoordinates
+            throw OSMMapDataResponseError.invalidNodeCoordinates
         }
         return OSMNode(id: "\(id)", version: "\(version)", latitude: lat, longitude: lon, tags: tags)
     }

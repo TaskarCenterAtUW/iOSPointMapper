@@ -21,7 +21,8 @@ final class SharedAppData: ObservableObject {
     var captureDataQueue: SafeDeque<CaptureImageData>
     var captureDataCapacity: Int
     
-    var mappingData: MappingData = MappingData()
+    var currentMappingData: CurrentMappingData = CurrentMappingData()
+    var liveMappingData: LiveMappingData = LiveMappingData()
     
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
@@ -37,6 +38,8 @@ final class SharedAppData: ObservableObject {
         self.currentDatasetEncoder = nil
         self.currentDatasetDecoder = nil
         self.currentCaptureDataRecord = nil
+        self.currentMappingData = CurrentMappingData()
+        self.liveMappingData = LiveMappingData()
     }
     
     func saveCaptureData(_ data: CaptureData) {

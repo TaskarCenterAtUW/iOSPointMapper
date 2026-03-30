@@ -28,7 +28,7 @@ class APIChangesetUploadController: ObservableObject {
     
     func uploadFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         idGenerator = IntIdGenerator()
@@ -46,19 +46,19 @@ class APIChangesetUploadController: ObservableObject {
         case .point:
             apiChangesetUploadResults = try await uploadPoints(
                 accessibilityFeatures: accessibilityFeatures,
-                mappingData: mappingData,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         case .linestring:
             apiChangesetUploadResults = try await uploadLineStrings(
                 accessibilityFeatures: accessibilityFeatures,
-                mappingData: mappingData,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         case .polygon:
             apiChangesetUploadResults = try await uploadPolygons(
                 accessibilityFeatures: accessibilityFeatures,
-                mappingData: mappingData,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         }
@@ -94,7 +94,7 @@ class APIChangesetUploadController: ObservableObject {
     private func getAdditionalTags(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         captureData: CaptureData,
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
     ) -> [String: String] {
         var enhancedAnalysisMode: Bool = false
         switch captureData {
@@ -116,7 +116,7 @@ class APIChangesetUploadController: ObservableObject {
 extension APIChangesetUploadController {
     func uploadPoints(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         let accessibilityFeatures = accessibilityFeatures
@@ -125,7 +125,7 @@ extension APIChangesetUploadController {
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPoint(feature, additionalTags: additionalTags)
@@ -235,7 +235,7 @@ extension APIChangesetUploadController {
 extension APIChangesetUploadController {
     func uploadLineStrings(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         var accessibilityFeatures = accessibilityFeatures
@@ -252,7 +252,7 @@ extension APIChangesetUploadController {
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToLineString(feature, additionalTags: additionalTags)
@@ -264,7 +264,7 @@ extension APIChangesetUploadController {
         var uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElements().map { .create($0) }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
         if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
-           let existingMappedFeature = mappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
+           let existingMappedFeature = liveMappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
             let existingOSWElement = existingMappedFeature.oswElement
             if var existingOSWLineString = existingOSWElement as? OSWLineString,
                let newOSWLineString = featureCache.getOSWLineStrings().first,
@@ -412,7 +412,7 @@ extension APIChangesetUploadController {
 extension APIChangesetUploadController {
     func uploadPolygons(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         let accessibilityFeatures = accessibilityFeatures
@@ -421,7 +421,7 @@ extension APIChangesetUploadController {
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPolygon(feature, additonalTags: additionalTags)
