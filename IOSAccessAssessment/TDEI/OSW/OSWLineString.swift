@@ -61,8 +61,9 @@ struct OSWLineString: OSWElement {
         self.calculatedAttributeValues = [:]
         self.experimentalAttributeValues = [:]
         let nodeRefs = osmWay.nodeRefs
+        let nodeRefSet = Set(nodeRefs)
         self.points = osmNodes.compactMap { osmNode in
-            if !nodeRefs.contains(osmNode.id) {
+            if !nodeRefSet.contains(osmNode.id) {
                 return nil
             }
             return OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)

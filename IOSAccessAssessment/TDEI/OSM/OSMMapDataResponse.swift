@@ -71,10 +71,10 @@ struct OSMMapDataResponseElement: Codable {
         members = try values.decodeIfPresent([OSMRelationMember].self, forKey: .members) ?? []
     }
     
-    func toOSMElement() throws -> (any OSMElement)? {
+    func toOSMElement() -> (any OSMElement)? {
         switch type {
         case .node:
-            return try toOSMNode()
+            return toOSMNode()
         case .way:
             return toOSMWay()
         case .relation:
@@ -82,9 +82,9 @@ struct OSMMapDataResponseElement: Codable {
         }
     }
 //    
-    private func toOSMNode() throws -> OSMNode {
+    private func toOSMNode() -> OSMNode? {
         guard let lat = lat, let lon = lon else {
-            throw OSMMapDataResponseError.invalidNodeCoordinates
+            return nil
         }
         return OSMNode(id: "\(id)", version: "\(version)", latitude: lat, longitude: lon, tags: tags)
     }

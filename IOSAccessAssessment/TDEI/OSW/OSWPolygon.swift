@@ -86,45 +86,59 @@ struct OSWPolygon: OSWElement {
         let osmWayMemberRefs = osmMemberRefs.filter { $0.type == .way }
         let osmRelationMemberRefs = osmMemberRefs.filter { $0.type == .relation }
         
+        let osmMemberElementsDict: [String: any OSMElement] = Dictionary(
+            uniqueKeysWithValues: osmMemberElements.map { ($0.id, $0) }
+        )
         let osmNodeElements: [OSMNode] = osmMemberElements.filter { element in
             return osmNodeMemberRefs.contains { $0.ref == element.id }
         }.compactMap { element in
             return element as? OSMNode
         }
+        let osmNodeElementsDict: [String: OSMNode] = Dictionary(uniqueKeysWithValues: osmNodeElements.map { ($0.id, $0) })
         let osmWayElements: [OSMWay] = osmMemberElements.filter { element in
             return osmWayMemberRefs.contains { $0.ref == element.id }
         }.compactMap { element in
             return element as? OSMWay
         }
+        let osmWayElementsDict: [String: OSMWay] = Dictionary(uniqueKeysWithValues: osmWayElements.map { ($0.id, $0) })
         let osmRelationElements: [OSMRelation] = osmMemberElements.filter { element in
             return osmRelationMemberRefs.contains { $0.ref == element.id }
         }.compactMap { element in
             return element as? OSMRelation
         }
+        let osmRelationElementsDict: [String: OSMRelation] = Dictionary(
+            uniqueKeysWithValues: osmRelationElements.map { ($0.id, $0) }
+        )
         
         var oswRelationMembers: [OSWRelationMember] = []
         osmNodeMemberRefs.forEach { osmNodeMemberRef in
-            if let matchingOSMNodeElement = osmNodeElements.first(where: { $0.id == osmNodeMemberRef.ref }) {
+            if let matchingOSMNodeElement = osmNodeElementsDict[osmNodeMemberRef.ref] {
                 let oswPoint: OSWPoint = OSWPoint(osmNode: matchingOSMNodeElement, oswElementClass: oswElementClass)
                 let oswRelationMember = OSWRelationMember(element: oswPoint, role: osmNodeMemberRef.role)
                 oswRelationMembers.append(oswRelationMember)
             }
         }
         osmWayMemberRefs.forEach { osmWayMemberRef in
-            if let matchingOSMWayElement = osmWayElements.first(where: { $0.id == osmWayMemberRef.ref }) {
+            if let matchingOSMWayElement = osmWayElementsDict[osmWayMemberRef.ref] {
+                let matchingOSWWayNodes = matchingOSMWayElement.nodeRefs.compactMap { nodeRef in
+                    return osmNodeElementsDict[nodeRef]
+                }
                 let oswLineString: OSWLineString = OSWLineString(
                     osmWay: matchingOSMWayElement, oswElementClass: oswElementClass,
-                    osmNodes: osmNodeElements
+                    osmNodes: matchingOSWWayNodes
                 )
                 let oswRelationMember = OSWRelationMember(element: oswLineString, role: osmWayMemberRef.role)
                 oswRelationMembers.append(oswRelationMember)
             }
         }
         osmRelationMemberRefs.forEach { osmRelationMemberRef in
-            if let matchingOSMRelationElement = osmRelationElements.first(where: { $0.id == osmRelationMemberRef.ref }) {
+            if let matchingOSMRelationElement = osmRelationElementsDict[osmRelationMemberRef.ref] {
+                let matchingOSMRelationMemberElements = matchingOSMRelationElement.members.compactMap { memberRef in
+                    return osmMemberElementsDict[memberRef.ref]
+                }
                 let oswPolygon: OSWPolygon = OSWPolygon(
                     osmRelation: matchingOSMRelationElement, oswElementClass: oswElementClass,
-                    osmMemberElements: osmMemberElements
+                    osmMemberElements: matchingOSMRelationMemberElements
                 )
                 let oswRelationMember = OSWRelationMember(element: oswPolygon, role: osmRelationMemberRef.role)
                 oswRelationMembers.append(oswRelationMember)
