@@ -139,6 +139,46 @@ struct LocationHelpers {
     }
     
     /**
+     Calculates the distance between two locations represented by their location details if they have similar geometry types.
+     Not commutative, checks distance from source to destination, so the order of the parameters matters.
+     Unit of distance is determined by MapKit's MKMapPoint.
+     
+     - Note:
+     First, checks the geometry types of the source and destination location details (e.g., point, linestring, polygon) based on the properties of their last location element. Then, based on the geometry types, it calls the appropriate distance calculation method (e.g., distanceBetweenPoints, distanceFromPointToLineString, distanceFromPointToPolygon, distanceBetweenLineStrings, distanceFromLineStringToPolygon, distanceBetweenPolygons) to compute the distance between the two locations.
+     */
+    static func distanceBetweenSimilarOSMLocationDetails(
+        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+    ) -> Double? {
+        guard let srcLastLocationElement = srcLocationDetails.locations.last else {
+            return nil
+        }
+        let isSrcMultipolygon = srcLocationDetails.locations.count > 1
+        let isSrcPolygon = (!isSrcMultipolygon) && srcLastLocationElement.isWay && srcLastLocationElement.isClosed
+        let isSrcLineString = (!isSrcMultipolygon) && srcLastLocationElement.isWay && !srcLastLocationElement.isClosed
+        let isSrcPoint = (!isSrcMultipolygon) && !srcLastLocationElement.isWay && !srcLastLocationElement.isClosed
+        
+        guard let dstLastLocationElement = dstLocationDetails.locations.last else {
+            return nil
+        }
+        let isDstMultipolygon = dstLocationDetails.locations.count > 1
+        let isDstPolygon = (!isDstMultipolygon) && dstLastLocationElement.isWay && dstLastLocationElement.isClosed
+        let isDstLineString = (!isDstMultipolygon) && dstLastLocationElement.isWay && !dstLastLocationElement.isClosed
+        let isDstPoint = (!isDstMultipolygon) && !dstLastLocationElement.isWay && !dstLastLocationElement.isClosed
+        
+        if isSrcPoint && isDstPoint {
+            return distanceBetweenPoints(srcLocationDetails: srcLocationDetails, dstLocationDetails: dstLocationDetails)
+        } else if isSrcLineString && isDstLineString {
+            return distanceBetweenLineStrings(srcLocationDetails: srcLocationDetails, dstLocationDetails: dstLocationDetails)
+        } else if isSrcPolygon && isDstPolygon {
+            return distanceBetweenPolygons(srcLocationDetails: srcLocationDetails, dstLocationDetails: dstLocationDetails)
+        } else if isSrcMultipolygon && isDstMultipolygon {
+            return distanceBetweenMultiPolygons(srcLocationDetails: srcLocationDetails, dstLocationDetails: dstLocationDetails)
+        } else {
+            return nil
+        }
+    }
+    
+    /**
     Calculates the distance between two points represented by their location details. The distance is returned in meters.
      Unit of distance is determined by MapKit's MKMapPoint.
      */
@@ -377,6 +417,9 @@ struct LocationHelpers {
      
      - Warning:
         The logic for overlapping polygons needs to be updated, so that it captures the degree of overlap instead of just returning 0. This is because in some cases, two polygons may partially overlap with each other, and the distance should reflect how much of the polygons are outside of each other rather than just indicating that there is some overlap.
+     
+     - Warning:
+     Currently, this algorithm doesn't actually consider the relation role of each multi-polygon member (e.g. outer vs inner), which can lead to inaccurate distance calculations in some cases. For example, if one of the multi-polygons has an inner member that overlaps with the other multi-polygon, the distance should be negative to reflect the degree of overlap. However, without considering the relation type, the algorithm may simply return a distance of 0 for this case, which does not accurately capture the spatial relationship between the two multi-polygons.
      */
     static func distanceBetweenMultiPolygons(
         srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
@@ -392,57 +435,61 @@ struct LocationHelpers {
             for dstLocationCoordinateArray in dstLocationCoordinateArrays {
                 let srcOSMLocationDetails = OSMLocationDetails(locations: [srcLocationCoordinateArray])
                 let dstOSMLocationDetails = OSMLocationDetails(locations: [dstLocationCoordinateArray])
-                let srcGeometry: OSWGeometry = srcLocationCoordinateArray.isWay ? (
-                    srcLocationCoordinateArray.isClosed ? .polygon : .linestring
-                ) : .point
-                let dstGeometry: OSWGeometry = dstLocationCoordinateArray.isWay ? (
-                    dstLocationCoordinateArray.isClosed ? .polygon : .linestring
-                ) : .point
+                /// While deciding the geometry, we are not using the .polygon enumeration, since that actually represents a multipolygon in OSW.
+                let srcGeometry: OSWGeometry = srcLocationCoordinateArray.isWay ? .linestring : .point
+                let isSrcPolygon = srcLocationCoordinateArray.isWay && srcLocationCoordinateArray.isClosed
+                let dstGeometry: OSWGeometry = dstLocationCoordinateArray.isWay ? .linestring : .point
+                let isDstPolygon = dstLocationCoordinateArray.isWay && dstLocationCoordinateArray.isClosed
                 
                 /// Must ensure the same units (in this case, decided by MKMapPoint)
-                switch (srcGeometry, dstGeometry) {
-                case (.point, .point):
+                if (srcGeometry == .point && dstGeometry == .point) {
                     guard let distance = distanceBetweenPoints(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
                     minDistance = min(minDistance, distance)
-                case (.point, .linestring):
+                }
+                else if (srcGeometry == .point && (dstGeometry == .linestring && !isDstPolygon)) {
                     guard let distance = distanceFromPointToLineString(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
                     minDistance = min(minDistance, distance)
-                case (.point, .polygon):
+                }
+                else if (srcGeometry == .point && (dstGeometry == .linestring && isDstPolygon)) {
                     guard let distance = distanceFromPointToPolygon(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
                     minDistance = min(minDistance, distance)
-                case (.linestring, .linestring):
+                }
+                else if ((srcGeometry == .linestring && !isSrcPolygon) && (dstGeometry == .linestring && !isDstPolygon)) {
                     guard let distance = distanceBetweenLineStrings(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
                     minDistance = min(minDistance, distance)
-                case (.linestring, .polygon):
+                }
+                else if ((srcGeometry == .linestring && !isSrcPolygon) && (dstGeometry == .linestring && isDstPolygon)) {
                     guard let distance = distanceFromLineStringToPolygon(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
                     minDistance = min(minDistance, distance)
-                case (.polygon, .polygon):
+                }
+                else if ((srcGeometry == .linestring && isSrcPolygon) && (dstGeometry == .linestring && isDstPolygon)) {
                     guard let distance = distanceBetweenPolygons(
                         srcLocationDetails: srcOSMLocationDetails, dstLocationDetails: dstOSMLocationDetails
                     ) else {
                         continue
                     }
-                default:
+                }
+                else {
                     continue
                 }
             }
