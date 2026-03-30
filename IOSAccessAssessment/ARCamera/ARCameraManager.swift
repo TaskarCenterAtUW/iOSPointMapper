@@ -251,10 +251,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
-        Task {
-            await MainActor.run {
-                self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
-            }
+        Task { @MainActor in
+            self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
         }
     }
     
@@ -268,10 +266,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
     }
     
     func setOrientation(_ orientation: UIInterfaceOrientation) {
-        Task {
-            await MainActor.run {
-                self.interfaceOrientation = orientation
-            }
+        Task { @MainActor in
+            self.interfaceOrientation = orientation
         }
     }
     

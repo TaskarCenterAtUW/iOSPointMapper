@@ -8,7 +8,7 @@ import Foundation
 import CoreLocation
 
 protocol OSWElement: Sendable, CustomStringConvertible {
-    var elementOSMString: String { get }
+    var osmElementType: OSMElementType { get }
     
     var id: String { get }
     var version: String { get }

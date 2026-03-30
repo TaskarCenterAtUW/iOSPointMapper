@@ -31,6 +31,11 @@ enum ARCameraViewConstants {
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
         
+        /// Mapping Data Status Alert
+        static let mappingDataStatusAlertTitleKey = "Error"
+        static let mappingDataStatusAlertRetryButtonKey = "Retry"
+        static let mappingDataStatusAlertDismissButtonKey = "OK"
+        
         /// Invalid Content View
         static let invalidContentViewTitle = "Invalid Capture"
         static let invalidContentViewMessage = "The captured data is invalid. Please try again."
@@ -65,11 +70,17 @@ enum ARCameraViewConstants {
 
 enum ARCameraViewError: Error, LocalizedError {
     case captureNoSegmentationAccessibilityFeatures
+    case workspaceConfigurationFailed
+    case authenticationError
     
     var errorDescription: String? {
         switch self {
         case .captureNoSegmentationAccessibilityFeatures:
             return "No accessibility features were captured. Please try again."
+        case .workspaceConfigurationFailed:
+            return "Workspace configuration failed. Please check your workspace settings."
+        case .authenticationError:
+            return "Authentication error. Please log in again."
         }
     }
 }
@@ -84,6 +95,16 @@ class ARCameraManagerStatusViewModel: ObservableObject {
     }
 }
 
+class MappingDataStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
@@ -91,20 +112,22 @@ struct ARCameraView: View {
     @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
-    var locationManager: LocationManager = LocationManager()
-    @State private var captureLocation: CLLocationCoordinate2D?
-    @State private var captureHeading: CLLocationDirection?
+    @StateObject private var locationManager: LocationManager = LocationManager()
+//    @State private var captureLocation: CLLocationCoordinate2D?
+//    @State private var captureHeading: CLLocationDirection?
+    @StateObject private var mappingDataStatusViewModel = MappingDataStatusViewModel()
     
     @State private var showARCameraLearnMoreSheet = false
     
     @State private var showAnnotationView = false
-    @StateObject private var apiTransmissionController: APITransmissionController = APITransmissionController()
+    @StateObject private var apiChangesetUploadController: APIChangesetUploadController = APIChangesetUploadController()
     
     var body: some View {
         Group {
@@ -155,6 +178,7 @@ struct ARCameraView: View {
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
+            locationManager.startLocationUpdates()
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
@@ -169,6 +193,14 @@ struct ARCameraView: View {
             }
         }
         .onDisappear {
+            Task {
+                do {
+                    try manager.pause()
+                    locationManager.stopLocationUpdates()
+                } catch {
+                    print("Error pausing ARCameraManager: \(error)")
+                }
+            }
         }
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -178,11 +210,23 @@ struct ARCameraView: View {
         }, message: {
             Text(managerConfigureStatusViewModel.errorMessage)
         })
+        .alert(ARCameraViewConstants.Texts.mappingDataStatusAlertTitleKey, isPresented: $mappingDataStatusViewModel.isFailed, actions: {
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertRetryButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                handleLocationUpdate(oldLocation: nil, newLocation: locationManager.currentLocation)
+            }
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertDismissButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                dismiss()
+            }
+        }, message: {
+            Text(mappingDataStatusViewModel.errorMessage)
+        })
         .fullScreenCover(isPresented: $showAnnotationView) {
-            if let captureLocation {
+            if let captureLocation = locationManager.currentLocation?.coordinate {
                 AnnotationView(
                     selectedClasses: selectedClasses, captureLocation: captureLocation,
-                    apiTransmissionController: apiTransmissionController
+                    apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {
                 InvalidContentView(
@@ -196,15 +240,20 @@ struct ARCameraView: View {
             Task {
                 if (oldValue == true && newValue == false) {
                     do {
+                        locationManager.startLocationUpdates()
                         await sharedAppData.refreshQueue()
-                        captureLocation = nil
-                        captureHeading = nil
                         try manager.resume()
                     } catch {
                         managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
                     }
                 }
             }
+        }
+        .onChange(of: manager.interfaceOrientation) { oldOrientation, newOrientation in
+            locationManager.updateOrientation(newOrientation)
+        }
+        .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+            handleLocationUpdate(oldLocation: oldLocation, newLocation: newLocation)
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
             ARCameraLearnMoreSheetView()
@@ -249,14 +298,13 @@ struct ARCameraView: View {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
                 }
-                captureLocation = try locationManager.getLocationCoordinate()
-                captureHeading = try locationManager.getHeadingDegrees()
                 try manager.pause()
+                locationManager.stopLocationUpdates()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
                 addCaptureDataToCurrentDataset(
                     captureImageData: captureData.imageData, captureMeshData: captureData.meshData,
-                    location: captureLocation, heading: captureHeading
+                    location: locationManager.currentLocation?.coordinate, heading: locationManager.currentHeading?.trueHeading
                 )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
@@ -285,11 +333,46 @@ struct ARCameraView: View {
                 try sharedAppData.currentDatasetEncoder?.addCaptureData(
                     captureImageData: captureImageData,
                     captureMeshData: captureMeshData,
-                    location: captureLocation,
-                    heading: captureHeading
+                    location: locationManager.currentLocation?.coordinate,
+                    heading: locationManager.currentHeading?.trueHeading
                 )
             } catch {
                 print("Error adding capture data to dataset encoder: \(error)")
+            }
+        }
+    }
+    
+    private func handleLocationUpdate(oldLocation: CLLocation?, newLocation: CLLocation?) {
+        var shouldUpdateMap = oldLocation == nil && newLocation != nil
+        if let oldLocation, let newLocation {
+            let distance = oldLocation.distance(from: newLocation)
+            shouldUpdateMap = distance > Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
+        }
+        if !shouldUpdateMap {
+            return
+        }
+        Task {
+            do {
+                guard let workspaceId = workspaceViewModel.workspaceId,
+                      let location = newLocation?.coordinate else {
+                    throw ARCameraViewError.workspaceConfigurationFailed
+                }
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw ARCameraViewError.authenticationError
+                }
+                let mapData = try await WorkspaceService.shared.fetchMapData(
+                    workspaceId: workspaceId,
+                    location: location,
+                    radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+                    accessToken: accessToken,
+                    environment: userStateViewModel.selectedEnvironment
+                )
+                sharedAppData.currentMappingData.update(
+                    osmMapDataResponse: mapData,
+                    accessibilityFeatureClasses: selectedClasses
+                )
+            } catch {
+                mappingDataStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
     }

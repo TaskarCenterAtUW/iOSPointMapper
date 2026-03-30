@@ -31,6 +31,11 @@ struct APIEndpoint {
         return baseURL?.appending(path: "workspaces/mine")
     }
     
+    static let getMapData = { (environment: APIEnvironment) in
+        let baseURL = URL(string: environment.osmBaseURL)
+        return baseURL?.appending(path: "map.json")
+    }
+    
     static let createChangeset = { (environment: APIEnvironment) in
         let baseURL = URL(string: environment.osmBaseURL)
         return baseURL?.appending(path: "changeset/create")

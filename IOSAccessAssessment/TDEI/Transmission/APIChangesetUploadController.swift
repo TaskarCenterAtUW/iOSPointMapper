@@ -1,5 +1,5 @@
 //
-//  APITransmissionController.swift
+//  APIChangesetUploadController.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 12/1/25.
@@ -8,7 +8,7 @@
 import SwiftUI
 import CoreLocation
 
-enum APITransmissionError: Error, LocalizedError {
+enum APIChangesetUploadError: Error, LocalizedError {
     case featureClassNotLineString(AccessibilityFeatureClass)
     case featureClassNotPolygon(AccessibilityFeatureClass)
     
@@ -22,14 +22,27 @@ enum APITransmissionError: Error, LocalizedError {
     }
 }
 
-class APITransmissionController: ObservableObject {
+/**
+    This controller is responsible for handling the upload of accessibility features as OSW elements to the OSW API, and mapping the response back to the accessibility features with their new ids and other details from OSM.
+ 
+    The general workflow for the upload is as follows:
+    1. Map the accessibility features to OSW elements based on their geometry type (point, linestring, polygon). This involves creating the corresponding OSW elements (OSWPoint, OSWLineString, OSWPolygon) and preparing any additional tags or properties that need to be uploaded along with the elements.
+    2. Prepare the upload operations (create, modify) for the OSW elements and perform the upload using the ChangesetService.
+    3. Handle the response from the upload to get the new ids and details for the uploaded OSW elements. This involves mapping the response back to the original accessibility features using a cache that keeps track of the mapping between the original features and the OSW elements.
+    4. Return the results of the upload, including the mapped accessibility features with their new ids and any failed uploads.
+
+    - TODO: Eventually, the methods here such as featureToPoint, featureToLineString, featureToPolygon can be moved to the AccessibilityFeatureProtocol as extension methods (or a dedicated helper class) since they are responsible for mapping an accessibility feature to an OSW element, which is a core responsibility of the accessibility feature model.
+ 
+ */
+class APIChangesetUploadController: ObservableObject {
     private var idGenerator: IntIdGenerator = IntIdGenerator()
     public var capturedFrameIds: Set<UUID> = []
     
     func uploadFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        inputs: APITransmissionInputs
-    ) async throws -> APITransmissionResults {
+        liveMappingData: LiveMappingData,
+        inputs: APIChangesetUploadInputs
+    ) async throws -> APIChangesetUploadResults {
         idGenerator = IntIdGenerator()
         var isFailedCaptureUpload = false
         if !capturedFrameIds.contains(inputs.captureData.id) {
@@ -40,31 +53,34 @@ class APITransmissionController: ObservableObject {
                 isFailedCaptureUpload = true
             }
         }
-        var apiTransmissionResults: APITransmissionResults
+        var apiChangesetUploadResults: APIChangesetUploadResults
         switch inputs.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
         case .point:
-            apiTransmissionResults = try await uploadPoints(
+            apiChangesetUploadResults = try await uploadPoints(
                 accessibilityFeatures: accessibilityFeatures,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         case .linestring:
-            apiTransmissionResults = try await uploadLineStrings(
+            apiChangesetUploadResults = try await uploadLineStrings(
                 accessibilityFeatures: accessibilityFeatures,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         case .polygon:
-            apiTransmissionResults = try await uploadPolygons(
+            apiChangesetUploadResults = try await uploadPolygons(
                 accessibilityFeatures: accessibilityFeatures,
+                liveMappingData: liveMappingData,
                 inputs: inputs
             )
         }
-        return APITransmissionResults(
-            from: apiTransmissionResults,
+        return APIChangesetUploadResults(
+            from: apiChangesetUploadResults,
             isFailedCaptureUpload: isFailedCaptureUpload
         )
     }
     
-    func uploadCapturePoint(inputs: APITransmissionInputs) async throws {
+    func uploadCapturePoint(inputs: APIChangesetUploadInputs) async throws {
         let additionalTags: [String: String] = [
             APIConstants.TagKeys.captureIdKey: inputs.captureData.id.uuidString,
             APIConstants.TagKeys.captureLatitudeKey: String(inputs.captureLocation.latitude),
@@ -90,7 +106,7 @@ class APITransmissionController: ObservableObject {
     private func getAdditionalTags(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         captureData: CaptureData,
-        mappingData: MappingData,
+        liveMappingData: LiveMappingData,
     ) -> [String: String] {
         var enhancedAnalysisMode: Bool = false
         switch captureData {
@@ -109,18 +125,19 @@ class APITransmissionController: ObservableObject {
 /**
  Extension for methods to handle points transmission
  */
-extension APITransmissionController {
+extension APIChangesetUploadController {
     func uploadPoints(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        inputs: APITransmissionInputs
-    ) async throws -> APITransmissionResults {
+        liveMappingData: LiveMappingData,
+        inputs: APIChangesetUploadInputs
+    ) async throws -> APIChangesetUploadResults {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
         /// Map Accessibility Features to OSW Elements
-        let featureCache: APIFeatureCache = APIFeatureCache()
+        let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPoint(feature, additionalTags: additionalTags)
@@ -136,12 +153,12 @@ extension APITransmissionController {
             accessToken: inputs.accessToken
         )
         guard featureCache.getOSWPoints().count > 0 else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
         let uploadedOSWElements = getUploadedOSWPoints(from: uploadedElements, featureCache: featureCache)
         guard !uploadedOSWElements.isEmpty else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Created Mapped Accessibility Features from the uploaded OSW Elements
         /// Make sure you are using the old ids of the uploaded elements to map back to the features
@@ -157,7 +174,7 @@ extension APITransmissionController {
             )
         }
         let failedUploads = totalFeatures - mappedAccessibilityFeatures.count
-        return APITransmissionResults(
+        return APIChangesetUploadResults(
             accessibilityFeatures: mappedAccessibilityFeatures,
             failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
         )
@@ -194,8 +211,8 @@ extension APITransmissionController {
     }
     
     private func getUploadedOSWPoints(
-        from uploadedElements: UploadedOSMResponseElements,
-        featureCache: APIFeatureCache
+        from uploadedElements: OSMChangesetUploadResponseElements,
+        featureCache: APIChangesetUploadCache
     ) -> [OSWPoint] {
         let cachedOSWPoints = featureCache.getOSWPoints()
         var uploadedOSWPoints: [OSWPoint?] = Array(repeating: nil, count: cachedOSWPoints.count)
@@ -227,15 +244,16 @@ extension APITransmissionController {
 /**
  Extension to handle line string transmission
  */
-extension APITransmissionController {
+extension APIChangesetUploadController {
     func uploadLineStrings(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        inputs: APITransmissionInputs
-    ) async throws -> APITransmissionResults {
+        liveMappingData: LiveMappingData,
+        inputs: APIChangesetUploadInputs
+    ) async throws -> APIChangesetUploadResults {
         var accessibilityFeatures = accessibilityFeatures
         var totalFeatures = accessibilityFeatures.count
         guard totalFeatures > 0, let firstFeature = accessibilityFeatures.first else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk
         if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk {
@@ -243,10 +261,10 @@ extension APITransmissionController {
             totalFeatures = 1
         }
         /// Map Accessibility Features to OSW Elements
-        let featureCache: APIFeatureCache = APIFeatureCache()
+        let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToLineString(feature, additionalTags: additionalTags)
@@ -258,7 +276,7 @@ extension APITransmissionController {
         var uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElements().map { .create($0) }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
         if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
-           let existingMappedFeature = inputs.mappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
+           let existingMappedFeature = liveMappingData.featuresMap[inputs.accessibilityFeatureClass]?.last {
             let existingOSWElement = existingMappedFeature.oswElement
             if var existingOSWLineString = existingOSWElement as? OSWLineString,
                let newOSWLineString = featureCache.getOSWLineStrings().first,
@@ -275,7 +293,7 @@ extension APITransmissionController {
             accessToken: inputs.accessToken
         )
         guard featureCache.getOSWLineStrings().count > 0 else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
         let uploadedOSWElements = getUploadedOSWLineStrings(
@@ -283,7 +301,7 @@ extension APITransmissionController {
             featureCache: featureCache
         )
         guard !uploadedOSWElements.isEmpty else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Created Mapped Accessibility Features from the uploaded OSW Elements
         /// Make sure you are using the old ids of the uploaded elements to map back to the features
@@ -299,7 +317,7 @@ extension APITransmissionController {
             )
         }
         let failedUploads = totalFeatures - mappedAccessibilityFeatures.count
-        return APITransmissionResults(
+        return APIChangesetUploadResults(
             accessibilityFeatures: mappedAccessibilityFeatures,
             failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
         )
@@ -359,8 +377,8 @@ extension APITransmissionController {
     }
     
     private func getUploadedOSWLineStrings(
-        from uploadedElements: UploadedOSMResponseElements,
-        featureCache: APIFeatureCache
+        from uploadedElements: OSMChangesetUploadResponseElements,
+        featureCache: APIChangesetUploadCache
     ) -> [OSWLineString] {
         let cachedOSWLineStrings = featureCache.getOSWLineStrings()
         var uploadedOSWLineStrings: [OSWLineString?] = Array(repeating: nil, count: cachedOSWLineStrings.count)
@@ -375,7 +393,7 @@ extension APITransmissionController {
                 return
             }
             /// First, get a new feature cache for the nodes that belong to this linestring
-            let pointsCache: APIFeatureCache = APIFeatureCache()
+            let pointsCache: APIChangesetUploadCache = APIChangesetUploadCache()
             matchedOriginalOSWLineString.points.forEach { point in
                 pointsCache.addEntry(osmOldId: point.id, feature: nil, oswElement: point)
             }
@@ -403,18 +421,19 @@ extension APITransmissionController {
 /**
  Extension to handle polygon transmission
  */
-extension APITransmissionController {
+extension APIChangesetUploadController {
     func uploadPolygons(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        inputs: APITransmissionInputs
-    ) async throws -> APITransmissionResults {
+        liveMappingData: LiveMappingData,
+        inputs: APIChangesetUploadInputs
+    ) async throws -> APIChangesetUploadResults {
         let accessibilityFeatures = accessibilityFeatures
         let totalFeatures = accessibilityFeatures.count
         /// Map Accessibility Features to OSW Elements
-        let featureCache: APIFeatureCache = APIFeatureCache()
+        let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, mappingData: inputs.mappingData
+            captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
             let oswElement = featureToPolygon(feature, additonalTags: additionalTags)
@@ -430,7 +449,7 @@ extension APITransmissionController {
             accessToken: inputs.accessToken
         )
         guard featureCache.getOSWPolygons().count > 0 else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
         let uploadedOSWElements = getUploadedPolygons(
@@ -438,7 +457,7 @@ extension APITransmissionController {
             featureCache: featureCache
         )
         guard !uploadedOSWElements.isEmpty else {
-            return APITransmissionResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// Created Mapped Accessibility Features from the uploaded OSW Elements
         /// Make sure you are using the old ids of the uploaded elements to map back to the features
@@ -454,7 +473,7 @@ extension APITransmissionController {
             )
         }
         let failedUploads = totalFeatures - mappedAccessibilityFeatures.count
-        return APITransmissionResults(
+        return APIChangesetUploadResults(
             accessibilityFeatures: mappedAccessibilityFeatures,
             failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
         )
@@ -470,16 +489,11 @@ extension APITransmissionController {
         }
         
         var oswElements: [any OSWElement] = []
-//        guard let featureLocationArrays: [[CLLocationCoordinate2D]] = feature.locationDetails?.coordinates,
-//              let firstLocationArray = featureLocationArrays.first, !firstLocationArray.isEmpty else {
-//            return nil
-//        }
         guard let featureLocationDetails: OSMLocationDetails = feature.locationDetails,
               !featureLocationDetails.locations.isEmpty else {
             return nil
         }
         featureLocationDetails.locations.forEach { locationElement in
-//        featureLocationArrays.forEach { locationArray in
             guard !locationElement.coordinates.isEmpty else { return }
             var oswPoints: [OSWPoint] = []
             locationElement.coordinates.forEach { location in
@@ -536,8 +550,8 @@ extension APITransmissionController {
     }
     
     private func getUploadedPolygons(
-        from uploadedElements: UploadedOSMResponseElements,
-        featureCache: APIFeatureCache
+        from uploadedElements: OSMChangesetUploadResponseElements,
+        featureCache: APIChangesetUploadCache
     ) -> [OSWPolygon] {
         let cachedOSWPolygons = featureCache.getOSWPolygons()
         var uploadedOSWPolygons: [OSWPolygon?] = Array(repeating: nil, count: cachedOSWPolygons.count)
@@ -552,7 +566,7 @@ extension APITransmissionController {
                 return
             }
             /// First, create a new feature cache for the point members of the polygon
-            let pointsCache: APIFeatureCache = APIFeatureCache()
+            let pointsCache: APIChangesetUploadCache = APIChangesetUploadCache()
             matchedOriginalOSWPolygon.members.forEach { member in
                 let element = member.element
                 guard let point = element as? OSWPoint else { return }
@@ -564,7 +578,7 @@ extension APITransmissionController {
                 featureCache: pointsCache
             )
             /// Second, create a new feature cache for the linestring members of the polygon
-            let lineStringsCache: APIFeatureCache = APIFeatureCache()
+            let lineStringsCache: APIChangesetUploadCache = APIChangesetUploadCache()
             matchedOriginalOSWPolygon.members.forEach { member in
                 let element = member.element
                 guard let lineString = element as? OSWLineString else { return }

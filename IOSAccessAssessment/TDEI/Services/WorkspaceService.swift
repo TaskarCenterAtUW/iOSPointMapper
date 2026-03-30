@@ -60,16 +60,16 @@ class WorkspaceService {
     private init() {}
     
     func fetchWorkspaces(
-        location: CLLocationCoordinate2D?, radius: Int = 2000,
+        location: CLLocationCoordinate2D?, radius: Double = 2000,
         accessToken: String,
         environment: APIEnvironment? = nil
     ) async throws -> [Workspace] {
         let selectedEnvironment = environment ?? EnvironmentService.shared.environment
-        guard let url = APIEndpoint.getWorkspaces(selectedEnvironment)
+        guard let urlEndpoint = APIEndpoint.getWorkspaces(selectedEnvironment)
         else {
             throw APIError.invalidURL
         }
-        var comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        var comps = URLComponents(url: urlEndpoint, resolvingAgainstBaseURL: false)
         comps?.queryItems = [
             URLQueryItem(name: "radius", value: "\(radius)")
         ]
@@ -101,6 +101,49 @@ class WorkspaceService {
             let decoder = JSONDecoder()
             let workspaces = try decoder.decode([Workspace].self, from: data)
             return workspaces
+        } catch {
+            throw APIError.decoding(error)
+        }
+    }
+    
+    func fetchMapData(
+        workspaceId: String,
+        location: CLLocationCoordinate2D, radius: Double = 1000,
+        accessToken: String,
+        environment: APIEnvironment? = nil
+    ) async throws -> OSMMapDataResponse {
+        let selectedEnvironment = environment ?? EnvironmentService.shared.environment
+        guard let urlEndpoint = APIEndpoint.getMapData(selectedEnvironment) else {
+            throw APIError.invalidURL
+        }
+        let bbox: BBox = LocationHelpers.boundingBoxAroundLocation(location: location, radius: radius)
+        
+        var comps = URLComponents(url: urlEndpoint, resolvingAgainstBaseURL: false)
+        comps?.queryItems = [
+            URLQueryItem(name: "bbox", value: bbox.toQueryString())
+        ]
+        guard let url = comps?.url else { throw APIError.invalidURL }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue(workspaceId, forHTTPHeaderField: "X-Workspace")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw APIError.badStatus(httpResponse.statusCode)
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let mapData: OSMMapDataResponse = try decoder.decode(OSMMapDataResponse.self, from: data)
+            
+            return mapData
         } catch {
             throw APIError.decoding(error)
         }

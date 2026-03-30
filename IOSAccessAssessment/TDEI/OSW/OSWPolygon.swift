@@ -23,12 +23,12 @@ struct OSWRelationMember: Sendable {
     }
     
     var toXML: String {
-        return "<member type=\"\(element.elementOSMString)\" ref=\"\(element.id)\" role=\"\(role)\" />"
+        return "<member type=\"\(element.osmElementType.rawValue)\" ref=\"\(element.id)\" role=\"\(role)\" />"
     }
 }
 
 struct OSWPolygon: OSWElement {
-    let elementOSMString: String = "relation"
+    let osmElementType: OSMElementType = .relation
     
     let id: String
     let version: String
@@ -61,6 +61,93 @@ struct OSWPolygon: OSWElement {
         self.additionalTags = additionalTags
     }
     
+    /**
+     Initializes an OSWPolygon from an OSMRelation and its member elements.
+     
+     - Parameters:
+        - osmRelation: The OSMRelation object representing the relation element in OSM.
+        - oswElementClass: The OSWElementClass corresponding to the relation's tags.
+        - osmMemberElements: An array of OSWElement objects representing the members of the relation. This array can actually represent nested relations as discreet elements. This initializer is supposed to identify the members of the relation and assign them the correct roles.
+     */
+    init(
+        osmRelation: OSMRelation,
+        oswElementClass: OSWElementClass,
+        osmMemberElements: [any OSMElement]
+    ) {
+        self.id = osmRelation.id
+        self.version = osmRelation.version
+        self.oswElementClass = oswElementClass
+        self.attributeValues = [:]
+        self.calculatedAttributeValues = [:]
+        self.experimentalAttributeValues = [:]
+        
+        let osmMemberRefs: [OSMRelationMember] = osmRelation.members
+        let osmNodeMemberRefs = osmMemberRefs.filter { $0.type == .node }
+        let osmWayMemberRefs = osmMemberRefs.filter { $0.type == .way }
+        let osmRelationMemberRefs = osmMemberRefs.filter { $0.type == .relation }
+        
+        let osmMemberElementsDict: [String: any OSMElement] = Dictionary(
+            uniqueKeysWithValues: osmMemberElements.map { ($0.id, $0) }
+        )
+        let osmNodeElements: [OSMNode] = osmMemberElements.filter { element in
+            return osmNodeMemberRefs.contains { $0.ref == element.id }
+        }.compactMap { element in
+            return element as? OSMNode
+        }
+        let osmNodeElementsDict: [String: OSMNode] = Dictionary(uniqueKeysWithValues: osmNodeElements.map { ($0.id, $0) })
+        let osmWayElements: [OSMWay] = osmMemberElements.filter { element in
+            return osmWayMemberRefs.contains { $0.ref == element.id }
+        }.compactMap { element in
+            return element as? OSMWay
+        }
+        let osmWayElementsDict: [String: OSMWay] = Dictionary(uniqueKeysWithValues: osmWayElements.map { ($0.id, $0) })
+        let osmRelationElements: [OSMRelation] = osmMemberElements.filter { element in
+            return osmRelationMemberRefs.contains { $0.ref == element.id }
+        }.compactMap { element in
+            return element as? OSMRelation
+        }
+        let osmRelationElementsDict: [String: OSMRelation] = Dictionary(
+            uniqueKeysWithValues: osmRelationElements.map { ($0.id, $0) }
+        )
+        
+        var oswRelationMembers: [OSWRelationMember] = []
+        osmNodeMemberRefs.forEach { osmNodeMemberRef in
+            if let matchingOSMNodeElement = osmNodeElementsDict[osmNodeMemberRef.ref] {
+                let oswPoint: OSWPoint = OSWPoint(osmNode: matchingOSMNodeElement, oswElementClass: oswElementClass)
+                let oswRelationMember = OSWRelationMember(element: oswPoint, role: osmNodeMemberRef.role)
+                oswRelationMembers.append(oswRelationMember)
+            }
+        }
+        osmWayMemberRefs.forEach { osmWayMemberRef in
+            if let matchingOSMWayElement = osmWayElementsDict[osmWayMemberRef.ref] {
+                let matchingOSWWayNodes = matchingOSMWayElement.nodeRefs.compactMap { nodeRef in
+                    return osmNodeElementsDict[nodeRef]
+                }
+                let oswLineString: OSWLineString = OSWLineString(
+                    osmWay: matchingOSMWayElement, oswElementClass: oswElementClass,
+                    osmNodes: matchingOSWWayNodes
+                )
+                let oswRelationMember = OSWRelationMember(element: oswLineString, role: osmWayMemberRef.role)
+                oswRelationMembers.append(oswRelationMember)
+            }
+        }
+        osmRelationMemberRefs.forEach { osmRelationMemberRef in
+            if let matchingOSMRelationElement = osmRelationElementsDict[osmRelationMemberRef.ref] {
+                let matchingOSMRelationMemberElements = matchingOSMRelationElement.members.compactMap { memberRef in
+                    return osmMemberElementsDict[memberRef.ref]
+                }
+                let oswPolygon: OSWPolygon = OSWPolygon(
+                    osmRelation: matchingOSMRelationElement, oswElementClass: oswElementClass,
+                    osmMemberElements: matchingOSMRelationMemberElements
+                )
+                let oswRelationMember = OSWRelationMember(element: oswPolygon, role: osmRelationMemberRef.role)
+                oswRelationMembers.append(oswRelationMember)
+            }
+        }
+        self.members = oswRelationMembers
+        self.additionalTags = osmRelation.tags
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .polygon {
@@ -72,14 +159,14 @@ struct OSWPolygon: OSWElement {
         if let calculatedAttributeValues {
             calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
         }
-        let tags = identifyingFieldTags.merging(attributeTags) { _, new in
-            return new
-        }.merging(experimentalAttributeTags) { _, new in
-            return new
-        }.merging(calculatedAttributeTags) { _, new in
-            return new
-        }.merging(additionalTags) { _, new in
-            return new
+        let tags = identifyingFieldTags.merging(attributeTags) { old, new in
+            return old
+        }.merging(experimentalAttributeTags) { old, new in
+            return old
+        }.merging(calculatedAttributeTags) { old, new in
+            return old
+        }.merging(additionalTags) { old, new in
+            return old
         }
         return tags
     }

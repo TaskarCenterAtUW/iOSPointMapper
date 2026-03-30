@@ -20,4 +20,15 @@ enum OSWGeometry: String, CaseIterable, Hashable, Codable {
             return "Polygon"
         }
     }
+    
+    var osmElementType: OSMElementType {
+        switch self {
+        case .point:
+            return .node
+        case .linestring:
+            return .way
+        case .polygon:
+            return .way
+        }
+    }
 }
