@@ -31,6 +31,11 @@ enum ARCameraViewConstants {
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
         
+        /// Mapping Data Status Alert
+        static let mappingDataStatusAlertTitleKey = "Error"
+        static let mappingDataStatusAlertRetryButtonKey = "Retry"
+        static let mappingDataStatusAlertDismissButtonKey = "OK"
+        
         /// Invalid Content View
         static let invalidContentViewTitle = "Invalid Capture"
         static let invalidContentViewMessage = "The captured data is invalid. Please try again."
@@ -90,6 +95,16 @@ class ARCameraManagerStatusViewModel: ObservableObject {
     }
 }
 
+class MappingDataStatusViewModel: ObservableObject {
+    @Published var isFailed: Bool = false
+    @Published var errorMessage: String = ""
+    
+    func update(isFailed: Bool, errorMessage: String) {
+        self.isFailed = isFailed
+        self.errorMessage = errorMessage
+    }
+}
+
 struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     
@@ -105,6 +120,9 @@ struct ARCameraView: View {
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
     @StateObject private var locationManager: LocationManager = LocationManager()
+//    @State private var captureLocation: CLLocationCoordinate2D?
+//    @State private var captureHeading: CLLocationDirection?
+    @StateObject private var mappingDataStatusViewModel = MappingDataStatusViewModel()
     
     @State private var showARCameraLearnMoreSheet = false
     
@@ -191,6 +209,18 @@ struct ARCameraView: View {
             }
         }, message: {
             Text(managerConfigureStatusViewModel.errorMessage)
+        })
+        .alert(ARCameraViewConstants.Texts.mappingDataStatusAlertTitleKey, isPresented: $mappingDataStatusViewModel.isFailed, actions: {
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertRetryButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                handleLocationUpdate(oldLocation: nil, newLocation: locationManager.currentLocation)
+            }
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertDismissButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                dismiss()
+            }
+        }, message: {
+            Text(mappingDataStatusViewModel.errorMessage)
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation = locationManager.currentLocation?.coordinate {
@@ -342,6 +372,7 @@ struct ARCameraView: View {
                     accessibilityFeatureClasses: selectedClasses
                 )
             } catch {
+                /// TODO: Replace with an alert that either retries the fetch or dismissed the view.
                 setHintText(error.localizedDescription)
             }
         }

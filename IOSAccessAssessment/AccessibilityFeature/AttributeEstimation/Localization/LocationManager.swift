@@ -16,7 +16,7 @@ struct BBox {
     let maxLon: Double
     
     func toQueryString() -> String {
-        return "\(minLat.roundedTo7Digits()),\(minLon.roundedTo7Digits()),\(maxLat.roundedTo7Digits()),\(maxLon.roundedTo7Digits())"
+        return "\(minLon.roundedTo7Digits()),\(minLat.roundedTo7Digits()),\(maxLon.roundedTo7Digits()),\(maxLat.roundedTo7Digits())"
     }
 }
 
@@ -123,32 +123,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         Task { @MainActor in
             self.currentHeading = newHeading
         }
-    }
-    
-    func getLocation() throws -> CLLocation {
-        guard let location = locationManager.location,
-        location.horizontalAccuracy > 0, location.verticalAccuracy > 0 else {
-            throw LocationManagerError.locationUnavailable
-        }
-        return location
-    }
-    
-    private func getHeading() throws -> CLHeading {
-        guard let heading = locationManager.heading,
-        heading.headingAccuracy > 0 else {
-            throw LocationManagerError.headingUnavailable
-        }
-        return heading
-    }
-    
-    func getLocationCoordinate() throws -> CLLocationCoordinate2D {
-        let location = try getLocation()
-        return location.coordinate
-    }
-    
-    func getHeadingDegrees() throws -> CLLocationDirection {
-        let heading = try getHeading()
-        return heading.trueHeading
     }
     
     func stopLocationUpdates() {

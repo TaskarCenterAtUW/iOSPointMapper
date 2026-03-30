@@ -53,6 +53,50 @@ enum TestCameraViewError: Error, LocalizedError {
     }
 }
 
+@MainActor
+class LocationManagerPlaceholder: NSObject, ObservableObject {
+    @Published var currentLocation: CLLocation?
+    @Published var currentHeading: CLHeading?
+    
+    override init() {
+        super.init()
+    }
+    
+    func startLocationUpdates() {}
+    
+    private func setupLocationManager() {}
+    
+    /**
+    Updates the heading orientation of the location manager based on the current device orientation. This ensures that heading data is accurate and consistent with the user's perspective.
+     */
+    public func updateOrientation(_ orientation: UIInterfaceOrientation) {}
+    
+    func locationManager(didUpdateLocations locations: [CLLocation]) {
+        guard let latestLocation = locations.last else { return }
+        guard let horizontalAccuracy = latestLocation.horizontalAccuracy as CLLocationAccuracy?,
+                let verticalAccuracy = latestLocation.verticalAccuracy as CLLocationAccuracy?,
+              horizontalAccuracy > 0, verticalAccuracy > 0 else {
+            return
+        }
+        Task { @MainActor in
+            self.currentLocation = latestLocation
+        }
+    }
+    
+    func locationManager(didUpdateHeading newHeading: CLHeading) {
+        guard let headingAccuracy = newHeading.headingAccuracy as CLLocationDirection?,
+              headingAccuracy > 0 else {
+            return
+        }
+        Task { @MainActor in
+            self.currentHeading = newHeading
+        }
+    }
+    
+    func stopLocationUpdates() {}
+
+}
+
 /**
  TestCameraView uses the data saved in the changeset directory, to simulate mapping
  */
@@ -65,6 +109,7 @@ struct TestCameraView: View {
     @EnvironmentObject var sharedAppContext: SharedAppContext
     @EnvironmentObject var segmentationPipeline: SegmentationARPipeline
     @EnvironmentObject var userStateViewModel: UserStateViewModel
+    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
     @StateObject private var manager: TestCameraManager = TestCameraManager()
@@ -72,9 +117,10 @@ struct TestCameraView: View {
     @State private var cameraHintDefaultText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
-//    var locationManager: LocationManager = LocationManager()
-    @State private var captureLocation: CLLocationCoordinate2D?
-    @State private var captureHeading: CLLocationDirection?
+    var locationManager: LocationManagerPlaceholder = LocationManagerPlaceholder()
+//    @State private var captureLocation: CLLocationCoordinate2D?
+//    @State private var captureHeading: CLLocationDirection?
+    @StateObject private var mappingDataStatusViewModel = MappingDataStatusViewModel()
     
     @State private var showARCameraLearnMoreSheet = false
     
@@ -170,8 +216,16 @@ struct TestCameraView: View {
                 )
                 sharedAppData.currentDatasetDecoder = datasetDecoder
                 self.datasetCaptureData = datasetCaptureData
-                self.captureLocation = datasetCaptureData.location
-                self.captureHeading = datasetCaptureData.heading
+                if let captureLocation = datasetCaptureData.location {
+                    self.locationManager.locationManager(didUpdateLocations: [
+                        CLLocation(latitude: captureLocation.latitude, longitude: captureLocation.longitude)
+                    ])
+                }
+                if let captureHeading = datasetCaptureData.heading {
+                    let heading = CLHeading()
+                    heading.setValue(captureHeading, forKey: "trueHeading")
+                    self.locationManager.locationManager(didUpdateHeading: heading)
+                }
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -197,8 +251,20 @@ struct TestCameraView: View {
         }, message: {
             Text(managerConfigureStatusViewModel.errorMessage)
         })
+        .alert(ARCameraViewConstants.Texts.mappingDataStatusAlertTitleKey, isPresented: $mappingDataStatusViewModel.isFailed, actions: {
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertRetryButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                handleLocationUpdate(oldLocation: nil, newLocation: locationManager.currentLocation)
+            }
+            Button(ARCameraViewConstants.Texts.mappingDataStatusAlertDismissButtonKey) {
+                mappingDataStatusViewModel.update(isFailed: false, errorMessage: "")
+                dismiss()
+            }
+        }, message: {
+            Text(mappingDataStatusViewModel.errorMessage)
+        })
         .fullScreenCover(isPresented: $showAnnotationView) {
-            if let captureLocation {
+            if let captureLocation = locationManager.currentLocation?.coordinate {
                 AnnotationView(
                     selectedClasses: selectedClasses, captureLocation: captureLocation,
                     apiChangesetUploadController: apiChangesetUploadController
@@ -219,6 +285,12 @@ struct TestCameraView: View {
                 }
             }
         }
+//        .onChange(of: manager.interfaceOrientation) { oldOrientation, newOrientation in
+//            locationManager.updateOrientation(newOrientation)
+//        }
+        .onChange(of: locationManager.currentLocation) { oldLocation, newLocation in
+            handleLocationUpdate(oldLocation: oldLocation, newLocation: newLocation)
+        }
         .onChange(of: currentIndex) { oldValue, newValue in
             do {
                 guard let datasetDecoder = sharedAppData.currentDatasetDecoder else {
@@ -228,8 +300,17 @@ struct TestCameraView: View {
                     datasetDecoder: datasetDecoder, enhancedAnalysisMode: userStateViewModel.isEnhancedAnalysisEnabled
                 )
                 self.datasetCaptureData = datasetCaptureData
-                self.captureLocation = datasetCaptureData.location
-                self.captureHeading = datasetCaptureData.heading
+                if let captureLocation = datasetCaptureData.location {
+                    self.locationManager.locationManager(didUpdateLocations: [
+                        CLLocation(latitude: captureLocation.latitude, longitude: captureLocation.longitude)
+                    ])
+                }
+                if let captureHeading = datasetCaptureData.heading {
+                    let heading = CLHeading()
+                    heading.setValue(captureHeading, forKey: "trueHeading")
+                    self.locationManager.locationManager(didUpdateHeading: heading)
+                }
+                
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
                 
                 /// For easier testing
@@ -336,6 +417,42 @@ struct TestCameraView: View {
                 )
             } catch {
                 print("Error adding capture data to dataset encoder: \(error)")
+            }
+        }
+    }
+    
+    private func handleLocationUpdate(oldLocation: CLLocation?, newLocation: CLLocation?) {
+        var shouldUpdateMap = oldLocation == nil && newLocation != nil
+        if let oldLocation, let newLocation {
+            let distance = oldLocation.distance(from: newLocation)
+            shouldUpdateMap = distance > Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
+        }
+        if !shouldUpdateMap {
+            return
+        }
+        Task {
+            do {
+                guard let workspaceId = workspaceViewModel.workspaceId,
+                      let location = newLocation?.coordinate else {
+                    throw ARCameraViewError.workspaceConfigurationFailed
+                }
+                guard let accessToken = userStateViewModel.getAccessToken() else {
+                    throw ARCameraViewError.authenticationError
+                }
+                let mapData = try await WorkspaceService.shared.fetchMapData(
+                    workspaceId: workspaceId,
+                    location: location,
+                    radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+                    accessToken: accessToken,
+                    environment: userStateViewModel.selectedEnvironment
+                )
+                sharedAppData.currentMappingData.updateFeatures(
+                    with: mapData,
+                    accessibilityFeatureClasses: selectedClasses
+                )
+            } catch {
+                /// TODO: Replace with an alert that either retries the fetch or dismissed the view.
+                setHintText(error.localizedDescription)
             }
         }
     }
