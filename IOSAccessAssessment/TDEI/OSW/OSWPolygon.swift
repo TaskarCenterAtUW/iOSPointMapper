@@ -45,7 +45,7 @@ struct OSWPolygon: OSWElement {
     }
     
     /**
-        Initializes an OSWLineString from an OSMWay and its associated OSMNodes.
+        Initializes an OSWPolygon from an OSMWay and its associated OSMNodes.
      
         - Parameters:
             - osmWay: The OSMWay object representing the way element from OpenStreetMap.
@@ -92,14 +92,14 @@ struct OSWPolygon: OSWElement {
             return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
         }
         let osmLocationElement: OSMLocationElement = OSMLocationElement(
-            coordinates: coordinates, isWay: true, isClosed: false
+            coordinates: coordinates, isWay: true, isClosed: true
         )
         return OSMLocationDetails(locations: [osmLocationElement])
     }
     
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
-        if oswElementClass.geometry == .linestring {
+        if oswElementClass.geometry == .polygon {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
         let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
@@ -189,11 +189,11 @@ struct OSWPolygon: OSWElement {
     
     var description: String {
         let nodesString = points.map { $0.shortDescription }.joined(separator: ", ")
-        return "OSWLineString(id: \(id), version: \(version), nodes: [\(nodesString)])"
+        return "OSWPolygon(id: \(id), version: \(version), nodes: [\(nodesString)])"
     }
     
     var shortDescription: String {
-        return "OSWLineString(id: \(id))"
+        return "OSWPolygon(id: \(id))"
     }
     
     private func getUniquePoints() -> [OSWPoint] {

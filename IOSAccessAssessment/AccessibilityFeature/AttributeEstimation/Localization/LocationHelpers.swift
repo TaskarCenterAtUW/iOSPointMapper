@@ -160,7 +160,7 @@ struct LocationHelpers {
         guard let dstLastLocationElement = dstLocationDetails.locations.last else {
             return nil
         }
-        let isDstMultipolygon = dstLocationDetails.locations.count > 1
+//        let isDstMultipolygon = dstLocationDetails.locations.count > 1
         let isDstPolygon = dstLastLocationElement.isWay && dstLastLocationElement.isClosed // && (!isDstMultipolygon)
         let isDstLineString = dstLastLocationElement.isWay && !dstLastLocationElement.isClosed // && (!isDstMultipolygon)
         let isDstPoint = !dstLastLocationElement.isWay && !dstLastLocationElement.isClosed // && (!isDstMultipolygon)

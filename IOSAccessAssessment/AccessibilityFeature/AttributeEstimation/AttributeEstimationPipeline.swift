@@ -178,6 +178,21 @@ class AttributeEstimationPipeline: ObservableObject {
            
     }
     
+    func processIsExistingRequest(
+        mappingData: CurrentMappingData,
+        accessibilityFeature: EditableAccessibilityFeature
+    ) {
+        guard let osmLocationDetails = accessibilityFeature.locationDetails,
+              let nearestElement = mappingData.getNearestFeature(
+                  to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass
+              ) else {
+            accessibilityFeature.setIsExisting(false)
+            return
+        }
+        accessibilityFeature.setIsExisting(true)
+        accessibilityFeature.setOSWElement(oswElement: nearestElement)
+    }
+    
     func processAttributeRequest(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {

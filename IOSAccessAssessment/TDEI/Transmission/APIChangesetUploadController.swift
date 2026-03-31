@@ -430,8 +430,8 @@ extension APIChangesetUploadController {
         liveMappingData: LiveMappingData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
-        var accessibilityFeatures = accessibilityFeatures
-        var totalFeatures = accessibilityFeatures.count
+        let accessibilityFeatures = accessibilityFeatures
+        let totalFeatures = accessibilityFeatures.count
         /// Map Accessibility Features to OSW Elements
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(

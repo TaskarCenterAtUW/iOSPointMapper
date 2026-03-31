@@ -121,6 +121,17 @@ class CurrentMappingData: CustomStringConvertible {
         guard let features = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
         var nearestDistance: CLLocationDistance = distanceThreshold
-        return nil
+        
+        for feature in features {
+            guard let featureOSMLocationDetails = feature.getOSMLocationDetails() else { continue }
+            guard let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: osmLocationDetails
+            ) else { continue }
+            if distance < nearestDistance {
+                nearestFeature = feature
+                nearestDistance = distance
+            }
+        }
+        return nearestFeature
     }
 }

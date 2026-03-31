@@ -19,6 +19,9 @@ struct AnnotationFeatureDetailView: View {
             static let statusAlertDismissAlertSuffixKey: String = "Press OK to dismiss this alert."
             static let statusAlertDismissButtonKey: String = "OK"
             
+            /// Is Existing
+            static let isExistingTitle: String = "Is this an existing feature?"
+            
             /// Invalid
             static let invalidTextKey: String = "Invalid"
         }
@@ -107,21 +110,36 @@ struct AnnotationFeatureDetailView: View {
                 
                 Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
                     if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
-                        HStack {
-                            Spacer()
-                            Text(
-                                locationFormatter.string(
-                                    from: NSNumber(value: featureLocation.latitude)
-                                ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
-                            )
-                            .padding(.horizontal)
-                            Text(
-                                locationFormatter.string(
-                                    from: NSNumber(value: featureLocation.longitude)
-                                ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
-                            )
-                            .padding(.horizontal)
-                            Spacer()
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Text(
+                                    locationFormatter.string(
+                                        from: NSNumber(value: featureLocation.latitude)
+                                    ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
+                                )
+                                .padding(.horizontal)
+                                Text(
+                                    locationFormatter.string(
+                                        from: NSNumber(value: featureLocation.longitude)
+                                    ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
+                                )
+                                .padding(.horizontal)
+                                Spacer()
+                            }
+                            Divider()
+                            HStack {
+                                Spacer()
+                                Toggle(isOn: Binding(
+                                    get: { accessibilityFeature.isExisting },
+                                    set: { newValue in
+                                        accessibilityFeature.setIsExisting(newValue)
+                                    }
+                                )) {
+                                    Text(AnnotationFeatureDetailView.Constants.Texts.isExistingTitle)
+                                }
+                                Spacer()
+                            }
                         }
                     } else {
                         Text(AnnotationFeatureDetailView.Constants.Texts.invalidTextKey)
