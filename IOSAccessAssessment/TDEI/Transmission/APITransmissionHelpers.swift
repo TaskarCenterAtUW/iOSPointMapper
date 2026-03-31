@@ -65,6 +65,16 @@ class APIChangesetUploadCache {
             return nil
         }
     }
+    
+    /// TODO: Not used currently, but can be used in future if we support multi-polygons
+//    func getOSWMultiPolygons() -> [OSWMultiPolygon] {
+//        return cacheEntry.compactMap { entry in
+//            if let multiPolygon = entry.oswElement as? OSWMultiPolygon {
+//                return multiPolygon
+//            }
+//            return nil
+//        }
+//    }
 }
 
 struct APIChangesetUploadInputs {

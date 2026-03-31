@@ -14,8 +14,9 @@ extension AttributeEstimationPipeline {
     ) throws -> LocationRequestResult {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        switch(oswElementClass) {
-        case .Sidewalk:
+        let oswGeometry = oswElementClass.geometry
+        switch(oswGeometry) {
+        case .linestring:
             if isMeshEnabled {
                 return try self.calculateLocationFromMeshForLineString(
                     deviceLocation: deviceLocation,
@@ -26,12 +27,12 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
-        case .Building:
+        case .polygon:
             return try self.calculateLocationFromImageForPolygon(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
-        default:
+        case .point:
             return try self.calculateLocationFromImageForPoint(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
