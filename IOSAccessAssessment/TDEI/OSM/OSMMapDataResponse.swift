@@ -27,7 +27,7 @@ struct OSMMapDataResponse: Codable {
     func getOSMElements() -> [String: any OSMElement] {
         var osmElements: [String: any OSMElement] = [:]
         for element in elements {
-            if let osmElement = try? element.toOSMElement() {
+            if let osmElement = element.toOSMElement() {
                 osmElements["\(element.id)"] = osmElement
             }
         }

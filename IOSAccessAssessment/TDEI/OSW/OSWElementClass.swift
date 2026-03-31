@@ -102,6 +102,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 identifyingFields: [
                     IdentifyingField(field: .building, value: "yes"),
                     /// Temporary hard-coding to ensure correct polygon geometry. Should later be inferred from mapped data.
+                    /// Not used at the moment because building is a single polygon. 
 //                    IdentifyingField(field: .custom("Type", "type"), value: "multipolygon")
                 ]
             )

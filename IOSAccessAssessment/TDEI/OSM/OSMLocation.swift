@@ -10,6 +10,8 @@ import CoreLocation
 
 struct OSMLocationElement: Codable, Sendable {
     var coordinates: [CLLocationCoordinate2D]
+    /// TODO: We can add an optional `members` property to OSMLocationElement that can hold child elements, and update the encoding/decoding logic to handle this new property appropriately. This way, we can represent the hierarchical nature of OSM data while still maintaining a clear structure for each element type.
+//    var members: [OSMLocationElement]?
     var isWay: Bool
     var isClosed: Bool
     
@@ -51,6 +53,17 @@ struct OSMLocationElement: Codable, Sendable {
     }
 }
 
+/**
+    Represents the location details of an OSM element, which can consist of multiple coordinate sets (e.g., for ways or relations).
+ 
+ - Warning:
+ This struct does not represent relation-type OSM elements properly, because it does not account for the fact that relations can contain multiple members, each of which can be a node, way, or another relation. Properly representing relations would require a more complex structure that can capture the hierarchical nature of OSM data.
+ This support was not implemented because the OSW schema does not support relations.
+ 
+- TODO:
+ For relation support: we can treat OSMLocationDetails as a tree of OSMLocationElement structs, where each OSMLocationElement can either have a set of coordinates (for nodes and ways) or a set of child OSMLocationElements (for relations). This way, we can represent the hierarchical nature of OSM data while still maintaining a clear structure for each element type. This will be an easier modification because we can simply add an optional `members` property to OSMLocationElement that can hold child elements, and update the encoding/decoding logic to handle this new property appropriately.
+ However, this will need modification to caller code that constructs/uses/modifies OSMLocationDetails, because they will need to account for the possibility of nested members when working with OSM data.
+ */
 struct OSMLocationDetails: Codable, Sendable {
     var locations: [OSMLocationElement]
     

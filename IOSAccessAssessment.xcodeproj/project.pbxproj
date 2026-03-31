@@ -46,6 +46,7 @@
 		A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943562EE81BF700C4C1BC /* OSWLineString.swift */; };
 		A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943582EE8204400C4C1BC /* OSWPolygon.swift */; };
 		A32D66512F7B343800DC4173 /* LocationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66502F7B343500DC4173 /* LocationHelpers.swift */; };
+		A32D66532F7C3F2F00DC4173 /* OSWMultiPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */; };
 		A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
@@ -253,6 +254,7 @@
 		A32943562EE81BF700C4C1BC /* OSWLineString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWLineString.swift; sourceTree = "<group>"; };
 		A32943582EE8204400C4C1BC /* OSWPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolygon.swift; sourceTree = "<group>"; };
 		A32D66502F7B343500DC4173 /* LocationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationHelpers.swift; sourceTree = "<group>"; };
+		A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWMultiPolygon.swift; sourceTree = "<group>"; };
 		A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3431E012F26FA2700B96610 /* LocationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationExtension.swift; sourceTree = "<group>"; };
@@ -957,6 +959,7 @@
 				A32943542EE8186C00C4C1BC /* OSWPoint.swift */,
 				A32943562EE81BF700C4C1BC /* OSWLineString.swift */,
 				A32943582EE8204400C4C1BC /* OSWPolygon.swift */,
+				A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */,
 			);
 			path = OSW;
 			sourceTree = "<group>";
@@ -1341,6 +1344,7 @@
 				A3431E062F26FA9C00B96610 /* OtherAttributeExtension.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */,
+				A32D66532F7C3F2F00DC4173 /* OSWMultiPolygon.swift in Sources */,
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,
 				A3AC01AF2F294CCD00A1D0E5 /* PlaneRasterizer.swift in Sources */,

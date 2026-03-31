@@ -60,6 +60,14 @@ struct OSWPoint: OSWElement {
         self.additionalTags = osmNode.tags
     }
     
+    func getOSMLocationDetails() -> OSMLocationDetails? {
+        let coordinates: [CLLocationCoordinate2D] = [CLLocationCoordinate2D(latitude: latitude, longitude: longitude)]
+        let osmLocationElement: OSMLocationElement = OSMLocationElement(
+            coordinates: coordinates, isWay: false, isClosed: false
+        )
+        return OSMLocationDetails(locations: [osmLocationElement])
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .point {

@@ -46,7 +46,7 @@ struct OSWLineString: OSWElement {
      
         - Parameters:
             - osmWay: The OSMWay object representing the way element from OpenStreetMap.
-            - osmElementClass: The OSWElementClass that defines the classification of the way element.
+            - oswElementClass: The OSWElementClass that defines the classification of the way element.
             - osmNodes: An array of OSMNode objects that are associated with the OSMWay. These nodes generally represent the points that make up the way. But they may contain additional nodes that are not part of the way, so we filter them based on the node references in the OSMWay.
      */
     init(
@@ -69,6 +69,16 @@ struct OSWLineString: OSWElement {
             return OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
         }
         self.additionalTags = osmWay.tags
+    }
+    
+    func getOSMLocationDetails() -> OSMLocationDetails? {
+        let coordinates: [CLLocationCoordinate2D] = self.points.map { point in
+            return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
+        }
+        let osmLocationElement: OSMLocationElement = OSMLocationElement(
+            coordinates: coordinates, isWay: true, isClosed: false
+        )
+        return OSMLocationDetails(locations: [osmLocationElement])
     }
     
     var tags: [String: String] {
