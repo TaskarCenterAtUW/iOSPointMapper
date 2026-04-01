@@ -26,37 +26,37 @@ extension AccessibilityFeatureConfig {
                     .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
                     .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
                 ],
-                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk)
+                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true)
             ),
             
             AccessibilityFeatureClass(
                 id: "building", name: "Building", grayscaleValue: 2.0 / 255.0, labelValue: 2,
                 color: CIColor(red: 0.275, green: 0.275, blue: 0.275),
-                oswPolicy: OSWPolicy(oswElementClass: .Building)
+                oswPolicy: OSWPolicy(oswElementClass: .Building, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
                 id: "pole", name: "Pole", grayscaleValue: 3.0 / 255.0, labelValue: 3,
                 color: CIColor(red: 0.600, green: 0.600, blue: 0.600),
-                oswPolicy: OSWPolicy(oswElementClass: .Pole)
+                oswPolicy: OSWPolicy(oswElementClass: .Pole, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
                 id: "traffic_light", name: "Traffic light", grayscaleValue: 4.0 / 255.0, labelValue: 4,
                 color: CIColor(red: 0.980, green: 0.667, blue: 0.118),
-                oswPolicy: OSWPolicy(oswElementClass: .TrafficLight)
+                oswPolicy: OSWPolicy(oswElementClass: .TrafficLight, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
                 id: "traffic_sign", name: "Traffic sign", grayscaleValue: 5.0 / 255.0, labelValue: 5,
                 color: CIColor(red: 0.863, green: 0.863, blue: 0.000),
-                oswPolicy: OSWPolicy(oswElementClass: .TrafficSign)
+                oswPolicy: OSWPolicy(oswElementClass: .TrafficSign, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
                 id: "vegetation", name: "Vegetation", grayscaleValue: 6.0 / 255.0, labelValue: 6,
                 color: CIColor(red: 0.420, green: 0.557, blue: 0.137),
-                oswPolicy: OSWPolicy(oswElementClass: .Vegetation)
+                oswPolicy: OSWPolicy(oswElementClass: .Vegetation, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(

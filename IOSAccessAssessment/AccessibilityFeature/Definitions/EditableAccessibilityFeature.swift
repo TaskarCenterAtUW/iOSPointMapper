@@ -17,6 +17,8 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
     var locationDetails: OSMLocationDetails?
+    /// If isExisting is false, even if an osw element is associated, it means the feature is new.
+    /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
     var isExisting: Bool = false
     var oswElement: (any OSWElement)?
     

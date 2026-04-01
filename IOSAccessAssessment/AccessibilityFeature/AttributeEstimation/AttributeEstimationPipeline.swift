@@ -194,7 +194,8 @@ class AttributeEstimationPipeline: ObservableObject {
             accessibilityFeature.setIsExisting(false)
             return
         }
-        accessibilityFeature.setIsExisting(true)
+        let isExisting = accessibilityFeature.accessibilityFeatureClass.oswPolicy.isExistingFirst
+        accessibilityFeature.setIsExisting(isExisting)
         accessibilityFeature.setOSWElement(oswElement: nearestElement)
     }
     
