@@ -61,13 +61,16 @@ struct OSWLineString: OSWElement {
         self.calculatedAttributeValues = [:]
         self.experimentalAttributeValues = [:]
         let nodeRefs = osmWay.nodeRefs
-        let nodeRefSet = Set(nodeRefs)
-        self.points = osmNodes.compactMap { osmNode in
-            if !nodeRefSet.contains(osmNode.id) {
-                return nil
+        let osmNodeDict = Dictionary(uniqueKeysWithValues: osmNodes.map { ($0.id, $0) })
+        /// The creation of points should be in the same order as node references in the way, not the osmNodes list
+        var points: [OSWPoint] = []
+        nodeRefs.forEach { nodeRef in
+            if let osmNode = osmNodeDict[nodeRef] {
+                let point = OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
+                points.append(point)
             }
-            return OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
         }
+        self.points = points
         self.additionalTags = osmWay.tags
     }
     
