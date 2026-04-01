@@ -18,10 +18,10 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey)
         }
         let worldPoints = try worldPointsProcessor.getWorldPoints(
             segmentationLabelImage: captureImageData.captureImageDataResults.segmentationLabelImage,
@@ -40,7 +40,7 @@ extension AttributeEstimationPipeline {
         worldPoints: [WorldPoint]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -64,7 +64,7 @@ extension AttributeEstimationPipeline {
         plane: Plane
     ) throws -> ProjectedPlane {
         guard let planeProcessor = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -105,7 +105,7 @@ extension AttributeEstimationPipeline {
         meshPolygons: [MeshPolygon]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData

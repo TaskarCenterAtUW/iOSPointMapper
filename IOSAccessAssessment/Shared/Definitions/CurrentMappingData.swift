@@ -89,14 +89,22 @@ class CurrentMappingData: CustomStringConvertible {
                     filteredFeatureWays = filteredFeatureWays.filter { way in
                         return way.nodeRefs.first == way.nodeRefs.last
                     }
+                    let matchingOSWPolygons: [OSWPolygon] = filteredFeatureWays.compactMap { way in
+                        return OSWPolygon(
+                            osmWay: way, oswElementClass: oswElementClass,
+                            osmNodes: Array(featureNodes.values)
+                        )
+                    }
+                    featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
+                } else {
+                    let matchingOSWLineStrings: [OSWLineString] = filteredFeatureWays.compactMap { way in
+                        return OSWLineString(
+                            osmWay: way, oswElementClass: oswElementClass,
+                            osmNodes: Array(featureNodes.values)
+                        )
+                    }
+                    featuresMap[featureClass]?.append(contentsOf: matchingOSWLineStrings)
                 }
-                let matchingOSWLineStrings: [OSWLineString] = filteredFeatureWays.compactMap { way in
-                    return OSWLineString(
-                        osmWay: way, oswElementClass: oswElementClass,
-                        osmNodes: Array(featureNodes.values)
-                    )
-                }
-                featuresMap[featureClass]?.append(contentsOf: matchingOSWLineStrings)
             case .relation:
                 let matchingOSWPolygons: [OSWMultiPolygon] = featureRelations.values.filter { relation in
                     return identifyingFieldTags.allSatisfy { tagKey, tagValue in

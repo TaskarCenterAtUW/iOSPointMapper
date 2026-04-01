@@ -131,13 +131,16 @@ struct AnnotationFeatureDetailView: View {
                             HStack {
                                 Spacer()
                                 Toggle(isOn: Binding(
-                                    get: { accessibilityFeature.isExisting },
+                                    get: { accessibilityFeature.isExisting && accessibilityFeature.oswElement != nil },
                                     set: { newValue in
                                         accessibilityFeature.setIsExisting(newValue)
                                     }
                                 )) {
                                     Text(AnnotationFeatureDetailView.Constants.Texts.isExistingTitle)
                                 }
+                                .disabled(accessibilityFeature.oswElement == nil)
+                                .foregroundStyle(accessibilityFeature.oswElement == nil ? .secondary : .primary)
+                                .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
                                 Spacer()
                             }
                         }

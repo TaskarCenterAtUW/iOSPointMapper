@@ -12,6 +12,12 @@ struct APIChangesetUploadCacheEntry: @unchecked Sendable {
     let osmOldId: String
     let feature: (any AccessibilityFeatureProtocol)?
     let oswElement: any OSWElement
+    let isExisting: Bool
+}
+
+struct OSWElementWithStatus {
+    let oswElement: any OSWElement
+    let isExisting: Bool
 }
 
 class APIChangesetUploadCache {
@@ -30,13 +36,21 @@ class APIChangesetUploadCache {
         return cacheEntry.first { $0.osmOldId == osmOldId }
     }
     
-    func addEntry(osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, oswElement: any OSWElement) {
-        let entry = APIChangesetUploadCacheEntry(osmOldId: osmOldId, feature: feature, oswElement: oswElement)
+    func addEntry(
+        osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, oswElement: any OSWElement,
+        isExisting: Bool = false
+    ) {
+        let entry = APIChangesetUploadCacheEntry(
+            osmOldId: osmOldId, feature: feature, oswElement: oswElement,
+            isExisting: isExisting
+        )
         cacheEntry.append(entry)
     }
     
-    func getOSWElements() -> [any OSWElement] {
-        return cacheEntry.map { $0.oswElement }
+    func getOSWElementsWithStatus() -> [OSWElementWithStatus] {
+        return cacheEntry.map { entry in
+            return OSWElementWithStatus(oswElement: entry.oswElement, isExisting: entry.isExisting)
+        }
     }
     
     func getOSWPoints() -> [OSWPoint] {

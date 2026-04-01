@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import MapKit
 
 enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
@@ -37,6 +38,16 @@ struct LocationRequestResult: Sendable {
     let lidarDepth: Float
 }
 
+enum AttributeEstimationPipelineConstants {
+    enum Texts {
+        static let depthMapProcessorKey = "Depth Map Processor"
+        static let localizationProcessorKey = "Localization Processor"
+        static let planeProcessorKey = "Plane Processor"
+        static let planeAttributeProcessorKey = "Plane Attribute Processor"
+        static let worldPointsProcessorKey = "World Points Processor"
+    }
+}
+
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
@@ -48,16 +59,6 @@ class AttributeEstimationPipeline: ObservableObject {
         var meshPolygons: [MeshPolygon]? = nil
         var meshTriangles: [MeshTriangle]? = nil
         var meshAlignedPlane: Plane? = nil
-    }
-    
-    enum Constants {
-        enum Texts {
-            static let depthMapProcessorKey = "Depth Map Processor"
-            static let localizationProcessorKey = "Localization Processor"
-            static let planeProcessorKey = "Plane Processor"
-            static let planeAttributeProcessorKey = "Plane Attribute Processor"
-            static let worldPointsProcessorKey = "World Points Processor"
-        }
     }
     
     var depthMapProcessor: DepthMapProcessor?
@@ -179,12 +180,16 @@ class AttributeEstimationPipeline: ObservableObject {
     }
     
     func processIsExistingRequest(
+        deviceLocation: CLLocationCoordinate2D,
         mappingData: CurrentMappingData,
         accessibilityFeature: EditableAccessibilityFeature
     ) {
+        /// Threshold needs to be in Map Units
+        let distanceThreshold = Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
         guard let osmLocationDetails = accessibilityFeature.locationDetails,
               let nearestElement = mappingData.getNearestFeature(
-                  to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass
+                  to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
+                  distanceThreshold: distanceThreshold
               ) else {
             accessibilityFeature.setIsExisting(false)
             return

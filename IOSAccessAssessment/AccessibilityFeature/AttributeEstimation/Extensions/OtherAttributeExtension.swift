@@ -47,10 +47,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey)
         }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeAttributeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -136,10 +136,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey)
         }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeAttributeProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
