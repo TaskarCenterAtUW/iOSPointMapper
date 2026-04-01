@@ -14,8 +14,9 @@ extension AttributeEstimationPipeline {
     ) throws -> LocationRequestResult {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        switch(oswElementClass) {
-        case .Sidewalk:
+        let oswGeometry = oswElementClass.geometry
+        switch(oswGeometry) {
+        case .linestring:
             if isMeshEnabled {
                 return try self.calculateLocationFromMeshForLineString(
                     deviceLocation: deviceLocation,
@@ -26,12 +27,12 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
-        case .Building:
+        case .polygon:
             return try self.calculateLocationFromImageForPolygon(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
             )
-        default:
+        case .point:
             return try self.calculateLocationFromImageForPoint(
                 deviceLocation: deviceLocation,
                 accessibilityFeature: accessibilityFeature
@@ -49,10 +50,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -72,10 +73,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -112,10 +113,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -147,10 +148,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData

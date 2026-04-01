@@ -13,10 +13,10 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     let accessibilityFeatureClass: AccessibilityFeatureClass
     
     var locationDetails: OSMLocationDetails?
+    var oswElement: any OSWElement
+    
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
-    
-    var oswElement: any OSWElement
     
     init (
         id: UUID = UUID(),

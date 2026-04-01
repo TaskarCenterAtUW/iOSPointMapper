@@ -9,32 +9,6 @@ import CoreLocation
 import UIKit
 import MapKit
 
-struct BBox {
-    let minLat: Double
-    let maxLat: Double
-    let minLon: Double
-    let maxLon: Double
-    
-    func toQueryString() -> String {
-        return "\(minLon.roundedTo7Digits()),\(minLat.roundedTo7Digits()),\(maxLon.roundedTo7Digits()),\(maxLat.roundedTo7Digits())"
-    }
-}
-
-class LocationHelpers {
-    static func boundingBoxAroundLocation(location: CLLocationCoordinate2D, radius: CLLocationDistance) -> BBox {
-        let region = MKCoordinateRegion(center: location, latitudinalMeters: radius, longitudinalMeters: radius)
-        let center = region.center
-        let span = region.span
-        let minLat = center.latitude - span.latitudeDelta
-        let maxLat = center.latitude + span.latitudeDelta
-        let minLon = center.longitude - span.longitudeDelta
-        let maxLon = center.longitude + span.longitudeDelta
-        
-        return BBox(minLat: minLat, maxLat: maxLat, minLon: minLon, maxLon: maxLon)
-    }
-}
-
-
 enum LocationManagerError: Error, LocalizedError {
     case locationUnavailable
     case headingUnavailable

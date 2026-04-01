@@ -79,24 +79,39 @@ class CurrentMappingData: CustomStringConvertible {
                 }
                 featuresMap[featureClass]?.append(contentsOf: matchingOSWPoints)
             case .way:
-                let matchingOSWLineStrings: [OSWLineString] = featureWays.values.filter { way in
+                var filteredFeatureWays: [OSMWay] = featureWays.values.filter { way in
                     return identifyingFieldTags.allSatisfy { tagKey, tagValue in
                         return way.tags[tagKey] == tagValue
                     }
-                }.compactMap { way in
-                    return OSWLineString(
-                        osmWay: way, oswElementClass: oswElementClass,
-                        osmNodes: Array(featureNodes.values)
-                    )
                 }
-                featuresMap[featureClass]?.append(contentsOf: matchingOSWLineStrings)
+                if geometry == .polygon {
+                    /// For polygon features, we only want to consider closed ways (where the first and last node references are the same)
+                    filteredFeatureWays = filteredFeatureWays.filter { way in
+                        return way.nodeRefs.first == way.nodeRefs.last
+                    }
+                    let matchingOSWPolygons: [OSWPolygon] = filteredFeatureWays.compactMap { way in
+                        return OSWPolygon(
+                            osmWay: way, oswElementClass: oswElementClass,
+                            osmNodes: Array(featureNodes.values)
+                        )
+                    }
+                    featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
+                } else {
+                    let matchingOSWLineStrings: [OSWLineString] = filteredFeatureWays.compactMap { way in
+                        return OSWLineString(
+                            osmWay: way, oswElementClass: oswElementClass,
+                            osmNodes: Array(featureNodes.values)
+                        )
+                    }
+                    featuresMap[featureClass]?.append(contentsOf: matchingOSWLineStrings)
+                }
             case .relation:
-                let matchingOSWPolygons: [OSWPolygon] = featureRelations.values.filter { relation in
+                let matchingOSWPolygons: [OSWMultiPolygon] = featureRelations.values.filter { relation in
                     return identifyingFieldTags.allSatisfy { tagKey, tagValue in
                         return relation.tags[tagKey] == tagValue
                     }
                 }.compactMap { relation in
-                    return OSWPolygon(
+                    return OSWMultiPolygon(
                         osmRelation: relation, oswElementClass: oswElementClass,
                         osmMemberElements: osmElements
                     )
@@ -108,9 +123,23 @@ class CurrentMappingData: CustomStringConvertible {
     }
     
     func getNearestFeature(
-        to location: CLLocationCoordinate2D, featureClass: AccessibilityFeatureClass,
+        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
-        return nil
+        guard let features = featuresMap[featureClass] else { return nil }
+        var nearestFeature: (any OSWElement)?
+        var nearestDistance: CLLocationDistance = distanceThreshold
+        
+        for feature in features {
+            guard let featureOSMLocationDetails = feature.getOSMLocationDetails() else { continue }
+            guard let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: osmLocationDetails
+            ) else { continue }
+            if distance < nearestDistance {
+                nearestFeature = feature
+                nearestDistance = distance
+            }
+        }
+        return nearestFeature
     }
 }

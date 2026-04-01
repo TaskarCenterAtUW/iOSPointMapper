@@ -24,6 +24,7 @@ protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
     var accessibilityFeatureClass: AccessibilityFeatureClass { get }
     
     var locationDetails: OSMLocationDetails? { get set }
+    
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     var experimentalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     

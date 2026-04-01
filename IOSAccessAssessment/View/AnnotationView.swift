@@ -525,6 +525,10 @@ struct AnnotationView: View {
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
                     )
+                    attributeEstimationPipeline.processIsExistingRequest(
+                        deviceLocation: captureLocation,
+                        mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
+                    )
                     try attributeEstimationPipeline.processAttributeRequest(
                         accessibilityFeature: accessibilityFeature
                     )

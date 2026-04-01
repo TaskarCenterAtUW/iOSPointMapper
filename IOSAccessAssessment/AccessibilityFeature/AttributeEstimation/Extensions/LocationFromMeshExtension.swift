@@ -18,10 +18,10 @@ extension AttributeEstimationPipeline {
         plane: Plane, meshContents: MeshContents
     ) throws -> LocationRequestResult {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey)
         }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeAttributeProcessorKey)
         }
         let meshPolygons: [MeshPolygon] = meshContents.polygons
         let worldPointsFromMesh: [WorldPoint] = meshPolygons.map { triangle in

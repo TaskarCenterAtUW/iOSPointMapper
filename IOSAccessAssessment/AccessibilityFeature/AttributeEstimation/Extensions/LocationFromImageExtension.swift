@@ -48,10 +48,10 @@ extension AttributeEstimationPipeline {
         plane: Plane, worldPoints: [WorldPoint]
     ) throws -> LocationRequestResult {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.worldPointsProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey)
         }
         guard let planeAttributeProcessor = self.planeAttributeProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.planeAttributeProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.planeAttributeProcessorKey)
         }
         let projectedPoints: [ProjectedPoint] = try worldPointsProcessor.projectPointsToPlane(
             worldPoints: worldPoints, plane: plane,

@@ -17,6 +17,11 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
     var locationDetails: OSMLocationDetails?
+    /// If isExisting is false, even if an osw element is associated, it means the feature is new.
+    /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
+    var isExisting: Bool = false
+    var oswElement: (any OSWElement)?
+    
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:]
@@ -30,6 +35,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.contourDetails = detectedAccessibilityFeature.contourDetails
         
         self.locationDetails = nil
+        
         calculatedAttributeValues = Dictionary(uniqueKeysWithValues: accessibilityFeatureClass.attributes.map { attribute in
             return (attribute, nil)
         })
@@ -46,6 +52,8 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
         locationDetails: OSMLocationDetails?,
+        isExisting: Bool = false,
+        oswElement: (any OSWElement)? = nil,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
@@ -53,10 +61,12 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.id = id
         self.contourDetails = contourDetails
         self.accessibilityFeatureClass = accessibilityFeatureClass
+        self.locationDetails = locationDetails
+        self.isExisting = isExisting
+        self.oswElement = oswElement
         self.calculatedAttributeValues = calculatedAttributeValues
         self.attributeValues = attributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
-        self.locationDetails = locationDetails
     }
     
     func setAnnotationOption(_ option: AnnotationOption) {
@@ -71,6 +81,14 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     
     func setLocationDetails(locationDetails: OSMLocationDetails) {
         self.locationDetails = locationDetails
+    }
+    
+    func setIsExisting(_ isExisting: Bool) {
+        self.isExisting = isExisting
+    }
+    
+    func setOSWElement(oswElement: any OSWElement) {
+        self.oswElement = oswElement
     }
     
     func setAttributeValue(

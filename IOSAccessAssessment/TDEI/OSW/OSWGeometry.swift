@@ -9,6 +9,7 @@ enum OSWGeometry: String, CaseIterable, Hashable, Codable {
     case point
     case linestring
     case polygon
+    // case multipolygon // For future use, currently not supported by OSW API
     
     var description: String {
         switch self {

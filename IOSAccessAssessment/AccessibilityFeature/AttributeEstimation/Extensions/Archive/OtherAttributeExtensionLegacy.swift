@@ -18,10 +18,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -55,10 +55,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -94,10 +94,10 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.depthMapProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
         }
         guard let localizationProcessor = self.localizationProcessor else {
-            throw AttributeEstimationPipelineError.configurationError(Constants.Texts.localizationProcessorKey)
+            throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.localizationProcessorKey)
         }
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
