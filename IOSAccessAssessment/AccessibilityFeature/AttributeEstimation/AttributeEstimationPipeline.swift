@@ -13,6 +13,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
     case missingCaptureData
     case missingDepthImage
+    case missingPreprocessors
     case invalidAttributeData
     case attributeAssignmentError
     
@@ -24,6 +25,8 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
             return NSLocalizedString("Captured data is missing for processing.", comment: "")
         case .missingDepthImage:
             return NSLocalizedString("Depth image is missing from the capture data.", comment: "")
+        case .missingPreprocessors:
+            return NSLocalizedString("Required pre-processors are not configured.", comment: "")
         case .invalidAttributeData:
             return NSLocalizedString("Invalid attribute data encountered.", comment: "")
         case .attributeAssignmentError:
@@ -61,13 +64,15 @@ class AttributeEstimationPipeline: ObservableObject {
         var meshAlignedPlane: Plane? = nil
     }
     
+    var captureImageData: (any CaptureImageDataProtocol)?
+    var captureMeshData: (any CaptureMeshDataProtocol)?
+    
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
     var worldPointsProcessor: WorldPointsProcessor?
     var planeProcessor: PlaneProcessor?
     var planeAttributeProcessor: PlaneAttributeProcessor?
-    var captureImageData: (any CaptureImageDataProtocol)?
-    var captureMeshData: (any CaptureMeshDataProtocol)?
+    var damageDetectionPipeline: DamageDetectionPipeline?
     
     var prerequisiteCache = PrerequisiteCache()
     
@@ -88,6 +93,9 @@ class AttributeEstimationPipeline: ObservableObject {
         self.planeAttributeProcessor = try PlaneAttributeProcessor()
         self.captureImageData = captureImageData
         self.captureMeshData = captureMeshData
+        let damageDetectionPipeline = DamageDetectionPipeline()
+        try damageDetectionPipeline.configure()
+        self.damageDetectionPipeline = damageDetectionPipeline
     }
     
     func setPrerequisites(

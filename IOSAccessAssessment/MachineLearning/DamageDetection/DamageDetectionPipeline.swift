@@ -9,9 +9,6 @@ import SwiftUI
 import Vision
 import CoreML
 
-import OrderedCollections
-import simd
-
 enum DamageDetectionPipelineError: Error, LocalizedError {
     case detectionResourcesNotConfigured
     
@@ -24,6 +21,10 @@ enum DamageDetectionPipelineError: Error, LocalizedError {
     
 }
 
+/**
+ This class serves as the main interface for processing damage detection requests.
+ In the future, it can include logic for asynchronous processing, request queuing, and more. 
+ */
 final class DamageDetectionPipeline: ObservableObject {
     private var damageDetectionModelRequestProcessor: DamageDetectionModelRequestProcessor?
     

@@ -33,7 +33,7 @@ struct DamageDetectionModelRequestProcessor {
     var visionModel: VNCoreMLModel
     
     init() throws {
-        guard let modelURL = Constants.SurfaceIntegrityConstants.damageDetectionModelURL else {
+        guard let modelURL = Constants.DamageDetectionConstants.damageDetectionModelURL else {
             throw DamageDetectionModelError.modelLoadingError
         }
         let configuration: MLModelConfiguration = MLModelConfiguration()
