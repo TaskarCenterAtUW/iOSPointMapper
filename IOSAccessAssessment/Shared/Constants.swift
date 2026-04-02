@@ -23,6 +23,12 @@ struct Constants {
         static let depthMaxThreshold: Float = 5.0
     }
     
+    struct SurfaceIntegrityConstants {
+        /// Model-specific constants
+        static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "v8n_175_16_960", withExtension: "mlmodelc")
+        static let inputSize: CGSize = CGSize(width: 640, height: 640)
+    }
+    
     struct WorkspaceConstants {
         static let primaryWorkspaceIds: [String] = ["1597"]
 //        ["1463"]

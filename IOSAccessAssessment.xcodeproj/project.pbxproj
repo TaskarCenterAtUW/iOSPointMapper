@@ -48,6 +48,7 @@
 		A32D66512F7B343800DC4173 /* LocationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66502F7B343500DC4173 /* LocationHelpers.swift */; };
 		A32D66532F7C3F2F00DC4173 /* OSWMultiPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */; };
 		A32D66F72F7EE88300DC4173 /* v8n_175_16_960.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A32D66F62F7EE88300DC4173 /* v8n_175_16_960.mlpackage */; };
+		A32D66FB2F7EE9DA00DC4173 /* DamageDetectionModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66FA2F7EE9D500DC4173 /* DamageDetectionModelRequestProcessor.swift */; };
 		A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
@@ -257,6 +258,7 @@
 		A32D66502F7B343500DC4173 /* LocationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationHelpers.swift; sourceTree = "<group>"; };
 		A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWMultiPolygon.swift; sourceTree = "<group>"; };
 		A32D66F62F7EE88300DC4173 /* v8n_175_16_960.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = v8n_175_16_960.mlpackage; sourceTree = "<group>"; };
+		A32D66FA2F7EE9D500DC4173 /* DamageDetectionModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DamageDetectionModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3431E012F26FA2700B96610 /* LocationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationExtension.swift; sourceTree = "<group>"; };
@@ -494,6 +496,7 @@
 				A33EB5AD2F761BFC008ABFB7 /* ModelZoo */,
 				A3A413AB2ECF948E0039298C /* Clustering */,
 				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
+				A32D66F82F7EE9AC00DC4173 /* SurfaceIntegrity */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 			);
 			path = MachineLearning;
@@ -657,12 +660,28 @@
 			path = Others;
 			sourceTree = "<group>";
 		};
-		A32D66F52F7EE82A00DC4173 /* CrackDetection */ = {
+		A32D66F52F7EE82A00DC4173 /* DamageDetection */ = {
 			isa = PBXGroup;
 			children = (
 				A32D66F62F7EE88300DC4173 /* v8n_175_16_960.mlpackage */,
 			);
-			path = CrackDetection;
+			path = DamageDetection;
+			sourceTree = "<group>";
+		};
+		A32D66F82F7EE9AC00DC4173 /* SurfaceIntegrity */ = {
+			isa = PBXGroup;
+			children = (
+				A32D66F92F7EE9D000DC4173 /* Functions */,
+			);
+			path = SurfaceIntegrity;
+			sourceTree = "<group>";
+		};
+		A32D66F92F7EE9D000DC4173 /* Functions */ = {
+			isa = PBXGroup;
+			children = (
+				A32D66FA2F7EE9D500DC4173 /* DamageDetectionModelRequestProcessor.swift */,
+			);
+			path = Functions;
 			sourceTree = "<group>";
 		};
 		A33EB5AC2F761B5D008ABFB7 /* Definitions */ = {
@@ -676,7 +695,7 @@
 		A33EB5AD2F761BFC008ABFB7 /* ModelZoo */ = {
 			isa = PBXGroup;
 			children = (
-				A32D66F52F7EE82A00DC4173 /* CrackDetection */,
+				A32D66F52F7EE82A00DC4173 /* DamageDetection */,
 				A3A413A82ECF947C0039298C /* DepthEstimation */,
 				A3A413A72ECF94690039298C /* SemanticSegmentation */,
 			);
@@ -1364,6 +1383,7 @@
 				A3A45F0A2EE7A4E10029F5AE /* UnionOfMasksPolicy.swift in Sources */,
 				A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */,
 				A35E05182EDEA476003C26CF /* AttributeEstimationPipeline.swift in Sources */,
+				A32D66FB2F7EE9DA00DC4173 /* DamageDetectionModelRequestProcessor.swift in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
 				A364B5DD2F259AFE00325E5C /* WorldPoints.metal in Sources */,
