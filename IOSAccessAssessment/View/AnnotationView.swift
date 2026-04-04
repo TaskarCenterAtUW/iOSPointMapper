@@ -575,7 +575,7 @@ struct AnnotationView: View {
                 }
                 /// MARK: Temporary code for visualization
                 if currentClass.attributes.contains(where: {
-                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
                 }) {
                     let plane = try attributeEstimationPipeline.calculateAlignedPlane(
                         accessibilityFeature: currentFeature, worldPoints: nil
@@ -583,7 +583,13 @@ struct AnnotationView: View {
                     let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
                         accessibilityFeature: currentFeature, plane: plane
                     )
-                    updateFeatureResults = AnnotationImageFeatureUpdateResults(plane: plane, projectedPlane: projectedPlane)
+                    let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
+                        accessibilityFeature: currentFeature
+                    )
+                    updateFeatureResults = AnnotationImageFeatureUpdateResults(
+                        plane: plane, projectedPlane: projectedPlane,
+                        damageDetectionResults: damageDetectionResults
+                    )
                 }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances

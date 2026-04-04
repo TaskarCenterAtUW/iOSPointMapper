@@ -12,11 +12,11 @@ extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        let damageDetectionResults = try getDamageDetectionResults()
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
         
     }
     
-    private func getDamageDetectionResults() throws -> [DamageDetectionResult] {
+    func getDamageDetectionResults(accessibilityFeature: EditableAccessibilityFeature) throws -> [DamageDetectionResult] {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
@@ -25,39 +25,44 @@ extension AttributeEstimationPipeline {
         }
         /// Run damage detection
         let cameraImage = captureImageData.cameraImage
-        let originalSize = cameraImage.extent.size
+//        let originalSize = cameraImage.extent.size
         let croppedSize = Constants.DamageDetectionConstants.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: captureImageData.interfaceOrientation
         )
-        let inverseOrientation = imageOrientation.inverted()
+//        let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = cameraImage.oriented(imageOrientation)
-        var inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
         let damageDetectionResults: [DamageDetectionResult] = try damageDetectionPipeline.processRequest(with: inputImage)
+        let alignedDamageDetectionResults = damageDetectionResults.map { result -> DamageDetectionResult in
+            let alignedBox = self.alignBoundingBox(result.boundingBox, orientation: imageOrientation, imageSize: croppedSize, originalSize: cameraImage.extent.size)
+            return DamageDetectionResult(
+                boundingBox: alignedBox,
+                confidence: result.confidence,
+                label: result.label
+            )
+        }
         
-        /// TODO: Need to re-align the bounding boxes from the model back to the original image orientation and size. This is needed to map the bounding boxes to the correct location on the original image for accurate annotation and visualization.
-        
-        return damageDetectionResults
+        return alignedDamageDetectionResults
     }
     
-//    private func alignBoundingBox(_ boundingBox: CGRect, orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize) -> CGRect {
-//        var orientationTransform = orientation.getNormalizedToUpTransform().inverted()
-//        
-//        let alignedBox = boundingBox.applying(orientationTransform)
-//        
-//        // Revert the center-cropping effect to map back to original image size
-//        
-//        let translatedBox = translateBoundingBoxToRevertCenterCrop(alignedBox, imageSize: imageSize, originalSize: originalSize)
-//        
+    private func alignBoundingBox(_ boundingBox: CGRect, orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize) -> CGRect {
+        let orientationTransform = orientation.getNormalizedToUpTransform().inverted()
+        let revertTransform = CenterCropTransformUtils.revertCenterCropAspectFitNormalizedTransform(
+            imageSize: imageSize, from: originalSize)
+        let alignTransform = orientationTransform.concatenating(revertTransform)
+        
+        let alignedBox = boundingBox.applying(alignTransform)
+        return alignedBox
+        
 //        let finalBox = CGRect(
 //            x: translatedBox.origin.x * originalSize.width,
 //            y: (1 - (translatedBox.origin.y + translatedBox.size.height)) * originalSize.height,
 //            width: translatedBox.size.width * originalSize.width,
 //            height: translatedBox.size.height * originalSize.height
 //        )
-//        
 //        return finalBox
-//    }
+    }
 }

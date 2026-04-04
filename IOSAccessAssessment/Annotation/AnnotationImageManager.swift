@@ -64,6 +64,7 @@ struct AnnotationImageResults {
 struct AnnotationImageFeatureUpdateResults: Sendable {
     let plane: Plane
     let projectedPlane: ProjectedPlane
+    let damageDetectionResults: [DamageDetectionResult]
 }
 
 /**
@@ -623,6 +624,32 @@ extension AnnotationImageManager {
             currentInterfaceOrientation: interfaceOrientation
         )
         let orientedImage = rasterizedPlaneCIImage.oriented(imageOrientation)
+        let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
+            return nil
+        }
+        return CIImage(cgImage: overlayCgImage)
+    }
+    
+    private func getDamageDetectionImage(
+        captureImageData: (any CaptureImageDataProtocol),
+        size: CGSize,
+        updateFeatureResults: AnnotationImageFeatureUpdateResults?
+    ) -> CIImage? {
+        guard let damageDetectionResults = updateFeatureResults?.damageDetectionResults else {
+            return nil
+        }
+        guard let rasterizedDamageDetectionCGImage = DamageDetectionRasterizer.rasterizePlane(
+            
+        ) else { return nil }
+        let rasterizedDamageDetectionCIImage = CIImage(cgImage: rasterizedDamageDetectionCGImage)
+        let interfaceOrientation = captureImageData.interfaceOrientation
+        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: interfaceOrientation
+        )
+        let orientedImage = rasterizedDamageDetectionCIImage.oriented(imageOrientation)
         let overlayOutputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
         guard let overlayCgImage = context.createCGImage(overlayOutputImage, from: overlayOutputImage.extent) else {
