@@ -251,27 +251,32 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         annotationImageResults.featuresOverlayOutputImage = updatedFeaturesOverlayResults.overlayImage
         self.annotationImageResults = annotationImageResults
         /// Additional images for debugging
-//        let overlay3Image: CIImage? = self.getPlaneImage(
+        let overlay3Image: CIImage? = self.getPlaneImage(
+            captureImageData: captureImageData,
+            size: captureImageData.originalSize,
+            updateFeatureResults: updateFeatureResults
+        )
+//        let overlay3Image: CIImage? = try {
+//            if isEnhancedAnalysisEnabled,
+//               let captureMeshData = self.captureMeshData {
+//                let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
+//                    captureImageData: captureImageData,
+//                    captureMeshData: captureMeshData,
+//                    accessibilityFeatureClass: accessibilityFeatureClass
+//                )
+//                return try getMeshOverlayOutputImage(
+//                    captureMeshData: captureMeshData,
+//                    polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
+//                    accessibilityFeatureClass: accessibilityFeatureClass
+//                )
+//            }
+//            return nil
+//        }()
+//        let overlay3Image: CIImage? = self.getDamageDetectionImage(
 //            captureImageData: captureImageData,
 //            size: captureImageData.originalSize,
 //            updateFeatureResults: updateFeatureResults
 //        )
-        let overlay3Image: CIImage? = try {
-            if isEnhancedAnalysisEnabled,
-               let captureMeshData = self.captureMeshData {
-                let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
-                    captureImageData: captureImageData,
-                    captureMeshData: captureMeshData,
-                    accessibilityFeatureClass: accessibilityFeatureClass
-                )
-                return try getMeshOverlayOutputImage(
-                    captureMeshData: captureMeshData,
-                    polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
-                    accessibilityFeatureClass: accessibilityFeatureClass
-                )
-            }
-            return nil
-        }()
         Task {
             await MainActor.run {
                 self.outputConsumer?.annotationOutputImage(
@@ -640,8 +645,8 @@ extension AnnotationImageManager {
         guard let damageDetectionResults = updateFeatureResults?.damageDetectionResults else {
             return nil
         }
-        guard let rasterizedDamageDetectionCGImage = DamageDetectionRasterizer.rasterizePlane(
-            
+        guard let rasterizedDamageDetectionCGImage = DamageDetectionRasterizer.rasterizeDamageDetection(
+            damageDetectionResults: damageDetectionResults, size: size
         ) else { return nil }
         let rasterizedDamageDetectionCIImage = CIImage(cgImage: rasterizedDamageDetectionCGImage)
         let interfaceOrientation = captureImageData.interfaceOrientation

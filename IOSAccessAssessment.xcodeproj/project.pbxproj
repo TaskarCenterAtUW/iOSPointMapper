@@ -117,6 +117,7 @@
 		A3AC01AF2F294CCD00A1D0E5 /* PlaneRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */; };
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
 		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
+		A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */; };
 		A3B61FC52F76480B0052AE2C /* EnvironmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */; };
 		A3B61FC92F78F93B0052AE2C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC82F78F9390052AE2C /* Extensions.swift */; };
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
@@ -333,6 +334,7 @@
 		A3AC01AE2F294CCA00A1D0E5 /* PlaneRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneRasterizer.swift; sourceTree = "<group>"; };
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
+		A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DamageDetectionRasterizer.swift; sourceTree = "<group>"; };
 		A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentService.swift; sourceTree = "<group>"; };
 		A3B61FC82F78F9390052AE2C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
@@ -714,6 +716,7 @@
 			children = (
 				A32D66F92F7EE9D000DC4173 /* Functions */,
 				A32D66FC2F7EF10A00DC4173 /* DamageDetectionPipeline.swift */,
+				A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */,
 			);
 			path = DamageDetection;
 			sourceTree = "<group>";
@@ -1477,6 +1480,7 @@
 				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
 				A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */,
 				A3DA4DB12EB99A5C005BB812 /* MetalBufferUtils.swift in Sources */,
+				A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */,
 				A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */,
 				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */,

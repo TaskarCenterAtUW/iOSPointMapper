@@ -36,6 +36,7 @@ extension AttributeEstimationPipeline {
         let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
         let damageDetectionResults: [DamageDetectionResult] = try damageDetectionPipeline.processRequest(with: inputImage)
+        print("Damage Detection Results: \(damageDetectionResults)")
         let alignedDamageDetectionResults = damageDetectionResults.map { result -> DamageDetectionResult in
             let alignedBox = self.alignBoundingBox(result.boundingBox, orientation: imageOrientation, imageSize: croppedSize, originalSize: cameraImage.extent.size)
             return DamageDetectionResult(

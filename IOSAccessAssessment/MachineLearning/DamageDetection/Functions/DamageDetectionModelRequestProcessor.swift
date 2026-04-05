@@ -29,6 +29,13 @@ struct DamageDetectionResult {
     var label: String
 }
 
+/**
+ This class is responsible for loading the damage detection model and processing detection requests.
+ 
+ The Damage Detection model returns bounding boxes, that through coreml post-processing, returns each bounding box in the following format:
+ - CGRect: (x, y, width, height) in normalized coordinates (0 to 1), where x and y represent the bottom-left corner of the bounding box relative to the image dimensions.
+ - Confidence Score: A value between 0 and 1 indicating the confidence level of the detection
+ */
 struct DamageDetectionModelRequestProcessor {
     var visionModel: VNCoreMLModel
     
