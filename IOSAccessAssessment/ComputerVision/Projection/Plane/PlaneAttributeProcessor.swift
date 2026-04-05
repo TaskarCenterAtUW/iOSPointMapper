@@ -415,12 +415,4 @@ extension PlaneAttributeProcessor {
             binCount: binCount, binSize: binSize, bins: bins
         )
     }
-    
-    /**
-     Compute the width of the plane by calculating the width for each projected point bin and then aggregating the results.
-     The width of each projected point bin is calculated by getting all the mesh triangles that intersect with the 's' range of the bin and then calculating the width of the 't' values for those triangles.
-     */
-    func computeWidths() -> [Float] {
-        return []
-    }
 }

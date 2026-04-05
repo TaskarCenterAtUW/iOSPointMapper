@@ -11,7 +11,6 @@ import CoreImage
 enum PlaneProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     case invalidPointData
-    case invalidMeshData
     case invalidPlaneData
     case invalidProjectionData
     
@@ -21,8 +20,6 @@ enum PlaneProcessorError: Error, LocalizedError {
             return "PlaneFit Initialization Error: \(message)"
         case .invalidPointData:
             return "The calculated point data is invalid."
-        case .invalidMeshData:
-            return "The provided mesh data is invalid."
         case .invalidPlaneData:
             return "The calculated plane data is invalid."
         case .invalidProjectionData:

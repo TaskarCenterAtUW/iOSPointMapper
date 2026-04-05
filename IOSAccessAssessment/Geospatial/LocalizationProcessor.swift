@@ -178,7 +178,7 @@ struct LocalizationProcessor {
         let cameraOriginPoint = simd_make_float3(cameraTransform.columns.3.x,
                                                  cameraTransform.columns.3.y,
                                                  cameraTransform.columns.3.z)
-        var delta = worldPoint - cameraOriginPoint
+        let delta = worldPoint - cameraOriginPoint
         
         return delta
     }

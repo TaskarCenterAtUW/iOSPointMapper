@@ -118,6 +118,7 @@
 		A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */; };
 		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
 		A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */; };
+		A3B5BDA02F831F270036C6EC /* ProjectionUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */; };
 		A3B61FC52F76480B0052AE2C /* EnvironmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */; };
 		A3B61FC92F78F93B0052AE2C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC82F78F9390052AE2C /* Extensions.swift */; };
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
@@ -335,6 +336,7 @@
 		A3B2DDBE2DC99DE9003416FB /* HomographyRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomographyRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DamageDetectionRasterizer.swift; sourceTree = "<group>"; };
+		A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectionUtils.swift; sourceTree = "<group>"; };
 		A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentService.swift; sourceTree = "<group>"; };
 		A3B61FC82F78F9390052AE2C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
@@ -463,6 +465,7 @@
 				A30F59C92F7EF9EE00EE7804 /* Geospatial */,
 				A3E84ECE2DDAC7980096A645 /* Annotation */,
 				A33EB5AE2F761C83008ABFB7 /* ComputerVision */,
+				A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */,
 				55659C092BB785EA0094DF01 /* MachineLearning */,
 				55659C0E2BB786240094DF01 /* View */,
 				55659C0B2BB786050094DF01 /* Shared */,
@@ -741,6 +744,7 @@
 			children = (
 				A32D67012F7EF88000DC4173 /* WorldPoints */,
 				A32D67002F7EF87C00DC4173 /* Plane */,
+				A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */,
 			);
 			path = Projection;
 			sourceTree = "<group>";
@@ -1076,6 +1080,13 @@
 				A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */,
 			);
 			path = Functions;
+			sourceTree = "<group>";
+		};
+		A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = SurfaceNormals;
 			sourceTree = "<group>";
 		};
 		A3BB5AF92DB21080008673ED /* ImageProcessing */ = {
@@ -1440,6 +1451,7 @@
 				A3DC22F72DD032960020CE84 /* UnionOfMasks.metal in Sources */,
 				A35E05182EDEA476003C26CF /* AttributeEstimationPipeline.swift in Sources */,
 				A32D66FB2F7EE9DA00DC4173 /* DamageDetectionModelRequestProcessor.swift in Sources */,
+				A3B5BDA02F831F270036C6EC /* ProjectionUtils.swift in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
 				A364B5DD2F259AFE00325E5C /* WorldPoints.metal in Sources */,

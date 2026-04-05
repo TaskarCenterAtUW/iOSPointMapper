@@ -179,32 +179,6 @@ struct WorldPointsProcessor {
     }
     
     /**
-        Compute world point from pixel coordinate and depth value (CPU version).
-     
-        Taking reference from `LocalizationProcessor`
-     */
-    private func computeWorldPointCPU(
-        pixelCoord: SIMD2<Int>,
-        depthValue: Float,
-        cameraTransform: simd_float4x4,
-        invIntrinsics: simd_float3x3
-    ) -> WorldPoint {
-        let imagePoint = simd_float3(Float(pixelCoord.x), Float(pixelCoord.y), 1.0)
-        let ray = invIntrinsics * imagePoint
-        let rayDirection = simd_normalize(ray)
-        
-        var cameraPoint = rayDirection * depthValue
-        cameraPoint.y = -cameraPoint.y
-        cameraPoint.z = -cameraPoint.z
-        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
-        
-        let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
-        
-        return WorldPoint(p: worldPoint)
-    }
-    
-    /**
         Extract world points from segmentation and depth images (CPU version).
      */
     func getWorldPointsCPU(
@@ -274,6 +248,37 @@ struct WorldPointsProcessor {
         return worldPoints
     }
     
+    /**
+        Compute world point from pixel coordinate and depth value (CPU version).
+     
+        Taking reference from `LocalizationProcessor`
+     */
+    private func computeWorldPointCPU(
+        pixelCoord: SIMD2<Int>,
+        depthValue: Float,
+        cameraTransform: simd_float4x4,
+        invIntrinsics: simd_float3x3
+    ) -> WorldPoint {
+        let imagePoint = simd_float3(Float(pixelCoord.x), Float(pixelCoord.y), 1.0)
+        let ray = invIntrinsics * imagePoint
+        let rayDirection = simd_normalize(ray)
+        
+        var cameraPoint = rayDirection * depthValue
+        cameraPoint.y = -cameraPoint.y
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
+        
+        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
+        
+        return WorldPoint(p: worldPoint)
+    }
+}
+
+/**
+ Extension for projecting world points to plane and unprojecting them back to world coordinates.
+ */
+extension WorldPointsProcessor {
     func projectPointsToPlane(
         worldPoints: [WorldPoint],
         plane: Plane,
@@ -395,6 +400,47 @@ struct WorldPointsProcessor {
     }
 }
 
+/**
+ Extension for restructuring world points array into more efficient data structures for improved post-processing.
+ */
+extension WorldPointsProcessor {
+    /**
+        Restructure world points into a 2D grid based on their projected pixel coordinates, for more efficient spatial queries.
+     */
+    func getWorldPointsGridCPU(
+        worldPoints: [WorldPoint],
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        imageSize: CGSize
+    ) throws -> [[WorldPoint?]] {
+        var grid = Array(
+            repeating: Array(repeating: Optional<WorldPoint>.none, count: Int(imageSize.width)),
+            count: Int(imageSize.height)
+        )
+        let viewMatrix = simd_inverse(cameraTransform)
+        worldPoints.forEach { worldPoint in
+            let pixelPoint: CGPoint? = ProjectionUtils.unprojectWorldToPixel(
+                worldPoint: worldPoint.p, viewMatrix: viewMatrix,
+                cameraIntrinsics: cameraIntrinsics, imageSize: imageSize
+            )
+            guard let pixelPoint = pixelPoint else {
+                return
+            }
+            let x = Int(pixelPoint.x)
+            let y = Int(pixelPoint.y)
+            guard x >= 0, x < Int(imageSize.width), y >= 0, y < Int(imageSize.height) else {
+                return
+            }
+            /// Store the world point in the corresponding grid cell
+            grid[x][y] = worldPoint
+        }
+        return grid
+    }
+}
+
+/**
+ Extension for debugging world points statistics.
+ */
 extension WorldPointsProcessor {
     private func debugWorldPoints(_ worldPoints: [WorldPoint]) {
         debugAxis(worldPoints, axisIndex: 0, axisLabel: "X")
