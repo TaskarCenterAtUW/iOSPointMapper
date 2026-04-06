@@ -248,6 +248,13 @@ class AttributeEstimationPipeline: ObservableObject {
                 case .crossSlopeFromImage:
                     let crossSlopeAttributeValue = try self.calculateCrossSlopeFromImage(accessibilityFeature: accessibilityFeature)
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlopeFromImage, isCalculated: true)
+                case .surfaceIntegrity:
+                    let surfaceIntegrityAttributeValue = try self.calculateSurfaceIntegrity(
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try accessibilityFeature.setAttributeValue(
+                        surfaceIntegrityAttributeValue, for: .surfaceIntegrity, isCalculated: true
+                    )
                 default:
                     continue
                 }

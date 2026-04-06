@@ -11,9 +11,19 @@ import CoreLocation
 extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
         accessibilityFeature: EditableAccessibilityFeature
-    ) throws {
+    ) throws -> AccessibilityFeatureAttribute.Value {
         let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
         
+        var surfaceIntegrity: Bool = false
+        if damageDetectionResults.count > 0 {
+            surfaceIntegrity = true
+        }
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.valueFromBool(
+            surfaceIntegrity
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return surfaceIntegrityAttributeValue
     }
     
     func getDamageDetectionResults(accessibilityFeature: EditableAccessibilityFeature) throws -> [DamageDetectionResult] {
