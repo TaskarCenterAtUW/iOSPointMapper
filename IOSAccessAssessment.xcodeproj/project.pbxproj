@@ -119,6 +119,8 @@
 		A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */; };
 		A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */; };
 		A3B5BDA02F831F270036C6EC /* ProjectionUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */; };
+		A3B5BDA32F8329740036C6EC /* ProjectedWorldPointsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BDA22F83296C0036C6EC /* ProjectedWorldPointsExtension.swift */; };
+		A3B5BDA52F8329A80036C6EC /* WorldPointsGridExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BDA42F8329A20036C6EC /* WorldPointsGridExtension.swift */; };
 		A3B61FC52F76480B0052AE2C /* EnvironmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */; };
 		A3B61FC92F78F93B0052AE2C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC82F78F9390052AE2C /* Extensions.swift */; };
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
@@ -337,6 +339,8 @@
 		A3B2DDC02DC99F3D003416FB /* SegmentationModelRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationModelRequestProcessor.swift; sourceTree = "<group>"; };
 		A3B5BD9C2F81CED70036C6EC /* DamageDetectionRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DamageDetectionRasterizer.swift; sourceTree = "<group>"; };
 		A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectionUtils.swift; sourceTree = "<group>"; };
+		A3B5BDA22F83296C0036C6EC /* ProjectedWorldPointsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectedWorldPointsExtension.swift; sourceTree = "<group>"; };
+		A3B5BDA42F8329A20036C6EC /* WorldPointsGridExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPointsGridExtension.swift; sourceTree = "<group>"; };
 		A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentService.swift; sourceTree = "<group>"; };
 		A3B61FC82F78F9390052AE2C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
@@ -763,6 +767,7 @@
 		A32D67012F7EF88000DC4173 /* WorldPoints */ = {
 			isa = PBXGroup;
 			children = (
+				A3B5BDA12F8329520036C6EC /* Extensions */,
 				A364B5DC2F259AF900325E5C /* WorldPoints.metal */,
 				A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */,
 			);
@@ -1087,6 +1092,15 @@
 			children = (
 			);
 			path = SurfaceNormals;
+			sourceTree = "<group>";
+		};
+		A3B5BDA12F8329520036C6EC /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A3B5BDA42F8329A20036C6EC /* WorldPointsGridExtension.swift */,
+				A3B5BDA22F83296C0036C6EC /* ProjectedWorldPointsExtension.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		A3BB5AF92DB21080008673ED /* ImageProcessing */ = {
@@ -1455,6 +1469,7 @@
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */,
 				A364B5DD2F259AFE00325E5C /* WorldPoints.metal in Sources */,
+				A3B5BDA52F8329A80036C6EC /* WorldPointsGridExtension.swift in Sources */,
 				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */,
 				A30C67E62EE27331006E4321 /* EditableAccessibilityFeature.swift in Sources */,
@@ -1482,6 +1497,7 @@
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				A35E050A2EDE299F003C26CF /* LocationManager.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
+				A3B5BDA32F8329740036C6EC /* ProjectedWorldPointsExtension.swift in Sources */,
 				A3A45F0C2EE7A4F40029F5AE /* ContourDetectionPolicy.swift in Sources */,
 				A3EE6F002F6A29F500F515E6 /* OSMLocation.swift in Sources */,
 				A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */,

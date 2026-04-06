@@ -101,6 +101,12 @@ typedef struct ProjectedPointsParams {
     MTL_FLOAT3      origin;
 } ProjectedPointsParams;
 
+typedef struct WorldPointGridParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} WorldPointGridParams;
+
 typedef struct ProjectedPointBinningParams {
     float sMin;
     float sMax;

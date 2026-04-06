@@ -180,6 +180,7 @@ struct PlaneAttributeProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
+        /// TODO: Consider using a more efficient way to read back the binned values, especially when the number of projected points is large.
         let binCountsPtr = binCountsBuffer.contents().bindMemory(to: UInt32.self, capacity: binCount)
         let binValuesPtr = binValuesBuffer.contents().bindMemory(to: Float.self, capacity: binCount * projectedPointCount)
         var bins: [ProjectedPointBin] = []
@@ -397,6 +398,7 @@ extension PlaneAttributeProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
+        /// TODO: Consider using a more efficient way to read back the binned values, especially when the number of triangles is large.
         let binTriangleCountsPtr = binTriangleCountsBuffer.contents().bindMemory(to: UInt32.self, capacity: binCount)
         let binValuesPtr = binValuesBuffer.contents().bindMemory(to: Float.self, capacity: binCount * maxTrianglesPerBin)
         var bins: [ProjectedPointBin] = []

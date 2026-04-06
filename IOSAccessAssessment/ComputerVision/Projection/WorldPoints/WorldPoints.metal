@@ -39,6 +39,33 @@ inline float3 projectPixelToWorld(
     
     return worldPoint;
 }
+    
+inline float2 unprojectWorldToPixel(
+    float3 worldPoint,
+    constant float4x4& viewMatrix,
+    constant float3x3& cameraIntrinsics,
+    constant uint2& imageSize
+) {
+    float4 worldPoint4 = float4(worldPoint, 1.0);
+    float4 clipSpacePoint = viewMatrix * worldPoint4;
+    
+    // Ensure z is negative
+    if (clipSpacePoint.z > 0) {
+        return float2(-1.0, -1.0); // Invalid projection
+    }
+    
+    // Normalized image coordinates (flip y to match image coordinate system)
+    float ndcX = clipSpacePoint.x / (-clipSpacePoint.z);
+    float ndcY = -clipSpacePoint.y / (-clipSpacePoint.z);
+    
+    float3 ndcPoint = float3(ndcX, ndcY, 1.0);
+    float3 imagePoint = cameraIntrinsics * ndcPoint;
+    
+    if (imagePoint.x < 0 || imagePoint.x >= imageSize.x || imagePoint.y < 0 || imagePoint.y >= imageSize.y) {
+        return float2(-1.0, -1.0); // Invalid projection
+    }
+    return imagePoint.xy;
+}
 
 // Function to compute world points from segmentation and depth textures
 // Assumes the depth texture is the same size as the segmentation texture
@@ -110,4 +137,26 @@ kernel void projectPointsToPlane(
     float t = dot(point - origin, lateralVector);
     outputPoints[id].s = s;
     outputPoints[id].t = t;
+}
+
+// Function to create a 2D grid of world points
+kernel void restructureWorldPointsToGrid(
+   device const WorldPoint* inputPoints [[buffer(0)]],
+   constant WorldPointGridParams& params [[buffer(1)]],
+   device WorldPoint* outputGrid [[buffer(2)]],
+   uint id [[thread_position_in_grid]]
+) {
+    // Assuming the grid is defined by a bounding box and resolution
+    float2 pixelPoint = unprojectWorldToPixel(
+        inputPoints[id].p,
+        params.viewMatrix,
+        params.cameraIntrinsics,
+        params.imageSize
+      );
+    if (pixelPoint.x < 0 || pixelPoint.y < 0 || pixelPoint.x >= params.imageSize.x || pixelPoint.y >= params.imageSize.y) {
+        return; // Skip points that project outside the image
+    }
+    uint gridX = uint(pixelPoint.x);
+    uint gridY = uint(pixelPoint.y);
+    outputGrid[gridY * uint(params.imageSize.x) + gridX] = inputPoints[id];
 }
