@@ -23,11 +23,20 @@ struct SurfaceNormalsForPointsGrid: Sendable {
 
 enum SurfaceNormalsProcessorError: Error, LocalizedError {
     case metalInitializationFailed
+    case metalPipelineCreationError
+    case metalPipelineBlitEncoderError
+    case invalidProjectedPlaneVectors
     
     var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
+        case .metalPipelineCreationError:
+            return "Failed to create Metal compute pipeline."
+        case .metalPipelineBlitEncoderError:
+            return "Failed to create Blit Command Encoder for the Surface Normals Processor."
+        case .invalidProjectedPlaneVectors:
+            return "Invalid projected plane vectors."
         }
     }
 }
@@ -77,43 +86,115 @@ struct SurfaceNormalsProcessor {
      - Note:
      The sampling is done in DDA-style (Digital Differential Analyzer) to ensure that the neighbors are equidistant and opposite to the point in the grid.
      */
-//    func getSurfaceNormalsFromWorldPoints(
-//        worldPointsGrid: WorldPointsGrid,
-//        projectedPlane: ProjectedPlane,
-//        minStep: Int = 4,
-//        maxStep: Int = 10,
-//        eps: Float = 1e-5
-//    ) throws -> SurfaceNormalsForPointsGrid {
-//        let width = worldPointsGrid.width
-//        let height = worldPointsGrid.height
-//        
-//        let gridCapacity = width * height
-//        /// Set up the world points buffer
-//        let worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-//            device: self.device,
-//            length: MemoryLayout<WorldPointGridCell>.stride * gridCapacity,
-//            options: .storageModeShared
-//        )
-//        let worldPointsBufferPtr = worldPointsBuffer.contents()
-//        try worldPointsGrid.data.withUnsafeBytes { srcPtr in
-//            guard let baseAddress = srcPtr.baseAddress else {
-//                throw WorldPointsProcessorError.unableToProcessBufferData
-//            }
-//            worldPointsBufferPtr.copyMemory(
-//                from: baseAddress, byteCount: MemoryLayout<WorldPointGridCell>.stride * gridCapacity
-//            )
-//        }
-//        var params = SurfaceNormalForPointGridParams(
-//            minStep: UInt32(minStep), maxStep: UInt32(maxStep), eps: eps,
-//            longitudinalVector: simd_float2(projectedPlane.firstVector.1 - projectedPlane.firstVector.0),
-//            lateralVector: simd_float2(projectedPlane.secondVector.1 - projectedPlane.secondVector.0),
-//            normalVector: simd_float2(projectedPlane.normalVector.1 - projectedPlane.normalVector.0),
-//            origin: simd_float2(projectedPlane.origin)
-//        )
-//    }
+    func getSurfaceNormalsFromWorldPoints(
+        worldPointsGrid: WorldPointsGrid,
+        plane: Plane,
+        projectedPlane: ProjectedPlane,
+        minStep: Int = 4,
+        maxStep: Int = 10,
+        eps: Float = 1e-5
+    ) throws -> SurfaceNormalsForPointsGrid {
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw SurfaceNormalsProcessorError.metalPipelineCreationError
+        }
+        
+        let width = worldPointsGrid.width
+        let height = worldPointsGrid.height
+        /// Sanity check with projected plane
+        let dirL = normalize2D(projectedPlane.firstVector.1 - projectedPlane.firstVector.0)
+        let dirT = normalize2D(projectedPlane.secondVector.1 - projectedPlane.secondVector.0)
+        let stepL = makeStep(dirL)
+        let stepT = makeStep(dirT)
+        if simd_length(stepL) == 0 || simd_length(stepT) == 0 {
+            throw SurfaceNormalsProcessorError.invalidProjectedPlaneVectors
+        }
+        
+        let gridCapacity = width * height
+        /// Set up the world points buffer
+        /// TODO: Need to check if the worldPointsGrid.data is correctly laid out in memory for a contiguous copy.
+        let worldPointsGridBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: MemoryLayout<WorldPointGridCell>.stride * gridCapacity,
+            options: .storageModeShared
+        )
+        let worldPointsGridBufferPtr = worldPointsGridBuffer.contents()
+        try worldPointsGrid.data.withUnsafeBytes { srcPtr in
+            guard let baseAddress = srcPtr.baseAddress else {
+                throw WorldPointsProcessorError.unableToProcessBufferData
+            }
+            worldPointsGridBufferPtr.copyMemory(
+                from: baseAddress, byteCount: MemoryLayout<WorldPointGridCell>.stride * gridCapacity
+            )
+        }
+        var widthLocal = UInt32(width)
+        var heightLocal: UInt32 = UInt32(height)
+        var params = SurfaceNormalForPointGridParams(
+            minStep: UInt32(minStep), maxStep: UInt32(maxStep), eps: eps,
+            longitudinalVector: plane.firstVector, lateralVector: plane.secondVector,
+            normalVector: plane.normalVector, origin: plane.origin,
+            projectedLongitudinalVector: simd_float2(projectedPlane.firstVector.1 - projectedPlane.firstVector.0),
+            projectedLateralVector: simd_float2(projectedPlane.secondVector.1 - projectedPlane.secondVector.0),
+            projectedNormalVector: simd_float2(projectedPlane.normalVector.1 - projectedPlane.normalVector.0),
+            projectedOrigin: simd_float2(projectedPlane.origin),
+            stepL: stepL, stepT: stepT
+        )
+        /// Setup the output buffer
+        let gridBufferLength = MemoryLayout<SurfaceNormalForPointGridCell>.stride * gridCapacity
+        let gridBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: gridBufferLength,
+            options: .storageModeShared
+        )
+        
+        /**
+         Initialize output buffer
+         */
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else {
+            throw SurfaceNormalsProcessorError.metalPipelineBlitEncoderError
+        }
+        blit.fill(buffer: gridBuffer, range: 0..<gridBufferLength, value: 0)
+        blit.endEncoding()
+        
+        let threadGroupSizeWidth = min(self.pipeline.maxTotalThreadsPerThreadgroup, 256)
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw SurfaceNormalsProcessorError.metalPipelineCreationError
+        }
+        
+        commandEncoder.setComputePipelineState(self.pipeline)
+        commandEncoder.setBuffer(worldPointsGridBuffer, offset: 0, index: 0)
+        commandEncoder.setBytes(&widthLocal, length: MemoryLayout<UInt32>.size, index: 1)
+        commandEncoder.setBytes(&heightLocal, length: MemoryLayout<UInt32>.size, index: 2)
+        commandEncoder.setBytes(&params, length: MemoryLayout<SurfaceNormalForPointGridParams>.stride, index: 3)
+        commandEncoder.setBuffer(gridBuffer, offset: 0, index: 4)
+        
+        let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
+        let threadgroups = MTLSize(width: (gridCapacity + threadGroupSize.width - 1) / threadGroupSize.width,
+                                   height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        /// Process the output grid buffer to create the 2D grid of surface normals for points
+        /// TODO: Consider using a more efficient method to read the data back from the GPU, especially for large grids.
+        var surfaceNormalGridData = Array(repeating: SurfaceNormalForPointGridCell(
+            worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
+        ), count: gridCapacity)
+        let surfaceNormalGridBufferPtr = gridBuffer.contents().bindMemory(to: SurfaceNormalForPointGridCell.self, capacity: gridCapacity)
+        for i in 0..<gridCapacity {
+            let surfaceNormalGridCell = surfaceNormalGridBufferPtr[i]
+            guard surfaceNormalGridCell.isValid != 0 else { continue }
+            surfaceNormalGridData[i] = surfaceNormalGridCell
+        }
+        let surfaceNormalsGrid = SurfaceNormalsForPointsGrid(width: width, height: height, data: surfaceNormalGridData)
+        debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: surfaceNormalsGrid)
+        return surfaceNormalsGrid
+    }
     
     func getSurfaceNormalsFromWorldPointsCPU(
         worldPointsGrid: WorldPointsGrid,
+        plane: Plane,
         projectedPlane: ProjectedPlane,
         minStep: Int = 4,
         maxStep: Int = 10,
@@ -121,6 +202,7 @@ struct SurfaceNormalsProcessor {
     ) throws -> SurfaceNormalsForPointsGrid {
         let width = worldPointsGrid.width
         let height = worldPointsGrid.height
+        let referenceNormal = plane.normalVector
         
         var surfaceNormalsGrid = SurfaceNormalsForPointsGrid(
             width: width, height: height,
@@ -128,17 +210,15 @@ struct SurfaceNormalsProcessor {
                 worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
             ), count: width * height)
         )
+        let dirL = normalize2D(projectedPlane.firstVector.1 - projectedPlane.firstVector.0)
+        let dirT = normalize2D(projectedPlane.secondVector.1 - projectedPlane.secondVector.0)
+        let stepL = makeStep(dirL)
+        let stepT = makeStep(dirT)
+        if simd_length(stepL) == 0 || simd_length(stepT) == 0 {
+            throw SurfaceNormalsProcessorError.invalidProjectedPlaneVectors
+        }
         
         /// Define helper functions for neighbor sampling
-        func normalize2D(_ v: SIMD2<Float>) -> SIMD2<Float> {
-            let len = simd_length(v)
-            return len > 0 ? v / len : SIMD2<Float>(0, 0)
-        }
-        func makeStep(_ dir: SIMD2<Float>) -> SIMD2<Float> {
-            let maxComp = max(abs(dir.x), abs(dir.y))
-            if maxComp == 0 { return SIMD2<Float>(0, 0) }
-            return dir / maxComp
-        }
         func walkDirection(startX: Int, startY: Int, step: SIMD2<Float>, sign: Float) -> SIMD3<Float>? {
             var pos = SIMD2<Float>(Float(startX), Float(startY))
             var pointSum: SIMD3<Float> = simd_float3(0, 0, 0)
@@ -165,22 +245,14 @@ struct SurfaceNormalsProcessor {
             
             return weightSum > 0 ? pointSum / weightSum : nil
         }
+        func alignNormalWithReference(_ normal: SIMD3<Float>) -> SIMD3<Float> {
+            return simd_dot(normal, referenceNormal) < 0 ? -normal : normal
+        }
         
-        let dirL = normalize2D(projectedPlane.firstVector.1 - projectedPlane.firstVector.0)
-        let dirT = normalize2D(projectedPlane.secondVector.1 - projectedPlane.secondVector.0)
-        let stepL = makeStep(dirL)
-        let stepT = makeStep(dirT)
-        
-        var validPointCount = 0
-        var validSurfaceNormalCount = 0
-        let upVector = simd_float3(0, 1, 0)
-        var averageNormalYAngles: [Float] = []
         for y in 0..<height {
             for x in 0..<width {
                 let cell = worldPointsGrid[x, y]
                 guard cell.isValid != 0 else { continue }
-//                let originPoint = cell.worldPoint.p
-                validPointCount += 1
                 
                 guard let pLPlus  = walkDirection(startX: x, startY: y, step: stepL, sign: +1),
                       let pLMinus = walkDirection(startX: x, startY: y, step: stepL, sign: -1),
@@ -203,14 +275,44 @@ struct SurfaceNormalsProcessor {
                 if sinSquared < eps {
                     continue
                 }
-                let normalizedNormal = simd_normalize(normal)
+                let normalizedNormal = simd_normalize(alignNormalWithReference(normal))
                 surfaceNormalsGrid[x, y] = SurfaceNormalForPointGridCell(
                     worldPoint: cell.worldPoint,
                     surfaceNormal: normalizedNormal,
                     isValid: UInt32(1)
                 )
-                validSurfaceNormalCount += 1
-                averageNormalYAngles.append(acos(simd_dot(normalizedNormal, upVector)))
+            }
+        }
+        debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: surfaceNormalsGrid)
+        return surfaceNormalsGrid
+    }
+    
+    private func normalize2D(_ v: SIMD2<Float>) -> SIMD2<Float> {
+        let len = simd_length(v)
+        return len > 0 ? v / len : SIMD2<Float>(0, 0)
+    }
+    
+    private func makeStep(_ dir: SIMD2<Float>) -> SIMD2<Float> {
+        let maxComp = max(abs(dir.x), abs(dir.y))
+        if maxComp == 0 { return SIMD2<Float>(0, 0) }
+        return dir / maxComp
+    }
+    
+    private func debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: SurfaceNormalsForPointsGrid) {
+        var validPointCount = 0
+        var validSurfaceNormalCount = 0
+        let upVector = simd_float3(0, 1, 0)
+        var averageNormalYAngles: [Float] = []
+        
+        for y in 0..<surfaceNormalsGrid.height {
+            for x in 0..<surfaceNormalsGrid.width {
+                let cell = surfaceNormalsGrid[x, y]
+                if cell.isValid != 0 {
+                    validPointCount += 1
+                    let normal = cell.surfaceNormal
+                    validSurfaceNormalCount += 1
+                    averageNormalYAngles.append(acos(simd_dot(normal, upVector)))
+                }
             }
         }
         let angleBuckets = stride(from: 0, to: 180, by: 10).map { bucketStart -> (range: String, count: Int) in
@@ -221,7 +323,7 @@ struct SurfaceNormalsProcessor {
             }.count
             return ("\(bucketStart)-\(bucketEnd)", count)
         }
+        print("Valid Points: \(validPointCount), Valid Surface Normals: \(validSurfaceNormalCount)")
         print(angleBuckets.map { "\($0.range): \($0.count)" }.joined(separator: ", "))
-        return surfaceNormalsGrid
     }
 }

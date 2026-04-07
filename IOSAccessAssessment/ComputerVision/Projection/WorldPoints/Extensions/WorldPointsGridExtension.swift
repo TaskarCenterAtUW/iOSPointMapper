@@ -61,6 +61,7 @@ extension WorldPointsProcessor {
             }
             worldPointsBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<WorldPoint>.stride * pointCount)
         }
+        var pointCountLocal = UInt32(pointCount)
         let viewMatrix = cameraTransform.inverse
         var params = WorldPointGridParams(
             imageSize: simd_uint2(UInt32(imageSize.width), UInt32(imageSize.height)),
@@ -92,8 +93,9 @@ extension WorldPointsProcessor {
         
         commandEncoder.setComputePipelineState(self.gridPipeline)
         commandEncoder.setBuffer(worldPointsBuffer, offset: 0, index: 0)
-        commandEncoder.setBytes(&params, length: MemoryLayout<WorldPointGridParams>.stride, index: 1)
-        commandEncoder.setBuffer(gridBuffer, offset: 0, index: 2)
+        commandEncoder.setBytes(&pointCountLocal, length: MemoryLayout<UInt32>.size, index: 1)
+        commandEncoder.setBytes(&params, length: MemoryLayout<WorldPointGridParams>.stride, index: 2)
+        commandEncoder.setBuffer(gridBuffer, offset: 0, index: 3)
         
         let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
         let threadgroups = MTLSize(width: (pointCount + threadGroupSize.width - 1) / threadGroupSize.width,
@@ -116,7 +118,8 @@ extension WorldPointsProcessor {
             guard worldPointGridCell.isValid != 0 else { continue }
             gridData[i] = worldPointGridCell
         }
-        return WorldPointsGrid(width: width, height: height, data: gridData)
+        let worldPointsGrid = WorldPointsGrid(width: width, height: height, data: gridData)
+        return worldPointsGrid
     }
     
     /**
@@ -156,5 +159,30 @@ extension WorldPointsProcessor {
             worldPointGrid[x, y] = WorldPointGridCell(worldPoint: worldPoint, isValid: UInt32(1))
         }
         return worldPointGrid
+    }
+    
+    private func debugWorldPointGrid(
+        worldPointGrid: WorldPointsGrid
+    ) {
+        var worldPointData: [WorldPoint] = []
+        var worldPointLengthData: [Float] = []
+        var sumPoints: simd_float3 = simd_float3(0, 0, 0)
+        for y in 0..<worldPointGrid.height {
+            for x in 0..<worldPointGrid.width {
+                let cell = worldPointGrid[x, y]
+                if cell.isValid != 0 {
+                    worldPointData.append(cell.worldPoint)
+                    worldPointLengthData.append(simd_length(cell.worldPoint.p))
+                    sumPoints += cell.worldPoint.p
+                }
+            }
+        }
+        print("Debug World Point Grid: Total Valid Points = \(worldPointData.count)")
+        print("Middle Point: \(sumPoints / Float(worldPointData.count))")
+        /// Analyze distribution of world point distances
+        let meanDistance = worldPointLengthData.reduce(0, +) / Float(worldPointLengthData.count)
+        let sortedDistances = worldPointLengthData.sorted()
+        let medianDistance = sortedDistances[sortedDistances.count / 2]
+        print("Mean Distance: \(meanDistance), Median Distance: \(medianDistance)")
     }
 }

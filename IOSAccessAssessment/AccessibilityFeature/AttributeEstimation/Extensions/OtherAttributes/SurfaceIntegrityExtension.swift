@@ -35,8 +35,8 @@ extension AttributeEstimationPipeline {
         let projectedPlane: ProjectedPlane = try self.prerequisiteCache.pointProjectedPlane ?? self.calculateProjectedPlane(
             accessibilityFeature: accessibilityFeature, plane: alignedPlane
         )
-        let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPointsCPU(
-            worldPointsGrid: worldPointsGrid, projectedPlane: projectedPlane
+        let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
         )
         
         var surfaceIntegrity: Bool = false

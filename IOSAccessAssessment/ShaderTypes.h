@@ -156,10 +156,16 @@ typedef struct SurfaceNormalForPointGridParams {
     MTL_UINT        minStep;
     MTL_UINT        maxStep;
     float           eps;
-    MTL_FLOAT2      longitudinalVector;
-    MTL_FLOAT2      lateralVector;
-    MTL_FLOAT2      normalVector;
-    MTL_FLOAT2      origin;
+    MTL_FLOAT3      longitudinalVector;
+    MTL_FLOAT3      lateralVector;
+    MTL_FLOAT3      normalVector;
+    MTL_FLOAT3      origin;
+    MTL_FLOAT2      projectedLongitudinalVector;
+    MTL_FLOAT2      projectedLateralVector;
+    MTL_FLOAT2      projectedNormalVector;
+    MTL_FLOAT2      projectedOrigin;
+    MTL_FLOAT2      stepL;
+    MTL_FLOAT2      stepT;
 } SurfaceNormalForPointGridParams;
 
 typedef struct SurfaceNormalForMeshGridCell {

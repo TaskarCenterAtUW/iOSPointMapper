@@ -140,10 +140,12 @@ kernel void projectPointsToPlane(
 // Function to create a 2D grid of world points
 kernel void restructureWorldPointsToGrid(
    device const WorldPoint* inputPoints [[buffer(0)]],
-   constant WorldPointGridParams& params [[buffer(1)]],
-   device WorldPointGridCell* outputGrid [[buffer(2)]],
+   constant uint& pointCount [[buffer(1)]],
+   constant WorldPointGridParams& params [[buffer(2)]],
+   device WorldPointGridCell* outputGrid [[buffer(3)]],
    uint id [[thread_position_in_grid]]
 ) {
+    if (id >= pointCount) return;
     // Assuming the grid is defined by a bounding box and resolution
     float2 pixelPoint = unprojectWorldToPixel(
         inputPoints[id].p,
