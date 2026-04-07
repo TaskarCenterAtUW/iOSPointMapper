@@ -56,12 +56,6 @@ extension AttributeEstimationPipeline {
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             imageSize: captureImageData.originalSize
         )
-        let _ = try worldPointsProcessor.getWorldPointsGridCPU(
-            worldPoints: worldPoints,
-            cameraTransform: captureImageData.cameraTransform,
-            cameraIntrinsics: captureImageData.cameraIntrinsics,
-            imageSize: captureImageData.originalSize
-        )
         return worldPointsGrid
     }
     

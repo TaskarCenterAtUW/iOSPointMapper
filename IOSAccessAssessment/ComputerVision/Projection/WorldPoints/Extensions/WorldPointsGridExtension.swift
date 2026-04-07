@@ -13,7 +13,7 @@ import simd
 /**
  A grid of world points structured for efficient spatial queries based on their projected pixel coordinates.
  */
-struct WorldPointsGrid {
+struct WorldPointsGrid: Sendable {
     let width: Int
     let height: Int
     var data: [WorldPointGridCell]
@@ -130,6 +130,9 @@ extension WorldPointsProcessor {
     ) throws -> WorldPointsGrid {
         let width = Int(imageSize.width)
         let height = Int(imageSize.height)
+        if worldPoints.isEmpty {
+            throw WorldPointsProcessorError.noWorldPointsToProcess
+        }
         let gridData = Array(
             repeating: WorldPointGridCell(worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), isValid: UInt32(0)),
             count: width * height

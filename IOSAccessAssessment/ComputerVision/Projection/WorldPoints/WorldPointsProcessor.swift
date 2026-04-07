@@ -76,13 +76,12 @@ struct WorldPointsProcessor {
               let projectionPipeline = try? device.makeComputePipelineState(function: projectionKernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
+        self.projectionPipeline = projectionPipeline
         guard let gridKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "restructureWorldPointsToGrid"),
               let gridPipeline = try? device.makeComputePipelineState(function: gridKernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.gridPipeline = gridPipeline
-              
-        self.projectionPipeline = projectionPipeline
     }
     
     /**

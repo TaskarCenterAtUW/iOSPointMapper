@@ -126,6 +126,8 @@
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */; };
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
+		A3C1D7352F84A78E00833411 /* SurfaceNormalsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */; };
+		A3C1D7392F84A84900833411 /* SurfaceNormals.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7382F84A84900833411 /* SurfaceNormals.metal */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
@@ -346,6 +348,8 @@
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskFilter.swift; sourceTree = "<group>"; };
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
+		A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsProcessor.swift; sourceTree = "<group>"; };
+		A3C1D7382F84A84900833411 /* SurfaceNormals.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SurfaceNormals.metal; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtilsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtilsExtension.swift; sourceTree = "<group>"; };
@@ -1090,6 +1094,8 @@
 		A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */ = {
 			isa = PBXGroup;
 			children = (
+				A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */,
+				A3C1D7382F84A84900833411 /* SurfaceNormals.metal */,
 			);
 			path = SurfaceNormals;
 			sourceTree = "<group>";
@@ -1473,6 +1479,7 @@
 				A3DC22E92DCF0F9A0020CE84 /* ImageProcessing.metal in Sources */,
 				A37E72142ED95C0C00CFE4EF /* MeshHelpers.swift in Sources */,
 				A30C67E62EE27331006E4321 /* EditableAccessibilityFeature.swift in Sources */,
+				A3C1D7352F84A78E00833411 /* SurfaceNormalsProcessor.swift in Sources */,
 				A37E72182ED95D0600CFE4EF /* CapturedMeshDefinitions.swift in Sources */,
 				A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */,
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
@@ -1516,6 +1523,7 @@
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */,
+				A3C1D7392F84A84900833411 /* SurfaceNormals.metal in Sources */,
 				A38338C62EDAF3E900F1A402 /* DepthMapProcessor.swift in Sources */,
 				A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */,
 				A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */,

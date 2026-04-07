@@ -12,8 +12,32 @@ extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
+        return try calculateSurfaceIntegrityFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateSurfaceIntegrityFromImage(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
         let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
         let worldPointsGrid = try self.prerequisiteCache.worldPointsGrid ?? self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.pointProjectedPlane ?? self.calculateProjectedPlane(
+            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+        )
+        let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPointsCPU(
+            worldPointsGrid: worldPointsGrid, projectedPlane: projectedPlane
+        )
         
         var surfaceIntegrity: Bool = false
         if damageDetectionResults.count > 0 {
@@ -36,18 +60,15 @@ extension AttributeEstimationPipeline {
         }
         /// Run damage detection
         let cameraImage = captureImageData.cameraImage
-//        let originalSize = cameraImage.extent.size
         let croppedSize = Constants.DamageDetectionConstants.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: captureImageData.interfaceOrientation
         )
-//        let inverseOrientation = imageOrientation.inverted()
         
         let orientedImage = cameraImage.oriented(imageOrientation)
         let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
         
         let damageDetectionResults: [DamageDetectionResult] = try damageDetectionPipeline.processRequest(with: inputImage)
-        print("Damage Detection Results: \(damageDetectionResults)")
         let alignedDamageDetectionResults = damageDetectionResults.map { result -> DamageDetectionResult in
             let alignedBox = self.alignBoundingBox(result.boundingBox, orientation: imageOrientation, imageSize: croppedSize, originalSize: cameraImage.extent.size)
             return DamageDetectionResult(

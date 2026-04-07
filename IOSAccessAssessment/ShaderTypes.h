@@ -78,17 +78,6 @@ typedef struct WorldPoint {
     MTL_FLOAT3  p;
 } WorldPoint;
 
-typedef struct WorldPointGridCell {
-    WorldPoint   worldPoint;
-    MTL_BOOL     isValid;
-} WorldPointGridCell;
-
-typedef struct WorldPointGridParams {
-    MTL_UINT2       imageSize;
-    MTL_FLOAT4X4    viewMatrix;
-    MTL_FLOAT3X3    cameraIntrinsics;
-} WorldPointGridParams;
-
 typedef struct ProjectedPoint {
     float s;
     float t;
@@ -131,3 +120,50 @@ typedef struct MeshProjectedPointBinningParams {
     MTL_FLOAT3      normalVector;
     MTL_FLOAT3      origin;
 } MeshProjectedPointBinningParams;
+
+/**
+ Grid based data structures
+ */
+typedef struct WorldPointGridCell {
+    WorldPoint   worldPoint;
+    MTL_BOOL     isValid;
+} WorldPointGridCell;
+
+typedef struct WorldPointGridParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} WorldPointGridParams;
+
+//typedef struct MeshGridCell {
+//    MeshTriangle   triangle;
+//    MTL_BOOL       isValid;
+//} MeshGridCell;
+//
+//typedef struct MeshGridParams {
+//    MTL_UINT2       imageSize;
+//    MTL_FLOAT4X4    viewMatrix;
+//    MTL_FLOAT3X3    cameraIntrinsics;
+//} MeshGridParams;
+
+typedef struct SurfaceNormalForPointGridCell {
+    WorldPoint     worldPoint;
+    MTL_FLOAT3     surfaceNormal;
+    MTL_BOOL       isValid;
+} SurfaceNormalForPointGridCell;
+
+typedef struct SurfaceNormalForPointGridParams {
+    MTL_UINT        minStep;
+    MTL_UINT        maxStep;
+    float           eps;
+    MTL_FLOAT2      longitudinalVector;
+    MTL_FLOAT2      lateralVector;
+    MTL_FLOAT2      normalVector;
+    MTL_FLOAT2      origin;
+} SurfaceNormalForPointGridParams;
+
+typedef struct SurfaceNormalForMeshGridCell {
+    MeshTriangle   triangle;
+    MTL_FLOAT3     surfaceNormal;
+    MTL_BOOL       isValid;
+} SurfaceNormalForMeshGridCell;

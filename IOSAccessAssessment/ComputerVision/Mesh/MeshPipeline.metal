@@ -16,7 +16,7 @@ enum DebugSlot : uint {
     unknown = 2
 };
 
-inline float2 projectWorldPointToPixel(
+inline float2 unprojectWorldPointToPixel(
     float3 worldPoint,
     constant float4x4& viewMatrix,
     constant float3x3& intrinsics,
@@ -110,7 +110,7 @@ kernel void processMesh(
     float3 centroid = (w0 + w1 + w2) / 3.0;
 //
     // Project to camera space
-    float2 pixel = projectWorldPointToPixel(centroid, Params.viewMatrix, Params.intrinsics, Params.imageSize);
+    float2 pixel = unprojectWorldPointToPixel(centroid, Params.viewMatrix, Params.intrinsics, Params.imageSize);
     if (pixel.x < 0.0 || pixel.y < 0.0) {
         // Not visible
         // Increase debug counter for unknown

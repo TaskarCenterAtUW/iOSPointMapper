@@ -41,6 +41,10 @@ struct Plane: Sendable, CustomStringConvertible {
     }
 }
 
+/**
+ ProjectedPlane represents the 2D projection of a 3D plane onto the image plane, containing the projected origin and vectors.
+ Each vector is a tuple of two points in 2D pixel coordinates, representing the start and end of the projected vector.
+ */
 struct ProjectedPlane: Sendable, CustomStringConvertible {
     var origin: SIMD2<Float>
     var firstVector: (SIMD2<Float>, SIMD2<Float>)

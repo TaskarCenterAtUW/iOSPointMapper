@@ -60,8 +60,9 @@ inline float2 unprojectWorldToPixel(
     
     float3 ndcPoint = float3(ndcX, ndcY, 1.0);
     float3 imagePoint = cameraIntrinsics * ndcPoint;
+    float2 pixelCoord = imagePoint.xy / imagePoint.z;
     
-    return float2(imagePoint.x, imagePoint.y);
+    return pixelCoord;
 }
 
 // Function to compute world points from segmentation and depth textures
