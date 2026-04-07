@@ -11,6 +11,20 @@ import MetalKit
 import simd
 
 /**
+ A grid of world points structured for efficient spatial queries based on their projected pixel coordinates.
+ */
+struct WorldPointsGrid {
+    let width: Int
+    let height: Int
+    var data: [WorldPointGridCell]
+    
+    subscript(x: Int, y: Int) -> WorldPointGridCell {
+        get { return data[y * width + x] }
+        set { data[y * width + x] = newValue }
+    }
+}
+
+/**
  Extension for restructuring world points array into more efficient data structures for improved post-processing.
  */
 extension WorldPointsProcessor {
@@ -22,15 +36,17 @@ extension WorldPointsProcessor {
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
         imageSize: CGSize
-    ) throws -> [[WorldPoint?]] {
+    ) throws -> WorldPointsGrid {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw WorldPointsProcessorError.metalPipelineCreationError
         }
-        var pointCount = worldPoints.count
+        let pointCount = worldPoints.count
+        let width = Int(imageSize.width)
+        let height = Int(imageSize.height)
         if pointCount == 0 {
-            return []
+            throw WorldPointsProcessorError.noWorldPointsToProcess
         }
-        let gridCapacity = Int(imageSize.width) * Int(imageSize.height)
+        let gridCapacity = width * height
         
         /// Set up the world points buffer
         let worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
@@ -52,14 +68,23 @@ extension WorldPointsProcessor {
             cameraIntrinsics: cameraIntrinsics
         )
         /// Set up the output grid buffer
-        let gridBufferLength = MemoryLayout<WorldPoint?>.stride * gridCapacity
+        let gridBufferLength = MemoryLayout<WorldPointGridCell>.stride * gridCapacity
         let gridBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: gridBufferLength,
             options: .storageModeShared
         )
         
-        let threadGroupSizeWidth = min(self.projectionPipeline.maxTotalThreadsPerThreadgroup, 256)
+        /**
+         Initialize output buffer
+         */
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else {
+            throw WorldPointsProcessorError.metalPipelineBlitEncoderError
+        }
+        blit.fill(buffer: gridBuffer, range: 0..<gridBufferLength, value: 0)
+        blit.endEncoding()
+        
+        let threadGroupSizeWidth = min(self.gridPipeline.maxTotalThreadsPerThreadgroup, 256)
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw WorldPointsProcessorError.metalPipelineCreationError
@@ -81,24 +106,17 @@ extension WorldPointsProcessor {
         
         /// Process the output grid buffer to create the 2D grid of world points
         /// TODO: Consider using a more efficient method to read back the grid data, especially for large images, as this could be a bottleneck. One option could be to read the buffer in chunks or use a more compact representation of the grid.
-        var grid: [[WorldPoint?]] = Array(
-            repeating: Array(repeating: Optional<WorldPoint>.none, count: Int(imageSize.width)),
-            count: Int(imageSize.height)
+        var gridData = Array(
+            repeating: WorldPointGridCell(worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), isValid: UInt32(0)),
+            count: gridCapacity
         )
-        let gridBufferPtr = gridBuffer.contents().bindMemory(to: Optional<WorldPoint>.self, capacity: gridCapacity)
+        let gridBufferPtr = gridBuffer.contents().bindMemory(to: WorldPointGridCell.self, capacity: gridCapacity)
         for i in 0..<gridCapacity {
-            let worldPointOpt = gridBufferPtr[i]
-            guard let worldPoint = worldPointOpt else {
-                continue
-            }
-            let xIndex: Int = i % Int(imageSize.width)
-            let yIndex: Int = i / Int(imageSize.width)
-            guard xIndex >= 0, xIndex < Int(imageSize.width), yIndex >= 0, yIndex < Int(imageSize.height) else {
-                continue
-            }
-            grid[yIndex][xIndex] = worldPoint
+            let worldPointGridCell = gridBufferPtr[i]
+            guard worldPointGridCell.isValid != 0 else { continue }
+            gridData[i] = worldPointGridCell
         }
-        return grid
+        return WorldPointsGrid(width: width, height: height, data: gridData)
     }
     
     /**
@@ -109,11 +127,14 @@ extension WorldPointsProcessor {
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
         imageSize: CGSize
-    ) throws -> [[WorldPoint?]] {
-        var grid = Array(
-            repeating: Array(repeating: Optional<WorldPoint>.none, count: Int(imageSize.width)),
-            count: Int(imageSize.height)
+    ) throws -> WorldPointsGrid {
+        let width = Int(imageSize.width)
+        let height = Int(imageSize.height)
+        let gridData = Array(
+            repeating: WorldPointGridCell(worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), isValid: UInt32(0)),
+            count: width * height
         )
+        var worldPointGrid: WorldPointsGrid = WorldPointsGrid(width: width, height: height, data: gridData)
         let viewMatrix = simd_inverse(cameraTransform)
         worldPoints.forEach { worldPoint in
             let pixelPoint: CGPoint? = ProjectionUtils.unprojectWorldToPixel(
@@ -129,8 +150,8 @@ extension WorldPointsProcessor {
                 return
             }
             /// Store the world point in the corresponding grid cell
-            grid[y][x] = worldPoint
+            worldPointGrid[x, y] = WorldPointGridCell(worldPoint: worldPoint, isValid: UInt32(1))
         }
-        return grid
+        return worldPointGrid
     }
 }

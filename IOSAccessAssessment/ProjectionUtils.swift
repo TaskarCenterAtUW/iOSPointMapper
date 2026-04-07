@@ -122,10 +122,15 @@ struct ProjectionUtils {
         
         let ndcPoint = simd_float3(ndcX, ndcY, 1.0)
         let imagePoint = cameraIntrinsics * ndcPoint
-        let pX = imagePoint.x
-        let pY = imagePoint.y
+//        let pX = imagePoint.x
+//        let pY = imagePoint.y
         
-        guard pX.isFinite, pY.isFinite, pX >= 0, pY >= 0, pX < Float(imageSize.width), pY < Float(imageSize.height) else {
+        guard imagePoint.x.isFinite, imagePoint.y.isFinite else {
+            return nil
+        }
+        let pX = Int(floor(imagePoint.x))
+        let pY = Int(floor(imagePoint.y))
+        guard pX >= 0, pY >= 0, pX < Int(imageSize.width), pY < Int(imageSize.height) else {
             return nil
         }
         return CGPoint(x: CGFloat(pX), y: CGFloat(pY))

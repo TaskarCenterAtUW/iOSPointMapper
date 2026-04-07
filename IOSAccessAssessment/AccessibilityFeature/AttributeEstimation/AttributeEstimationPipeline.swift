@@ -57,6 +57,7 @@ enum AttributeEstimationPipelineConstants {
 class AttributeEstimationPipeline: ObservableObject {
     struct PrerequisiteCache: Sendable {
         var worldPoints: [WorldPoint]? = nil
+        var worldPointsGrid: WorldPointsGrid? = nil
         var pointAlignedPlane: Plane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
@@ -104,6 +105,7 @@ class AttributeEstimationPipeline: ObservableObject {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
+        var worldPointsGrid: WorldPointsGrid? = nil
         var pointAlignedPlane: Plane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
@@ -122,6 +124,7 @@ class AttributeEstimationPipeline: ObservableObject {
             /// TODO: We can actually, eventually, comment this out since we don't need world points if mesh data is available.
             /// But we will have to ensure that none of the attribute calculations rely on world points in that case, which may require some refactoring, so leaving it for now.
             worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
+            worldPointsGrid = try self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
             pointAlignedPlane = try self.calculateAlignedPlane(
                 accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
             )
@@ -129,6 +132,7 @@ class AttributeEstimationPipeline: ObservableObject {
             break
         }
         self.prerequisiteCache.worldPoints = worldPoints
+        self.prerequisiteCache.worldPointsGrid = worldPointsGrid
         self.prerequisiteCache.pointAlignedPlane = pointAlignedPlane
         self.prerequisiteCache.meshContents = meshContents
         self.prerequisiteCache.meshPolygons = meshPolygons

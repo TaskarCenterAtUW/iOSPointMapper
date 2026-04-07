@@ -18,6 +18,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
     case metalPipelineBlitEncoderError
     case outputImageCreationFailed
     case unableToProcessBufferData
+    case noWorldPointsToProcess
     
     var errorDescription: String? {
         switch self {
@@ -35,6 +36,8 @@ enum WorldPointsProcessorError: Error, LocalizedError {
             return "Failed to create output CIImage from Metal texture."
         case .unableToProcessBufferData:
             return "Unable to process data from CVPixelBuffer."
+        case .noWorldPointsToProcess:
+            return "No world points to process for grid restructuring."
         }
     }
 }

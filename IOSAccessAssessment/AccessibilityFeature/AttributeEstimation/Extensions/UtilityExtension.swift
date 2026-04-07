@@ -11,6 +11,9 @@ import CoreLocation
  Extension for utilities related to world point extraction and plane calculation.
  */
 extension AttributeEstimationPipeline {
+    /**
+     Get world points corresponding to the feature based on the segmentation label image and depth map, using the world points processor.
+     */
     func getWorldPoints(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> [WorldPoint] {
@@ -30,6 +33,36 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics
         )
         return worldPoints
+    }
+    
+    /**
+     Restructure world points into a 2D grid based on their projected pixel coordinates, for more efficient spatial queries.
+     */
+    func getWorldPointsGrid(accessibilityFeature: EditableAccessibilityFeature) throws -> WorldPointsGrid {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let worldPointsProcessor = self.worldPointsProcessor else {
+            throw AttributeEstimationPipelineError.configurationError(
+                AttributeEstimationPipelineConstants.Texts.worldPointsProcessorKey
+            )
+        }
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let worldPointsGrid: WorldPointsGrid = try worldPointsProcessor.getWorldPointsGrid(
+            worldPoints: worldPoints,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.originalSize
+        )
+        let _ = try worldPointsProcessor.getWorldPointsGridCPU(
+            worldPoints: worldPoints,
+            cameraTransform: captureImageData.cameraTransform,
+            cameraIntrinsics: captureImageData.cameraIntrinsics,
+            imageSize: captureImageData.originalSize
+        )
+        return worldPointsGrid
     }
     
     /**

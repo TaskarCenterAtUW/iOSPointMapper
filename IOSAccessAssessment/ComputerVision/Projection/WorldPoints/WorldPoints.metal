@@ -61,10 +61,7 @@ inline float2 unprojectWorldToPixel(
     float3 ndcPoint = float3(ndcX, ndcY, 1.0);
     float3 imagePoint = cameraIntrinsics * ndcPoint;
     
-    if (imagePoint.x < 0 || imagePoint.x >= imageSize.x || imagePoint.y < 0 || imagePoint.y >= imageSize.y) {
-        return float2(-1.0, -1.0); // Invalid projection
-    }
-    return imagePoint.xy;
+    return float2(imagePoint.x, imagePoint.y);
 }
 
 // Function to compute world points from segmentation and depth textures
@@ -143,7 +140,7 @@ kernel void projectPointsToPlane(
 kernel void restructureWorldPointsToGrid(
    device const WorldPoint* inputPoints [[buffer(0)]],
    constant WorldPointGridParams& params [[buffer(1)]],
-   device WorldPoint* outputGrid [[buffer(2)]],
+   device WorldPointGridCell* outputGrid [[buffer(2)]],
    uint id [[thread_position_in_grid]]
 ) {
     // Assuming the grid is defined by a bounding box and resolution
@@ -153,10 +150,14 @@ kernel void restructureWorldPointsToGrid(
         params.cameraIntrinsics,
         params.imageSize
       );
-    if (pixelPoint.x < 0 || pixelPoint.y < 0 || pixelPoint.x >= params.imageSize.x || pixelPoint.y >= params.imageSize.y) {
+    if (!isfinite(pixelPoint.x) || !isfinite(pixelPoint.y)) {
+        return; // Skip points that cannot be projected
+    }
+    uint gridX = uint(floor(pixelPoint.x));
+    uint gridY = uint(floor(pixelPoint.y));
+    if (gridX < 0 || gridY < 0 || gridX >= params.imageSize.x || gridY >= params.imageSize.y) {
         return; // Skip points that project outside the image
     }
-    uint gridX = uint(pixelPoint.x);
-    uint gridY = uint(pixelPoint.y);
-    outputGrid[gridY * uint(params.imageSize.x) + gridX] = inputPoints[id];
+    outputGrid[gridY * uint(params.imageSize.x) + gridX].worldPoint = inputPoints[id];
+    outputGrid[gridY * uint(params.imageSize.x) + gridX].isValid = true;
 }

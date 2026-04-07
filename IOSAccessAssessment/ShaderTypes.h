@@ -78,6 +78,17 @@ typedef struct WorldPoint {
     MTL_FLOAT3  p;
 } WorldPoint;
 
+typedef struct WorldPointGridCell {
+    WorldPoint   worldPoint;
+    MTL_BOOL     isValid;
+} WorldPointGridCell;
+
+typedef struct WorldPointGridParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} WorldPointGridParams;
+
 typedef struct ProjectedPoint {
     float s;
     float t;
@@ -100,12 +111,6 @@ typedef struct ProjectedPointsParams {
     MTL_FLOAT3      normalVector;
     MTL_FLOAT3      origin;
 } ProjectedPointsParams;
-
-typedef struct WorldPointGridParams {
-    MTL_UINT2       imageSize;
-    MTL_FLOAT4X4    viewMatrix;
-    MTL_FLOAT3X3    cameraIntrinsics;
-} WorldPointGridParams;
 
 typedef struct ProjectedPointBinningParams {
     float sMin;

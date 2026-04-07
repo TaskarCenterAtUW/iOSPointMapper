@@ -13,6 +13,7 @@ extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
         let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let worldPointsGrid = try self.prerequisiteCache.worldPointsGrid ?? self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
         
         var surfaceIntegrity: Bool = false
         if damageDetectionResults.count > 0 {
@@ -67,13 +68,5 @@ extension AttributeEstimationPipeline {
         
         let alignedBox = boundingBox.applying(alignTransform)
         return alignedBox
-        
-//        let finalBox = CGRect(
-//            x: translatedBox.origin.x * originalSize.width,
-//            y: (1 - (translatedBox.origin.y + translatedBox.size.height)) * originalSize.height,
-//            width: translatedBox.size.width * originalSize.width,
-//            height: translatedBox.size.height * originalSize.height
-//        )
-//        return finalBox
     }
 }
