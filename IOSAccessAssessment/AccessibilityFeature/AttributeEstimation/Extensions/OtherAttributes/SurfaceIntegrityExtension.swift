@@ -18,6 +18,9 @@ extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrityFromImage(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
         guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
             throw AttributeEstimationPipelineError.missingPreprocessors
         }
@@ -38,6 +41,11 @@ extension AttributeEstimationPipeline {
         let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
         )
+        let surfaceNormalsGridByDamageResults: [DamageDetectionResult: SurfaceNormalsForPointsGrid] = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPointsWithinBoundsCPU(
+                surfaceNormalsForPointsGrid: surfaceNormalsGrid, damageDetectionResults: damageDetectionResults,
+                cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics,
+                imageSize: captureImageData.originalSize
+            )
         
         var surfaceIntegrity: Bool = false
         if damageDetectionResults.count > 0 {

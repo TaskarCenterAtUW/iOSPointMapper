@@ -18,12 +18,12 @@ struct DamageDetectionRasterizer {
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         
         for result in damageDetectionResults {
-            let boundingBox = result.boundingBox
             let boundsColor = boundsConfig.color ?? UIColor.white
-            let boundingBoxRect = CGRect(x: CGFloat(boundingBox.origin.x) * size.width,
-                                         y: (1 - CGFloat(boundingBox.origin.y + boundingBox.size.height)) * size.height,
-                                         width: CGFloat(boundingBox.size.width) * size.width,
-                                         height: CGFloat(boundingBox.size.height) * size.height)
+//            let boundingBoxRect = CGRect(x: CGFloat(boundingBox.origin.x) * size.width,
+//                                         y: (1 - CGFloat(boundingBox.origin.y + boundingBox.size.height)) * size.height,
+//                                         width: CGFloat(boundingBox.size.width) * size.width,
+//                                         height: CGFloat(boundingBox.size.height) * size.height)
+            let boundingBoxRect = result.getPixelCGRect(for: size)
             context.setStrokeColor(boundsColor.cgColor)
             context.setLineWidth(boundsConfig.width)
             context.addRect(boundingBoxRect)

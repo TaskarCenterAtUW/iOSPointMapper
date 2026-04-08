@@ -128,6 +128,7 @@
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
 		A3C1D7352F84A78E00833411 /* SurfaceNormalsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */; };
 		A3C1D7392F84A84900833411 /* SurfaceNormals.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7382F84A84900833411 /* SurfaceNormals.metal */; };
+		A3C1D73C2F85F47A00833411 /* SurfaceNormalsWithinBoundsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
@@ -350,6 +351,7 @@
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
 		A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsProcessor.swift; sourceTree = "<group>"; };
 		A3C1D7382F84A84900833411 /* SurfaceNormals.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SurfaceNormals.metal; sourceTree = "<group>"; };
+		A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsWithinBoundsExtension.swift; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtilsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtilsExtension.swift; sourceTree = "<group>"; };
@@ -1094,6 +1096,7 @@
 		A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */ = {
 			isa = PBXGroup;
 			children = (
+				A3C1D73A2F85F46200833411 /* Extensions */,
 				A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */,
 				A3C1D7382F84A84900833411 /* SurfaceNormals.metal */,
 			);
@@ -1119,6 +1122,14 @@
 				DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorFilter.swift */,
 			);
 			path = ImageProcessing;
+			sourceTree = "<group>";
+		};
+		A3C1D73A2F85F46200833411 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
@@ -1545,6 +1556,7 @@
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
+				A3C1D73C2F85F47A00833411 /* SurfaceNormalsWithinBoundsExtension.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedFeature.swift in Sources */,
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,

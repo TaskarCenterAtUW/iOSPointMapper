@@ -23,10 +23,28 @@ enum DamageDetectionModelError: Error, LocalizedError {
     }
 }
 
-struct DamageDetectionResult {
+/**
+    This struct represents the result of a damage detection operation, containing the bounding box of the detected damage, the confidence score, and the label.
+ 
+ - boundingBox: A CGRect representing the location and size of the detected damage in normalized coordinates (0 to 1). Here the origin is at the bottom-left corner of the image, and the width and height are relative to the image dimensions. Hence, to use it in pixel coordinates appropriately, the y-coordinate needs to be adjusted by subtracting the bounding box's height and y-origin from 1, and then scaling it according to the image size.
+ - confidence: A VNConfidence value (between 0 and 1) indicating the confidence level of the detection.
+ - label: A String representing the label or category of the detected damage.
+ */
+struct DamageDetectionResult: Sendable, Hashable {
     var boundingBox: CGRect
     var confidence: VNConfidence
     var label: String
+    
+    /// The bounding box returned by the model is in normalized coordinates (0 to 1) with the origin at the bottom-left corner.
+    /// To convert it to pixel coordinates, we need to adjust the y-coordinate and scale it according to the image size.
+    func getPixelCGRect(for imageSize: CGSize) -> CGRect {
+        return CGRect(
+            x: CGFloat(boundingBox.origin.x) * imageSize.width,
+            y: CGFloat(1.0 - boundingBox.origin.y - boundingBox.size.height) * imageSize.height,
+            width: CGFloat(boundingBox.size.width) * imageSize.width,
+            height: CGFloat(boundingBox.size.height) * imageSize.height
+        )
+    }
 }
 
 /**

@@ -15,6 +15,7 @@ struct SurfaceNormalsForPointsGrid: Sendable {
     let height: Int
     var data: [SurfaceNormalForPointGridCell]
     
+    /// TODO: Handle out-of-bounds access more robustly, possibly with a custom error or by returning an optional.
     subscript(x: Int, y: Int) -> SurfaceNormalForPointGridCell {
         get { return data[y * width + x] }
         set { data[y * width + x] = newValue }
@@ -26,6 +27,7 @@ enum SurfaceNormalsProcessorError: Error, LocalizedError {
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
     case invalidProjectedPlaneVectors
+    case unableToProcessBufferData
     
     var errorDescription: String? {
         switch self {
@@ -37,18 +39,21 @@ enum SurfaceNormalsProcessorError: Error, LocalizedError {
             return "Failed to create Blit Command Encoder for the Surface Normals Processor."
         case .invalidProjectedPlaneVectors:
             return "Invalid projected plane vectors."
+        case .unableToProcessBufferData:
+            return "Unable to process buffer data for surface normals grid."
         }
     }
 }
 
 struct SurfaceNormalsProcessor {
-    private let device: MTLDevice
-    private let commandQueue: MTLCommandQueue
+    let device: MTLDevice
+    let commandQueue: MTLCommandQueue
     
-    private let pipeline: MTLComputePipelineState
-    private let textureLoader: MTKTextureLoader
+    let computePipeline: MTLComputePipelineState
+    let boundsPipeline: MTLComputePipelineState
+    let textureLoader: MTKTextureLoader
     
-    private let ciContext: CIContext
+    let ciContext: CIContext
     
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -61,11 +66,16 @@ struct SurfaceNormalsProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeSurfaceNormals"),
-              let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
+        guard let computeKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeSurfaceNormals"),
+              let computePipeline = try? device.makeComputePipelineState(function: computeKernelFunction) else {
             throw SurfaceNormalsProcessorError.metalInitializationFailed
         }
-        self.pipeline = pipeline
+        guard let boundsKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "getSurfaceNormalsWithinBounds"),
+              let boundsPipeline = try? device.makeComputePipelineState(function: boundsKernelFunction) else {
+            throw SurfaceNormalsProcessorError.metalInitializationFailed
+        }
+        self.computePipeline = computePipeline
+        self.boundsPipeline = boundsPipeline
     }
     
     /**
@@ -155,12 +165,12 @@ struct SurfaceNormalsProcessor {
         blit.fill(buffer: gridBuffer, range: 0..<gridBufferLength, value: 0)
         blit.endEncoding()
         
-        let threadGroupSizeWidth = min(self.pipeline.maxTotalThreadsPerThreadgroup, 256)
+        let threadGroupSizeWidth = min(self.computePipeline.maxTotalThreadsPerThreadgroup, 256)
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw SurfaceNormalsProcessorError.metalPipelineCreationError
         }
         
-        commandEncoder.setComputePipelineState(self.pipeline)
+        commandEncoder.setComputePipelineState(self.computePipeline)
         commandEncoder.setBuffer(worldPointsGridBuffer, offset: 0, index: 0)
         commandEncoder.setBytes(&widthLocal, length: MemoryLayout<UInt32>.size, index: 1)
         commandEncoder.setBytes(&heightLocal, length: MemoryLayout<UInt32>.size, index: 2)
@@ -188,7 +198,6 @@ struct SurfaceNormalsProcessor {
             surfaceNormalGridData[i] = surfaceNormalGridCell
         }
         let surfaceNormalsGrid = SurfaceNormalsForPointsGrid(width: width, height: height, data: surfaceNormalGridData)
-        debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: surfaceNormalsGrid)
         return surfaceNormalsGrid
     }
     
@@ -283,7 +292,6 @@ struct SurfaceNormalsProcessor {
                 )
             }
         }
-        debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: surfaceNormalsGrid)
         return surfaceNormalsGrid
     }
     
@@ -298,7 +306,7 @@ struct SurfaceNormalsProcessor {
         return dir / maxComp
     }
     
-    private func debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: SurfaceNormalsForPointsGrid) {
+    func debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: SurfaceNormalsForPointsGrid) {
         var validPointCount = 0
         var validSurfaceNormalCount = 0
         let upVector = simd_float3(0, 1, 0)

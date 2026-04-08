@@ -173,3 +173,15 @@ typedef struct SurfaceNormalForMeshGridCell {
     MTL_FLOAT3     surfaceNormal;
     MTL_BOOL       isValid;
 } SurfaceNormalForMeshGridCell;
+
+/**
+ Related to bounding boxes
+ */
+typedef struct SurfaceNormalsWithinBoundsParams {
+    MTL_UINT        gridWidth;
+    MTL_UINT        gridHeight;
+    MTL_UINT        boxCount;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+    MTL_UINT2       imageSize;
+} SurfaceNormalsWithinBoundsParams;
