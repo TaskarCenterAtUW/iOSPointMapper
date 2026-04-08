@@ -130,3 +130,68 @@ kernel void computeSurfaceNormals(
     outputGrid[id].surfaceNormal = normal;
     outputGrid[id].isValid = true;
 }
+
+inline float2 unprojectWorldToPixel(
+    float3 worldPoint,
+    constant float4x4& viewMatrix,
+    constant float3x3& cameraIntrinsics,
+    constant uint2& imageSize
+) {
+    float4 worldPoint4 = float4(worldPoint, 1.0);
+    float4 clipSpacePoint = viewMatrix * worldPoint4;
+    
+    // Ensure z is negative
+    if (clipSpacePoint.z > 0) {
+        return float2(-1.0, -1.0); // Invalid projection
+    }
+    
+    // Normalized image coordinates (flip y to match image coordinate system)
+    float ndcX = clipSpacePoint.x / (-clipSpacePoint.z);
+    float ndcY = -clipSpacePoint.y / (-clipSpacePoint.z);
+    
+    float3 ndcPoint = float3(ndcX, ndcY, 1.0);
+    float3 imagePoint = cameraIntrinsics * ndcPoint;
+    float2 pixelCoord = imagePoint.xy / imagePoint.z;
+    
+    return pixelCoord;
+}
+
+kernel void getSurfaceNormalsWithinBounds(
+    device const SurfaceNormalForPointGridCell* inputGrid [[buffer(0)]],
+    constant BoundsParams* boxes [[buffer(1)]],
+    constant SurfaceNormalsWithinBoundsParams& params [[buffer(2)]],
+    device SurfaceNormalForPointGridCell* outputBoxGrids [[buffer(3)]],
+    uint id [[thread_position_in_grid]]
+) {
+    uint gridCellCount = params.gridWidth * params.gridHeight;
+    if (id >= gridCellCount) {
+        return;
+    }
+    SurfaceNormalForPointGridCell cell = inputGrid[id];
+    if (cell.isValid == 0) {
+        return;
+    }
+    
+    float2 pixelPoint = unprojectWorldToPixel(
+        cell.worldPoint.p, params.viewMatrix,
+        params.cameraIntrinsics, params.imageSize
+    );
+    if (!isfinite(pixelPoint.x) || !isfinite(pixelPoint.y)) {
+        return;
+    }
+    uint pixelX = uint(floor(pixelPoint.x));
+    uint pixelY = uint(floor(pixelPoint.y));
+    if (pixelX < 0 || pixelY < 0 || pixelX >= uint(params.imageSize.x) || pixelY >= uint(params.imageSize.y)) {
+        return;
+    }
+    
+    for (uint boxIndex = 0; boxIndex < params.boxCount; ++boxIndex) {
+        BoundsParams box = boxes[boxIndex];
+        if (pixelX < uint(box.minX) || pixelX > uint(box.maxX) ||
+            pixelY < uint(box.minY) || pixelY > uint(box.maxY)) {
+            continue;
+        }
+        uint outputIndex = boxIndex * gridCellCount + pixelY * params.gridWidth + pixelX;
+        outputBoxGrids[outputIndex] = cell;
+    }
+}
