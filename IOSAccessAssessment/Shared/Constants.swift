@@ -29,6 +29,19 @@ struct Constants {
         static let inputSize: CGSize = CGSize(width: 640, height: 640)
     }
     
+    struct SurfaceIntegrityConstants {
+        /// Image (world point) based constants
+        static let imageBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
+        static let imagePlaneAngularDeviationThreshold: Float = 15.0 // Unit: degrees
+        static let imageDeviantPointProportionThreshold: Float = 0.1 // Unit: percentage (0 to 1)
+        static let imageBoundingBoxAngularStdThreshold: Float = 10.0 // Unit: degrees
+        
+        /// Mesh based constants
+        static let meshBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
+        static let meshPlaneAngularDeviationThreshold: Float = 7.5 // Unit: degrees
+        static let meshBoundingBoxAngularStdThreshold: Float = 5.0 // Unit: degrees
+    }
+    
     struct WorkspaceConstants {
         static let primaryWorkspaceIds: [String] = ["1597"]
 //        ["1463"]

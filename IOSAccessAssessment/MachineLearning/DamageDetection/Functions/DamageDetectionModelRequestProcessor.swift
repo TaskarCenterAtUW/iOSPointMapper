@@ -45,6 +45,18 @@ struct DamageDetectionResult: Sendable, Hashable {
             height: CGFloat(boundingBox.size.height) * imageSize.height
         )
     }
+    
+    /**
+        This function calculates the parameters needed to get the bounds of the detected damage in pixel coordinates, given the size of the image.
+     */
+    func getBoundsParams(for imageSize: CGSize) -> BoundsParams {
+        let pixelRect: CGRect = self.getPixelCGRect(for: imageSize)
+        let minX = max(Float(pixelRect.minX), 0)
+        let maxX = min(Float(pixelRect.maxX), Float(imageSize.width) - 1)
+        let minY = max(Float(pixelRect.minY), 0)
+        let maxY = min(Float(pixelRect.maxY), Float(imageSize.height) - 1)
+        return BoundsParams(minX: minX, minY: minY, maxX: maxX, maxY: maxY)
+    }
 }
 
 /**

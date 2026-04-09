@@ -129,6 +129,7 @@
 		A3C1D7352F84A78E00833411 /* SurfaceNormalsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */; };
 		A3C1D7392F84A84900833411 /* SurfaceNormals.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7382F84A84900833411 /* SurfaceNormals.metal */; };
 		A3C1D73C2F85F47A00833411 /* SurfaceNormalsWithinBoundsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */; };
+		A3C1D7402F882EF600833411 /* SurfaceIntegrityProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D73F2F882EF200833411 /* SurfaceIntegrityProcessor.swift */; };
 		A3C22FD32CF194A600533BF7 /* CGImageUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
@@ -352,6 +353,7 @@
 		A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsProcessor.swift; sourceTree = "<group>"; };
 		A3C1D7382F84A84900833411 /* SurfaceNormals.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SurfaceNormals.metal; sourceTree = "<group>"; };
 		A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsWithinBoundsExtension.swift; sourceTree = "<group>"; };
+		A3C1D73F2F882EF200833411 /* SurfaceIntegrityProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceIntegrityProcessor.swift; sourceTree = "<group>"; };
 		A3C22FD22CF194A200533BF7 /* CGImageUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGImageUtils.swift; sourceTree = "<group>"; };
 		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3C55A482EAFFAB600F6CFDC /* CenterCropTransformUtilsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterCropTransformUtilsExtension.swift; sourceTree = "<group>"; };
@@ -521,7 +523,6 @@
 				A3A413AB2ECF948E0039298C /* Clustering */,
 				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
 				A32D66F82F7EE9AC00DC4173 /* DamageDetection */,
-				A32D66FE2F7EF2AB00DC4173 /* SurfaceIntegrity */,
 				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 			);
 			path = MachineLearning;
@@ -742,18 +743,12 @@
 			path = Functions;
 			sourceTree = "<group>";
 		};
-		A32D66FE2F7EF2AB00DC4173 /* SurfaceIntegrity */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = SurfaceIntegrity;
-			sourceTree = "<group>";
-		};
 		A32D66FF2F7EF83E00DC4173 /* Projection */ = {
 			isa = PBXGroup;
 			children = (
 				A32D67012F7EF88000DC4173 /* WorldPoints */,
 				A32D67002F7EF87C00DC4173 /* Plane */,
+				A3C1D73E2F882EE100833411 /* SurfaceIntegrity */,
 				A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */,
 			);
 			path = Projection;
@@ -1132,6 +1127,14 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
+		A3C1D73E2F882EE100833411 /* SurfaceIntegrity */ = {
+			isa = PBXGroup;
+			children = (
+				A3C1D73F2F882EF200833411 /* SurfaceIntegrityProcessor.swift */,
+			);
+			path = SurfaceIntegrity;
+			sourceTree = "<group>";
+		};
 		A3DA4DA62EB9320E005BB812 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
@@ -1440,6 +1443,7 @@
 				A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */,
 				A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */,
 				A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */,
+				A3C1D7402F882EF600833411 /* SurfaceIntegrityProcessor.swift in Sources */,
 				A30F59D02F7EFAC700EE7804 /* RunninSlopeExtension.swift in Sources */,
 				A30801602EC09BB700B1BA3A /* VOCClassConfig.swift in Sources */,
 				A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */,

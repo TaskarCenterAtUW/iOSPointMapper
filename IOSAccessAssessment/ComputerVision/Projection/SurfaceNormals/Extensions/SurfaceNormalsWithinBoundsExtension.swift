@@ -44,10 +44,6 @@ extension SurfaceNormalsProcessor {
         
         let boxCount = damageDetectionResults.count
         
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-            throw WorldPointsProcessorError.metalPipelineCreationError
-        }
-        
         /// Set up the input buffers
         let surfaceNormalsGridBufferLength = MemoryLayout<SurfaceNormalForPointGridCell>.stride * width * height
         let surfaceNormalsGridBuffer = try MetalBufferUtils.makeBuffer(
@@ -144,7 +140,8 @@ extension SurfaceNormalsProcessor {
             }
             finalResults[damageDetectionResults[i]] = surfaceNormalsGrid
         }
-        return [:]
+//        debugSurfaceNormalsFromWorldPointsWithinBounds(results: finalResults)
+        return finalResults
     }
     
     /// TODO: Eventually, optimize the size of the bounding box surface normal grids to be the size of the bounding box itself.
@@ -162,25 +159,14 @@ extension SurfaceNormalsProcessor {
         
         var details: [BoundsParams] = []
         var results: [SurfaceNormalsForPointsGrid] = []
-        for damageDetectionResult in damageDetectionResults {
-            let pixelRect: CGRect = damageDetectionResult.getPixelCGRect(for: imageSize)
-            
-            let minX = max(Float(pixelRect.minX), 0)
-            let maxX = min(Float(pixelRect.maxX), Float(width) - 1)
-//            let boxWidth = maxX - minX + 1
-            let minY = max(Float(pixelRect.minY), 0)
-            let maxY = min(Float(pixelRect.maxY), Float(height) - 1)
-//            let boxHeight = maxY - minY + 1
-            
+        for damageDetectionResult in damageDetectionResults {            
             let surfaceNormalsData: [SurfaceNormalForPointGridCell] = Array(
                 repeating: SurfaceNormalForPointGridCell(
                     worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
                 ),
                 count: width * height
             )
-            details.append(BoundsParams(
-                minX: minX, minY: minY, maxX: maxX, maxY: maxY
-            ))
+            details.append(damageDetectionResult.getBoundsParams(for: imageSize))
             results.append(SurfaceNormalsForPointsGrid(
                 width: width, height: height, data: surfaceNormalsData
             ))
@@ -215,7 +201,7 @@ extension SurfaceNormalsProcessor {
         for i in 0..<damageDetectionResults.count {
             finalResults[damageDetectionResults[i]] = results[i]
         }
-        debugSurfaceNormalsFromWorldPointsWithinBounds(results: finalResults)
+//        debugSurfaceNormalsFromWorldPointsWithinBounds(results: finalResults)
         return finalResults
     }
     

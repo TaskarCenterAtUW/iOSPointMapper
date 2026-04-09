@@ -41,11 +41,13 @@ extension AttributeEstimationPipeline {
         let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
         )
-        let surfaceNormalsGridByDamageResults: [DamageDetectionResult: SurfaceNormalsForPointsGrid] = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPointsWithinBoundsCPU(
-                surfaceNormalsForPointsGrid: surfaceNormalsGrid, damageDetectionResults: damageDetectionResults,
-                cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics,
-                imageSize: captureImageData.originalSize
-            )
+        /// NOTE: We do not need to get subset copies the surface normal grid per bounding box
+        /// Instead, we can simply use the main grid as a base grid and have each bounding box act as a subview of the main grid.
+//        let surfaceNormalsGridByDamageResults: [DamageDetectionResult: SurfaceNormalsForPointsGrid] = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPointsWithinBounds(
+//                surfaceNormalsForPointsGrid: surfaceNormalsGrid, damageDetectionResults: damageDetectionResults,
+//                cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics,
+//                imageSize: captureImageData.originalSize
+//            )
         
         var surfaceIntegrity: Bool = false
         if damageDetectionResults.count > 0 {
