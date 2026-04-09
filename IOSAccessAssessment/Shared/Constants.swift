@@ -31,9 +31,9 @@ struct Constants {
     
     struct SurfaceIntegrityConstants {
         /// Image (world point) based constants
-        static let imageBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
         static let imagePlaneAngularDeviationThreshold: Float = 15.0 // Unit: degrees
         static let imageDeviantPointProportionThreshold: Float = 0.1 // Unit: percentage (0 to 1)
+        static let imageBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
         static let imageBoundingBoxAngularStdThreshold: Float = 10.0 // Unit: degrees
         
         /// Mesh based constants
