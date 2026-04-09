@@ -24,11 +24,11 @@ extension AttributeEstimationPipeline {
         guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
             throw AttributeEstimationPipelineError.missingPreprocessors
         }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
         let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
         let worldPointsGrid = try self.prerequisiteCache.worldPointsGrid ?? self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
-        guard let captureImageData = self.captureImageData else {
-            throw AttributeEstimationPipelineError.missingCaptureData
-        }
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
@@ -48,6 +48,10 @@ extension AttributeEstimationPipeline {
 //                cameraTransform: captureImageData.cameraTransform, cameraIntrinsics: captureImageData.cameraIntrinsics,
 //                imageSize: captureImageData.originalSize
 //            )
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromImageCPU(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
+            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+        )
         
         var surfaceIntegrity: Bool = false
         if damageDetectionResults.count > 0 {

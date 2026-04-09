@@ -75,8 +75,9 @@ class AttributeEstimationPipeline: ObservableObject {
     var worldPointsProcessor: WorldPointsProcessor?
     var planeProcessor: PlaneProcessor?
     var planeAttributeProcessor: PlaneAttributeProcessor?
-    var surfaceNormalsProcessor: SurfaceNormalsProcessor?
     var damageDetectionPipeline: DamageDetectionPipeline?
+    var surfaceNormalsProcessor: SurfaceNormalsProcessor?
+    var surfaceIntegrityProcessor: SurfaceIntegrityProcessor?
     
     var prerequisiteCache = PrerequisiteCache()
     
@@ -96,6 +97,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.planeProcessor = PlaneProcessor(worldPointsProcessor: worldPointsProcessor)
         self.planeAttributeProcessor = try PlaneAttributeProcessor()
         self.surfaceNormalsProcessor = try SurfaceNormalsProcessor()
+        self.surfaceIntegrityProcessor = try SurfaceIntegrityProcessor()
         self.captureImageData = captureImageData
         self.captureMeshData = captureMeshData
         let damageDetectionPipeline = DamageDetectionPipeline()
