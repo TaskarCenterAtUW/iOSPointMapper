@@ -139,6 +139,7 @@ extension AttributeEstimationPipeline {
         }
         var plane: Plane
         /// Using the vertices of the mesh polygons as points to fit the plane.
+        /// TODO: For optimization, replace the usage of meshPolygons with meshTriangles (GPU-based)
         let meshPolygonsLocal: [MeshPolygon] = try meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons

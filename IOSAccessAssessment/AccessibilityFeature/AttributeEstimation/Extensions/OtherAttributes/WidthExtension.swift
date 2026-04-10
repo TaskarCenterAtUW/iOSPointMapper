@@ -76,6 +76,7 @@ extension AttributeEstimationPipeline {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         /// First, get the reference bins from mesh triangle centroids
+        /// TODO: For optimization, replace the usage of meshPolygons with meshTriangles (GPU-based)
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons

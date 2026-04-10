@@ -74,6 +74,8 @@ struct SurfaceIntegrityProcessor {
     
     let countPipeline: MTLComputePipelineState
     let stdPipeline: MTLComputePipelineState
+    let countPolygonPipeline: MTLComputePipelineState
+    let areaWithinBoundsPolygonPipeline: MTLComputePipelineState
     let textureLoader: MTKTextureLoader
     
     let ciContext: CIContext
@@ -99,43 +101,53 @@ struct SurfaceIntegrityProcessor {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.stdPipeline = stdPipeline
+        guard let countPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "countDeviantPolygonNormals"),
+              let countPolygonPipeline = try? device.makeComputePipelineState(function: countPolygonKernelFunction) else {
+            throw SurfaceIntegrityProcessorError.metalInitializationFailed
+        }
+        self.countPolygonPipeline = countPolygonPipeline
+        guard let areaWithinBoundsPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "areaWithinBoundsPolygon"),
+              let areaWithinBoundsPolygonPipeline = try? device.makeComputePipelineState(function: areaWithinBoundsPolygonKernelFunction) else {
+            throw SurfaceIntegrityProcessorError.metalInitializationFailed
+        }
+        self.areaWithinBoundsPolygonPipeline = areaWithinBoundsPolygonPipeline
     }
     
     /**
         Main function to get surface integrity results from mesh data. Calls individual integrity assessment functions and aggregates results.
      */
-//    func getIntegrityResultsFromMesh(
-//        meshPolygons: [MeshPolygon],
-//        plane: Plane,
-//        damageDetectionResults: [DamageDetectionResult],
-//        captureData: (any CaptureMeshDataProtocol)
-//    ) throws -> IntegrityResults {
-//        let surfaceNormalIntegrityResult = try getSurfaceNormalIntegrityResultFromMesh(
-//            meshPolygons: meshPolygons,
-//            plane: plane,
-//            damageDetectionResults: damageDetectionResults,
-//            captureData: captureData
-//        )
-//        let boundingBoxAreaIntegrityResult = try getBoundingBoxAreaIntegrityResultFromMesh(
-//            meshPolygons: meshPolygons,
-//            plane: plane,
-//            damageDetectionResults: damageDetectionResults,
-//            captureData: captureData
-//        )
-//        let boundingBoxSurfaceNormalIntegrityResult = try getBoundingBoxSurfaceNormalIntegrityResultFromMesh(
-//            meshPolygons: meshPolygons,
-//            plane: plane,
-//            damageDetectionResults: damageDetectionResults,
-//            captureData: captureData
-//        )
-//        let integrityResults = IntegrityResults(
-//            surfaceNormalStatusDetails: surfaceNormalIntegrityResult,
-//            boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
-//            boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
-//        )
-//        debugIntegrityResults(integrityResults: integrityResults)
-//        return integrityResults
-//    }
+    func getIntegrityResultsFromMesh(
+        meshTriangles: [MeshTriangle],
+        plane: Plane,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureMeshDataProtocol)
+    ) throws -> IntegrityResults {
+        let surfaceNormalIntegrityResult = try getSurfaceNormalIntegrityResultFromMesh(
+            meshTriangles: meshTriangles,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxAreaIntegrityResult = try getBoundingBoxAreaIntegrityResultFromMesh(
+            meshTriangles: meshTriangles,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxSurfaceNormalIntegrityResult = try getBoundingBoxSurfaceNormalIntegrityResultFromMesh(
+            meshTriangles: meshTriangles,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let integrityResults = IntegrityResults(
+            surfaceNormalStatusDetails: surfaceNormalIntegrityResult,
+            boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
+            boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
+        )
+        debugIntegrityResults(integrityResults: integrityResults)
+        return integrityResults
+    }
     
     func getIntegrityResultsFromMeshCPU(
         meshPolygons: [MeshPolygon],

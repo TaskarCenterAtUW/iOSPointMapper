@@ -80,6 +80,7 @@ extension AttributeEstimationPipeline {
             accessibilityFeature: accessibilityFeature
         )
         let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let meshTriangles: [MeshTriangle] = self.prerequisiteCache.meshTriangles ?? meshContents.triangles
         let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
@@ -90,7 +91,10 @@ extension AttributeEstimationPipeline {
             meshPolygons: meshPolygons, plane: alignedPlane,
             damageDetectionResults: damageDetectionResults, captureData: captureMeshData
         )
-        
+        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
+            meshTriangles: meshTriangles, plane: alignedPlane,
+            damageDetectionResults: damageDetectionResults, captureData: captureMeshData
+        )
         
         var surfaceIntegrity: Bool = {
             return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||

@@ -45,6 +45,7 @@ extension AttributeEstimationPipeline {
     func calculateCrossSlopeFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
+        /// TODO: For optimization, replace the usage of meshPolygons with meshTriangles (GPU-based)
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(
             accessibilityFeature: accessibilityFeature
         ).polygons

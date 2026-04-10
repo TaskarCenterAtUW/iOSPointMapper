@@ -185,9 +185,9 @@ extension SurfaceIntegrityProcessor {
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
             throw SurfaceIntegrityProcessorError.meshPipelineBlitEncoderError
         }
-        blit.fill(buffer: deviationSumBuffer, range: 0..<MemoryLayout<Float>.stride, value: 0)
-        blit.fill(buffer: deviationSquaredSumBuffer, range: 0..<MemoryLayout<Float>.stride, value: 0)
-        blit.fill(buffer: totalValidBuffer, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
+        blit.fill(buffer: deviationSumBuffer, range: 0..<(MemoryLayout<Float>.stride * numThreadGroups), value: 0)
+        blit.fill(buffer: deviationSquaredSumBuffer, range: 0..<(MemoryLayout<Float>.stride * numThreadGroups), value: 0)
+        blit.fill(buffer: totalValidBuffer, range: 0..<(MemoryLayout<UInt32>.stride * numThreadGroups), value: 0)
         blit.endEncoding()
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
