@@ -163,6 +163,8 @@ extension SurfaceIntegrityProcessor {
                 from: baseAddress, byteCount: MemoryLayout<SurfaceNormalsForPointsGridCell>.stride * gridCapacity
             )
         }
+        var widthLocal = UInt32(width)
+        var heightLocal: UInt32 = UInt32(height)
         var params = StdNormalParams(
             normalVector: plane.normalVector
         )
@@ -192,11 +194,13 @@ extension SurfaceIntegrityProcessor {
         
         commandEncoder.setComputePipelineState(self.stdPipeline)
         commandEncoder.setBuffer(surfaceNormalsGridBuffer, offset: 0, index: 0)
-        commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.stride, index: 1)
-        commandEncoder.setBytes(&params, length: MemoryLayout<StdNormalParams>.stride, index: 2)
-        commandEncoder.setBuffer(deviationSumBuffer, offset: 0, index: 3)
-        commandEncoder.setBuffer(deviationSquaredSumBuffer, offset: 0, index: 4)
-        commandEncoder.setBuffer(totalValidBuffer, offset: 0, index: 5)
+        commandEncoder.setBytes(&widthLocal, length: MemoryLayout<UInt32>.size, index: 1)
+        commandEncoder.setBytes(&heightLocal, length: MemoryLayout<UInt32>.size, index: 2)
+        commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.stride, index: 3)
+        commandEncoder.setBytes(&params, length: MemoryLayout<StdNormalParams>.stride, index: 4)
+        commandEncoder.setBuffer(deviationSumBuffer, offset: 0, index: 5)
+        commandEncoder.setBuffer(deviationSquaredSumBuffer, offset: 0, index: 6)
+        commandEncoder.setBuffer(totalValidBuffer, offset: 0, index: 7)
         
         let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
         let threadgroups = MTLSize(width: (gridCapacity + threadGroupSize.width - 1) / threadGroupSize.width,
