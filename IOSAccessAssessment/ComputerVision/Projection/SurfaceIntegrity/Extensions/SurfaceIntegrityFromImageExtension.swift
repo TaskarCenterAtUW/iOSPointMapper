@@ -169,14 +169,17 @@ extension SurfaceIntegrityProcessor {
             normalVector: plane.normalVector
         )
         var boundsParams = bounds
+        /// Set up buffers to hold the sum of angular deviations, sum of squared angular deviations, and total valid points for standard deviation calculation
+        let threadGroupSizeWidth = 256
+        let numThreadGroups = (gridCapacity + threadGroupSizeWidth - 1) / threadGroupSizeWidth
         let deviationSumBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device, length: MemoryLayout<Float>.stride, options: .storageModeShared
+            device: self.device, length: MemoryLayout<Float>.stride * numThreadGroups, options: .storageModeShared
         )
         let deviationSquaredSumBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device, length: MemoryLayout<Float>.stride, options: .storageModeShared
+            device: self.device, length: MemoryLayout<Float>.stride * numThreadGroups, options: .storageModeShared
         )
         let totalValidBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device, length: MemoryLayout<UInt32>.stride, options: .storageModeShared
+            device: self.device, length: MemoryLayout<UInt32>.stride * numThreadGroups, options: .storageModeShared
         )
         
         guard let blit = commandBuffer.makeBlitCommandEncoder() else {
@@ -187,7 +190,6 @@ extension SurfaceIntegrityProcessor {
         blit.fill(buffer: totalValidBuffer, range: 0..<MemoryLayout<UInt32>.stride, value: 0)
         blit.endEncoding()
         
-        let threadGroupSizeWidth = 256
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
         }
@@ -203,21 +205,33 @@ extension SurfaceIntegrityProcessor {
         commandEncoder.setBuffer(totalValidBuffer, offset: 0, index: 7)
         
         let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
-        let threadgroups = MTLSize(width: (gridCapacity + threadGroupSize.width - 1) / threadGroupSize.width,
-                                   height: 1, depth: 1)
+        let threadgroups = MTLSize(width: numThreadGroups, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
-        let angularDeviationSum = deviationSumBuffer.contents().bindMemory(to: Float.self, capacity: 1).pointee
-        let angularDeviationSquaredSum = deviationSquaredSumBuffer.contents().bindMemory(to: Float.self, capacity: 1).pointee
-        let totalPoints = totalValidBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
+        let angularDeviationSumPtr = deviationSumBuffer.contents().bindMemory(to: Float.self, capacity: numThreadGroups)
+        let angularDeviationSquaredSumPtr = deviationSquaredSumBuffer.contents().bindMemory(
+            to: Float.self, capacity: numThreadGroups
+        )
+        let totalPointsPtr = totalValidBuffer.contents().bindMemory(to: UInt32.self, capacity: numThreadGroups)
+        
+        var angularDeviationSum: Float = 0
+        var angularDeviationSquaredSum: Float = 0
+        var totalPoints: UInt32 = 0
+        
+        for i in 0..<numThreadGroups {
+            angularDeviationSum += angularDeviationSumPtr[i]
+            angularDeviationSquaredSum += angularDeviationSquaredSumPtr[i]
+            totalPoints += totalPointsPtr[i]
+        }
         
         let angularDeviationMean = angularDeviationSum / Float(totalPoints)
         let angularDeviationVariance = (angularDeviationSquaredSum / Float(totalPoints)) - (angularDeviationMean * angularDeviationMean)
-        let angularDeviationStd = sqrt(angularDeviationVariance)
+        let angularDeviationStdInRadians: Float = sqrt(angularDeviationVariance)
+        let angularDeviationStd = angularDeviationStdInRadians * 180.0 / .pi
         return angularDeviationStd
     }
     

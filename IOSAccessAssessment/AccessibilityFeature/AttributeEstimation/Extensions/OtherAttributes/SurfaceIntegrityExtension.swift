@@ -41,6 +41,10 @@ extension AttributeEstimationPipeline {
         let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
         )
+        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromImageCPU(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
+            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+        )
         let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromImage(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
             damageDetectionResults: damageDetectionResults, captureData: captureImageData

@@ -34,6 +34,8 @@ kernel void countDeviantNormals(
             valid = 1;
             float3 n = cell.surfaceNormal;
             float cosTheta = dot(n, params.normalVector);
+            // clamp
+            cosTheta = clamp(cosTheta, -1.0f, 1.0f);
             if (cosTheta < params.angularDeviationCosThreshold) {
                 deviant = 1;
             }
@@ -66,37 +68,40 @@ kernel void stdFromNormals(
     constant uint& height [[buffer(2)]],
     constant BoundsParams& boundsParams [[buffer(3)]],
     constant StdNormalParams& params [[buffer(4)]],
-    device atomic_float* deviationSum [[buffer(5)]],
-    device atomic_float* deviationSquaredSum [[buffer(6)]],
-    device atomic_uint* totalValid [[buffer(7)]],
+    device float* deviationSum [[buffer(5)]],
+    device float* deviationSquaredSum [[buffer(6)]],
+    device uint* totalValid [[buffer(7)]],
     uint id [[thread_position_in_grid]],
-    uint tid [[thread_index_in_threadgroup]]
+    uint tid [[thread_index_in_threadgroup]],
+    uint gid [[threadgroup_position_in_grid]]
 ) {
     threadgroup float localDeviationSum[256];
     threadgroup float localDeviationSquaredSum[256];
     threadgroup uint localValid[256];
     
-    float deviationSumThread = 0.0f;
-    float deviationSquaredSumThread = 0.0f;
-    uint valid = 0;
+    float deviationThread = 0.0f;
+    float deviationSquaredThread = 0.0f;
+    uint validThread = 0;
     
     uint x = id % width;
     uint y = id / width;
-    if (x < width && y < height) {
+    if (x >= boundsParams.minX && x <= boundsParams.maxX && y >= boundsParams.minY && y <= boundsParams.maxY) {
         SurfaceNormalsForPointsGridCell cell = grid[id];
         if (cell.isValid != 0) {
-            valid = 1;
+            validThread = 1;
             float3 n = cell.surfaceNormal;
             float cosTheta = dot(n, params.normalVector);
+            // clamp
+            cosTheta = clamp(cosTheta, -1.0f, 1.0f);
             float deviation = acos(cosTheta);
-            deviationSumThread = deviation;
-            deviationSquaredSumThread = deviation * deviation;
+            deviationThread = deviation;
+            deviationSquaredThread = deviation * deviation;
         }
     }
     
-    localDeviationSum[tid] = deviationSumThread;
-    localDeviationSquaredSum[tid] = deviationSquaredSumThread;
-    localValid[tid] = valid;
+    localDeviationSum[tid] = deviationThread;
+    localDeviationSquaredSum[tid] = deviationSquaredThread;
+    localValid[tid] = validThread;
     
     // Perform parallel reduction within the threadgroup
     threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -111,8 +116,8 @@ kernel void stdFromNormals(
     
     // Thread 0 of the group writes the result to global memory
     if (tid == 0) {
-        atomic_fetch_add_explicit(deviationSum, localDeviationSum[0], memory_order_relaxed);
-        atomic_fetch_add_explicit(deviationSquaredSum, localDeviationSquaredSum[0], memory_order_relaxed);
-        atomic_fetch_add_explicit(totalValid, localValid[0], memory_order_relaxed);
+        deviationSum[gid] = localDeviationSum[0];
+        deviationSquaredSum[gid] = localDeviationSquaredSum[0];
+        totalValid[gid] = localValid[0];
     }
 }
