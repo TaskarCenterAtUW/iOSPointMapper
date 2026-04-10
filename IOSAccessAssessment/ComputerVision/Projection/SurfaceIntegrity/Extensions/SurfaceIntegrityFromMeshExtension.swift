@@ -123,10 +123,27 @@ extension SurfaceIntegrityProcessor {
         angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
         boundingBoxAngularStdThreshold: Float = Constants.SurfaceIntegrityConstants.meshBoundingBoxAngularStdThreshold
     ) throws -> IntegrityStatusDetails {
-        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw SurfaceIntegrityProcessorError.metalPipelineCreationError
+        let totalBoundingBoxes = damageDetectionResults.count
+        var deviantBoundingBoxes = 0
+        var boundingBoxDetails = ""
+        for damageDetectionResult in damageDetectionResults {
+            let boundsParams = damageDetectionResult.getBoundsParams(for: captureData.originalSize)
+            let angularStd = try getSurfaceNormalStdDetailsWithinBounds(
+                meshTriangles: meshTriangles,
+                plane: plane,
+                bounds: boundsParams
+            )
+            if angularStd > boundingBoxAngularStdThreshold {
+                deviantBoundingBoxes += 1
+                boundingBoxDetails += "Bounding Box with label \(damageDetectionResult.label) and confidence \(damageDetectionResult.confidence) has surface normal angular std above threshold. Angular Std: \(angularStd).\n"
+            }
         }
-        let count = meshTriangles.count
+        let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
+        let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
+            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
+        )
+        return statusDetails
     }
     
     func getAreaWithinBounds(
@@ -191,6 +208,99 @@ extension SurfaceIntegrityProcessor {
             totalArea += areaPointer[i]
         }
         return totalArea
+    }
+    
+    func getSurfaceNormalStdDetailsWithinBounds(
+        meshTriangles: [MeshTriangle],
+        plane: Plane,
+        bounds: BoundsParams
+    ) throws -> Float {
+        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
+            throw SurfaceIntegrityProcessorError.metalPipelineCreationError
+        }
+        let count = meshTriangles.count
+        
+        /// Set up the triangle data buffer
+        let meshTriangleBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device,
+            length: MemoryLayout<MeshTriangle>.stride * count,
+            options: .storageModeShared
+        )
+        let meshTriangleBufferPtr = meshTriangleBuffer.contents()
+        try meshTriangles.withUnsafeBytes { rawBuffer in
+            guard let baseAddress = rawBuffer.baseAddress else {
+                throw SurfaceIntegrityProcessorError.unableToProcessBufferData
+            }
+            meshTriangleBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<MeshTriangle>.stride * count)
+        }
+        var countLocal = UInt32(count)
+        var params = StdNormalParams(
+            normalVector: plane.normalVector
+        )
+        var boundsParams = bounds
+        /// Set up buffers to hold the sum of angular deviations, sum of squared angular deviations, and total valid points for standard deviation calculation
+        let threadGroupSizeWidth = 256
+        let numThreadGroups = (count + threadGroupSizeWidth - 1) / threadGroupSizeWidth
+        let deviationSumBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device, length: MemoryLayout<Float>.stride * numThreadGroups, options: .storageModeShared
+        )
+        let deviationSquaredSumBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device, length: MemoryLayout<Float>.stride * numThreadGroups, options: .storageModeShared
+        )
+        let totalValidBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
+            device: self.device, length: MemoryLayout<UInt32>.stride * numThreadGroups, options: .storageModeShared
+        )
+        
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else {
+            throw SurfaceIntegrityProcessorError.meshPipelineBlitEncoderError
+        }
+        blit.fill(buffer: deviationSumBuffer, range: 0..<(MemoryLayout<Float>.stride * numThreadGroups), value: 0)
+        blit.fill(buffer: deviationSquaredSumBuffer, range: 0..<(MemoryLayout<Float>.stride * numThreadGroups), value: 0)
+        blit.fill(buffer: totalValidBuffer, range: 0..<(MemoryLayout<UInt32>.stride * numThreadGroups), value: 0)
+        blit.endEncoding()
+        
+        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            throw SurfaceIntegrityProcessorError.metalPipelineCreationError
+        }
+        
+        commandEncoder.setComputePipelineState(self.stdPolygonPipeline)
+        commandEncoder.setBuffer(meshTriangleBuffer, offset: 0, index: 0)
+        commandEncoder.setBytes(&countLocal, length: MemoryLayout<UInt32>.stride, index: 1)
+        commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.stride, index: 2)
+        commandEncoder.setBytes(&params, length: MemoryLayout<StdNormalParams>.stride, index: 3)
+        commandEncoder.setBuffer(deviationSumBuffer, offset: 0, index: 4)
+        commandEncoder.setBuffer(deviationSquaredSumBuffer, offset: 0, index: 5)
+        commandEncoder.setBuffer(totalValidBuffer, offset: 0, index: 6)
+        
+        let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
+        let threadgroups = MTLSize(width: numThreadGroups, height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        let angularDeviationSumPtr = deviationSumBuffer.contents().bindMemory(to: Float.self, capacity: numThreadGroups)
+        let angularDeviationSquaredSumPtr = deviationSquaredSumBuffer.contents().bindMemory(
+            to: Float.self, capacity: numThreadGroups
+        )
+        let totalPointsPtr = totalValidBuffer.contents().bindMemory(to: UInt32.self, capacity: numThreadGroups)
+        
+        var angularDeviationSum: Float = 0
+        var angularDeviationSquaredSum: Float = 0
+        var totalPoints: UInt32 = 0
+        
+        for i in 0..<numThreadGroups {
+            angularDeviationSum += angularDeviationSumPtr[i]
+            angularDeviationSquaredSum += angularDeviationSquaredSumPtr[i]
+            totalPoints += totalPointsPtr[i]
+        }
+        
+        let angularDeviationMean = angularDeviationSum / Float(totalPoints)
+        let angularDeviationVariance = (angularDeviationSquaredSum / Float(totalPoints)) - (angularDeviationMean * angularDeviationMean)
+        let angularDeviationStdInRadians: Float = sqrt(angularDeviationVariance)
+        let angularDeviationStd = angularDeviationStdInRadians * 180.0 / .pi
+        return angularDeviationStd        
     }
     
     func getSurfaceNormalIntegrityResultFromMeshCPU(

@@ -76,6 +76,7 @@ struct SurfaceIntegrityProcessor {
     let stdPipeline: MTLComputePipelineState
     let countPolygonPipeline: MTLComputePipelineState
     let areaWithinBoundsPolygonPipeline: MTLComputePipelineState
+    let stdPolygonPipeline: MTLComputePipelineState
     let textureLoader: MTKTextureLoader
     
     let ciContext: CIContext
@@ -111,6 +112,11 @@ struct SurfaceIntegrityProcessor {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.areaWithinBoundsPolygonPipeline = areaWithinBoundsPolygonPipeline
+        guard let stdPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "stdFromPolygonNormals"),
+              let stdPolygonPipeline = try? device.makeComputePipelineState(function: stdPolygonKernelFunction) else {
+            throw SurfaceIntegrityProcessorError.metalInitializationFailed
+        }
+        self.stdPolygonPipeline = stdPolygonPipeline
     }
     
     /**

@@ -224,3 +224,67 @@ kernel void areaWithinBoundsPolygon(
         area[gid] = localArea[0];
     }
 }
+
+kernel void stdFromPolygonNormals(
+    device const MeshTriangle* meshTriangles [[buffer(0)]],
+    constant uint& count [[buffer(1)]],
+    constant BoundsParams& boundsParams [[buffer(2)]],
+    constant StdNormalParams& params [[buffer(4)]],
+    device float* deviationSum [[buffer(5)]],
+    device float* deviationSquaredSum [[buffer(6)]],
+    device uint* totalValid [[buffer(7)]],
+    uint id [[thread_position_in_grid]],
+    uint tid [[thread_index_in_threadgroup]],
+    uint gid [[threadgroup_position_in_grid]]
+) {
+    threadgroup float localDeviationSum[256];
+    threadgroup float localDeviationSquaredSum[256];
+    threadgroup uint localValid[256];
+    
+    float deviationThread = 0.0f;
+    float deviationSquaredThread = 0.0f;
+    uint validThread = 0;
+    
+    if (id < count) {
+        MeshTriangle tri = meshTriangles[id];
+        // Get the centroid and check if it's within bounds
+        float3 centroid = (tri.a + tri.b + tri.c) / 3.0f;
+        if (centroid.x >= boundsParams.minX && centroid.x <= boundsParams.maxX &&
+            centroid.y >= boundsParams.minY && centroid.y <= boundsParams.maxY) {
+            validThread = 1;
+            // Calculate normal from the points
+            packed_float3 edge1 = tri.b - tri.a;
+            packed_float3 edge2 = tri.c - tri.a;
+            float3 normal = cross(edge1, edge2);
+            normal = alignNormalWithReference(normal, params.normalVector);
+            float cosTheta = dot(normal, params.normalVector);
+            // clamp
+            cosTheta = clamp(cosTheta, -1.0f, 1.0f);
+            float deviation = acos(cosTheta);
+            deviationThread = deviation;
+            deviationSquaredThread = deviation * deviation;
+        }
+    }
+    
+    localDeviationSum[tid] = deviationThread;
+    localDeviationSquaredSum[tid] = deviationSquaredThread;
+    localValid[tid] = validThread;
+    
+    // Perform parallel reduction within the threadgroup
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+    for (uint offset = 128; offset > 0; offset /= 2) {
+        if (tid < offset) {
+            localDeviationSum[tid] += localDeviationSum[tid + offset];
+            localDeviationSquaredSum[tid] += localDeviationSquaredSum[tid + offset];
+            localValid[tid] += localValid[tid + offset];
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+    
+    // Thread 0 of the group writes the result to global memory
+    if (tid == 0) {
+        deviationSum[gid] = localDeviationSum[0];
+        deviationSquaredSum[gid] = localDeviationSquaredSum[0];
+        totalValid[gid] = localValid[0];
+    }
+}
