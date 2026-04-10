@@ -77,6 +77,12 @@ struct MeshPolygon: Sendable {
         let crossProduct = simd_cross(edge1, edge2)
         return simd_length(crossProduct) / 2.0
     }
+    
+    var normal: simd_float3 {
+        let edge1 = v1 - v0
+        let edge2 = v2 - v0
+        return simd_normalize(simd_cross(edge1, edge2))
+    }
 }
 
 /**

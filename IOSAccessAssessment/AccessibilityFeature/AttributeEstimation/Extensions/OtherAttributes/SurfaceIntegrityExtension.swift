@@ -46,10 +46,53 @@ extension AttributeEstimationPipeline {
             damageDetectionResults: damageDetectionResults, captureData: captureImageData
         )
         
-        var surfaceIntegrity: Bool = false
-        if damageDetectionResults.count > 0 {
-            surfaceIntegrity = true
+        var surfaceIntegrity: Bool = {
+            return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
+            surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
+            surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
+        }()
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.valueFromBool(
+            surfaceIntegrity
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
         }
+        return surfaceIntegrityAttributeValue
+    }
+    
+    func calculateSurfaceIntegrityFromMesh(
+        accessibilityFeature: EditableAccessibilityFeature
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
+            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+        )
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
+            meshPolygons: meshPolygons, plane: alignedPlane,
+            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+        )
+        
+        
+        var surfaceIntegrity: Bool = {
+            return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
+            surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
+            surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
+        }()
         guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.valueFromBool(
             surfaceIntegrity
         ) else {

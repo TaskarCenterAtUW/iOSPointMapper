@@ -102,6 +102,42 @@ struct SurfaceIntegrityProcessor {
     }
     
     /**
+        Main function to get surface integrity results from mesh data. Calls individual integrity assessment functions and aggregates results.
+     */
+    func getIntegrityResultsFromMesh(
+        meshPolygons: [MeshPolygon],
+        plane: Plane,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureImageDataProtocol)
+    ) throws -> IntegrityResults {
+        let surfaceNormalIntegrityResult = try getSurfaceNormalIntegrityResultFromMesh(
+            meshPolygons: meshPolygons,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxAreaIntegrityResult = try getBoundingBoxAreaIntegrityResultFromMesh(
+            meshPolygons: meshPolygons,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxSurfaceNormalIntegrityResult = try getBoundingBoxSurfaceNormalIntegrityResultFromMesh(
+            meshPolygons: meshPolygons,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let integrityResults = IntegrityResults(
+            surfaceNormalStatusDetails: surfaceNormalIntegrityResult,
+            boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
+            boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
+        )
+        debugIntegrityResults(integrityResults: integrityResults)
+        return integrityResults
+    }
+    
+    /**
         Main function to get surface integrity results from image data. Calls individual integrity assessment functions and aggregates results.
      */
     func getIntegrityResultsFromImage(
