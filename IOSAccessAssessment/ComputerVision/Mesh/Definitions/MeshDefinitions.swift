@@ -16,6 +16,7 @@ struct MeshContents: Sendable {
     var colorG8: Int
     var colorB8: Int
     
+    /// - Warning: Ideally, this property should be avoided for performance reasons.
     var polygons: [MeshPolygon] {
         var result: [MeshPolygon] = []
         for i in stride(from: 0, to: indices.count, by: 3) {
@@ -39,6 +40,7 @@ struct MeshContents: Sendable {
         return result
     }
     
+    /// TODO: The efficiency of this can be improved through GPU acceleration if needed.
     var triangles: [MeshTriangle] {
         var result: [MeshTriangle] = []
         for i in stride(from: 0, to: indices.count, by: 3) {
@@ -54,6 +56,7 @@ struct MeshContents: Sendable {
     }
 }
 
+/// - Warning: Ideally, this struct should be avoided for performance reasons. It is recommended to use the `MeshContents` properties directly for efficient processing.
 struct MeshPolygon: Sendable {
     let v0: simd_float3
     let v1: simd_float3

@@ -62,7 +62,7 @@ extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrityFromMesh(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
-        guard let captureImageData = self.captureImageData else {
+        guard let captureMeshData = self.captureMeshData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
         guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
@@ -82,9 +82,9 @@ extension AttributeEstimationPipeline {
         let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
             accessibilityFeature: accessibilityFeature, plane: alignedPlane
         )
-        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMeshCPU(
             meshPolygons: meshPolygons, plane: alignedPlane,
-            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+            damageDetectionResults: damageDetectionResults, captureData: captureMeshData
         )
         
         

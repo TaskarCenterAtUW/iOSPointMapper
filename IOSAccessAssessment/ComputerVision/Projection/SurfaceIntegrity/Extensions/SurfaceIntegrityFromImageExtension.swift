@@ -325,9 +325,10 @@ extension SurfaceIntegrityProcessor {
                 getWorldPointForCGPointWithinRadius(point: $0, radius: boundingBoxWorldPointRetrievalRadius)
             }
             if boundingBoxWorldPoints.count < 4 { continue }
-            if getBoundingBoxArea(worldPoints: boundingBoxWorldPoints) < boundingBoxAreaThreshold { continue }
+            let boundingBoxArea = getBoundingBoxArea(worldPoints: boundingBoxWorldPoints)
+            if boundingBoxArea < boundingBoxAreaThreshold { continue }
             deviantBoundingBoxes += 1
-            boundingBoxDetails += "Bounding Box with label \(damageDetectionResult.label) and confidence \(damageDetectionResult.confidence) has area above threshold. Area: \(getBoundingBoxArea(worldPoints: boundingBoxWorldPoints)).\n"
+            boundingBoxDetails += "Bounding Box with label \(damageDetectionResult.label) and confidence \(damageDetectionResult.confidence) has area above threshold. Area: \(boundingBoxArea)).\n"
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(

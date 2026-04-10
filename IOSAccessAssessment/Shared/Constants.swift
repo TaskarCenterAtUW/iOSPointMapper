@@ -37,8 +37,9 @@ struct Constants {
         static let imageBoundingBoxAngularStdThreshold: Float = 10.0 // Unit: degrees
         
         /// Mesh based constants
-        static let meshBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
         static let meshPlaneAngularDeviationThreshold: Float = 7.5 // Unit: degrees
+        static let meshDeviantPolygonProportionThreshold: Float = 0.1 // Unit: percentage (0 to 1)
+        static let meshBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
         static let meshBoundingBoxAngularStdThreshold: Float = 5.0 // Unit: degrees
     }
     
