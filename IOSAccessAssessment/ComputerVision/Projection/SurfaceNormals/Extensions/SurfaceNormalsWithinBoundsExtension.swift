@@ -45,7 +45,7 @@ extension SurfaceNormalsProcessor {
         let boxCount = damageDetectionResults.count
         
         /// Set up the input buffers
-        let surfaceNormalsGridBufferLength = MemoryLayout<SurfaceNormalForPointGridCell>.stride * width * height
+        let surfaceNormalsGridBufferLength = MemoryLayout<SurfaceNormalsForPointsGridCell>.stride * width * height
         let surfaceNormalsGridBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: surfaceNormalsGridBufferLength,
@@ -78,7 +78,7 @@ extension SurfaceNormalsProcessor {
         )
         
         /// Set up the output grid buffer
-        let outputSurfaceNormalsGridBufferLength = MemoryLayout<SurfaceNormalForPointGridCell>.stride * width * height * boxCount
+        let outputSurfaceNormalsGridBufferLength = MemoryLayout<SurfaceNormalsForPointsGridCell>.stride * width * height * boxCount
         let outputSurfaceNormalsGridBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: outputSurfaceNormalsGridBufferLength,
@@ -119,11 +119,11 @@ extension SurfaceNormalsProcessor {
         /// TODO: Consider using a more efficient method to read the output buffer.
         var finalResults: [DamageDetectionResult: SurfaceNormalsForPointsGrid] = [:]
         let outputSurfaceNormalsGridBufferPtr = outputSurfaceNormalsGridBuffer.contents().bindMemory(
-            to: SurfaceNormalForPointGridCell.self, capacity: outputSurfaceNormalsGridBufferLength
+            to: SurfaceNormalsForPointsGridCell.self, capacity: outputSurfaceNormalsGridBufferLength
         )
         for i in 0..<boxCount {
-            let surfaceNormalsData: [SurfaceNormalForPointGridCell] = Array(
-                repeating: SurfaceNormalForPointGridCell(
+            let surfaceNormalsData: [SurfaceNormalsForPointsGridCell] = Array(
+                repeating: SurfaceNormalsForPointsGridCell(
                     worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
                 ),
                 count: width * height
@@ -160,8 +160,8 @@ extension SurfaceNormalsProcessor {
         var details: [BoundsParams] = []
         var results: [SurfaceNormalsForPointsGrid] = []
         for damageDetectionResult in damageDetectionResults {            
-            let surfaceNormalsData: [SurfaceNormalForPointGridCell] = Array(
-                repeating: SurfaceNormalForPointGridCell(
+            let surfaceNormalsData: [SurfaceNormalsForPointsGridCell] = Array(
+                repeating: SurfaceNormalsForPointsGridCell(
                     worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
                 ),
                 count: width * height
@@ -173,10 +173,10 @@ extension SurfaceNormalsProcessor {
         }
         for y in 0..<height {
             for x in 0..<width {
-                let surfaceNormalForPointGridCell = surfaceNormalsForPointsGrid[x, y]
-                if surfaceNormalForPointGridCell.isValid == 0 { continue }
+                let surfaceNormalsForPointsGridCell = surfaceNormalsForPointsGrid[x, y]
+                if surfaceNormalsForPointsGridCell.isValid == 0 { continue }
                 let pixelPoint: CGPoint? = ProjectionUtils.unprojectWorldToPixel(
-                    worldPoint: surfaceNormalForPointGridCell.worldPoint.p, viewMatrix: viewMatrix,
+                    worldPoint: surfaceNormalsForPointsGridCell.worldPoint.p, viewMatrix: viewMatrix,
                     cameraIntrinsics: cameraIntrinsics, imageSize: imageSize
                 )
                 guard let pixelPoint = pixelPoint else {
@@ -193,7 +193,7 @@ extension SurfaceNormalsProcessor {
                         continue
                     }
                     // If it is, add the surface normal for that point to the surfaceNormalsData array
-                    results[i][pixelX, pixelY] = surfaceNormalForPointGridCell
+                    results[i][pixelX, pixelY] = surfaceNormalsForPointsGridCell
                 }
             }
         }

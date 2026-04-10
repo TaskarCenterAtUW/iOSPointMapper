@@ -16,6 +16,7 @@ enum SurfaceIntegrityProcessorError: Error, LocalizedError {
     case metalPipelineBlitEncoderError
     case invalidProjectedPlaneVectors
     case unableToProcessBufferData
+    case meshPipelineBlitEncoderError
     
     var errorDescription: String? {
         switch self {
@@ -29,6 +30,8 @@ enum SurfaceIntegrityProcessorError: Error, LocalizedError {
             return "Invalid projected plane vectors."
         case .unableToProcessBufferData:
             return "Unable to process buffer data for surface integrity grid."
+        case .meshPipelineBlitEncoderError:
+            return "Failed to create Blit Command Encoder for the pipeline."
         }
     }
 }
@@ -69,7 +72,8 @@ struct SurfaceIntegrityProcessor {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     
-    let deviantPipeline: MTLComputePipelineState
+    let countPipeline: MTLComputePipelineState
+    let stdPipeline: MTLComputePipelineState
     let textureLoader: MTKTextureLoader
     
     let ciContext: CIContext
@@ -85,15 +89,60 @@ struct SurfaceIntegrityProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let deviantKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeSurfaceNormals"),
-              let deviantPipeline = try? device.makeComputePipelineState(function: deviantKernelFunction) else {
+        guard let countKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "countDeviantNormals"),
+              let countPipeline = try? device.makeComputePipelineState(function: countKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
-        self.deviantPipeline = deviantPipeline
+        self.countPipeline = countPipeline
+        guard let stdKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "stdFromNormals"),
+              let stdPipeline = try? device.makeComputePipelineState(function: stdKernelFunction) else {
+            throw SurfaceIntegrityProcessorError.metalInitializationFailed
+        }
+        self.stdPipeline = stdPipeline
     }
     
     /**
-     CPU implementation for surface integrity assessment. Used for benchmarking and fallback when Metal processing is not available.
+        Main function to get surface integrity results from image data. Calls individual integrity assessment functions and aggregates results.
+     */
+    func getIntegrityResultsFromImage(
+        worldPointsGrid: WorldPointsGrid,
+        plane: Plane,
+        surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureImageDataProtocol)
+    ) throws -> IntegrityResults {
+        let surfaceNormalIntegrityResult = try getSurfaceNormalIntegrityResultFromImage(
+            worldPointsGrid: worldPointsGrid,
+            plane: plane,
+            surfaceNormalsForPointsGrid: surfaceNormalsForPointsGrid,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxAreaIntegrityResult = try getBoundingBoxAreaIntegrityResultFromImageCPU(
+            worldPointsGrid: worldPointsGrid,
+            plane: plane,
+            surfaceNormalsForPointsGrid: surfaceNormalsForPointsGrid,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let boundingBoxSurfaceNormalIntegrityResult = try getBoundingBoxSurfaceNormalIntegrityResultFromImage(
+            worldPointsGrid: worldPointsGrid,
+            plane: plane,
+            surfaceNormalsForPointsGrid: surfaceNormalsForPointsGrid,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData
+        )
+        let integrityResults = IntegrityResults(
+            surfaceNormalStatusDetails: surfaceNormalIntegrityResult,
+            boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
+            boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
+        )
+        debugIntegrityResults(integrityResults: integrityResults)
+        return integrityResults
+    }
+    
+    /**
+     CPU implementation for surface integrity assessment from image. Used for benchmarking and fallback when Metal processing is not available.
      */
     func getIntegrityResultsFromImageCPU(
         worldPointsGrid: WorldPointsGrid,

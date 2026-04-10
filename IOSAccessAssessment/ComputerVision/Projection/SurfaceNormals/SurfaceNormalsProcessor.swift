@@ -13,10 +13,10 @@ import simd
 struct SurfaceNormalsForPointsGrid: Sendable {
     let width: Int
     let height: Int
-    var data: [SurfaceNormalForPointGridCell]
+    var data: [SurfaceNormalsForPointsGridCell]
     
     /// TODO: Handle out-of-bounds access more robustly, possibly with a custom error or by returning an optional.
-    subscript(x: Int, y: Int) -> SurfaceNormalForPointGridCell {
+    subscript(x: Int, y: Int) -> SurfaceNormalsForPointsGridCell {
         get { return data[y * width + x] }
         set { data[y * width + x] = newValue }
     }
@@ -124,7 +124,7 @@ struct SurfaceNormalsProcessor {
         /// TODO: Need to check if the worldPointsGrid.data is correctly laid out in memory for a contiguous copy.
         let worldPointsGridBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
-            length: MemoryLayout<WorldPointGridCell>.stride * gridCapacity,
+            length: MemoryLayout<WorldPointsGridCell>.stride * gridCapacity,
             options: .storageModeShared
         )
         let worldPointsGridBufferPtr = worldPointsGridBuffer.contents()
@@ -133,12 +133,12 @@ struct SurfaceNormalsProcessor {
                 throw WorldPointsProcessorError.unableToProcessBufferData
             }
             worldPointsGridBufferPtr.copyMemory(
-                from: baseAddress, byteCount: MemoryLayout<WorldPointGridCell>.stride * gridCapacity
+                from: baseAddress, byteCount: MemoryLayout<WorldPointsGridCell>.stride * gridCapacity
             )
         }
         var widthLocal = UInt32(width)
         var heightLocal: UInt32 = UInt32(height)
-        var params = SurfaceNormalForPointGridParams(
+        var params = SurfaceNormalsForPointsGridParams(
             minStep: UInt32(minStep), maxStep: UInt32(maxStep), eps: eps,
             longitudinalVector: plane.firstVector, lateralVector: plane.secondVector,
             normalVector: plane.normalVector, origin: plane.origin,
@@ -149,7 +149,7 @@ struct SurfaceNormalsProcessor {
             stepL: stepL, stepT: stepT
         )
         /// Setup the output buffer
-        let gridBufferLength = MemoryLayout<SurfaceNormalForPointGridCell>.stride * gridCapacity
+        let gridBufferLength = MemoryLayout<SurfaceNormalsForPointsGridCell>.stride * gridCapacity
         let gridBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
             device: self.device,
             length: gridBufferLength,
@@ -174,7 +174,7 @@ struct SurfaceNormalsProcessor {
         commandEncoder.setBuffer(worldPointsGridBuffer, offset: 0, index: 0)
         commandEncoder.setBytes(&widthLocal, length: MemoryLayout<UInt32>.size, index: 1)
         commandEncoder.setBytes(&heightLocal, length: MemoryLayout<UInt32>.size, index: 2)
-        commandEncoder.setBytes(&params, length: MemoryLayout<SurfaceNormalForPointGridParams>.stride, index: 3)
+        commandEncoder.setBytes(&params, length: MemoryLayout<SurfaceNormalsForPointsGridParams>.stride, index: 3)
         commandEncoder.setBuffer(gridBuffer, offset: 0, index: 4)
         
         let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
@@ -188,10 +188,10 @@ struct SurfaceNormalsProcessor {
         
         /// Process the output grid buffer to create the 2D grid of surface normals for points
         /// TODO: Consider using a more efficient method to read the data back from the GPU, especially for large grids.
-        var surfaceNormalGridData = Array(repeating: SurfaceNormalForPointGridCell(
+        var surfaceNormalGridData = Array(repeating: SurfaceNormalsForPointsGridCell(
             worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
         ), count: gridCapacity)
-        let surfaceNormalGridBufferPtr = gridBuffer.contents().bindMemory(to: SurfaceNormalForPointGridCell.self, capacity: gridCapacity)
+        let surfaceNormalGridBufferPtr = gridBuffer.contents().bindMemory(to: SurfaceNormalsForPointsGridCell.self, capacity: gridCapacity)
         for i in 0..<gridCapacity {
             let surfaceNormalGridCell = surfaceNormalGridBufferPtr[i]
             guard surfaceNormalGridCell.isValid != 0 else { continue }
@@ -215,7 +215,7 @@ struct SurfaceNormalsProcessor {
         
         var surfaceNormalsGrid = SurfaceNormalsForPointsGrid(
             width: width, height: height,
-            data: Array(repeating: SurfaceNormalForPointGridCell(
+            data: Array(repeating: SurfaceNormalsForPointsGridCell(
                 worldPoint: WorldPoint(p: simd_float3(0, 0, 0)), surfaceNormal: simd_float3(0, 0, 0), isValid: UInt32(0)
             ), count: width * height)
         )
@@ -285,7 +285,7 @@ struct SurfaceNormalsProcessor {
                     continue
                 }
                 let normalizedNormal = simd_normalize(alignNormalWithReference(normal))
-                surfaceNormalsGrid[x, y] = SurfaceNormalForPointGridCell(
+                surfaceNormalsGrid[x, y] = SurfaceNormalsForPointsGridCell(
                     worldPoint: cell.worldPoint,
                     surfaceNormal: normalizedNormal,
                     isValid: UInt32(1)

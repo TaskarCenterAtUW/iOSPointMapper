@@ -141,8 +141,8 @@ kernel void projectPointsToPlane(
 kernel void restructureWorldPointsToGrid(
    device const WorldPoint* inputPoints [[buffer(0)]],
    constant uint& pointCount [[buffer(1)]],
-   constant WorldPointGridParams& params [[buffer(2)]],
-   device WorldPointGridCell* outputGrid [[buffer(3)]],
+   constant WorldPointsGridParams& params [[buffer(2)]],
+   device WorldPointsGridCell* outputGrid [[buffer(3)]],
    uint id [[thread_position_in_grid]]
 ) {
     if (id >= pointCount) return;

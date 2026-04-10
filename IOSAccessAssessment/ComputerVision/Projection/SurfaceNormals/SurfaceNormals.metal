@@ -32,7 +32,7 @@ inline OptionalNeighbor walkDirection(
     uint startX, uint startY, float2 step, float sign,
     uint minStep, uint maxStep,
     uint width, uint height,
-    device const WorldPointGridCell* grid
+    device const WorldPointsGridCell* grid
 ) {
     float2 pos = float2(float(startX), float(startY));
     float3 pointSum = float3(0.0);
@@ -48,7 +48,7 @@ inline OptionalNeighbor walkDirection(
         }
         
         uint index = yi * width + xi;
-        WorldPointGridCell cell = grid[index];
+        WorldPointsGridCell cell = grid[index];
         if (cell.isValid == 0) {
             continue; // Skip invalid cells
         }
@@ -72,11 +72,11 @@ inline float3 alignNormalWithReference(float3 normal, float3 reference) {
 }
 
 kernel void computeSurfaceNormals(
-    device const WorldPointGridCell* inputPoints [[buffer(0)]],
+    device const WorldPointsGridCell* inputPoints [[buffer(0)]],
     constant uint& width [[buffer(1)]],
     constant uint& height [[buffer(2)]],
-    constant SurfaceNormalForPointGridParams& params [[buffer(3)]],
-    device SurfaceNormalForPointGridCell* outputGrid [[buffer(4)]],
+    constant SurfaceNormalsForPointsGridParams& params [[buffer(3)]],
+    device SurfaceNormalsForPointsGridCell* outputGrid [[buffer(4)]],
     uint id [[thread_position_in_grid]]
 ) {
     // Index = y * width + x
@@ -84,7 +84,7 @@ kernel void computeSurfaceNormals(
     uint y = id / width;
     if (x >= width || y >= height) return;
     
-    WorldPointGridCell cell = inputPoints[id];
+    WorldPointsGridCell cell = inputPoints[id];
     if (cell.isValid == 0) {
         return;
     }
@@ -157,17 +157,17 @@ inline float2 unprojectWorldToPixel(
 }
 
 kernel void getSurfaceNormalsWithinBounds(
-    device const SurfaceNormalForPointGridCell* inputGrid [[buffer(0)]],
+    device const SurfaceNormalsForPointsGridCell* inputGrid [[buffer(0)]],
     constant BoundsParams* boxes [[buffer(1)]],
     constant SurfaceNormalsWithinBoundsParams& params [[buffer(2)]],
-    device SurfaceNormalForPointGridCell* outputBoxGrids [[buffer(3)]],
+    device SurfaceNormalsForPointsGridCell* outputBoxGrids [[buffer(3)]],
     uint id [[thread_position_in_grid]]
 ) {
     uint gridCellCount = params.gridWidth * params.gridHeight;
     if (id >= gridCellCount) {
         return;
     }
-    SurfaceNormalForPointGridCell cell = inputGrid[id];
+    SurfaceNormalsForPointsGridCell cell = inputGrid[id];
     if (cell.isValid == 0) {
         return;
     }
