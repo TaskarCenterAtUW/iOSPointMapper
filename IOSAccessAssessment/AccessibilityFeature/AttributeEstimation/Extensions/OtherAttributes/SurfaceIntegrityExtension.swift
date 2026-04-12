@@ -84,10 +84,6 @@ extension AttributeEstimationPipeline {
 //        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
 //            accessibilityFeature: accessibilityFeature, plane: alignedPlane
 //        )
-        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromMeshCPU(
-            meshPolygons: meshPolygons, plane: alignedPlane,
-            damageDetectionResults: damageDetectionResults, captureData: captureMeshData
-        )
         let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
             meshTriangles: meshTriangles, plane: alignedPlane,
             damageDetectionResults: damageDetectionResults, captureData: captureMeshData
