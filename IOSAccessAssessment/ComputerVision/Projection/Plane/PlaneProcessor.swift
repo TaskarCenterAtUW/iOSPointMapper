@@ -11,7 +11,6 @@ import CoreImage
 enum PlaneProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     case invalidPointData
-    case invalidMeshData
     case invalidPlaneData
     case invalidProjectionData
     
@@ -21,8 +20,6 @@ enum PlaneProcessorError: Error, LocalizedError {
             return "PlaneFit Initialization Error: \(message)"
         case .invalidPointData:
             return "The calculated point data is invalid."
-        case .invalidMeshData:
-            return "The provided mesh data is invalid."
         case .invalidPlaneData:
             return "The calculated plane data is invalid."
         case .invalidProjectionData:
@@ -44,6 +41,10 @@ struct Plane: Sendable, CustomStringConvertible {
     }
 }
 
+/**
+ ProjectedPlane represents the 2D projection of a 3D plane onto the image plane, containing the projected origin and vectors.
+ Each vector is a tuple of two points in 2D pixel coordinates, representing the start and end of the projected vector.
+ */
 struct ProjectedPlane: Sendable, CustomStringConvertible {
     var origin: SIMD2<Float>
     var firstVector: (SIMD2<Float>, SIMD2<Float>)

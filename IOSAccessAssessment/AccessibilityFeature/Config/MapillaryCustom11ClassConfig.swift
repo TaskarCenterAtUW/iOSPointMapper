@@ -23,8 +23,8 @@ extension AccessibilityFeatureConfig {
                 meshClassification: [.floor],
                 attributes: [
                     .width, .runningSlope, .crossSlope, .surfaceIntegrity,
-                    .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
-                    .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
+//                    .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
+//                    .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
                 ],
                 oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true)
             ),

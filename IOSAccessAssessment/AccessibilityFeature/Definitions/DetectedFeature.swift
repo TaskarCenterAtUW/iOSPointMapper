@@ -13,6 +13,7 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     let area: Float
     let perimeter: Float
     
+    /// Specialized property to hold the 4 points of the trapezoid that approximates the contour, if applicable.
     let trapezoidPoints: [SIMD2<Float>]?
     
     init(

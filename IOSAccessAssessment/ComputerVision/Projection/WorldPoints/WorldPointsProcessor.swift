@@ -18,6 +18,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
     case metalPipelineBlitEncoderError
     case outputImageCreationFailed
     case unableToProcessBufferData
+    case noWorldPointsToProcess
     
     var errorDescription: String? {
         switch self {
@@ -35,6 +36,8 @@ enum WorldPointsProcessorError: Error, LocalizedError {
             return "Failed to create output CIImage from Metal texture."
         case .unableToProcessBufferData:
             return "Unable to process data from CVPixelBuffer."
+        case .noWorldPointsToProcess:
+            return "No world points to process for grid restructuring."
         }
     }
 }
@@ -43,14 +46,15 @@ enum WorldPointsProcessorError: Error, LocalizedError {
  Extacting 3D world points.
  */
 struct WorldPointsProcessor {
-    private let device: MTLDevice
-    private let commandQueue: MTLCommandQueue
+    let device: MTLDevice
+    let commandQueue: MTLCommandQueue
     
-    private let worldPointsPipeline: MTLComputePipelineState
-    private let projectionPipeline: MTLComputePipelineState
-    private let textureLoader: MTKTextureLoader
+    let worldPointsPipeline: MTLComputePipelineState
+    let projectionPipeline: MTLComputePipelineState
+    let gridPipeline: MTLComputePipelineState
+    let textureLoader: MTKTextureLoader
     
-    private let ciContext: CIContext
+    let ciContext: CIContext
     
     init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
@@ -73,6 +77,11 @@ struct WorldPointsProcessor {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.projectionPipeline = projectionPipeline
+        guard let gridKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "restructureWorldPointsToGrid"),
+              let gridPipeline = try? device.makeComputePipelineState(function: gridKernelFunction) else {
+            throw WorldPointsProcessorError.metalInitializationFailed
+        }
+        self.gridPipeline = gridPipeline
     }
     
     /**
@@ -163,6 +172,7 @@ struct WorldPointsProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
+        /// TODO: Consider using a more efficient way to read back the point count and points, especially when the point count is large. This current approach reads the entire points buffer, which may not be efficient if there are many points.
         let pointsCountPointer = pointCount.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let actualPointCount = Int(pointsCountPointer)
         var worldPoints: [WorldPoint] = []
@@ -176,32 +186,6 @@ struct WorldPointsProcessor {
 //        let dbg = debugBuffer.contents().bindMemory(to: UInt32.self, capacity: debugCountSlots)
 //        debugWorldPoints(worldPoints)
         return worldPoints
-    }
-    
-    /**
-        Compute world point from pixel coordinate and depth value (CPU version).
-     
-        Taking reference from `LocalizationProcessor`
-     */
-    private func computeWorldPointCPU(
-        pixelCoord: SIMD2<Int>,
-        depthValue: Float,
-        cameraTransform: simd_float4x4,
-        invIntrinsics: simd_float3x3
-    ) -> WorldPoint {
-        let imagePoint = simd_float3(Float(pixelCoord.x), Float(pixelCoord.y), 1.0)
-        let ray = invIntrinsics * imagePoint
-        let rayDirection = simd_normalize(ray)
-        
-        var cameraPoint = rayDirection * depthValue
-        cameraPoint.y = -cameraPoint.y
-        cameraPoint.z = -cameraPoint.z
-        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
-        
-        let worldPoint4 = cameraTransform * cameraPoint4
-        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
-        
-        return WorldPoint(p: worldPoint)
     }
     
     /**
@@ -274,127 +258,36 @@ struct WorldPointsProcessor {
         return worldPoints
     }
     
-    func projectPointsToPlane(
-        worldPoints: [WorldPoint],
-        plane: Plane,
+    /**
+        Compute world point from pixel coordinate and depth value (CPU version).
+     
+        Taking reference from `LocalizationProcessor`
+     */
+    private func computeWorldPointCPU(
+        pixelCoord: SIMD2<Int>,
+        depthValue: Float,
         cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3,
-        imageSize: CGSize
-    ) throws -> [ProjectedPoint] {
-        guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw WorldPointsProcessorError.metalPipelineCreationError
-        }
-        var pointCount = worldPoints.count
-        if pointCount == 0 {
-            return []
-        }
-        /// Set up the world points buffer
-        let worldPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device,
-            length: MemoryLayout<WorldPoint>.stride * pointCount,
-            options: .storageModeShared
-        )
-        let worldPointsBufferPtr = worldPointsBuffer.contents()
-        try worldPoints.withUnsafeBytes { srcPtr in
-            guard let baseAddress = srcPtr.baseAddress else {
-                throw WorldPointsProcessorError.unableToProcessBufferData
-            }
-            worldPointsBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<WorldPoint>.stride * pointCount)
-        }
-        var params = ProjectedPointsParams(
-            imageSize: simd_uint2(UInt32(imageSize.width), UInt32(imageSize.height)),
-            cameraTransform: cameraTransform,
-            cameraIntrinsics: cameraIntrinsics,
-            longitudinalVector: simd_float3(plane.firstVector),
-            lateralVector: simd_float3(plane.secondVector),
-            normalVector: simd_float3(plane.normalVector),
-            origin: simd_float3(plane.origin)
-        )
-        let projectedPointsBuffer: MTLBuffer = try MetalBufferUtils.makeBuffer(
-            device: self.device,
-            length: MemoryLayout<ProjectedPoint>.stride * pointCount,
-            options: .storageModeShared
-        )
+        invIntrinsics: simd_float3x3
+    ) -> WorldPoint {
+        let imagePoint = simd_float3(Float(pixelCoord.x), Float(pixelCoord.y), 1.0)
+        let ray = invIntrinsics * imagePoint
+        let rayDirection = simd_normalize(ray)
         
-        let threadGroupSizeWidth = min(self.projectionPipeline.maxTotalThreadsPerThreadgroup, 256)
+        var cameraPoint = rayDirection * depthValue
+        cameraPoint.y = -cameraPoint.y
+        cameraPoint.z = -cameraPoint.z
+        let cameraPoint4 = simd_float4(cameraPoint, 1.0)
         
-        guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw WorldPointsProcessorError.metalPipelineCreationError
-        }
+        let worldPoint4 = cameraTransform * cameraPoint4
+        let worldPoint = SIMD3<Float>(worldPoint4.x, worldPoint4.y, worldPoint4.z) / worldPoint4.w
         
-        commandEncoder.setComputePipelineState(self.projectionPipeline)
-        commandEncoder.setBuffer(worldPointsBuffer, offset: 0, index: 0)
-        commandEncoder.setBytes(&pointCount, length: MemoryLayout<UInt32>.stride, index: 1)
-        commandEncoder.setBytes(&params, length: MemoryLayout<ProjectedPointsParams>.stride, index: 2)
-        commandEncoder.setBuffer(projectedPointsBuffer, offset: 0, index: 3)
-        
-        let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
-        let threadgroups = MTLSize(width: (pointCount + threadGroupSize.width - 1) / threadGroupSize.width,
-                                    height: 1, depth: 1)
-        commandEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadGroupSize)
-        commandEncoder.endEncoding()
-        
-        commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
-        
-        var projectedPoints: [ProjectedPoint] = []
-        let projectedPointsPointer = projectedPointsBuffer.contents().bindMemory(to: ProjectedPoint.self, capacity: pointCount)
-        for i in 0..<pointCount {
-            let projectedPoint = projectedPointsPointer.advanced(by: i).pointee
-            projectedPoints.append(projectedPoint)
-        }
-        return projectedPoints
-    }
-    
-    func projectPointsToPlaneCPU(
-        worldPoints: [WorldPoint],
-        plane: Plane,
-        cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3,
-        imageSize: CGSize
-    ) throws -> [ProjectedPoint] {
-        let pointCount = worldPoints.count
-        if pointCount == 0 {
-            return []
-        }
-        let longitudinalVector = simd_float3(plane.firstVector)
-        let lateralVector = simd_float3(plane.secondVector)
-//        let normalVector = simd_float3(plane.normalVector)
-        let origin = simd_float3(plane.origin)
-        var projectedPoints: [ProjectedPoint] = []
-        for i in 0..<pointCount {
-            let worldPoint = worldPoints[i].p
-            let s = simd_dot(worldPoint - origin, longitudinalVector)
-            let t = simd_dot(worldPoint - origin, lateralVector)
-            projectedPoints.append(
-                ProjectedPoint(s: s, t: t)
-            )
-        }
-        return projectedPoints
-    }
-    
-    func unprojectPointsFromPlaneCPU(
-        projectedPoints: [ProjectedPoint],
-        plane: Plane
-    ) throws -> [WorldPoint] {
-        let pointCount = projectedPoints.count
-        if pointCount == 0 {
-            return []
-        }
-        let longitudinalVector = simd_float3(plane.firstVector)
-        let lateralVector = simd_float3(plane.secondVector)
-//        let normalVector = simd_float3(plane.normalVector)
-        let origin = simd_float3(plane.origin)
-        var worldPoints: [WorldPoint] = []
-        for i in 0..<pointCount {
-            let projectedPoint = projectedPoints[i]
-            let worldPointPosition = origin + projectedPoint.s * longitudinalVector + projectedPoint.t * lateralVector
-            worldPoints.append(WorldPoint(p: worldPointPosition))
-        }
-        return worldPoints
+        return WorldPoint(p: worldPoint)
     }
 }
 
+/**
+ Extension for debugging world points statistics.
+ */
 extension WorldPointsProcessor {
     private func debugWorldPoints(_ worldPoints: [WorldPoint]) {
         debugAxis(worldPoints, axisIndex: 0, axisLabel: "X")

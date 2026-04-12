@@ -120,3 +120,93 @@ typedef struct MeshProjectedPointBinningParams {
     MTL_FLOAT3      normalVector;
     MTL_FLOAT3      origin;
 } MeshProjectedPointBinningParams;
+
+/**
+ Grid based data structures
+ */
+typedef struct WorldPointsGridCell {
+    WorldPoint   worldPoint;
+    MTL_BOOL     isValid;
+} WorldPointsGridCell;
+
+typedef struct WorldPointsGridParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} WorldPointsGridParams;
+
+//typedef struct MeshGridCell {
+//    MeshTriangle   triangle;
+//    MTL_BOOL       isValid;
+//} MeshGridCell;
+//
+//typedef struct MeshGridParams {
+//    MTL_UINT2       imageSize;
+//    MTL_FLOAT4X4    viewMatrix;
+//    MTL_FLOAT3X3    cameraIntrinsics;
+//} MeshGridParams;
+
+typedef struct SurfaceNormalsForPointsGridCell {
+    WorldPoint     worldPoint;
+    MTL_FLOAT3     surfaceNormal;
+    MTL_BOOL       isValid;
+} SurfaceNormalsForPointsGridCell;
+
+typedef struct SurfaceNormalsForPointsGridParams {
+    MTL_UINT        minStep;
+    MTL_UINT        maxStep;
+    float           eps;
+    MTL_FLOAT3      longitudinalVector;
+    MTL_FLOAT3      lateralVector;
+    MTL_FLOAT3      normalVector;
+    MTL_FLOAT3      origin;
+    MTL_FLOAT2      projectedLongitudinalVector;
+    MTL_FLOAT2      projectedLateralVector;
+    MTL_FLOAT2      projectedNormalVector;
+    MTL_FLOAT2      projectedOrigin;
+    MTL_FLOAT2      stepL;
+    MTL_FLOAT2      stepT;
+} SurfaceNormalsForPointsGridParams;
+
+typedef struct SurfaceNormalForMeshGridCell {
+    MeshTriangle   triangle;
+    MTL_FLOAT3     surfaceNormal;
+    MTL_BOOL       isValid;
+} SurfaceNormalForMeshGridCell;
+
+/**
+ Related to bounding boxes
+ */
+typedef struct SurfaceNormalsWithinBoundsParams {
+    MTL_UINT        gridWidth;
+    MTL_UINT        gridHeight;
+    MTL_UINT        boxCount;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+    MTL_UINT2       imageSize;
+} SurfaceNormalsWithinBoundsParams;
+
+/**
+ Related to Surface Integrity
+ */
+typedef struct DeviantNormalParams {
+    MTL_FLOAT3      normalVector;
+    float           angularDeviationCosThreshold;
+} DeviantNormalParams;
+
+typedef struct StdNormalParams {
+    MTL_FLOAT3      normalVector;
+} StdNormalParams;
+
+typedef struct AreaWithinBoundsPolygonParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} AreaWithinBoundsPolygonParams;
+
+typedef struct StdPolygonParams {
+    MTL_FLOAT3      normalVector;
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} StdPolygonParams;

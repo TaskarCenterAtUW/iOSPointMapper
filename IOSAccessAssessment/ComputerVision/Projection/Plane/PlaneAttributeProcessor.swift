@@ -180,6 +180,7 @@ struct PlaneAttributeProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
+        /// TODO: Consider using a more efficient way to read back the binned values, especially when the number of projected points is large.
         let binCountsPtr = binCountsBuffer.contents().bindMemory(to: UInt32.self, capacity: binCount)
         let binValuesPtr = binValuesBuffer.contents().bindMemory(to: Float.self, capacity: binCount * projectedPointCount)
         var bins: [ProjectedPointBin] = []
@@ -397,6 +398,7 @@ extension PlaneAttributeProcessor {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
         
+        /// TODO: Consider using a more efficient way to read back the binned values, especially when the number of triangles is large.
         let binTriangleCountsPtr = binTriangleCountsBuffer.contents().bindMemory(to: UInt32.self, capacity: binCount)
         let binValuesPtr = binValuesBuffer.contents().bindMemory(to: Float.self, capacity: binCount * maxTrianglesPerBin)
         var bins: [ProjectedPointBin] = []
@@ -414,13 +416,5 @@ extension PlaneAttributeProcessor {
         return ProjectedPointBins(
             binCount: binCount, binSize: binSize, bins: bins
         )
-    }
-    
-    /**
-     Compute the width of the plane by calculating the width for each projected point bin and then aggregating the results.
-     The width of each projected point bin is calculated by getting all the mesh triangles that intersect with the 's' range of the bin and then calculating the width of the 't' values for those triangles.
-     */
-    func computeWidths() -> [Float] {
-        return []
     }
 }

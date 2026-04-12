@@ -573,9 +573,9 @@ struct AnnotationView: View {
                     accessibilityFeatures.append(oldFeature)
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
                 }
-                /// MARK: Temporary code for visualization
+                /// MARK: Temporary code for visualization. Incurs significant performance overhead.
                 if currentClass.attributes.contains(where: {
-                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
                 }) {
                     let plane = try attributeEstimationPipeline.calculateAlignedPlane(
                         accessibilityFeature: currentFeature, worldPoints: nil
@@ -583,7 +583,13 @@ struct AnnotationView: View {
                     let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
                         accessibilityFeature: currentFeature, plane: plane
                     )
-                    updateFeatureResults = AnnotationImageFeatureUpdateResults(plane: plane, projectedPlane: projectedPlane)
+                    let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
+                        accessibilityFeature: currentFeature
+                    )
+                    updateFeatureResults = AnnotationImageFeatureUpdateResults(
+                        plane: plane, projectedPlane: projectedPlane,
+                        damageDetectionResults: damageDetectionResults
+                    )
                 }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
@@ -680,7 +686,6 @@ struct AnnotationView: View {
             throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
         }
         sharedAppData.liveMappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
-        print("Live Mapping Data: \(sharedAppData.liveMappingData)")
         
         addFeaturesToCurrentDataset(
             captureImageData: currentCaptureDataRecord.imageData,

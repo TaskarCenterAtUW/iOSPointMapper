@@ -32,10 +32,12 @@ struct SegmentationModelRequestProcessor {
     var selectedClasses: [AccessibilityFeatureClass] = []
     
     init(selectedClasses: [AccessibilityFeatureClass]) throws {
-        let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL
+        guard let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL else {
+            throw SegmentationModelError.modelLoadingError
+        }
         let configuration: MLModelConfiguration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
-        self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL!, configuration: configuration))
+        self.visionModel = try VNCoreMLModel(for: MLModel(contentsOf: modelURL, configuration: configuration))
         self.selectedClasses = selectedClasses
     }
     

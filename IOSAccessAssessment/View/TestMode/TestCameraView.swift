@@ -73,11 +73,11 @@ class LocationManagerPlaceholder: NSObject, ObservableObject {
     
     func locationManager(didUpdateLocations locations: [CLLocation]) {
         guard let latestLocation = locations.last else { return }
-        guard let horizontalAccuracy = latestLocation.horizontalAccuracy as CLLocationAccuracy?,
-                let verticalAccuracy = latestLocation.verticalAccuracy as CLLocationAccuracy?,
-              horizontalAccuracy > 0, verticalAccuracy > 0 else {
-            return
-        }
+//        guard let horizontalAccuracy = latestLocation.horizontalAccuracy as CLLocationAccuracy?,
+//                let verticalAccuracy = latestLocation.verticalAccuracy as CLLocationAccuracy?,
+//              horizontalAccuracy > 0, verticalAccuracy > 0 else {
+//            return
+//        }
         Task { @MainActor in
             self.currentLocation = latestLocation
         }

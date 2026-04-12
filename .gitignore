@@ -19,6 +19,8 @@ Frameworks/*
 *.mlpackage
 *.mlmodel
 !IOSAccessAssessment/MachineLearning/SemanticSegmentation/bisenetv2_11_640_640.mlpackage
+!IOSAccessAssessment/MachineLearning/ModelZoo/CrackDetection/v8n_175_16_960.mlpackage
+
 
 *.mlperf
 

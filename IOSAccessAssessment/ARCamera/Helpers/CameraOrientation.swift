@@ -94,6 +94,9 @@ extension CGImagePropertyOrientation {
         }
     }
     
+    /**
+        Returns a CGAffineTransform that can be applied to an image with this orientation to transform it to the "up" orientation.
+     */
     func getNormalizedToUpTransform() -> CGAffineTransform {
         var t = CGAffineTransform.identity
 

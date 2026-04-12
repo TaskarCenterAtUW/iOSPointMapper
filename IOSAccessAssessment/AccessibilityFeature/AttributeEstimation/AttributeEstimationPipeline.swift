@@ -13,6 +13,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
     case missingCaptureData
     case missingDepthImage
+    case missingPreprocessors
     case invalidAttributeData
     case attributeAssignmentError
     
@@ -24,6 +25,8 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
             return NSLocalizedString("Captured data is missing for processing.", comment: "")
         case .missingDepthImage:
             return NSLocalizedString("Depth image is missing from the capture data.", comment: "")
+        case .missingPreprocessors:
+            return NSLocalizedString("Required pre-processors are not configured.", comment: "")
         case .invalidAttributeData:
             return NSLocalizedString("Invalid attribute data encountered.", comment: "")
         case .attributeAssignmentError:
@@ -54,20 +57,27 @@ enum AttributeEstimationPipelineConstants {
 class AttributeEstimationPipeline: ObservableObject {
     struct PrerequisiteCache: Sendable {
         var worldPoints: [WorldPoint]? = nil
+        var worldPointsGrid: WorldPointsGrid? = nil
         var pointAlignedPlane: Plane? = nil
+        var pointProjectedPlane: ProjectedPlane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
         var meshTriangles: [MeshTriangle]? = nil
         var meshAlignedPlane: Plane? = nil
+        var meshProjectedPlane: ProjectedPlane? = nil
     }
+    
+    var captureImageData: (any CaptureImageDataProtocol)?
+    var captureMeshData: (any CaptureMeshDataProtocol)?
     
     var depthMapProcessor: DepthMapProcessor?
     var localizationProcessor: LocalizationProcessor?
     var worldPointsProcessor: WorldPointsProcessor?
     var planeProcessor: PlaneProcessor?
     var planeAttributeProcessor: PlaneAttributeProcessor?
-    var captureImageData: (any CaptureImageDataProtocol)?
-    var captureMeshData: (any CaptureMeshDataProtocol)?
+    var damageDetectionPipeline: DamageDetectionPipeline?
+    var surfaceNormalsProcessor: SurfaceNormalsProcessor?
+    var surfaceIntegrityProcessor: SurfaceIntegrityProcessor?
     
     var prerequisiteCache = PrerequisiteCache()
     
@@ -86,8 +96,13 @@ class AttributeEstimationPipeline: ObservableObject {
         self.worldPointsProcessor = worldPointsProcessor
         self.planeProcessor = PlaneProcessor(worldPointsProcessor: worldPointsProcessor)
         self.planeAttributeProcessor = try PlaneAttributeProcessor()
+        self.surfaceNormalsProcessor = try SurfaceNormalsProcessor()
+        self.surfaceIntegrityProcessor = try SurfaceIntegrityProcessor()
         self.captureImageData = captureImageData
         self.captureMeshData = captureMeshData
+        let damageDetectionPipeline = DamageDetectionPipeline()
+        try damageDetectionPipeline.configure()
+        self.damageDetectionPipeline = damageDetectionPipeline
     }
     
     func setPrerequisites(
@@ -96,36 +111,51 @@ class AttributeEstimationPipeline: ObservableObject {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
         let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
+        var worldPointsGrid: WorldPointsGrid? = nil
         var pointAlignedPlane: Plane? = nil
+        var pointProjectedPlane: ProjectedPlane? = nil
         var meshContents: MeshContents? = nil
         var meshPolygons: [MeshPolygon]? = nil
         var meshTriangles: [MeshTriangle]? = nil
         var meshAlignedPlane: Plane? = nil
+        var meshProjectedPlane: ProjectedPlane? = nil
         switch(oswElementClass) {
         case .Sidewalk:
             if isMeshEnabled {
                 meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
                 meshPolygons = meshContents?.polygons
                 meshTriangles = meshContents?.triangles
-                meshAlignedPlane = try self.calculateAlignedPlane(
+                let calculatedMeshAlignedPlane = try self.calculateAlignedPlane(
                     accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+                )
+                meshAlignedPlane = calculatedMeshAlignedPlane
+                meshProjectedPlane = try self.calculateProjectedPlane(
+                    accessibilityFeature: accessibilityFeature, plane: calculatedMeshAlignedPlane
                 )
             }
             /// TODO: We can actually, eventually, comment this out since we don't need world points if mesh data is available.
             /// But we will have to ensure that none of the attribute calculations rely on world points in that case, which may require some refactoring, so leaving it for now.
             worldPoints = try self.getWorldPoints(accessibilityFeature: accessibilityFeature)
-            pointAlignedPlane = try self.calculateAlignedPlane(
+            worldPointsGrid = try self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
+            let calculatedPointProjectedPlane = try self.calculateAlignedPlane(
                 accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+            )
+            pointAlignedPlane = calculatedPointProjectedPlane
+            pointProjectedPlane = try self.calculateProjectedPlane(
+                accessibilityFeature: accessibilityFeature, plane: calculatedPointProjectedPlane
             )
         default:
             break
         }
         self.prerequisiteCache.worldPoints = worldPoints
+        self.prerequisiteCache.worldPointsGrid = worldPointsGrid
         self.prerequisiteCache.pointAlignedPlane = pointAlignedPlane
+        self.prerequisiteCache.pointProjectedPlane = pointProjectedPlane
         self.prerequisiteCache.meshContents = meshContents
         self.prerequisiteCache.meshPolygons = meshPolygons
         self.prerequisiteCache.meshTriangles = meshTriangles
         self.prerequisiteCache.meshAlignedPlane = meshAlignedPlane
+        self.prerequisiteCache.meshProjectedPlane = meshProjectedPlane
     }
     
     func clearPrerequisites() {
@@ -240,6 +270,13 @@ class AttributeEstimationPipeline: ObservableObject {
                 case .crossSlopeFromImage:
                     let crossSlopeAttributeValue = try self.calculateCrossSlopeFromImage(accessibilityFeature: accessibilityFeature)
                     try accessibilityFeature.setAttributeValue(crossSlopeAttributeValue, for: .crossSlopeFromImage, isCalculated: true)
+                case .surfaceIntegrity:
+                    let surfaceIntegrityAttributeValue = try self.calculateSurfaceIntegrity(
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try accessibilityFeature.setAttributeValue(
+                        surfaceIntegrityAttributeValue, for: .surfaceIntegrity, isCalculated: true
+                    )
                 default:
                     continue
                 }
