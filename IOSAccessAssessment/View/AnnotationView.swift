@@ -574,23 +574,23 @@ struct AnnotationView: View {
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
                 }
                 /// MARK: Temporary code for visualization. Incurs significant performance overhead.
-//                if currentClass.attributes.contains(where: {
-//                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
-//                }) {
-//                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(
-//                        accessibilityFeature: currentFeature, worldPoints: nil
-//                    )
-//                    let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
-//                        accessibilityFeature: currentFeature, plane: plane
-//                    )
-//                    let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
-//                        accessibilityFeature: currentFeature
-//                    )
-//                    updateFeatureResults = AnnotationImageFeatureUpdateResults(
-//                        plane: plane, projectedPlane: projectedPlane,
-//                        damageDetectionResults: damageDetectionResults
-//                    )
-//                }
+                if currentClass.attributes.contains(where: {
+                    $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
+                }) {
+                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(
+                        accessibilityFeature: currentFeature, worldPoints: nil
+                    )
+                    let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
+                        accessibilityFeature: currentFeature, plane: plane
+                    )
+                    let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
+                        accessibilityFeature: currentFeature
+                    )
+                    updateFeatureResults = AnnotationImageFeatureUpdateResults(
+                        plane: plane, projectedPlane: projectedPlane,
+                        damageDetectionResults: damageDetectionResults
+                    )
+                }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
                 featureSelectedStatus = featureSelectionViewModel.instances.reduce(into: [:]) { dict, feature in

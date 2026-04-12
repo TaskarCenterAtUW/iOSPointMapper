@@ -130,14 +130,42 @@ kernel void stdFromNormals(
     }
 }
 
+inline float2 unprojectWorldPointToPixel(
+    float3 worldPoint,
+    constant float4x4& viewMatrix,
+    constant float3x3& intrinsics,
+    uint2 imageSize
+) {
+    float4 worldPoint4 = float4(worldPoint, 1.0);
+    float4 imageVertex = viewMatrix * worldPoint4;
+    
+    if (imageVertex.z > 0) {
+        return float2(-1, -1);
+    }
+    float3 imagePoint = imageVertex.xyz / imageVertex.z;
+    float xNormalized = - imagePoint.x / imagePoint.z;
+    float yNormalized = - imagePoint.y / (- imagePoint.z);
+    
+    float3 pixelHomogeneous = intrinsics * float3(xNormalized, yNormalized, 1.0);
+    float2 pixelCoord = pixelHomogeneous.xy / pixelHomogeneous.z;
+    
+    if (pixelCoord.x < 0 || pixelCoord.x >= imageSize.x ||
+        pixelCoord.y < 0 || pixelCoord.y >= imageSize.y) {
+        return float2(-1, -1);
+    }
+    float2 pixelCoordRounded = round(pixelCoord);
+    return pixelCoordRounded;
+}
+
 kernel void countDeviantPolygonNormals(
     device const MeshTriangle* meshTriangles [[buffer(0)]],
     constant uint& count [[buffer(1)]],
-    constant DeviantNormalParams& params [[buffer(3)]],
-    device atomic_uint* totalValid [[buffer(4)]],
-    device atomic_uint* totalDeviant [[buffer(5)]],
+    constant DeviantNormalParams& params [[buffer(2)]],
+    device atomic_uint* totalValid [[buffer(3)]],
+    device atomic_uint* totalDeviant [[buffer(4)]],
     uint id [[thread_position_in_grid]],
-    uint tid [[thread_index_in_threadgroup]]
+    uint tid [[thread_index_in_threadgroup]],
+    uint gid [[threadgroup_position_in_grid]]
 ) {
     threadgroup uint localValid[256];
     threadgroup uint localDeviant[256];
@@ -149,10 +177,12 @@ kernel void countDeviantPolygonNormals(
         valid = 1;
         MeshTriangle tri = meshTriangles[id];
         // Calculate normal from the points
-        packed_float3 edge1 = tri.b - tri.a;
-        packed_float3 edge2 = tri.c - tri.a;
+        // First convert to float3 for cross product
+        float3 edge1 = tri.b - tri.a;
+        float3 edge2 = tri.c - tri.a;
         float3 normal = cross(edge1, edge2);
         normal = alignNormalWithReference(normal, params.normalVector);
+        normal = normalize(normal);
         float cosTheta = dot(normal, params.normalVector);
         // clamp
         cosTheta = clamp(cosTheta, -1.0f, 1.0f);
@@ -185,7 +215,8 @@ kernel void areaWithinBoundsPolygon(
     device const MeshTriangle* meshTriangles [[buffer(0)]],
     constant uint& count [[buffer(1)]],
     constant BoundsParams& boundsParams [[buffer(2)]],
-    device float* area [[buffer(3)]],
+    constant AreaWithinBoundsPolygonParams& params [[buffer(3)]],
+    device float* area [[buffer(4)]],
     uint id [[thread_position_in_grid]],
     uint tid [[thread_index_in_threadgroup]],
     uint gid [[threadgroup_position_in_grid]]
@@ -198,8 +229,11 @@ kernel void areaWithinBoundsPolygon(
         MeshTriangle tri = meshTriangles[id];
         // Get the centroid and check if it's within bounds
         float3 centroid = (tri.a + tri.b + tri.c) / 3.0f;
-        if (centroid.x >= boundsParams.minX && centroid.x <= boundsParams.maxX &&
-            centroid.y >= boundsParams.minY && centroid.y <= boundsParams.maxY) {
+        float2 unprojectedCentroid = unprojectWorldPointToPixel(
+            centroid, params.viewMatrix, params.cameraIntrinsics, params.imageSize
+        );
+        if (unprojectedCentroid.x >= boundsParams.minX && unprojectedCentroid.x <= boundsParams.maxX &&
+            unprojectedCentroid.y >= boundsParams.minY && unprojectedCentroid.y <= boundsParams.maxY) {
             // Calculate area using cross product
             packed_float3 edge1 = tri.b - tri.a;
             packed_float3 edge2 = tri.c - tri.a;
@@ -229,10 +263,10 @@ kernel void stdFromPolygonNormals(
     device const MeshTriangle* meshTriangles [[buffer(0)]],
     constant uint& count [[buffer(1)]],
     constant BoundsParams& boundsParams [[buffer(2)]],
-    constant StdNormalParams& params [[buffer(4)]],
-    device float* deviationSum [[buffer(5)]],
-    device float* deviationSquaredSum [[buffer(6)]],
-    device uint* totalValid [[buffer(7)]],
+    constant StdPolygonParams& params [[buffer(3)]],
+    device float* deviationSum [[buffer(4)]],
+    device float* deviationSquaredSum [[buffer(5)]],
+    device uint* totalValid [[buffer(6)]],
     uint id [[thread_position_in_grid]],
     uint tid [[thread_index_in_threadgroup]],
     uint gid [[threadgroup_position_in_grid]]
@@ -249,13 +283,17 @@ kernel void stdFromPolygonNormals(
         MeshTriangle tri = meshTriangles[id];
         // Get the centroid and check if it's within bounds
         float3 centroid = (tri.a + tri.b + tri.c) / 3.0f;
-        if (centroid.x >= boundsParams.minX && centroid.x <= boundsParams.maxX &&
-            centroid.y >= boundsParams.minY && centroid.y <= boundsParams.maxY) {
+        float2 unprojectedCentroid = unprojectWorldPointToPixel(
+            centroid, params.viewMatrix, params.cameraIntrinsics, params.imageSize
+        );
+        if (unprojectedCentroid.x >= boundsParams.minX && unprojectedCentroid.x <= boundsParams.maxX &&
+            unprojectedCentroid.y >= boundsParams.minY && unprojectedCentroid.y <= boundsParams.maxY) {
             validThread = 1;
             // Calculate normal from the points
             packed_float3 edge1 = tri.b - tri.a;
             packed_float3 edge2 = tri.c - tri.a;
             float3 normal = cross(edge1, edge2);
+            normal = normalize(normal);
             normal = alignNormalWithReference(normal, params.normalVector);
             float cosTheta = dot(normal, params.normalVector);
             // clamp

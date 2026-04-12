@@ -101,7 +101,8 @@ extension SurfaceIntegrityProcessor {
             let area = try getAreaWithinBounds(
                 meshTriangles: meshTriangles,
                 plane: plane,
-                bounds: boundsParams
+                bounds: boundsParams,
+                captureData: captureData
             )
             if area < boundingBoxAreaThreshold { continue }
             deviantBoundingBoxes += 1
@@ -131,7 +132,8 @@ extension SurfaceIntegrityProcessor {
             let angularStd = try getSurfaceNormalStdDetailsWithinBounds(
                 meshTriangles: meshTriangles,
                 plane: plane,
-                bounds: boundsParams
+                bounds: boundsParams,
+                captureData: captureData
             )
             if angularStd > boundingBoxAngularStdThreshold {
                 deviantBoundingBoxes += 1
@@ -149,7 +151,8 @@ extension SurfaceIntegrityProcessor {
     func getAreaWithinBounds(
         meshTriangles: [MeshTriangle],
         plane: Plane,
-        bounds: BoundsParams
+        bounds: BoundsParams,
+        captureData: (any CaptureMeshDataProtocol)
     ) throws -> Float {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
@@ -171,6 +174,11 @@ extension SurfaceIntegrityProcessor {
         }
         var countLocal = UInt32(count)
         var boundsParams = bounds
+        var params = AreaWithinBoundsPolygonParams(
+            imageSize: simd_uint2(UInt32(captureData.originalSize.width), UInt32(captureData.originalSize.height)),
+            viewMatrix: captureData.cameraTransform.inverse,
+            cameraIntrinsics: captureData.cameraIntrinsics
+        )
         /// Set up the buffers to hold the area
         let threadGroupSizeWidth = 256
         let numThreadGroups = (count + threadGroupSizeWidth - 1) / threadGroupSizeWidth
@@ -192,7 +200,8 @@ extension SurfaceIntegrityProcessor {
         commandEncoder.setBuffer(meshTriangleBuffer, offset: 0, index: 0)
         commandEncoder.setBytes(&countLocal, length: MemoryLayout<UInt32>.stride, index: 1)
         commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.stride, index: 2)
-        commandEncoder.setBuffer(areaBuffer, offset: 0, index: 3)
+        commandEncoder.setBytes(&params, length: MemoryLayout<AreaWithinBoundsPolygonParams>.stride, index: 3)
+        commandEncoder.setBuffer(areaBuffer, offset: 0, index: 4)
         
         let threadGroupSize = MTLSize(width: threadGroupSizeWidth, height: 1, depth: 1)
         let threadgroups = MTLSize(width: numThreadGroups, height: 1, depth: 1)
@@ -213,7 +222,8 @@ extension SurfaceIntegrityProcessor {
     func getSurfaceNormalStdDetailsWithinBounds(
         meshTriangles: [MeshTriangle],
         plane: Plane,
-        bounds: BoundsParams
+        bounds: BoundsParams,
+        captureData: (any CaptureMeshDataProtocol),
     ) throws -> Float {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
@@ -234,8 +244,11 @@ extension SurfaceIntegrityProcessor {
             meshTriangleBufferPtr.copyMemory(from: baseAddress, byteCount: MemoryLayout<MeshTriangle>.stride * count)
         }
         var countLocal = UInt32(count)
-        var params = StdNormalParams(
-            normalVector: plane.normalVector
+        var params = StdPolygonParams(
+            normalVector: plane.normalVector,
+            imageSize: simd_uint2(UInt32(captureData.originalSize.width), UInt32(captureData.originalSize.height)),
+            viewMatrix: captureData.cameraTransform.inverse,
+            cameraIntrinsics: captureData.cameraIntrinsics
         )
         var boundsParams = bounds
         /// Set up buffers to hold the sum of angular deviations, sum of squared angular deviations, and total valid points for standard deviation calculation
@@ -267,7 +280,7 @@ extension SurfaceIntegrityProcessor {
         commandEncoder.setBuffer(meshTriangleBuffer, offset: 0, index: 0)
         commandEncoder.setBytes(&countLocal, length: MemoryLayout<UInt32>.stride, index: 1)
         commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.stride, index: 2)
-        commandEncoder.setBytes(&params, length: MemoryLayout<StdNormalParams>.stride, index: 3)
+        commandEncoder.setBytes(&params, length: MemoryLayout<StdPolygonParams>.stride, index: 3)
         commandEncoder.setBuffer(deviationSumBuffer, offset: 0, index: 4)
         commandEncoder.setBuffer(deviationSquaredSumBuffer, offset: 0, index: 5)
         commandEncoder.setBuffer(totalValidBuffer, offset: 0, index: 6)
@@ -296,6 +309,9 @@ extension SurfaceIntegrityProcessor {
             totalPoints += totalPointsPtr[i]
         }
         
+        if totalPoints == 0 {
+            return 0
+        }
         let angularDeviationMean = angularDeviationSum / Float(totalPoints)
         let angularDeviationVariance = (angularDeviationSquaredSum / Float(totalPoints)) - (angularDeviationMean * angularDeviationMean)
         let angularDeviationStdInRadians: Float = sqrt(angularDeviationVariance)

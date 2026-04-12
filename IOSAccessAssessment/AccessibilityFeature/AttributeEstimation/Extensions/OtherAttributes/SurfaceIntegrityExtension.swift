@@ -12,6 +12,10 @@ extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateSurfaceIntegrityFromMesh(accessibilityFeature: accessibilityFeature)
+        }
         return try calculateSurfaceIntegrityFromImage(accessibilityFeature: accessibilityFeature)
     }
     
@@ -41,16 +45,12 @@ extension AttributeEstimationPipeline {
         let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
         )
-        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromImageCPU(
-            worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
-            damageDetectionResults: damageDetectionResults, captureData: captureImageData
-        )
         let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromImage(
             worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
             damageDetectionResults: damageDetectionResults, captureData: captureImageData
         )
         
-        var surfaceIntegrity: Bool = {
+        let surfaceIntegrity: Bool = {
             return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
             surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
             surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
@@ -69,9 +69,6 @@ extension AttributeEstimationPipeline {
         guard let captureMeshData = self.captureMeshData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
-        guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
-            throw AttributeEstimationPipelineError.missingPreprocessors
-        }
         guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
             throw AttributeEstimationPipelineError.missingPreprocessors
         }
@@ -84,19 +81,19 @@ extension AttributeEstimationPipeline {
         let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
             accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
         )
-        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
-            accessibilityFeature: accessibilityFeature, plane: alignedPlane
-        )
-        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMeshCPU(
+//        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
+//            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+//        )
+        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromMeshCPU(
             meshPolygons: meshPolygons, plane: alignedPlane,
             damageDetectionResults: damageDetectionResults, captureData: captureMeshData
         )
-        let _ = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
             meshTriangles: meshTriangles, plane: alignedPlane,
             damageDetectionResults: damageDetectionResults, captureData: captureMeshData
         )
         
-        var surfaceIntegrity: Bool = {
+        let surfaceIntegrity: Bool = {
             return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
             surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
             surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised

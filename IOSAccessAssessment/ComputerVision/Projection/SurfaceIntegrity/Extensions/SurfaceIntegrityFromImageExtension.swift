@@ -268,6 +268,31 @@ extension SurfaceIntegrityProcessor {
         return statusDetails
     }
     
+    private func getSurfaceNormalDeviationDetailsWithinBoundsCPU(
+        worldPointsGrid: WorldPointsGrid,
+        plane: Plane,
+        surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
+        bounds: BoundsParams,
+        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold
+    ) -> (deviantPointCount: Int, totalPointCount: Int) {
+        let planeNormal = plane.normalVector
+        var totalDeviantPoints = 0
+        var totalPoints = 0
+        for y in Int(bounds.minY)...Int(bounds.maxY) {
+            for x in Int(bounds.minX)...Int(bounds.maxX) {
+                let surfaceNormalsForPointsGridCell = surfaceNormalsForPointsGrid[x, y]
+                if surfaceNormalsForPointsGridCell.isValid == 0 { continue }
+                let surfaceNormal = surfaceNormalsForPointsGridCell.surfaceNormal
+                let angularDeviation = getAngularDeviation(planeNormal, surfaceNormal)
+                if angularDeviation > angularDeviationThreshold {
+                    totalDeviantPoints += 1
+                }
+                totalPoints += 1
+            }
+        }
+        return (deviantPointCount: totalDeviantPoints, totalPointCount: totalPoints)
+    }
+    
     /**
         This function assesses the integrity of the surface based on the area of the bounding box of detected damage. It retrieves world points corresponding to the corners of the bounding box, calculates the area formed by these points, and determines the integrity status based on whether this area exceeds a defined threshold.
      
@@ -386,31 +411,6 @@ extension SurfaceIntegrityProcessor {
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
-    }
-    
-    private func getSurfaceNormalDeviationDetailsWithinBoundsCPU(
-        worldPointsGrid: WorldPointsGrid,
-        plane: Plane,
-        surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
-        bounds: BoundsParams,
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold
-    ) -> (deviantPointCount: Int, totalPointCount: Int) {
-        let planeNormal = plane.normalVector
-        var totalDeviantPoints = 0
-        var totalPoints = 0
-        for y in Int(bounds.minY)...Int(bounds.maxY) {
-            for x in Int(bounds.minX)...Int(bounds.maxX) {
-                let surfaceNormalsForPointsGridCell = surfaceNormalsForPointsGrid[x, y]
-                if surfaceNormalsForPointsGridCell.isValid == 0 { continue }
-                let surfaceNormal = surfaceNormalsForPointsGridCell.surfaceNormal
-                let angularDeviation = getAngularDeviation(planeNormal, surfaceNormal)
-                if angularDeviation > angularDeviationThreshold {
-                    totalDeviantPoints += 1
-                }
-                totalPoints += 1
-            }
-        }
-        return (deviantPointCount: totalDeviantPoints, totalPointCount: totalPoints)
     }
     
     private func getSurfaceNormalStdDetailsWithinBoundsCPU(

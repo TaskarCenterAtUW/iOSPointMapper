@@ -197,3 +197,16 @@ typedef struct DeviantNormalParams {
 typedef struct StdNormalParams {
     MTL_FLOAT3      normalVector;
 } StdNormalParams;
+
+typedef struct AreaWithinBoundsPolygonParams {
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} AreaWithinBoundsPolygonParams;
+
+typedef struct StdPolygonParams {
+    MTL_FLOAT3      normalVector;
+    MTL_UINT2       imageSize;
+    MTL_FLOAT4X4    viewMatrix;
+    MTL_FLOAT3X3    cameraIntrinsics;
+} StdPolygonParams;

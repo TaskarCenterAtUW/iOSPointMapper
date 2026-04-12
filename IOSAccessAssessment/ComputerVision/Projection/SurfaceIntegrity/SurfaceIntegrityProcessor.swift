@@ -269,6 +269,7 @@ struct SurfaceIntegrityProcessor {
     }
     
     private func debugIntegrityResults(integrityResults: IntegrityResults) {
+        print("Damage Detection Integrity Assessment Results:")
         print("Surface Normal Integrity Status: \(integrityResults.surfaceNormalStatusDetails.status) - \(integrityResults.surfaceNormalStatusDetails.details)")
         print("Bounding Box Area Integrity Status: \(integrityResults.boundingBoxAreaStatusDetails.status) - \(integrityResults.boundingBoxAreaStatusDetails.details)")
         print("Bounding Box Surface Normal Integrity Status: \(integrityResults.boundingBoxSurfaceNormalStatusDetails.status) - \(integrityResults.boundingBoxSurfaceNormalStatusDetails.details)")

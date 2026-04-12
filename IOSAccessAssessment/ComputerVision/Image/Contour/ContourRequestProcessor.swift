@@ -24,6 +24,10 @@ enum ContourRequestProcessorError: Error, LocalizedError {
 /**
     ContourRequestProcessor is a struct that processes contour detection requests using Vision framework.
     It performs the contour detection concurrently for each class label in the segmentation image.
+ 
+    TODO: The coordinate system for the detected contours is in normalized coordinates (0 to 1) with the origin at the bottom-left corner.
+    This can cause confusion in the app because it pre-dominantly uses Core Video, ARKit, etc. which use a coordinate system with the origin at the top-left corner.
+    To reduce confusion, we can preemptively convert the coordinates to the top-left origin. We would also need to change ContourDetails to reflect this change, by not using CGPoint, CGRect, etc. which are based on the bottom-left origin, and instead use a custom struct that can represent the coordinates in the top-left origin.
  */
 struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01

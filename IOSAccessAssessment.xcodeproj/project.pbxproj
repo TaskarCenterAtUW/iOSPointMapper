@@ -128,7 +128,6 @@
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
 		A3C1D7352F84A78E00833411 /* SurfaceNormalsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */; };
 		A3C1D7392F84A84900833411 /* SurfaceNormals.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7382F84A84900833411 /* SurfaceNormals.metal */; };
-		A3C1D73C2F85F47A00833411 /* SurfaceNormalsWithinBoundsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */; };
 		A3C1D7402F882EF600833411 /* SurfaceIntegrityProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D73F2F882EF200833411 /* SurfaceIntegrityProcessor.swift */; };
 		A3C1D7442F886D3500833411 /* SurfaceIntegrity.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7432F886D3100833411 /* SurfaceIntegrity.metal */; };
 		A3C1D7472F886D9D00833411 /* SurfaceIntegrityFromImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C1D7462F886D8E00833411 /* SurfaceIntegrityFromImageExtension.swift */; };
@@ -355,7 +354,6 @@
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
 		A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsProcessor.swift; sourceTree = "<group>"; };
 		A3C1D7382F84A84900833411 /* SurfaceNormals.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SurfaceNormals.metal; sourceTree = "<group>"; };
-		A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceNormalsWithinBoundsExtension.swift; sourceTree = "<group>"; };
 		A3C1D73F2F882EF200833411 /* SurfaceIntegrityProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceIntegrityProcessor.swift; sourceTree = "<group>"; };
 		A3C1D7432F886D3100833411 /* SurfaceIntegrity.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SurfaceIntegrity.metal; sourceTree = "<group>"; };
 		A3C1D7462F886D8E00833411 /* SurfaceIntegrityFromImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceIntegrityFromImageExtension.swift; sourceTree = "<group>"; };
@@ -483,7 +481,6 @@
 				A30F59C92F7EF9EE00EE7804 /* Geospatial */,
 				A3E84ECE2DDAC7980096A645 /* Annotation */,
 				A33EB5AE2F761C83008ABFB7 /* ComputerVision */,
-				A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */,
 				55659C092BB785EA0094DF01 /* MachineLearning */,
 				55659C0E2BB786240094DF01 /* View */,
 				55659C0B2BB786050094DF01 /* Shared */,
@@ -752,6 +749,7 @@
 		A32D66FF2F7EF83E00DC4173 /* Projection */ = {
 			isa = PBXGroup;
 			children = (
+				A3B5BD9F2F831F250036C6EC /* ProjectionUtils.swift */,
 				A32D67012F7EF88000DC4173 /* WorldPoints */,
 				A32D67002F7EF87C00DC4173 /* Plane */,
 				A3C1D73E2F882EE100833411 /* SurfaceIntegrity */,
@@ -1097,7 +1095,6 @@
 		A3B5BD9E2F82FEA50036C6EC /* SurfaceNormals */ = {
 			isa = PBXGroup;
 			children = (
-				A3C1D73A2F85F46200833411 /* Extensions */,
 				A3C1D7342F84A78800833411 /* SurfaceNormalsProcessor.swift */,
 				A3C1D7382F84A84900833411 /* SurfaceNormals.metal */,
 			);
@@ -1123,14 +1120,6 @@
 				DAA7F8CB2CA77FA5003666D8 /* GrayscaleToColorFilter.swift */,
 			);
 			path = ImageProcessing;
-			sourceTree = "<group>";
-		};
-		A3C1D73A2F85F46200833411 /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				A3C1D73B2F85F47500833411 /* SurfaceNormalsWithinBoundsExtension.swift */,
-			);
-			path = Extensions;
 			sourceTree = "<group>";
 		};
 		A3C1D73E2F882EE100833411 /* SurfaceIntegrity */ = {
@@ -1578,7 +1567,6 @@
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
-				A3C1D73C2F85F47A00833411 /* SurfaceNormalsWithinBoundsExtension.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedFeature.swift in Sources */,
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
