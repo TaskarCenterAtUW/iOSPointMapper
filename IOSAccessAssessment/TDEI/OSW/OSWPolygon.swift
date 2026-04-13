@@ -100,6 +100,13 @@ struct OSWPolygon: OSWElement {
         return OSMLocationDetails(locations: [osmLocationElement])
     }
     
+    func getCaptureId() -> String? {
+        if let captureId = additionalTags[APIConstants.TagKeys.captureIdKey] {
+            return captureId
+        }
+        return nil
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .polygon {

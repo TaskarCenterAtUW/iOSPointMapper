@@ -21,6 +21,7 @@ protocol OSWElement: Sendable, CustomStringConvertible {
     var additionalTags: [String: String] { get }
     
     func getOSMLocationDetails() -> OSMLocationDetails?
+    func getCaptureId() -> String?
     
     func toOSMCreateXML(changesetId: String) -> String
     func toOSMModifyXML(changesetId: String) -> String

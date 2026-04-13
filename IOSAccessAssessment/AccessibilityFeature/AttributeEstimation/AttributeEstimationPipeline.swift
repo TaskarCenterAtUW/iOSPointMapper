@@ -216,17 +216,22 @@ class AttributeEstimationPipeline: ObservableObject {
     ) {
         /// Threshold needs to be in Map Units
         let distanceThreshold = Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
-        guard let osmLocationDetails = accessibilityFeature.locationDetails,
-              let nearestElement = mappingData.getNearestFeature(
-                  to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
-                  distanceThreshold: distanceThreshold
-              ) else {
+        guard let osmLocationDetails = accessibilityFeature.locationDetails else {
+            accessibilityFeature.setIsExisting(false)
+            return
+        }
+        var matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
+            to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
+            captureId: self.captureImageData?.id,
+            distanceThreshold: distanceThreshold
+        )
+        guard let matchedElement = matchedElement else {
             accessibilityFeature.setIsExisting(false)
             return
         }
         let isExisting = accessibilityFeature.accessibilityFeatureClass.oswPolicy.isExistingFirst
         accessibilityFeature.setIsExisting(isExisting)
-        accessibilityFeature.setOSWElement(oswElement: nearestElement)
+        accessibilityFeature.setOSWElement(oswElement: matchedElement)
     }
     
     func processAttributeRequest(
