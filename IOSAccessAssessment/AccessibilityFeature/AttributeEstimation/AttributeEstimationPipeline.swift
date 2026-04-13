@@ -229,6 +229,7 @@ class AttributeEstimationPipeline: ObservableObject {
             accessibilityFeature.setIsExisting(false)
             return
         }
+        print("Matched Element: \(matchedElement.detailedDescription)")
         let isExisting = accessibilityFeature.accessibilityFeatureClass.oswPolicy.isExistingFirst
         accessibilityFeature.setIsExisting(isExisting)
         accessibilityFeature.setOSWElement(oswElement: matchedElement)
