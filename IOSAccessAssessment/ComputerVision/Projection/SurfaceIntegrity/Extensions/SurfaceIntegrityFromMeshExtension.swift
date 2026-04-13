@@ -80,7 +80,7 @@ extension SurfaceIntegrityProcessor {
         let totalDeviantPolygons = totalDeviantBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let deviantPolygonProportion = totalValidPolygons > 0 ? Float(totalDeviantPolygons) / Float(totalValidPolygons) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantPolygonProportion > deviantPointProportionThreshold ? .compromised : .intact,
+            status: deviantPolygonProportion > deviantPointProportionThreshold ? .slight : .intact,
             details: "Deviant Polygon Proportion: \(deviantPolygonProportion * 100)%, Total Deviant Polygons: \(totalDeviantPolygons), Total Valid Polygons: \(totalValidPolygons)"
         )
         return statusDetails
@@ -110,7 +110,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .moderate : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
@@ -142,7 +142,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .severe : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
@@ -340,7 +340,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantPolygonProportion = totalPolygons > 0 ? Float(totalDeviantPolygons) / Float(totalPolygons) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantPolygonProportion > deviantPolygonProportion ? .compromised : .intact,
+            status: deviantPolygonProportion > deviantPolygonProportion ? .slight : .intact,
             details: "Deviant Polygon Proportion: \(deviantPolygonProportion * 100)%, Total Deviant Polygon: \(totalDeviantPolygons), Total Polygons: \(totalPolygons)"
         )
         return statusDetails
@@ -393,7 +393,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .moderate : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
@@ -459,7 +459,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .severe : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails

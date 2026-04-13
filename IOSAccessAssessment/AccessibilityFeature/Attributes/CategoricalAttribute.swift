@@ -11,7 +11,7 @@ protocol FeatureCategorical: Codable, CaseIterable, Sendable, RawRepresentable w
     static var typeID: String { get }   // unique identifier
 }
 
-struct AnyCategoricalValue: Codable, Sendable, Equatable {
+struct AnyCategoricalValue: Codable, Sendable, Equatable, Hashable {
     let typeID: String
     let rawValue: String
     
@@ -39,13 +39,24 @@ struct AnyCategoricalValue: Codable, Sendable, Equatable {
     }
 }
 
-enum SurfaceIntegrityStatus: String, FeatureCategorical {
+enum SurfaceIntegrityStatus: String, FeatureCategorical, Comparable {
     case intact
     case slight
     case moderate
     case severe
     
     static let typeID = "surface_integrity_status"
+    
+    static func < (lhs: SurfaceIntegrityStatus, rhs: SurfaceIntegrityStatus) -> Bool {
+        switch (lhs, rhs) {
+        case (.intact, .slight), (.intact, .moderate), (.intact, .severe),
+            (.slight, .moderate), (.slight, .severe),
+            (.moderate, .severe):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /**
@@ -77,7 +88,7 @@ struct CategoricalAttributeRegistry {
     }
     
     static func decodeToCategoricalValue(typeID: String, raw: String) -> AnyCategoricalValue? {
-        guard let decoded = decode(typeID: typeID, raw: raw) else {
+        guard let _ = decode(typeID: typeID, raw: raw) else {
             return nil
         }
         return AnyCategoricalValue(typeID: typeID, rawValue: raw)

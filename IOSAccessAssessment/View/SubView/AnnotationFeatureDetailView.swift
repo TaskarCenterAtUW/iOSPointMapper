@@ -184,7 +184,7 @@ struct AnnotationFeatureDetailView: View {
                 if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.surfaceIntegrity))
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.surfaceIntegrity.displayName)) {
-                        toggleView(attribute: .surfaceIntegrity)
+                        pickerView(attribute: .surfaceIntegrity)
                             .focused($focusedField, equals: .surfaceIntegrity)
                     }
                 }
@@ -259,6 +259,7 @@ struct AnnotationFeatureDetailView: View {
         }
         .onAppear {
             self.statusViewModel.configure(accessibilityFeature: accessibilityFeature)
+            focusedField = nil
         }
         .onTapGesture {
             // Dismiss the keyboard when tapping outside of a TextField
@@ -369,35 +370,34 @@ struct AnnotationFeatureDetailView: View {
         }
     }
     
+    @State private var placeholderPickerSelection: String = "Option 1"
+    
     @ViewBuilder
     private func pickerView(attribute: AccessibilityFeatureAttribute) -> some View {
         Picker(
             attribute.displayName,
-            selection: Binding(
+            selection: Binding<AnyCategoricalValue?>(
                 get: {
-                    guard let attributeValue = accessibilityFeature.attributeValues[attribute],
-                          let attributeValue,
-                          let attributeBindableValue = attributeValue.toString() else {
-                        return ""
+                    guard case .categorical(let category) = accessibilityFeature.attributeValues[attribute] else {
+                        return attribute.categoricalOptions().first
                     }
-                    return attributeBindableValue
+                    return category
                 },
                 set: { newValue in
+                    guard let newValue else { return }
                     do {
-                        let newCategoricalValue = newValue
-                        guard let newAttributeValue = attribute.value(from: newCategoricalValue) else {
-                            return
-                        }
-                        try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
+                        let newCategoricalValue: AccessibilityFeatureAttribute.Value = .categorical(newValue)
+                        try accessibilityFeature.setAttributeValue(newCategoricalValue, for: attribute)
                     } catch {
                         setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
                     }
                 }
         )) {
-            ForEach(attribute.categoricalOptions(), id: \.self.rawValue) { option in
-                Text(option.rawValue).tag(option.rawValue)
+            ForEach(attribute.categoricalOptions(), id: \.self) { option in
+                Text(option.rawValue).tag(option)
             }
         }
+        .pickerStyle(.menu)
     }
     
     private func setAttributeStatusErrorText(

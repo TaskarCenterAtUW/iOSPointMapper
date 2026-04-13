@@ -36,27 +36,27 @@ enum SurfaceIntegrityProcessorError: Error, LocalizedError {
     }
 }
 
-enum IntegrityStatus: CaseIterable, Identifiable, CustomStringConvertible {
-    var id: Self { self }
-    
-    case intact
-    case compromised
-    
-    var description: String {
-        switch self {
-        case .intact:
-            return "The surface is intact."
-        case .compromised:
-            return "The surface has integrity issues."
-        }
-    }
-}
+//enum IntegrityStatus: CaseIterable, Identifiable, CustomStringConvertible {
+//    var id: Self { self }
+//    
+//    case intact
+//    case compromised
+//    
+//    var description: String {
+//        switch self {
+//        case .intact:
+//            return "The surface is intact."
+//        case .compromised:
+//            return "The surface has integrity issues."
+//        }
+//    }
+//}
 
 struct IntegrityStatusDetails {
-    var status: IntegrityStatus
+    var status: SurfaceIntegrityStatus
     var details: String
     
-    init(status: IntegrityStatus = .intact, details: String = "") {
+    init(status: SurfaceIntegrityStatus = .intact, details: String = "") {
         self.status = status
         self.details = details
     }

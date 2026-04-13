@@ -50,11 +50,7 @@ extension AttributeEstimationPipeline {
             damageDetectionResults: damageDetectionResults, captureData: captureImageData
         )
         
-        let surfaceIntegrity: Bool = {
-            return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
-            surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
-            surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
-        }()
+        let surfaceIntegrity = processSurfaceIntegrityResults(integrityResults: surfaceIntegrityResults)
         guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
             from: surfaceIntegrity
         ) else {
@@ -89,11 +85,7 @@ extension AttributeEstimationPipeline {
             damageDetectionResults: damageDetectionResults, captureData: captureMeshData
         )
         
-        let surfaceIntegrity: Bool = {
-            return surfaceIntegrityResults.boundingBoxAreaStatusDetails.status == .compromised ||
-            surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
-            surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
-        }()
+        let surfaceIntegrity = processSurfaceIntegrityResults(integrityResults: surfaceIntegrityResults)
         guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
             from: surfaceIntegrity
         ) else {
@@ -140,5 +132,15 @@ extension AttributeEstimationPipeline {
         
         let alignedBox = boundingBox.applying(alignTransform)
         return alignedBox
+    }
+    
+    private func processSurfaceIntegrityResults(integrityResults: IntegrityResults) -> SurfaceIntegrityStatus {
+        /// We look for the most severe status across all integrity results to determine the overall surface integrity status.
+        let worstStatus: SurfaceIntegrityStatus = max(
+            integrityResults.boundingBoxAreaStatusDetails.status,
+            integrityResults.boundingBoxSurfaceNormalStatusDetails.status,
+            integrityResults.surfaceNormalStatusDetails.status
+        )
+        return worstStatus
     }
 }
