@@ -110,4 +110,8 @@ struct IOSAccessAssessmentApp: App {
             }
         }
     }
+    
+    private func registerEnums() {
+        CategoricalAttributeRegistry.registerAll()
+    }
 }

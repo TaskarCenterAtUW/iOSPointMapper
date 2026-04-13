@@ -39,12 +39,14 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         case length
         case angle
         case flag
+        case categorical(typeID: String)
     }
     
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
         case angle(Measurement<UnitAngle>)
         case flag(Bool)
+        case categorical(AnyCategoricalValue)
         
         static func == (lhs: Value, rhs: Value) -> Bool {
             switch (lhs, rhs) {
@@ -54,6 +56,8 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
                 return a1 == a2
             case (.flag(let f1), .flag(let f2)):
                 return f1 == f2
+            case (.categorical(let c1), .categorical(let c2)):
+                return c1 == c2
             default:
                 return false
             }
@@ -92,7 +96,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         case .surfaceIntegrity:
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
-                valueType: .flag,
+                valueType: .categorical(typeID: SurfaceIntegrityStatus.typeID),
                 osmTagKey: "surface"
             )
         case .lidarDepth:
@@ -192,6 +196,7 @@ extension AccessibilityFeatureAttribute.Value {
         case .length: return .length
         case .angle: return .angle
         case .flag: return .flag
+        case .categorical(let categoricalValue): return .categorical(typeID: categoricalValue.typeID)
         }
     }
 }
@@ -200,8 +205,20 @@ extension AccessibilityFeatureAttribute.Value {
  Extensions for AccessibilityFeatureAttribute to provide expected value types,
  */
 extension AccessibilityFeatureAttribute {
+//    func isCompatible(with value: Value) -> Bool {
+//        return self.valueType == value.valueType
+//    }
     func isCompatible(with value: Value) -> Bool {
-        return self.valueType == value.valueType
+        switch (self.valueType, value) {
+        case (.length, .length),
+             (.angle, .angle),
+             (.flag, .flag):
+            return true
+        case (.categorical(let expectedID), .categorical(let cat)):
+            return cat.typeID == expectedID
+        default:
+            return false
+        }
     }
 }
 
@@ -217,6 +234,8 @@ extension AccessibilityFeatureAttribute.Value {
             return measurement.converted(to: .degrees).value
         case .flag:
             return nil
+        case .categorical:
+            return nil
         }
     }
     
@@ -226,6 +245,19 @@ extension AccessibilityFeatureAttribute.Value {
             return value
         default:
             return nil
+        }
+    }
+    
+    func toString() -> String? {
+        switch self {
+        case .length(let measurement):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case .angle(let measurement):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case .flag(let value):
+            return value ? "yes" : "no"
+        case .categorical(let value):
+            return value.rawValue
         }
     }
 }
@@ -239,6 +271,8 @@ extension AccessibilityFeatureAttribute {
             return .angle(Measurement(value: double, unit: .degrees))
         case .flag:
             return nil // Flags cannot be represented as doubles
+        case .categorical:
+            return nil
         }
     }
     
@@ -249,6 +283,53 @@ extension AccessibilityFeatureAttribute {
         default:
             return nil // Only flags can be represented as booleans
         }
+    }
+    
+    func value<T: FeatureCategorical>(from categorical: T) -> Value? {
+        switch self.valueType {
+        case .categorical(let expectedID):
+            if T.typeID == expectedID {
+                return .categorical(AnyCategoricalValue(categorical))
+            } else {
+                return nil // Categorical type ID does not match
+            }
+        default:
+            return nil // Only categorical attributes can be represented as categorical values
+        }
+    }
+    
+    func value(from categoricalRawValue: String) -> Value? {
+        switch self.valueType {
+        case .categorical(let expectedID):
+            switch expectedID {
+            case SurfaceIntegrityStatus.typeID:
+                if let categoricalValue = SurfaceIntegrityStatus(rawValue: categoricalRawValue) {
+                    return .categorical(AnyCategoricalValue(categoricalValue))
+                } else {
+                    return nil // Invalid categorical raw value for Surface Integrity
+                }
+            default:
+                guard let decoded = CategoricalAttributeRegistry.decodeToCategoricalValue(
+                    typeID: expectedID,
+                    raw: categoricalRawValue
+                ) else {
+                    return nil
+                }
+                return .categorical(decoded)
+            }
+        default:
+            return nil // Only categorical attributes can be represented as categorical values
+        }
+    }
+    
+    func categoricalOptions() -> [AnyCategoricalValue] {
+        guard case .categorical(let typeID) = self.valueType else {
+            return []
+        }
+        if typeID == SurfaceIntegrityStatus.typeID {
+            return SurfaceIntegrityStatus.allCases.map { AnyCategoricalValue($0) }
+        }
+        return CategoricalAttributeRegistry.cases(for: typeID) ?? []
     }
     
     func getValueDescription(attributeValue: Value?) -> String? {
@@ -262,8 +343,8 @@ extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.crossSlope, .angle(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
-        case (.surfaceIntegrity, .flag(let flag)):
-            return flag ? "yes" : "no"
+        case (.surfaceIntegrity, .categorical(let categoricalValue)):
+            return categoricalValue.rawValue
         case (.lidarDepth, .length(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         case (.latitudeDelta, .length(let measurement)):

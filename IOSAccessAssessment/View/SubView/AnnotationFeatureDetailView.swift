@@ -369,6 +369,37 @@ struct AnnotationFeatureDetailView: View {
         }
     }
     
+    @ViewBuilder
+    private func pickerView(attribute: AccessibilityFeatureAttribute) -> some View {
+        Picker(
+            attribute.displayName,
+            selection: Binding(
+                get: {
+                    guard let attributeValue = accessibilityFeature.attributeValues[attribute],
+                          let attributeValue,
+                          let attributeBindableValue = attributeValue.toString() else {
+                        return ""
+                    }
+                    return attributeBindableValue
+                },
+                set: { newValue in
+                    do {
+                        let newCategoricalValue = newValue
+                        guard let newAttributeValue = attribute.value(from: newCategoricalValue) else {
+                            return
+                        }
+                        try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
+                    } catch {
+                        setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
+                    }
+                }
+        )) {
+            ForEach(attribute.categoricalOptions(), id: \.self.rawValue) { option in
+                Text(option.rawValue).tag(option.rawValue)
+            }
+        }
+    }
+    
     private func setAttributeStatusErrorText(
         for attribute: AccessibilityFeatureAttribute, message: String
     ) {

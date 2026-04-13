@@ -84,6 +84,7 @@
 		A364B5DD2F259AFE00325E5C /* WorldPoints.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DC2F259AF900325E5C /* WorldPoints.metal */; };
 		A364B5DF2F26DB5700325E5C /* WorldPointsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */; };
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
+		A374B4AA2F8C8B4D003E030D /* CategoricalAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374B4A92F8C8B40003E030D /* CategoricalAttribute.swift */; };
 		A374FAB72EE0173600055268 /* OSMChangesetUploadResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMChangesetUploadResponseElement.swift */; };
 		A37C3C182F3141FF001F4248 /* Plane.metal in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C172F3141F9001F4248 /* Plane.metal */; };
 		A37C3C1A2F3144F7001F4248 /* PlaneAttributeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */; };
@@ -308,6 +309,7 @@
 		A364B5DC2F259AF900325E5C /* WorldPoints.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = WorldPoints.metal; sourceTree = "<group>"; };
 		A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPointsProcessor.swift; sourceTree = "<group>"; };
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
+		A374B4A92F8C8B40003E030D /* CategoricalAttribute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoricalAttribute.swift; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMChangesetUploadResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMChangesetUploadResponseElement.swift; sourceTree = "<group>"; };
 		A37C3C172F3141F9001F4248 /* Plane.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Plane.metal; sourceTree = "<group>"; };
 		A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneAttributeProcessor.swift; sourceTree = "<group>"; };
@@ -1003,6 +1005,7 @@
 			isa = PBXGroup;
 			children = (
 				A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttribute.swift */,
+				A374B4A92F8C8B40003E030D /* CategoricalAttribute.swift */,
 			);
 			path = Attributes;
 			sourceTree = "<group>";
@@ -1468,6 +1471,7 @@
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */,
 				A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */,
+				A374B4AA2F8C8B4D003E030D /* CategoricalAttribute.swift in Sources */,
 				A3DC22FB2DD16CB00020CE84 /* DimensionBasedMaskFilter.swift in Sources */,
 				A3FFAA7E2DE3E41D002B99BD /* SegmentationARPipeline.swift in Sources */,
 				A30BED3C2ED2F48B004A5B51 /* MeshClusteringUtils.swift in Sources */,
