@@ -55,8 +55,8 @@ extension AttributeEstimationPipeline {
             surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
             surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
         }()
-        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.valueFromBool(
-            surfaceIntegrity
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
+            from: surfaceIntegrity
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
@@ -94,8 +94,8 @@ extension AttributeEstimationPipeline {
             surfaceIntegrityResults.boundingBoxSurfaceNormalStatusDetails.status == .compromised ||
             surfaceIntegrityResults.surfaceNormalStatusDetails.status == .compromised
         }()
-        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.valueFromBool(
-            surfaceIntegrity
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
+            from: surfaceIntegrity
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }

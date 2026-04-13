@@ -177,8 +177,8 @@ class AttributeEstimationPipeline: ObservableObject {
         )
         accessibilityFeature.setLocationDetails(locationDetails: locationRequestResult.locationDetails)
         /// Set Lidar Depth as experimental attribute
-        if let lidarDepthAttributeValue = AccessibilityFeatureAttribute.lidarDepth.valueFromDouble(
-            Double(locationRequestResult.lidarDepth)
+        if let lidarDepthAttributeValue = AccessibilityFeatureAttribute.lidarDepth.value(
+            from: Double(locationRequestResult.lidarDepth)
         ) {
             do {
                 try accessibilityFeature.setExperimentalAttributeValue(lidarDepthAttributeValue, for: .lidarDepth)
@@ -186,8 +186,8 @@ class AttributeEstimationPipeline: ObservableObject {
                 print("Error setting lidar depth attribute for feature \(accessibilityFeature.id): \(error.localizedDescription)")
             }
         }
-        if let latitudeDeltaAttributeValue = AccessibilityFeatureAttribute.latitudeDelta.valueFromDouble(
-            Double(locationRequestResult.locationDelta.x)
+        if let latitudeDeltaAttributeValue = AccessibilityFeatureAttribute.latitudeDelta.value(
+            from: Double(locationRequestResult.locationDelta.x)
         ) {
             do {
                 try accessibilityFeature.setExperimentalAttributeValue(latitudeDeltaAttributeValue, for: .latitudeDelta)
@@ -196,8 +196,8 @@ class AttributeEstimationPipeline: ObservableObject {
                       "\(accessibilityFeature.id): \(error.localizedDescription)")
             }
         }
-        if let longitudeDeltaAttributeValue = AccessibilityFeatureAttribute.longitudeDelta.valueFromDouble(
-            Double(locationRequestResult.locationDelta.y)
+        if let longitudeDeltaAttributeValue = AccessibilityFeatureAttribute.longitudeDelta.value(
+            from: Double(locationRequestResult.locationDelta.y)
         ) {
             do {
                 try accessibilityFeature.setExperimentalAttributeValue(longitudeDeltaAttributeValue, for: .longitudeDelta)

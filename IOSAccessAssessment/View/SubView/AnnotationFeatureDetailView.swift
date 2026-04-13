@@ -296,7 +296,7 @@ struct AnnotationFeatureDetailView: View {
                     set: { newValue in
                         do {
                             let newDoubleValue = Double(newValue)
-                            guard let newAttributeValue = attribute.valueFromDouble(newDoubleValue) else {
+                            guard let newAttributeValue = attribute.value(from: newDoubleValue) else {
                                 return
                             }
                             try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
@@ -355,7 +355,7 @@ struct AnnotationFeatureDetailView: View {
                 set: { newValue in
                     do {
                         let newBoolValue = Bool(newValue)
-                        guard let newAttributeValue = attribute.valueFromBool(newBoolValue) else {
+                        guard let newAttributeValue = attribute.value(from: newBoolValue) else {
                             return
                         }
                         try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)

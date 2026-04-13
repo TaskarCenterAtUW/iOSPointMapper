@@ -41,7 +41,7 @@ extension AttributeEstimationPipeline {
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
         
-        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.value(from: slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return runningSlopeAttributeValue
@@ -65,7 +65,7 @@ extension AttributeEstimationPipeline {
         let slopeRadians = atan2(rise, run)
         let slopeDegrees: Double = Double(abs(slopeRadians * (180.0 / .pi)))
         
-        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(slopeDegrees) else {
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.value(from: slopeDegrees) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return runningSlopeAttributeValue

@@ -35,6 +35,12 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     case runningSlopeFromImage
     case crossSlopeFromImage
     
+    enum ValueType: Sendable, Codable, Equatable {
+        case length
+        case angle
+        case flag
+    }
+    
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
         case angle(Measurement<UnitAngle>)
@@ -58,7 +64,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         let id: Int
         let name: String
         let unit: Dimension?
-        let valueType: Value
+        let valueType: ValueType
         /// TODO: Verify these OSM tag keys
         let osmTagKey: String
     }
@@ -68,79 +74,79 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         case .width:
             return Metadata(
                 id: 10, name: "Width", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width"
             )
         case .runningSlope:
             return Metadata(
                 id: 20, name: "Running Slope", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "incline"
             )
         case .crossSlope:
             return Metadata(
                 id: 30, name: "Cross Slope", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope"
             )
         case .surfaceIntegrity:
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
-                valueType: .flag(false),
+                valueType: .flag,
                 osmTagKey: "surface"
             )
         case .lidarDepth:
             return Metadata(
                 id: 50, name: "LiDAR Depth", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.lidarDepthKey
             )
         case .latitudeDelta:
             return Metadata(
                 id: 60, name: "Latitude Delta", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.latitudeDeltaKey
             )
         case .longitudeDelta:
             return Metadata(
                 id: 70, name: "Longitude Delta", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.longitudeDeltaKey
             )
         case .widthLegacy:
             return Metadata(
                 id: 15, name: "Width Legacy", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width_legacy"
             )
         case .runningSlopeLegacy:
             return Metadata(
                 id: 25, name: "Running Slope Legacy", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "incline_legacy"
             )
         case .crossSlopeLegacy:
             return Metadata(
                 id: 35, name: "Cross Slope Legacy", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope_legacy"
             )
         case .widthFromImage:
             return Metadata(
                 id: 16, name: "Width from Image", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width_from_image"
             )
         case .runningSlopeFromImage:
             return Metadata(
                 id: 26, name: "Running Slope from Image", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "running_slope_from_image"
             )
         case .crossSlopeFromImage:
             return Metadata(
                 id: 36, name: "Cross Slope from Image", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope_from_image"
             )
         }
@@ -156,6 +162,10 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     
     var unit: Dimension? {
         return metadata.unit
+    }
+    
+    var valueType: ValueType {
+        return metadata.valueType
     }
     
     var displayName: String {
@@ -176,41 +186,22 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     }
 }
 
+extension AccessibilityFeatureAttribute.Value {
+    var valueType: AccessibilityFeatureAttribute.ValueType {
+        switch self {
+        case .length: return .length
+        case .angle: return .angle
+        case .flag: return .flag
+        }
+    }
+}
+
 /**
  Extensions for AccessibilityFeatureAttribute to provide expected value types,
  */
 extension AccessibilityFeatureAttribute {
     func isCompatible(with value: Value) -> Bool {
-        switch (self, value) {
-        case (.width, .length):
-            return true
-        case (.runningSlope, .angle):
-            return true
-        case (.crossSlope, .angle):
-            return true
-        case (.surfaceIntegrity, .flag):
-            return true
-        case (.lidarDepth, .length):
-            return true
-        case (.latitudeDelta, .length):
-            return true
-        case (.longitudeDelta, .length):
-            return true
-        case (.widthLegacy, .length):
-            return true
-        case (.runningSlopeLegacy, .angle):
-            return true
-        case (.crossSlopeLegacy, .angle):
-            return true
-        case (.widthFromImage, .length):
-            return true
-        case (.runningSlopeFromImage, .angle):
-            return true
-        case (.crossSlopeFromImage, .angle):
-            return true
-        default:
-            return false
-        }
+        return self.valueType == value.valueType
     }
 }
 
@@ -240,47 +231,27 @@ extension AccessibilityFeatureAttribute.Value {
 }
 
 extension AccessibilityFeatureAttribute {
-    func valueFromDouble(_ value: Double) -> Value? {
-        switch self {
-        case .width:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlope:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlope:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .surfaceIntegrity:
-            return nil // Surface Integrity does not have a double representation
-        case .lidarDepth:
-            return .length(Measurement(value: value, unit: .meters))
-        case .latitudeDelta:
-            return .length(Measurement(value: value, unit: .meters))
-        case .longitudeDelta:
-            return .length(Measurement(value: value, unit: .meters))
-        case .widthLegacy:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlopeLegacy:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlopeLegacy:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .widthFromImage:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlopeFromImage:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlopeFromImage:
-            return .angle(Measurement(value: value, unit: .degrees))
+    func value(from double: Double) -> Value? {
+        switch self.valueType {
+        case .length:
+            return .length(Measurement(value: double, unit: .meters))
+        case .angle:
+            return .angle(Measurement(value: double, unit: .degrees))
+        case .flag:
+            return nil // Flags cannot be represented as doubles
         }
     }
     
-    func valueFromBool(_ value: Bool) -> Value? {
-        switch self {
-        case .surfaceIntegrity:
-            return .flag(value)
+    func value(from bool: Bool) -> Value? {
+        switch self.valueType {
+        case .flag:
+            return .flag(bool)
         default:
-            return nil // Other attributes do not have a boolean representation
+            return nil // Only flags can be represented as booleans
         }
     }
     
-    func getOSMTagFromValue(attributeValue: Value?) -> String? {
+    func getValueDescription(attributeValue: Value?) -> String? {
         guard let attributeValue = attributeValue else {
             return nil
         }
