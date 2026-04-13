@@ -45,6 +45,8 @@ enum SurfaceIntegrityStatus: String, FeatureCategorical, Comparable {
     case moderate
     case severe
     
+    /// - Warning: This typeID must not be changed, as it is used to locally store accessibilty feature details, and changing this would break the decoding of existing data
+    /// . If you need to change the typeID for some reason, please implement a migration strategy to update existing stored data with the new typeID.
     static let typeID = "surface_integrity_status"
     
     static func < (lhs: SurfaceIntegrityStatus, rhs: SurfaceIntegrityStatus) -> Bool {

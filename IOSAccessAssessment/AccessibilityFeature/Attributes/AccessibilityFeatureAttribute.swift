@@ -97,7 +97,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
                 valueType: .categorical(typeID: SurfaceIntegrityStatus.typeID),
-                osmTagKey: "surface"
+                osmTagKey: "surface_integrity"
             )
         case .lidarDepth:
             return Metadata(
