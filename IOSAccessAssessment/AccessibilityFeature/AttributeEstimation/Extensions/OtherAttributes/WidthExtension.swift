@@ -53,7 +53,7 @@ extension AttributeEstimationPipeline {
             return partialResult + Double(binWidth.width)
         } / Double(binWidths.count)
         
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.value(from: Double(averageWidth)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue
@@ -108,7 +108,7 @@ extension AttributeEstimationPipeline {
             return partialResult + Double(binWidth.width)
         } / Double(binWidths.count)
         
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(averageWidth)) else {
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.value(from: Double(averageWidth)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue

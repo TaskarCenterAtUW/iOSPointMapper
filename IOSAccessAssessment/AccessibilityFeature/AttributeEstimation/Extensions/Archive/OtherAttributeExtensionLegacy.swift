@@ -45,7 +45,7 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.valueFromDouble(Double(widthValue)) else {
+        guard let widthAttributeValue = AccessibilityFeatureAttribute.width.value(from: Double(widthValue)) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
         return widthAttributeValue
@@ -82,8 +82,8 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.valueFromDouble(
-            Double(runningSlopeValue)
+        guard let runningSlopeAttributeValue = AccessibilityFeatureAttribute.runningSlope.value(
+            from: Double(runningSlopeValue)
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }
@@ -121,8 +121,8 @@ extension AttributeEstimationPipeline {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics
         )
-        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.valueFromDouble(
-            Double(crossSlopeValue)
+        guard let crossSlopeAttributeValue = AccessibilityFeatureAttribute.crossSlope.value(
+            from: Double(crossSlopeValue)
         ) else {
             throw AttributeEstimationPipelineError.attributeAssignmentError
         }

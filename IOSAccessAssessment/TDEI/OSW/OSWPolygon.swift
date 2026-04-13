@@ -143,7 +143,7 @@ struct OSWPolygon: OSWElement {
                 attributeTagKey = "\(APIConstants.TagKeys.calculatedTagPrefix):\(attributeTagKey)"
             }
             let attributeValue = attributeKeyValuePair.value
-            let attributeTagValue = attributeKey.getOSMTagFromValue(attributeValue: attributeValue)
+            let attributeTagValue = attributeKey.getValueDescription(attributeValue: attributeValue)
             guard let attributeTagValue else { return }
             attributeTags[attributeTagKey] = attributeTagValue
         }

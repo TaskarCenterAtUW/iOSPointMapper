@@ -35,10 +35,18 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     case runningSlopeFromImage
     case crossSlopeFromImage
     
+    enum ValueType: Sendable, Codable, Equatable {
+        case length
+        case angle
+        case flag
+        case categorical(typeID: String)
+    }
+    
     enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
         case angle(Measurement<UnitAngle>)
         case flag(Bool)
+        case categorical(AnyCategoricalValue)
         
         static func == (lhs: Value, rhs: Value) -> Bool {
             switch (lhs, rhs) {
@@ -48,6 +56,8 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
                 return a1 == a2
             case (.flag(let f1), .flag(let f2)):
                 return f1 == f2
+            case (.categorical(let c1), .categorical(let c2)):
+                return c1 == c2
             default:
                 return false
             }
@@ -58,7 +68,7 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         let id: Int
         let name: String
         let unit: Dimension?
-        let valueType: Value
+        let valueType: ValueType
         /// TODO: Verify these OSM tag keys
         let osmTagKey: String
     }
@@ -68,79 +78,79 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
         case .width:
             return Metadata(
                 id: 10, name: "Width", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width"
             )
         case .runningSlope:
             return Metadata(
                 id: 20, name: "Running Slope", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "incline"
             )
         case .crossSlope:
             return Metadata(
                 id: 30, name: "Cross Slope", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope"
             )
         case .surfaceIntegrity:
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
-                valueType: .flag(false),
+                valueType: .categorical(typeID: SurfaceIntegrityStatus.typeID),
                 osmTagKey: "surface"
             )
         case .lidarDepth:
             return Metadata(
                 id: 50, name: "LiDAR Depth", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.lidarDepthKey
             )
         case .latitudeDelta:
             return Metadata(
                 id: 60, name: "Latitude Delta", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.latitudeDeltaKey
             )
         case .longitudeDelta:
             return Metadata(
                 id: 70, name: "Longitude Delta", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: APIConstants.TagKeys.longitudeDeltaKey
             )
         case .widthLegacy:
             return Metadata(
                 id: 15, name: "Width Legacy", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width_legacy"
             )
         case .runningSlopeLegacy:
             return Metadata(
                 id: 25, name: "Running Slope Legacy", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "incline_legacy"
             )
         case .crossSlopeLegacy:
             return Metadata(
                 id: 35, name: "Cross Slope Legacy", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope_legacy"
             )
         case .widthFromImage:
             return Metadata(
                 id: 16, name: "Width from Image", unit: UnitLength.meters,
-                valueType: .length(Measurement(value: 0, unit: .meters)),
+                valueType: .length,
                 osmTagKey: "width_from_image"
             )
         case .runningSlopeFromImage:
             return Metadata(
                 id: 26, name: "Running Slope from Image", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "running_slope_from_image"
             )
         case .crossSlopeFromImage:
             return Metadata(
                 id: 36, name: "Cross Slope from Image", unit: UnitAngle.degrees,
-                valueType: .angle(Measurement(value: 0, unit: .degrees)),
+                valueType: .angle,
                 osmTagKey: "cross_slope_from_image"
             )
         }
@@ -156,6 +166,10 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     
     var unit: Dimension? {
         return metadata.unit
+    }
+    
+    var valueType: ValueType {
+        return metadata.valueType
     }
     
     var displayName: String {
@@ -176,38 +190,32 @@ enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, Codable,
     }
 }
 
+extension AccessibilityFeatureAttribute.Value {
+    var valueType: AccessibilityFeatureAttribute.ValueType {
+        switch self {
+        case .length: return .length
+        case .angle: return .angle
+        case .flag: return .flag
+        case .categorical(let categoricalValue): return .categorical(typeID: categoricalValue.typeID)
+        }
+    }
+}
+
 /**
  Extensions for AccessibilityFeatureAttribute to provide expected value types,
  */
 extension AccessibilityFeatureAttribute {
+//    func isCompatible(with value: Value) -> Bool {
+//        return self.valueType == value.valueType
+//    }
     func isCompatible(with value: Value) -> Bool {
-        switch (self, value) {
-        case (.width, .length):
+        switch (self.valueType, value) {
+        case (.length, .length),
+             (.angle, .angle),
+             (.flag, .flag):
             return true
-        case (.runningSlope, .angle):
-            return true
-        case (.crossSlope, .angle):
-            return true
-        case (.surfaceIntegrity, .flag):
-            return true
-        case (.lidarDepth, .length):
-            return true
-        case (.latitudeDelta, .length):
-            return true
-        case (.longitudeDelta, .length):
-            return true
-        case (.widthLegacy, .length):
-            return true
-        case (.runningSlopeLegacy, .angle):
-            return true
-        case (.crossSlopeLegacy, .angle):
-            return true
-        case (.widthFromImage, .length):
-            return true
-        case (.runningSlopeFromImage, .angle):
-            return true
-        case (.crossSlopeFromImage, .angle):
-            return true
+        case (.categorical(let expectedID), .categorical(let cat)):
+            return cat.typeID == expectedID
         default:
             return false
         }
@@ -226,6 +234,8 @@ extension AccessibilityFeatureAttribute.Value {
             return measurement.converted(to: .degrees).value
         case .flag:
             return nil
+        case .categorical:
+            return nil
         }
     }
     
@@ -237,50 +247,94 @@ extension AccessibilityFeatureAttribute.Value {
             return nil
         }
     }
+    
+    func toString() -> String? {
+        switch self {
+        case .length(let measurement):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
+        case .angle(let measurement):
+            return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case .flag(let value):
+            return value ? "yes" : "no"
+        case .categorical(let value):
+            return value.rawValue
+        }
+    }
 }
 
 extension AccessibilityFeatureAttribute {
-    func valueFromDouble(_ value: Double) -> Value? {
-        switch self {
-        case .width:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlope:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlope:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .surfaceIntegrity:
-            return nil // Surface Integrity does not have a double representation
-        case .lidarDepth:
-            return .length(Measurement(value: value, unit: .meters))
-        case .latitudeDelta:
-            return .length(Measurement(value: value, unit: .meters))
-        case .longitudeDelta:
-            return .length(Measurement(value: value, unit: .meters))
-        case .widthLegacy:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlopeLegacy:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlopeLegacy:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .widthFromImage:
-            return .length(Measurement(value: value, unit: .meters))
-        case .runningSlopeFromImage:
-            return .angle(Measurement(value: value, unit: .degrees))
-        case .crossSlopeFromImage:
-            return .angle(Measurement(value: value, unit: .degrees))
+    func value(from double: Double) -> Value? {
+        switch self.valueType {
+        case .length:
+            return .length(Measurement(value: double, unit: .meters))
+        case .angle:
+            return .angle(Measurement(value: double, unit: .degrees))
+        case .flag:
+            return nil // Flags cannot be represented as doubles
+        case .categorical:
+            return nil
         }
     }
     
-    func valueFromBool(_ value: Bool) -> Value? {
-        switch self {
-        case .surfaceIntegrity:
-            return .flag(value)
+    func value(from bool: Bool) -> Value? {
+        switch self.valueType {
+        case .flag:
+            return .flag(bool)
         default:
-            return nil // Other attributes do not have a boolean representation
+            return nil // Only flags can be represented as booleans
         }
     }
     
-    func getOSMTagFromValue(attributeValue: Value?) -> String? {
+    func value<T: FeatureCategorical>(from categorical: T) -> Value? {
+        switch self.valueType {
+        case .categorical(let expectedID):
+            if T.typeID == expectedID {
+                return .categorical(AnyCategoricalValue(categorical))
+            } else {
+                return nil // Categorical type ID does not match
+            }
+        default:
+            return nil // Only categorical attributes can be represented as categorical values
+        }
+    }
+    
+    func value(from categoricalRawValue: String) -> Value? {
+        switch self.valueType {
+        case .categorical(let expectedID):
+            switch expectedID {
+            case SurfaceIntegrityStatus.typeID:
+                if let categoricalValue = SurfaceIntegrityStatus(rawValue: categoricalRawValue) {
+                    return .categorical(AnyCategoricalValue(categoricalValue))
+                } else {
+                    return nil // Invalid categorical raw value for Surface Integrity
+                }
+            default:
+                guard let decoded = CategoricalAttributeRegistry.decodeToCategoricalValue(
+                    typeID: expectedID,
+                    raw: categoricalRawValue
+                ) else {
+                    return nil
+                }
+                return .categorical(decoded)
+            }
+        default:
+            return nil // Only categorical attributes can be represented as categorical values
+        }
+    }
+    
+    func categoricalOptions() -> [AnyCategoricalValue] {
+        guard case .categorical(let typeID) = self.valueType else {
+            return []
+        }
+        if typeID == SurfaceIntegrityStatus.typeID {
+            let options = SurfaceIntegrityStatus.allCases.map { AnyCategoricalValue($0) }
+            return options
+        }
+        let options = CategoricalAttributeRegistry.cases(for: typeID) ?? []
+        return options
+    }
+    
+    func getValueDescription(attributeValue: Value?) -> String? {
         guard let attributeValue = attributeValue else {
             return nil
         }
@@ -291,8 +345,8 @@ extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.crossSlope, .angle(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
-        case (.surfaceIntegrity, .flag(let flag)):
-            return flag ? "yes" : "no"
+        case (.surfaceIntegrity, .categorical(let categoricalValue)):
+            return categoricalValue.rawValue
         case (.lidarDepth, .length(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         case (.latitudeDelta, .length(let measurement)):

@@ -91,7 +91,7 @@ extension SurfaceIntegrityProcessor {
         let totalDeviantPoints = totalDeviantBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let deviantPointProportion = totalValidPoints > 0 ? Float(totalDeviantPoints) / Float(totalValidPoints) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantPointProportion > deviantPointProportionThreshold ? .compromised : .intact,
+            status: deviantPointProportion > deviantPointProportionThreshold ? .slight : .intact,
             details: "Deviant Point Proportion: \(deviantPointProportion * 100)%, Total Deviant Points: \(totalDeviantPoints), Total Points: \(totalValidPoints)"
         )
         return statusDetails
@@ -129,7 +129,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .severe : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
@@ -262,7 +262,7 @@ extension SurfaceIntegrityProcessor {
         
         let deviantPointProportion = totalPoints > 0 ? Float(totalDeviantPoints) / Float(totalPoints) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantPointProportion > deviantPointProportionThreshold ? .compromised : .intact,
+            status: deviantPointProportion > deviantPointProportionThreshold ? .slight : .intact,
             details: "Deviant Point Proportion: \(deviantPointProportion * 100)%, Total Deviant Points: \(totalDeviantPoints), Total Points: \(totalPoints)"
         )
         return statusDetails
@@ -375,7 +375,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .moderate : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails
@@ -407,7 +407,7 @@ extension SurfaceIntegrityProcessor {
         }
         let deviantBoundingBoxProportion = totalBoundingBoxes > 0 ? Float(deviantBoundingBoxes) / Float(totalBoundingBoxes) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
-            status: deviantBoundingBoxProportion > 0 ? .compromised : .intact,
+            status: deviantBoundingBoxProportion > 0 ? .severe : .intact,
             details: "Deviant Bounding Box Proportion: \(deviantBoundingBoxProportion * 100)%, Total Bounding Boxes: \(totalBoundingBoxes), Deviant Bounding Boxes: \(deviantBoundingBoxes). Details: \(boundingBoxDetails)"
         )
         return statusDetails

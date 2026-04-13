@@ -83,6 +83,8 @@ struct AnnotationFeatureDetailView: View {
     
     @StateObject private var statusViewModel = AnnotationFeatureDetailView.StatusViewModel()
     @FocusState private var focusedField: AccessibilityFeatureAttribute?
+    /// Note: Fields such as pickers don't have built-in ways to update their UI based on user input. Hence we need to trigger a refresh manually when their value changes.
+    @State private var refreshTrigger: Int = 0
     
     var locationFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -184,8 +186,9 @@ struct AnnotationFeatureDetailView: View {
                 if (accessibilityFeature.accessibilityFeatureClass.attributes.contains(.surfaceIntegrity))
                 {
                     Section(header: Text(AccessibilityFeatureAttribute.surfaceIntegrity.displayName)) {
-                        toggleView(attribute: .surfaceIntegrity)
+                        pickerView(attribute: .surfaceIntegrity)
                             .focused($focusedField, equals: .surfaceIntegrity)
+                            .id(refreshTrigger) // Refresh the Picker view when refreshTrigger changes
                     }
                 }
                 
@@ -259,6 +262,7 @@ struct AnnotationFeatureDetailView: View {
         }
         .onAppear {
             self.statusViewModel.configure(accessibilityFeature: accessibilityFeature)
+            focusedField = nil
         }
         .onTapGesture {
             // Dismiss the keyboard when tapping outside of a TextField
@@ -296,7 +300,7 @@ struct AnnotationFeatureDetailView: View {
                     set: { newValue in
                         do {
                             let newDoubleValue = Double(newValue)
-                            guard let newAttributeValue = attribute.valueFromDouble(newDoubleValue) else {
+                            guard let newAttributeValue = attribute.value(from: newDoubleValue) else {
                                 return
                             }
                             try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
@@ -355,7 +359,7 @@ struct AnnotationFeatureDetailView: View {
                 set: { newValue in
                     do {
                         let newBoolValue = Bool(newValue)
-                        guard let newAttributeValue = attribute.valueFromBool(newBoolValue) else {
+                        guard let newAttributeValue = attribute.value(from: newBoolValue) else {
                             return
                         }
                         try accessibilityFeature.setAttributeValue(newAttributeValue, for: attribute)
@@ -367,6 +371,35 @@ struct AnnotationFeatureDetailView: View {
         ) {
             Text(attribute.displayName)
         }
+    }
+    
+    @ViewBuilder
+    private func pickerView(attribute: AccessibilityFeatureAttribute) -> some View {
+        Picker(
+            attribute.displayName,
+            selection: Binding<AnyCategoricalValue?>(
+                get: {
+                    guard case .categorical(let category) = accessibilityFeature.attributeValues[attribute] else {
+                        return attribute.categoricalOptions().first
+                    }
+                    return category
+                },
+                set: { newValue in
+                    guard let newValue else { return }
+                    do {
+                        let newCategoricalValue: AccessibilityFeatureAttribute.Value = .categorical(newValue)
+                        try accessibilityFeature.setAttributeValue(newCategoricalValue, for: attribute)
+                        refreshTrigger += 1 // Trigger a refresh to update the Picker's displayed value
+                    } catch {
+                        setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
+                    }
+                }
+        )) {
+            ForEach(attribute.categoricalOptions(), id: \.self) { option in
+                Text(option.rawValue).tag(option)
+            }
+        }
+        .pickerStyle(.menu)
     }
     
     private func setAttributeStatusErrorText(
