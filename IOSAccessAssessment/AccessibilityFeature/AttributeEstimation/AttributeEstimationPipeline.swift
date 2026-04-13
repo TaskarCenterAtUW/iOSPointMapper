@@ -220,7 +220,7 @@ class AttributeEstimationPipeline: ObservableObject {
             accessibilityFeature.setIsExisting(false)
             return
         }
-        var matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
+        let matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
             to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
             captureId: self.captureImageData?.id,
             distanceThreshold: distanceThreshold

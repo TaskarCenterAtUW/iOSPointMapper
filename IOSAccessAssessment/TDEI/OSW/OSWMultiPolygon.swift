@@ -268,6 +268,10 @@ struct OSWMultiPolygon: OSWElement {
         return "OSWMultiPolygon(id: \(id))"
     }
     
+    var detailedDescription: String {
+        return description
+    }
+    
     private func getUniqueMembers() -> [OSWRelationMember] {
         var uniqueMembers: [OSWRelationMember] = []
         var seenMemberIds: Set<String> = Set()

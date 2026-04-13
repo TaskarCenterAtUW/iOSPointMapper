@@ -190,6 +190,20 @@ struct OSWLineString: OSWElement {
         return "OSWLineString(id: \(id))"
     }
     
+    var detailedDescription: String {
+        /// This includes all immediate details of the OSWLineString, including all the tags and attributes, which can be useful for debugging or logging purposes.
+        let tagsDescription = tags.map { "\($0): \($1)" }.joined(separator: ", ")
+        let nodesDescription = points.map { $0.shortDescription }.joined(separator: ", ")
+        return """
+        OSWLineString(
+        id: \(id),
+        version: \(version),
+        tags: [\(tagsDescription)],
+        nodes: [\(nodesDescription)]
+        )
+        """
+    }
+    
     private func getUniquePoints() -> [OSWPoint] {
         var uniquePoints: [OSWPoint] = []
         var seenPointIds: Set<String> = Set()

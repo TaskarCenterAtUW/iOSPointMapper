@@ -206,6 +206,20 @@ struct OSWPolygon: OSWElement {
         return "OSWPolygon(id: \(id))"
     }
     
+    var detailedDescription: String {
+        /// This includes the point IDs and their coordinates for better debugging, but can be verbose if there are many points.
+        let tagsDescription = tags.map { "\($0): \($1)" }.joined(separator: ", ")
+        let nodesDescription = points.map { $0.shortDescription }.joined(separator: ", ")
+        return """
+        OSWLineString(
+        id: \(id),
+        version: \(version),
+        tags: [\(tagsDescription)],
+        nodes: [\(nodesDescription)]
+        )
+        """
+    }
+    
     private func getUniquePoints() -> [OSWPoint] {
         var uniquePoints: [OSWPoint] = []
         var seenPointIds: Set<String> = Set()

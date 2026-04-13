@@ -156,4 +156,10 @@ struct OSWPoint: OSWElement {
     var shortDescription: String {
         return "OSWPoint(id: \(id))"
     }
+    
+    var detailedDescription: String {
+        /// This includes all immediate details of the OSWPoint, including the OSWElementClass and all tags, but does not include the details of the OSWElementClass's identifying field tags.
+        let tagsDescription = tags.map { "\($0): \($1)" }.joined(separator: ", ")
+        return "OSWPoint(id: \(id), version: \(version), latitude: \(latitude), longitude: \(longitude), tags: [\(tagsDescription)])"
+    }
 }
