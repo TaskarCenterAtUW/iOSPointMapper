@@ -83,6 +83,8 @@ struct AnnotationFeatureDetailView: View {
     
     @StateObject private var statusViewModel = AnnotationFeatureDetailView.StatusViewModel()
     @FocusState private var focusedField: AccessibilityFeatureAttribute?
+    /// Note: Fields such as pickers don't have built-in ways to update their UI based on user input. Hence we need to trigger a refresh manually when their value changes.
+    @State private var refreshTrigger: Int = 0
     
     var locationFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -186,6 +188,7 @@ struct AnnotationFeatureDetailView: View {
                     Section(header: Text(AccessibilityFeatureAttribute.surfaceIntegrity.displayName)) {
                         pickerView(attribute: .surfaceIntegrity)
                             .focused($focusedField, equals: .surfaceIntegrity)
+                            .id(refreshTrigger) // Refresh the Picker view when refreshTrigger changes
                     }
                 }
                 
@@ -370,8 +373,6 @@ struct AnnotationFeatureDetailView: View {
         }
     }
     
-    @State private var placeholderPickerSelection: String = "Option 1"
-    
     @ViewBuilder
     private func pickerView(attribute: AccessibilityFeatureAttribute) -> some View {
         Picker(
@@ -388,6 +389,7 @@ struct AnnotationFeatureDetailView: View {
                     do {
                         let newCategoricalValue: AccessibilityFeatureAttribute.Value = .categorical(newValue)
                         try accessibilityFeature.setAttributeValue(newCategoricalValue, for: attribute)
+                        refreshTrigger += 1 // Trigger a refresh to update the Picker's displayed value
                     } catch {
                         setAttributeStatusErrorText(for: attribute, message: "\(error.localizedDescription)")
                     }

@@ -324,16 +324,13 @@ extension AccessibilityFeatureAttribute {
     
     func categoricalOptions() -> [AnyCategoricalValue] {
         guard case .categorical(let typeID) = self.valueType else {
-            print("Error: Attempted to get categorical options for a non-categorical attribute.")
             return []
         }
         if typeID == SurfaceIntegrityStatus.typeID {
             let options = SurfaceIntegrityStatus.allCases.map { AnyCategoricalValue($0) }
-            print(options)
             return options
         }
         let options = CategoricalAttributeRegistry.cases(for: typeID) ?? []
-        print(options)
         return options
     }
     
