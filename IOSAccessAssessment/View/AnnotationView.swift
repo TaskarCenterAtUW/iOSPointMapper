@@ -686,6 +686,8 @@ struct AnnotationView: View {
             throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
         }
         sharedAppData.liveMappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
+        let mappedElements: [any OSWElement] = mappedAccessibilityFeatures.map { $0.oswElement }
+        sharedAppData.currentMappingData.updateFeatures(mappedElements, for: accessibilityFeatureClass)
         
         addFeaturesToCurrentDataset(
             captureImageData: currentCaptureDataRecord.imageData,

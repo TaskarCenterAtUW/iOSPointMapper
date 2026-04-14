@@ -31,7 +31,7 @@ class LiveMappingData: CustomStringConvertible {
     init() { }
     
     /**
-     Updates features in the mapping data for a specific feature class.
+     Updates features in the mapping data for a specific feature class by adding new features or updating existing ones based on their IDs.
      */
     func updateFeatures(_ features: [MappedAccessibilityFeature], for featureClass: AccessibilityFeatureClass) {
         var existingFeatures = featuresMap[featureClass, default: []]

@@ -14,6 +14,7 @@ enum CurrentMappingDataError: Error, LocalizedError {
 class CurrentMappingData: CustomStringConvertible {
     
     var featuresMap: [AccessibilityFeatureClass: [any OSWElement]] = [:]
+    var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
 //    var otherFeatures: [OSWElement] = []
     
     init() {
@@ -37,6 +38,26 @@ class CurrentMappingData: CustomStringConvertible {
     func update(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
         print("Updated features map with new OSM data. \n\(description)")
+    }
+    
+    /**
+     Updates the features map for a specific accessibility feature class by adding or replacing the features of that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
+     */
+    func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
+        var existingFeatures = featuresMap[featureClass, default: []]
+        var featureIdToIndex: [String: Int] = featureIdToIndexDictMap[featureClass, default: [:]]
+        elements.forEach { element in
+            if let existingIndex = featureIdToIndex[element.id] {
+                // Update the existing feature
+                existingFeatures[existingIndex] = element
+            } else {
+                // Add the new feature
+                existingFeatures.append(element)
+                featureIdToIndex[element.id] = existingFeatures.count - 1
+            }
+        }
+        featuresMap[featureClass] = existingFeatures
+        featureIdToIndexDictMap[featureClass] = featureIdToIndex
     }
     
     func getFeatures(
@@ -119,7 +140,24 @@ class CurrentMappingData: CustomStringConvertible {
                 featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
             }
         }
+        /// Rebuild the feature ID to index mapping after updating the features map
+        rebuildFeatureIdToIndexDictMap()
         return featuresMap
+    }
+    
+    /**
+     This function rebuilds the mapping from feature IDs to their indices in the features map for each accessibility feature class.
+     */
+    private func rebuildFeatureIdToIndexDictMap() {
+        var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
+        for (featureClass, features) in featuresMap {
+            var featureIdToIndexDict: [String: Int] = [:]
+            for (index, feature) in features.enumerated() {
+                featureIdToIndexDict[feature.id] = index
+            }
+            featureIdToIndexDictMap[featureClass] = featureIdToIndexDict
+        }
+        self.featureIdToIndexDictMap = featureIdToIndexDictMap
     }
     
     /**
