@@ -20,7 +20,7 @@ struct OSWPolygon: OSWElement {
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     var additionalTags: [String : String] = [:]
     
-    var points: [OSWPoint]
+    var pointRefs: [String]
     
     init(
         id: String, version: String,
@@ -28,7 +28,7 @@ struct OSWPolygon: OSWElement {
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = nil,
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?],
-        points: [OSWPoint],
+        pointRefs: [String],
         additionalTags: [String : String] = [:]
     ) {
         self.id = id
@@ -37,11 +37,11 @@ struct OSWPolygon: OSWElement {
         self.attributeValues = attributeValues
         self.calculatedAttributeValues = calculatedAttributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
-        self.points = points
+        self.pointRefs = pointRefs
         self.additionalTags = additionalTags
         
         /// Re-update points to ensure the polygon is closed (i.e., first and last points are the same)
-        self.points = getClosedPoints(oswPoints: points)
+        self.pointRefs = getClosedPoints(oswPointRefs: pointRefs)
     }
     
     /**
@@ -54,8 +54,7 @@ struct OSWPolygon: OSWElement {
      */
     init(
         osmWay: OSMWay,
-        oswElementClass: OSWElementClass,
-        osmNodes: [OSMNode]
+        oswElementClass: OSWElementClass
     ) {
         self.id = osmWay.id
         self.version = osmWay.version
@@ -64,40 +63,21 @@ struct OSWPolygon: OSWElement {
         self.calculatedAttributeValues = [:]
         self.experimentalAttributeValues = [:]
         let nodeRefs = osmWay.nodeRefs
-        let osmNodeDict = Dictionary(uniqueKeysWithValues: osmNodes.map { ($0.id, $0) })
-        /// The creation of points should be in the same order as node references in the way, not the osmNodes list
-        var points: [OSWPoint] = []
-        nodeRefs.forEach { nodeRef in
-            if let osmNode = osmNodeDict[nodeRef] {
-                let point = OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
-                points.append(point)
-            }
-        }
-        self.points = points
+        self.pointRefs = nodeRefs
         self.additionalTags = osmWay.tags
         
         /// Re-update points to ensure the polygon is closed (i.e., first and last points are the same)
-        self.points = getClosedPoints(oswPoints: self.points)
+        self.pointRefs = getClosedPoints(oswPointRefs: self.pointRefs)
     }
     
-    func getClosedPoints(oswPoints: [OSWPoint]) -> [OSWPoint] {
-        var closedPoints = oswPoints
-        if let firstPoint = oswPoints.first, let lastPoint = oswPoints.last {
-            if firstPoint.id != lastPoint.id {
+    func getClosedPoints(oswPointRefs: [String]) -> [String] {
+        var closedPoints = oswPointRefs
+        if let firstPoint = oswPointRefs.first, let lastPoint = oswPointRefs.last {
+            if firstPoint != lastPoint {
                 closedPoints.append(firstPoint)
             }
         }
         return closedPoints
-    }
-    
-    func getOSMLocationDetails() -> OSMLocationDetails? {
-        let coordinates: [CLLocationCoordinate2D] = self.points.map { point in
-            return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
-        }
-        let osmLocationElement: OSMLocationElement = OSMLocationElement(
-            coordinates: coordinates, isWay: true, isClosed: true
-        )
-        return OSMLocationDetails(locations: [osmLocationElement])
     }
     
     func getCaptureId() -> String? {
@@ -159,10 +139,8 @@ struct OSWPolygon: OSWElement {
     
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = getUniquePoints().map { $0.toOSMCreateXML(changesetId: changesetId) }.joined(separator: "\n")
+        let refsXML = pointRefs.map { "<nd ref=\"\($0)\" />" }.joined(separator: "\n")
         return """
-        \(nodesXML)
         <way id="\(id)" changeset="\(changesetId)">
             \(tagsXML)
             \(refsXML)
@@ -176,10 +154,8 @@ struct OSWPolygon: OSWElement {
      */
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let refsXML = points.map { "<nd ref=\"\($0.id)\" />" }.joined(separator: "\n")
-        let nodesXML = getUniquePoints().map { $0.toOSMModifyXML(changesetId: changesetId) }.joined(separator: "\n")
+        let refsXML = pointRefs.map { "<nd ref=\"\($0)\" />" }.joined(separator: "\n")
         return """
-        \(nodesXML)
         <way id="\(id)" version="\(version)" changeset="\(changesetId)">
             \(tagsXML)
             \(refsXML)
@@ -198,8 +174,8 @@ struct OSWPolygon: OSWElement {
     }
     
     var description: String {
-        let nodesString = points.map { $0.shortDescription }.joined(separator: ", ")
-        return "OSWPolygon(id: \(id), version: \(version), nodes: [\(nodesString)])"
+        let nodesString = pointRefs.joined(separator: ", ")
+        return "OSWLineString(id: \(id), version: \(version), nodes: [\(nodesString)])"
     }
     
     var shortDescription: String {
@@ -209,24 +185,24 @@ struct OSWPolygon: OSWElement {
     var detailedDescription: String {
         /// This includes the point IDs and their coordinates for better debugging, but can be verbose if there are many points.
         let tagsDescription = tags.map { "\($0): \($1)" }.joined(separator: ", ")
-        let nodesDescription = points.map { $0.shortDescription }.joined(separator: ", ")
+        let nodesString = pointRefs.joined(separator: ", ")
         return """
         OSWLineString(
         id: \(id),
         version: \(version),
         tags: [\(tagsDescription)],
-        nodes: [\(nodesDescription)]
+        nodes: [\(nodesString)]
         )
         """
     }
     
-    private func getUniquePoints() -> [OSWPoint] {
-        var uniquePoints: [OSWPoint] = []
+    private func getUniquePoints() -> [String] {
+        var uniquePoints: [String] = []
         var seenPointIds: Set<String> = Set()
-        self.points.forEach { point in
-            if !seenPointIds.contains(point.id) {
-                uniquePoints.append(point)
-                seenPointIds.insert(point.id)
+        self.pointRefs.forEach { pointRef in
+            if !seenPointIds.contains(pointRef) {
+                uniquePoints.append(pointRef)
+                seenPointIds.insert(pointRef)
             }
         }
         return uniquePoints
