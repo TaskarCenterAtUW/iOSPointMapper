@@ -224,7 +224,7 @@ struct SurfaceIntegrityProcessor {
             boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
             boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
         )
-        debugIntegrityResults(integrityResults: integrityResults)
+//        debugIntegrityResults(integrityResults: integrityResults)
         return integrityResults
     }
     
@@ -264,7 +264,7 @@ struct SurfaceIntegrityProcessor {
             boundingBoxAreaStatusDetails: boundingBoxAreaIntegrityResult,
             boundingBoxSurfaceNormalStatusDetails: boundingBoxSurfaceNormalIntegrityResult
         )
-        debugIntegrityResults(integrityResults: integrityResults)
+//        debugIntegrityResults(integrityResults: integrityResults)
         return integrityResults
     }
     

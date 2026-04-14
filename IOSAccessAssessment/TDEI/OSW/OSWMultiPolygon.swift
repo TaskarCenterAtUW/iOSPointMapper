@@ -157,6 +157,13 @@ struct OSWMultiPolygon: OSWElement {
         return nil
     }
     
+    func getCaptureId() -> String? {
+        if let captureId = additionalTags[APIConstants.TagKeys.captureIdKey] {
+            return captureId
+        }
+        return nil
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .polygon {
@@ -259,6 +266,10 @@ struct OSWMultiPolygon: OSWElement {
     
     var shortDescription: String {
         return "OSWMultiPolygon(id: \(id))"
+    }
+    
+    var detailedDescription: String {
+        return description
     }
     
     private func getUniqueMembers() -> [OSWRelationMember] {

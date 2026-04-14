@@ -21,10 +21,12 @@ protocol OSWElement: Sendable, CustomStringConvertible {
     var additionalTags: [String: String] { get }
     
     func getOSMLocationDetails() -> OSMLocationDetails?
+    func getCaptureId() -> String?
     
     func toOSMCreateXML(changesetId: String) -> String
     func toOSMModifyXML(changesetId: String) -> String
     func toOSMDeleteXML(changesetId: String) -> String
     
     var shortDescription: String { get }
+    var detailedDescription: String { get }
 }

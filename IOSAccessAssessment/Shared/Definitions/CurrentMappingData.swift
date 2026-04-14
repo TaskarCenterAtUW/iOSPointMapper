@@ -14,6 +14,7 @@ enum CurrentMappingDataError: Error, LocalizedError {
 class CurrentMappingData: CustomStringConvertible {
     
     var featuresMap: [AccessibilityFeatureClass: [any OSWElement]] = [:]
+    var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
 //    var otherFeatures: [OSWElement] = []
     
     init() {
@@ -30,13 +31,37 @@ class CurrentMappingData: CustomStringConvertible {
     
     init(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        /// Rebuild the feature ID to index mapping after updating the features map
+        rebuildFeatureIdToIndexDictMap()
         print("Initialized features map with OSM data. \n\(description)")
     }
     
     /// Note: Replaces the feature map instead of incrementally updating it.
     func update(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        /// Rebuild the feature ID to index mapping after updating the features map
+        rebuildFeatureIdToIndexDictMap()
         print("Updated features map with new OSM data. \n\(description)")
+    }
+    
+    /**
+     Updates the features map for a specific accessibility feature class by adding or replacing the features of that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
+     */
+    func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
+        var existingFeatures = featuresMap[featureClass, default: []]
+        var featureIdToIndex: [String: Int] = featureIdToIndexDictMap[featureClass, default: [:]]
+        elements.forEach { element in
+            if let existingIndex = featureIdToIndex[element.id] {
+                // Update the existing feature
+                existingFeatures[existingIndex] = element
+            } else {
+                // Add the new feature
+                existingFeatures.append(element)
+                featureIdToIndex[element.id] = existingFeatures.count - 1
+            }
+        }
+        featuresMap[featureClass] = existingFeatures
+        featureIdToIndexDictMap[featureClass] = featureIdToIndex
     }
     
     func getFeatures(
@@ -122,6 +147,25 @@ class CurrentMappingData: CustomStringConvertible {
         return featuresMap
     }
     
+    /**
+     This function rebuilds the mapping from feature IDs to their indices in the features map for each accessibility feature class.
+     */
+    private func rebuildFeatureIdToIndexDictMap() {
+        var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
+        for (featureClass, features) in featuresMap {
+            var featureIdToIndexDict: [String: Int] = [:]
+            for (index, feature) in features.enumerated() {
+                featureIdToIndexDict[feature.id] = index
+            }
+            featureIdToIndexDictMap[featureClass] = featureIdToIndexDict
+        }
+        self.featureIdToIndexDictMap = featureIdToIndexDictMap
+    }
+    
+    /**
+     This function takes in OSM location details and an accessibility feature class, and returns the nearest feature of that class within a specified distance threshold.
+     It iterates through the features of the specified class, calculates the distance from each feature to the given OSM location details, and keeps track of the nearest feature found that is within the distance threshold. If no features are found within the threshold, it returns nil.
+     */
     func getNearestFeature(
         to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
         distanceThreshold: CLLocationDistance = 50.0
@@ -141,5 +185,49 @@ class CurrentMappingData: CustomStringConvertible {
             }
         }
         return nearestFeature
+    }
+    
+    /**
+     This function takes in OSM location details, an accessibility feature class, and a capture ID, and returns the feature of that class whose capture ID matches the given capture ID.
+     */
+    func getCaptureMatchedFeature(
+        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
+        captureId: UUID
+    ) -> (any OSWElement)? {
+        guard let features = featuresMap[featureClass] else { return nil }
+        var nearestFeature: (any OSWElement)?
+        let captureIdString = captureId.uuidString
+        
+        for feature in features {
+            guard let featureCaptureId = feature.getCaptureId() else { continue }
+            if featureCaptureId == captureIdString {
+                nearestFeature = feature
+                break
+            }
+        }
+        
+        return nearestFeature
+    }
+    
+    /**
+     This function matches features based on both proximity and capture ID.
+     It first attempts to find a feature that matches the capture ID, and if it finds one, it directly returns it. Else,  it falls back to finding the nearest feature within the distance threshold.
+     */
+    func getMatchedFeature(
+        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
+        captureId: UUID?,
+        distanceThreshold: CLLocationDistance = 50.0
+    ) -> (any OSWElement)? {
+        if let captureId = captureId {
+            let captureMatchedFeature = getCaptureMatchedFeature(
+                to: osmLocationDetails, featureClass: featureClass, captureId: captureId
+            )
+            if let captureMatchedFeature = captureMatchedFeature {
+                return captureMatchedFeature
+            }
+        }
+        return getNearestFeature(
+            to: osmLocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
+        )
     }
 }

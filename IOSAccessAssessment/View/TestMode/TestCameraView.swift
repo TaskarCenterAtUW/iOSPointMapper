@@ -117,7 +117,7 @@ struct TestCameraView: View {
     @State private var cameraHintDefaultText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
     
-    var locationManager: LocationManagerPlaceholder = LocationManagerPlaceholder()
+    @StateObject var locationManager: LocationManagerPlaceholder = LocationManagerPlaceholder()
 //    @State private var captureLocation: CLLocationCoordinate2D?
 //    @State private var captureHeading: CLLocationDirection?
     @StateObject private var mappingDataStatusViewModel = MappingDataStatusViewModel()

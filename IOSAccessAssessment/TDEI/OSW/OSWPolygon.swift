@@ -100,6 +100,13 @@ struct OSWPolygon: OSWElement {
         return OSMLocationDetails(locations: [osmLocationElement])
     }
     
+    func getCaptureId() -> String? {
+        if let captureId = additionalTags[APIConstants.TagKeys.captureIdKey] {
+            return captureId
+        }
+        return nil
+    }
+    
     var tags: [String: String] {
         var identifyingFieldTags: [String: String] = [:]
         if oswElementClass.geometry == .polygon {
@@ -197,6 +204,20 @@ struct OSWPolygon: OSWElement {
     
     var shortDescription: String {
         return "OSWPolygon(id: \(id))"
+    }
+    
+    var detailedDescription: String {
+        /// This includes the point IDs and their coordinates for better debugging, but can be verbose if there are many points.
+        let tagsDescription = tags.map { "\($0): \($1)" }.joined(separator: ", ")
+        let nodesDescription = points.map { $0.shortDescription }.joined(separator: ", ")
+        return """
+        OSWLineString(
+        id: \(id),
+        version: \(version),
+        tags: [\(tagsDescription)],
+        nodes: [\(nodesDescription)]
+        )
+        """
     }
     
     private func getUniquePoints() -> [OSWPoint] {
