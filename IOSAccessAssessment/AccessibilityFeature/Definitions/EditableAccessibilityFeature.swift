@@ -94,7 +94,8 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute,
-        isCalculated: Bool = false
+        isCalculated: Bool = false,
+        isFinal: Bool = true
     ) throws {
         guard attribute.isCompatible(with: value) else {
             throw AccessibilityFeatureError.attributeValueMismatch(attribute: attribute, value: value)
@@ -102,14 +103,16 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         if isCalculated {
             calculatedAttributeValues[attribute] = value
         }
-        attributeValues[attribute] = value
+        if isFinal {
+            attributeValues[attribute] = value
+        }
     }
     
     func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute
     ) throws {
-        try setAttributeValue(value, for: attribute, isCalculated: false)
+        try setAttributeValue(value, for: attribute, isCalculated: false, isFinal: true)
     }
     
     func setExperimentalAttributeValue(

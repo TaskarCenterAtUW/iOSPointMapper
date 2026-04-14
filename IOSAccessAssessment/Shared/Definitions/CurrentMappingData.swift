@@ -31,12 +31,16 @@ class CurrentMappingData: CustomStringConvertible {
     
     init(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        /// Rebuild the feature ID to index mapping after updating the features map
+        rebuildFeatureIdToIndexDictMap()
         print("Initialized features map with OSM data. \n\(description)")
     }
     
     /// Note: Replaces the feature map instead of incrementally updating it.
     func update(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
         self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
+        /// Rebuild the feature ID to index mapping after updating the features map
+        rebuildFeatureIdToIndexDictMap()
         print("Updated features map with new OSM data. \n\(description)")
     }
     
@@ -140,8 +144,6 @@ class CurrentMappingData: CustomStringConvertible {
                 featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
             }
         }
-        /// Rebuild the feature ID to index mapping after updating the features map
-        rebuildFeatureIdToIndexDictMap()
         return featuresMap
     }
     
