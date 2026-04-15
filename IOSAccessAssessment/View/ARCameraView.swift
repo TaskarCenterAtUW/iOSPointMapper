@@ -26,6 +26,7 @@ enum ARCameraViewConstants {
         static let cameraHintMeshNotProcessedText = "Features Not Processed"
         static let cameraHintLocationErrorText = "Location Error"
         static let cameraHintUnknownErrorText = "Unknown Error"
+        static let cameraHintMappingDataNotReadyText = "Mapping Data Not Ready"
         
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
@@ -72,6 +73,7 @@ enum ARCameraViewError: Error, LocalizedError {
     case captureNoSegmentationAccessibilityFeatures
     case workspaceConfigurationFailed
     case authenticationError
+    case mappingDataNotReady
     
     var errorDescription: String? {
         switch self {
@@ -81,6 +83,8 @@ enum ARCameraViewError: Error, LocalizedError {
             return "Workspace configuration failed. Please check your workspace settings."
         case .authenticationError:
             return "Authentication error. Please log in again."
+        case .mappingDataNotReady:
+            return "Mapping data is not ready yet. Please wait a moment and try again."
         }
     }
 }
@@ -98,10 +102,15 @@ class ARCameraManagerStatusViewModel: ObservableObject {
 class MappingDataStatusViewModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
+    @Published var isInProgress: Bool = false
     
     func update(isFailed: Bool, errorMessage: String) {
         self.isFailed = isFailed
         self.errorMessage = errorMessage
+    }
+    
+    func update(isInProgress: Bool) {
+        self.isInProgress = isInProgress
     }
 }
 
@@ -284,6 +293,9 @@ struct ARCameraView: View {
     private func cameraCapture() {
         Task {
             do {
+                guard !mappingDataStatusViewModel.isInProgress else {
+                    throw ARCameraViewError.mappingDataNotReady
+                }
                 let captureData: CaptureData = try await manager.performFinalSessionUpdateIfPossible()
                 switch captureData {
                 case .imageData(let data):
@@ -314,6 +326,8 @@ struct ARCameraView: View {
                 setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch ARCameraManagerError.finalSessionNoSegmentationMesh {
                 setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+            } catch ARCameraViewError.mappingDataNotReady {
+                setHintText(ARCameraViewConstants.Texts.cameraHintMappingDataNotReadyText)
             } catch _ as LocationManagerError {
                 setHintText(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
             } catch {
@@ -353,6 +367,7 @@ struct ARCameraView: View {
         }
         Task {
             do {
+                mappingDataStatusViewModel.update(isInProgress: true)
                 guard let workspaceId = workspaceViewModel.workspaceId,
                       let location = newLocation?.coordinate else {
                     throw ARCameraViewError.workspaceConfigurationFailed
@@ -367,11 +382,13 @@ struct ARCameraView: View {
                     accessToken: accessToken,
                     environment: userStateViewModel.selectedEnvironment
                 )
-                sharedAppData.currentMappingData.update(
+                sharedAppData.currentMappingData.replace(
                     osmMapDataResponse: mapData,
                     accessibilityFeatureClasses: selectedClasses
                 )
+                mappingDataStatusViewModel.update(isInProgress: false)
             } catch {
+                mappingDataStatusViewModel.update(isInProgress: false)
                 mappingDataStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }

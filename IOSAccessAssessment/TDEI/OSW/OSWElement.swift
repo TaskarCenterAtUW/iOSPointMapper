@@ -20,7 +20,6 @@ protocol OSWElement: Sendable, CustomStringConvertible {
     var experimentalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get }
     var additionalTags: [String: String] { get }
     
-    func getOSMLocationDetails() -> OSMLocationDetails?
     func getCaptureId() -> String?
     
     func toOSMCreateXML(changesetId: String) -> String

@@ -8,22 +8,25 @@
 import Foundation
 import CoreLocation
 
-struct OSWRelationMember: Sendable {
-    let element: any OSWElement
+struct OSWRelationMemberRef: Sendable {
+    let type: OSMElementType
+    let ref: String
     let role: String
     
-    init(element: any OSWElement, role: String) {
-        self.element = element
+    init(ref: String, type: OSMElementType, role: String = "outer") {
+        self.ref = ref
+        self.type = type
         self.role = role
     }
     
-    init(element: any OSWElement) {
-        self.element = element
-        self.role = "outer"
+    init(element: any OSWElement, role: String = "outer") {
+        self.ref = element.id
+        self.type = element.osmElementType
+        self.role = role
     }
     
     var toXML: String {
-        return "<member type=\"\(element.osmElementType.rawValue)\" ref=\"\(element.id)\" role=\"\(role)\" />"
+        return "<member type=\"\(type.rawValue)\" ref=\"\(ref)\" role=\"\(role)\" />"
     }
 }
 
@@ -44,7 +47,7 @@ struct OSWMultiPolygon: OSWElement {
     var additionalTags: [String : String] = [:]
     
     /// TODO: Add the proper support for member (specifically roles).
-    var members: [OSWRelationMember]
+    var memberRefs: [OSWRelationMemberRef]
     
     init(
         id: String, version: String,
@@ -52,7 +55,7 @@ struct OSWMultiPolygon: OSWElement {
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]? = nil,
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?],
-        members: [OSWRelationMember],
+        memberRefs: [OSWRelationMemberRef],
         additionalTags: [String : String] = [:]
     ) {
         self.id = id
@@ -61,7 +64,7 @@ struct OSWMultiPolygon: OSWElement {
         self.attributeValues = attributeValues
         self.calculatedAttributeValues = calculatedAttributeValues
         self.experimentalAttributeValues = experimentalAttributeValues
-        self.members = members
+        self.memberRefs = memberRefs
         self.additionalTags = additionalTags
     }
     
@@ -75,8 +78,7 @@ struct OSWMultiPolygon: OSWElement {
      */
     init(
         osmRelation: OSMRelation,
-        oswElementClass: OSWElementClass,
-        osmMemberElements: [any OSMElement]
+        oswElementClass: OSWElementClass
     ) {
         self.id = osmRelation.id
         self.version = osmRelation.version
@@ -86,76 +88,92 @@ struct OSWMultiPolygon: OSWElement {
         self.experimentalAttributeValues = [:]
         
         let osmMemberRefs: [OSMRelationMember] = osmRelation.members
-        let osmNodeMemberRefs = osmMemberRefs.filter { $0.type == .node }
-        let osmWayMemberRefs = osmMemberRefs.filter { $0.type == .way }
-        let osmRelationMemberRefs = osmMemberRefs.filter { $0.type == .relation }
-        
-        let osmMemberElementsDict: [String: any OSMElement] = Dictionary(
-            uniqueKeysWithValues: osmMemberElements.map { ($0.id, $0) }
-        )
-        let osmNodeElements: [OSMNode] = osmMemberElements.filter { element in
-            return osmNodeMemberRefs.contains { $0.ref == element.id }
-        }.compactMap { element in
-            return element as? OSMNode
+        self.memberRefs = osmMemberRefs.map { osmMemberRef in
+            OSWRelationMemberRef(
+                ref: osmMemberRef.ref,
+                type: osmMemberRef.type,
+                role: osmMemberRef.role
+            )
         }
-        let osmNodeElementsDict: [String: OSMNode] = Dictionary(uniqueKeysWithValues: osmNodeElements.map { ($0.id, $0) })
-        let osmWayElements: [OSMWay] = osmMemberElements.filter { element in
-            return osmWayMemberRefs.contains { $0.ref == element.id }
-        }.compactMap { element in
-            return element as? OSMWay
-        }
-        let osmWayElementsDict: [String: OSMWay] = Dictionary(uniqueKeysWithValues: osmWayElements.map { ($0.id, $0) })
-        let osmRelationElements: [OSMRelation] = osmMemberElements.filter { element in
-            return osmRelationMemberRefs.contains { $0.ref == element.id }
-        }.compactMap { element in
-            return element as? OSMRelation
-        }
-        let osmRelationElementsDict: [String: OSMRelation] = Dictionary(
-            uniqueKeysWithValues: osmRelationElements.map { ($0.id, $0) }
-        )
-        
-        var oswRelationMembers: [OSWRelationMember] = []
-        osmNodeMemberRefs.forEach { osmNodeMemberRef in
-            if let matchingOSMNodeElement = osmNodeElementsDict[osmNodeMemberRef.ref] {
-                let oswPoint: OSWPoint = OSWPoint(osmNode: matchingOSMNodeElement, oswElementClass: oswElementClass)
-                let oswRelationMember = OSWRelationMember(element: oswPoint, role: osmNodeMemberRef.role)
-                oswRelationMembers.append(oswRelationMember)
-            }
-        }
-        osmWayMemberRefs.forEach { osmWayMemberRef in
-            if let matchingOSMWayElement = osmWayElementsDict[osmWayMemberRef.ref] {
-                let matchingOSWWayNodes = matchingOSMWayElement.nodeRefs.compactMap { nodeRef in
-                    return osmNodeElementsDict[nodeRef]
-                }
-                let oswLineString: OSWLineString = OSWLineString(
-                    osmWay: matchingOSMWayElement, oswElementClass: oswElementClass,
-                    osmNodes: matchingOSWWayNodes
-                )
-                let oswRelationMember = OSWRelationMember(element: oswLineString, role: osmWayMemberRef.role)
-                oswRelationMembers.append(oswRelationMember)
-            }
-        }
-        osmRelationMemberRefs.forEach { osmRelationMemberRef in
-            if let matchingOSMRelationElement = osmRelationElementsDict[osmRelationMemberRef.ref] {
-                let matchingOSMRelationMemberElements = matchingOSMRelationElement.members.compactMap { memberRef in
-                    return osmMemberElementsDict[memberRef.ref]
-                }
-                let oswMultiPolygon: OSWMultiPolygon = OSWMultiPolygon(
-                    osmRelation: matchingOSMRelationElement, oswElementClass: oswElementClass,
-                    osmMemberElements: matchingOSMRelationMemberElements
-                )
-                let oswRelationMember = OSWRelationMember(element: oswMultiPolygon, role: osmRelationMemberRef.role)
-                oswRelationMembers.append(oswRelationMember)
-            }
-        }
-        self.members = oswRelationMembers
-        self.additionalTags = osmRelation.tags
     }
-    
-    /// TODO: This is a temporary implementation. The location details of a multipolygon relation can be determined in multiple ways (e.g. centroid of the polygon, location of a specific node member etc.). The proper strategy for determining the location details of a multipolygon relation needs to be defined and implemented.
-    func getOSMLocationDetails() -> OSMLocationDetails? {
-        return nil
-    }
+//    init(
+//        osmRelation: OSMRelation,
+//        oswElementClass: OSWElementClass
+//        osmMemberElements: [any OSMElement]
+//    ) {
+//        self.id = osmRelation.id
+//        self.version = osmRelation.version
+//        self.oswElementClass = oswElementClass
+//        self.attributeValues = [:]
+//        self.calculatedAttributeValues = [:]
+//        self.experimentalAttributeValues = [:]
+//        
+//        let osmMemberRefs: [OSMRelationMember] = osmRelation.members
+//        let osmNodeMemberRefs = osmMemberRefs.filter { $0.type == .node }
+//        let osmWayMemberRefs = osmMemberRefs.filter { $0.type == .way }
+//        let osmRelationMemberRefs = osmMemberRefs.filter { $0.type == .relation }
+//        
+//        let osmMemberElementsDict: [String: any OSMElement] = Dictionary(
+//            uniqueKeysWithValues: osmMemberElements.map { ($0.id, $0) }
+//        )
+//        let osmNodeElements: [OSMNode] = osmMemberElements.filter { element in
+//            return osmNodeMemberRefs.contains { $0.ref == element.id }
+//        }.compactMap { element in
+//            return element as? OSMNode
+//        }
+//        let osmNodeElementsDict: [String: OSMNode] = Dictionary(uniqueKeysWithValues: osmNodeElements.map { ($0.id, $0) })
+//        let osmWayElements: [OSMWay] = osmMemberElements.filter { element in
+//            return osmWayMemberRefs.contains { $0.ref == element.id }
+//        }.compactMap { element in
+//            return element as? OSMWay
+//        }
+//        let osmWayElementsDict: [String: OSMWay] = Dictionary(uniqueKeysWithValues: osmWayElements.map { ($0.id, $0) })
+//        let osmRelationElements: [OSMRelation] = osmMemberElements.filter { element in
+//            return osmRelationMemberRefs.contains { $0.ref == element.id }
+//        }.compactMap { element in
+//            return element as? OSMRelation
+//        }
+//        let osmRelationElementsDict: [String: OSMRelation] = Dictionary(
+//            uniqueKeysWithValues: osmRelationElements.map { ($0.id, $0) }
+//        )
+//        
+//        var oswRelationMembers: [OSWRelationMember] = []
+//        osmNodeMemberRefs.forEach { osmNodeMemberRef in
+//            if let matchingOSMNodeElement = osmNodeElementsDict[osmNodeMemberRef.ref] {
+//                let oswPoint: OSWPoint = OSWPoint(osmNode: matchingOSMNodeElement, oswElementClass: oswElementClass)
+//                let oswRelationMember = OSWRelationMember(element: oswPoint, role: osmNodeMemberRef.role)
+//                oswRelationMembers.append(oswRelationMember)
+//            }
+//        }
+//        osmWayMemberRefs.forEach { osmWayMemberRef in
+//            if let matchingOSMWayElement = osmWayElementsDict[osmWayMemberRef.ref] {
+//                let matchingOSWWayNodes = matchingOSMWayElement.nodeRefs.compactMap { nodeRef in
+//                    return osmNodeElementsDict[nodeRef]
+//                }
+//                let oswLineString: OSWLineString = OSWLineString(
+//                    osmWay: matchingOSMWayElement, oswElementClass: oswElementClass,
+//                    osmNodes: matchingOSWWayNodes
+//                )
+//                let oswRelationMember = OSWRelationMember(element: oswLineString, role: osmWayMemberRef.role)
+//                oswRelationMembers.append(oswRelationMember)
+//            }
+//        }
+//        osmRelationMemberRefs.forEach { osmRelationMemberRef in
+//            if let matchingOSMRelationElement = osmRelationElementsDict[osmRelationMemberRef.ref] {
+//                let matchingOSMRelationMemberElements = matchingOSMRelationElement.members.compactMap { memberRef in
+//                    return osmMemberElementsDict[memberRef.ref]
+//                }
+//                let oswMultiPolygon: OSWMultiPolygon = OSWMultiPolygon(
+//                    osmRelation: matchingOSMRelationElement, oswElementClass: oswElementClass,
+//                    osmMemberElements: matchingOSMRelationMemberElements
+//                )
+//                let oswRelationMember = OSWRelationMember(element: oswMultiPolygon, role: osmRelationMemberRef.role)
+//                oswRelationMembers.append(oswRelationMember)
+//            }
+//        }
+//        self.members = oswRelationMembers
+//        self.additionalTags = osmRelation.tags
+//    }
     
     func getCaptureId() -> String? {
         if let captureId = additionalTags[APIConstants.TagKeys.captureIdKey] {
@@ -212,12 +230,8 @@ struct OSWMultiPolygon: OSWElement {
      */
     func toOSMCreateXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = getUniqueMembers().map {
-            $0.element.toOSMCreateXML(changesetId: changesetId)
-        }.joined(separator: "\n")
-        let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
+        let memberRefsXML = memberRefs.map { $0.toXML }.joined(separator: "\n")
         return """
-        \(membersXML)
         <relation id="\(id)" changeset="\(changesetId)">
             \(tagsXML)
             \(memberRefsXML)
@@ -234,12 +248,8 @@ struct OSWMultiPolygon: OSWElement {
      */
     func toOSMModifyXML(changesetId: String) -> String {
         let tagsXML = tags.map { "<tag k=\"\($0)\" v=\"\($1)\" />" }.joined(separator: "\n")
-        let membersXML = getUniqueMembers().map {
-            $0.element.toOSMModifyXML(changesetId: changesetId)
-        }.joined(separator: "\n")
-        let memberRefsXML = members.map { $0.toXML }.joined(separator: "\n")
+        let memberRefsXML = memberRefs.map { $0.toXML }.joined(separator: "\n")
         return """
-        \(membersXML)
         <relation id="\(id)" version="\(version)" changeset="\(changesetId)">
             \(tagsXML)
             \(memberRefsXML)
@@ -258,9 +268,7 @@ struct OSWMultiPolygon: OSWElement {
     }
     
     var description: String {
-        let membersString = members.map {
-            $0.element.shortDescription
-        }.joined(separator: ", ")
+        let membersString = memberRefs.map { "\($0.type.rawValue):\($0.ref)(\($0.role))" }.joined(separator: ", ")
         return "OSWMultiPolygon(id: \(id), version: \(version), class: \(oswElementClass), members: [\(membersString)])"
     }
     
@@ -272,13 +280,13 @@ struct OSWMultiPolygon: OSWElement {
         return description
     }
     
-    private func getUniqueMembers() -> [OSWRelationMember] {
-        var uniqueMembers: [OSWRelationMember] = []
+    private func getUniqueMembers() -> [OSWRelationMemberRef] {
+        var uniqueMembers: [OSWRelationMemberRef] = []
         var seenMemberIds: Set<String> = Set()
-        self.members.forEach { member in
-            if !seenMemberIds.contains(member.element.id) {
-                uniqueMembers.append(member)
-                seenMemberIds.insert(member.element.id)
+        self.memberRefs.forEach { memberRef in
+            if !seenMemberIds.contains(memberRef.ref) {
+                uniqueMembers.append(memberRef)
+                seenMemberIds.insert(memberRef.ref)
             }
         }
         return uniqueMembers

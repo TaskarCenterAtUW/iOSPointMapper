@@ -11,6 +11,13 @@ enum ChangesetDiffOperation {
     case create(any OSWElement)
     case modify(any OSWElement)
     case delete(any OSWElement)
+    
+    var oswElement: any OSWElement {
+        switch self {
+        case .create(let element), .modify(let element), .delete(let element):
+            return element
+        }
+    }
 }
 
 enum ChangesetServiceError: Error, LocalizedError {
