@@ -57,35 +57,9 @@ class APIChangesetUploadController: ObservableObject {
                 isFailedCaptureUpload = true
             }
         }
-        var apiChangesetUploadResults: APIChangesetUploadResults
-        switch inputs.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
-        case .point:
-            apiChangesetUploadResults = try await uploadPoints(
-                accessibilityFeatures: accessibilityFeatures,
-                liveMappingData: liveMappingData,
-                inputs: inputs
-            )
-        case .linestring:
-            /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk, and connect it to the previously uploaded linestring
-            var accessibilityFeaturesLocal = accessibilityFeatures
-            var shouldConnectLast = false
-            if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
-               let firstAccessibilityFeature = accessibilityFeatures.first {
-                accessibilityFeaturesLocal = [firstAccessibilityFeature]
-                shouldConnectLast = true
-            }
-            apiChangesetUploadResults = try await uploadLineStrings(
-                accessibilityFeatures: accessibilityFeaturesLocal,
-                liveMappingData: liveMappingData,
-                inputs: inputs
-            )
-        case .polygon:
-            apiChangesetUploadResults = try await uploadPolygons(
-                accessibilityFeatures: accessibilityFeatures,
-                liveMappingData: liveMappingData,
-                inputs: inputs
-            )
-        }
+        let apiChangesetUploadResults: APIChangesetUploadResults = try await uploadAllFeatures(
+            accessibilityFeatures: accessibilityFeatures, liveMappingData: liveMappingData, inputs: inputs
+        )
         return APIChangesetUploadResults(
             from: apiChangesetUploadResults,
             isFailedCaptureUpload: isFailedCaptureUpload
@@ -141,13 +115,17 @@ extension APIChangesetUploadController {
     func uploadAllFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
         liveMappingData: LiveMappingData,
-        inputs: APIChangesetUploadInputs,
-        shouldConnectLast: Bool = false
+        inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         var accessibilityFeatures = accessibilityFeatures
         var totalFeatures = accessibilityFeatures.count
         guard totalFeatures > 0, let firstFeature = accessibilityFeatures.first else {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+        }
+        /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk
+        if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk {
+            accessibilityFeatures = [firstFeature]
+            totalFeatures = 1
         }
         /// Map Accessibility Features to OSW Elements
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
@@ -156,23 +134,44 @@ extension APIChangesetUploadController {
             captureData: inputs.captureData, liveMappingData: liveMappingData
         )
         for feature in accessibilityFeatures {
+            var diffOperations: [ChangesetDiffOperation] = []
             switch feature.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
             case .point:
                 let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromPointFeature(
                     feature, additionalTags: additionalTags
                 )
-                diffOperations.forEach { diffOperation in
-                    let oswElement = diffOperation.oswElement
-                    let osmOldId = oswElement.id
-                    featureCache.addEntry(osmOldId: osmOldId, feature: feature, diffOperation: diffOperation)
-                }
-            default:
-                break
+            case .linestring:
+                let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromLinestringFeature(
+                    feature, additionalTags: additionalTags
+                )
+            case .polygon:
+                let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromPolygons(
+                    feature, additionalTags: additionalTags
+                )
+            }
+            diffOperations.forEach { diffOperation in
+                let oswElement = diffOperation.oswElement
+                let osmOldId = oswElement.id
+                featureCache.addEntry(osmOldId: osmOldId, feature: feature, diffOperation: diffOperation)
             }
         }
-        let uploadOperations: [ChangesetDiffOperation] = featureCache.getDiffOperations()
+        var uploadOperations: [ChangesetDiffOperation] = featureCache.getDiffOperations()
         guard uploadOperations.count > 0 else {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+        }
+        /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
+        if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
+           let newDiffOperation = featureCache.getDiffOperations().first,
+           case .create(let newOSWElement) = newDiffOperation,
+           let existingMappedFeature = liveMappingData.featuresMap[inputs.accessibilityFeatureClass]?.last,
+           var existingOSWLineString = existingMappedFeature.oswElement as? OSWLineString,
+           let newOSWLineString = newOSWElement as? OSWLineString,
+           let newOSWStartingPointRef = newOSWLineString.pointRefs.first
+        {
+            existingOSWLineString.pointRefs.append(newOSWStartingPointRef)
+            featureCache.addEntry(osmOldId: existingOSWLineString.id, feature: existingMappedFeature, diffOperation: .modify(existingOSWLineString))
+            totalFeatures += 1
+            uploadOperations.append(.modify(existingOSWLineString))
         }
         let uploadedElements = try await ChangesetService.shared.performUploadAsync(
             workspaceId: inputs.workspaceId, changesetId: inputs.changesetId,
@@ -204,6 +203,83 @@ extension APIChangesetUploadController {
             oswElements: uploadedOSWElements,
             failedFeatureUploads: failedUploads, totalFeatureUploads: totalFeatures
         )
+    }
+    
+    func getUploadedOSWElements(
+        from uploadedElements: OSMChangesetUploadResponseElements,
+        featureCache: APIChangesetUploadCache
+    ) -> [any OSWElement] {
+        let cachedOSWPoints = featureCache.getOSWPoints()
+        var uploadedOSWPoints: [OSWPoint?] = Array(repeating: nil, count: cachedOSWPoints.count)
+        uploadedElements.nodes.forEach { uploadedNode in
+            let uploadedNodeData = uploadedNode.value
+            let uploadedNodeOSMOldId = uploadedNodeData.oldId
+            guard let nodeIndex = cachedOSWPoints.firstIndex(where: { $0.id == uploadedNodeOSMOldId }) else {
+                return
+            }
+            guard let matchedCachedEntry = featureCache.getEntry(osmOldId: uploadedNodeOSMOldId),
+                  let matchedOriginalOSWPoint = matchedCachedEntry.diffOperation.oswElement as? OSWPoint else {
+                return
+            }
+            let uploadedOSWPoint = OSWPoint(
+                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                oswElementClass: matchedOriginalOSWPoint.oswElementClass,
+                latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
+                attributeValues: matchedOriginalOSWPoint.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWPoint.calculatedAttributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
+                additionalTags: matchedOriginalOSWPoint.additionalTags
+            )
+            uploadedOSWPoints[nodeIndex] = uploadedOSWPoint
+        }
+        let cachedOSWLineStrings = featureCache.getOSWLineStrings()
+        var uploadedOSWLineStrings: [OSWLineString?] = Array(repeating: nil, count: cachedOSWLineStrings.count)
+        uploadedElements.ways.forEach { uploadedWay in
+            let uploadedWayData = uploadedWay.value
+            let uploadedWayOSMOldId = uploadedWayData.oldId
+            guard let lineStringIndex = cachedOSWLineStrings.firstIndex(where: { $0.id == uploadedWayOSMOldId }) else {
+                return
+            }
+            guard let matchedCachedEntry = featureCache.getEntry(osmOldId: uploadedWayOSMOldId),
+                  let matchedOriginalOSWLineString = matchedCachedEntry.diffOperation.oswElement as? OSWLineString else {
+                return
+            }
+            let uploadedOSWLineString = OSWLineString(
+                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
+                oswElementClass: matchedOriginalOSWLineString.oswElementClass,
+                attributeValues: matchedOriginalOSWLineString.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWLineString.calculatedAttributeValues,
+                experimentalAttributeValues: matchedOriginalOSWLineString.experimentalAttributeValues,
+                pointRefs: matchedOriginalOSWLineString.pointRefs,
+                additionalTags: matchedOriginalOSWLineString.additionalTags
+            )
+            uploadedOSWLineStrings[lineStringIndex] = uploadedOSWLineString
+        }
+        let cachedOSWPolygons = featureCache.getOSWPolygons()
+        var uploadedOSWPolygons: [OSWPolygon?] = Array(repeating: nil, count: cachedOSWPolygons.count)
+        uploadedElements.ways.forEach { uploadedWay in
+            let uploadedWayData = uploadedWay.value
+            let uploadedWayOSMOldId = uploadedWayData.oldId
+            guard let polygonIndex = cachedOSWPolygons.firstIndex(where: { $0.id == uploadedWayOSMOldId }) else {
+                return
+            }
+            guard let matchedCachedEntry = featureCache.getEntry(osmOldId: uploadedWayOSMOldId),
+                  let matchedOriginalOSWPolygon = matchedCachedEntry.diffOperation.oswElement as? OSWPolygon else {
+                return
+            }
+            let uploadedOSWPolygon = OSWPolygon(
+                id: uploadedWayData.newId, version: uploadedWayData.newVersion,
+                oswElementClass: matchedOriginalOSWPolygon.oswElementClass,
+                attributeValues: matchedOriginalOSWPolygon.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWPolygon.calculatedAttributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPolygon.experimentalAttributeValues,
+                pointRefs: matchedOriginalOSWPolygon.pointRefs,
+                additionalTags: matchedOriginalOSWPolygon.additionalTags
+            )
+            uploadedOSWPolygons[polygonIndex] = uploadedOSWPolygon
+        }
+        return (uploadedOSWPoints.compactMap { $0 }) +
+        (uploadedOSWLineStrings.compactMap { $0 }) + (uploadedOSWPolygons.compactMap { $0 })
     }
 }
 
