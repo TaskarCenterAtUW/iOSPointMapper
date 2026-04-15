@@ -11,13 +11,9 @@ import CoreLocation
 struct APIChangesetUploadCacheEntry: @unchecked Sendable {
     let osmOldId: String
     let feature: (any AccessibilityFeatureProtocol)?
-    let oswElement: any OSWElement
-    let isExisting: Bool
-}
-
-struct OSWElementWithStatus {
-    let oswElement: any OSWElement
-    let isExisting: Bool
+//    let oswElement: any OSWElement
+//    let isExisting: Bool
+    let diffOperation: ChangesetDiffOperation
 }
 
 class APIChangesetUploadCache {
@@ -37,25 +33,19 @@ class APIChangesetUploadCache {
     }
     
     func addEntry(
-        osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, oswElement: any OSWElement,
-        isExisting: Bool = false
+        osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, diffOperation: ChangesetDiffOperation
     ) {
-        let entry = APIChangesetUploadCacheEntry(
-            osmOldId: osmOldId, feature: feature, oswElement: oswElement,
-            isExisting: isExisting
-        )
+        let entry = APIChangesetUploadCacheEntry(osmOldId: osmOldId, feature: feature, diffOperation: diffOperation)
         cacheEntry.append(entry)
     }
     
-    func getOSWElementsWithStatus() -> [OSWElementWithStatus] {
-        return cacheEntry.map { entry in
-            return OSWElementWithStatus(oswElement: entry.oswElement, isExisting: entry.isExisting)
-        }
+    func getDiffOperations() -> [ChangesetDiffOperation] {
+        return cacheEntry.map { $0.diffOperation }
     }
     
     func getOSWPoints() -> [OSWPoint] {
         return cacheEntry.compactMap { entry in
-            if let point = entry.oswElement as? OSWPoint {
+            if let point = entry.diffOperation.oswElement as? OSWPoint {
                 return point
             }
             return nil
@@ -64,7 +54,7 @@ class APIChangesetUploadCache {
     
     func getOSWLineStrings() -> [OSWLineString] {
         return cacheEntry.compactMap { entry in
-            if let lineString = entry.oswElement as? OSWLineString {
+            if let lineString = entry.diffOperation.oswElement as? OSWLineString {
                 return lineString
             }
             return nil
@@ -73,7 +63,7 @@ class APIChangesetUploadCache {
     
     func getOSWPolygons() -> [OSWPolygon] {
         return cacheEntry.compactMap { entry in
-            if let polygon = entry.oswElement as? OSWPolygon {
+            if let polygon = entry.diffOperation.oswElement as? OSWPolygon {
                 return polygon
             }
             return nil

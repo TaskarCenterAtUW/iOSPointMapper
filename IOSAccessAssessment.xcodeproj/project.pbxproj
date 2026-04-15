@@ -86,6 +86,7 @@
 		A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */; };
 		A374B4AA2F8C8B4D003E030D /* CategoricalAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374B4A92F8C8B40003E030D /* CategoricalAttribute.swift */; };
 		A374B4AC2F8EF654003E030D /* CurrentMappingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */; };
+		A374B4B02F8F2CEB003E030D /* APIChangesetUploadControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374B4AF2F8F2CDE003E030D /* APIChangesetUploadControllerExtension.swift */; };
 		A374FAB72EE0173600055268 /* OSMChangesetUploadResponseElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A374FAB62EE0173200055268 /* OSMChangesetUploadResponseElement.swift */; };
 		A37C3C182F3141FF001F4248 /* Plane.metal in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C172F3141F9001F4248 /* Plane.metal */; };
 		A37C3C1A2F3144F7001F4248 /* PlaneAttributeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */; };
@@ -311,6 +312,7 @@
 		A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_35_640_640.mlpackage; sourceTree = "<group>"; };
 		A374B4A92F8C8B40003E030D /* CategoricalAttribute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoricalAttribute.swift; sourceTree = "<group>"; };
 		A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMappingData.swift; sourceTree = "<group>"; };
+		A374B4AF2F8F2CDE003E030D /* APIChangesetUploadControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIChangesetUploadControllerExtension.swift; sourceTree = "<group>"; };
 		A374FAB62EE0173200055268 /* OSMChangesetUploadResponseElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMChangesetUploadResponseElement.swift; sourceTree = "<group>"; };
 		A37C3C172F3141F9001F4248 /* Plane.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Plane.metal; sourceTree = "<group>"; };
 		A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneAttributeProcessor.swift; sourceTree = "<group>"; };
@@ -874,6 +876,7 @@
 		A35E05142EDE7494003C26CF /* Transmission */ = {
 			isa = PBXGroup;
 			children = (
+				A374B4AE2F8F2CD2003E030D /* Extensions */,
 				A35E05152EDEA04B003C26CF /* APIChangesetUploadController.swift */,
 				A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */,
 			);
@@ -901,6 +904,14 @@
 				A30646292D614D9400B97D1B /* ImageSaver.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		A374B4AE2F8F2CD2003E030D /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A374B4AF2F8F2CDE003E030D /* APIChangesetUploadControllerExtension.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		A37E3E352EED60C100B07B77 /* CHelpers */ = {
@@ -1422,6 +1433,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A37C3C1C2F356254001F4248 /* IntersectionFilter.swift in Sources */,
+				A374B4B02F8F2CEB003E030D /* APIChangesetUploadControllerExtension.swift in Sources */,
 				A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */,
 				A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */,
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
