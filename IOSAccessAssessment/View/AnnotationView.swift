@@ -630,6 +630,29 @@ struct AnnotationView: View {
         }
     }
     
+    /// Fetches the latest map data for the current location and workspace, and updates the sharedAppData's currentMappingData.
+    /// This ensures that the most up-to-date map data is used for the next class's annotation, in case there were any changes from the previous upload.
+    /// May be used as a fail-safe if API changeset upload fails, to ensure that the user is working with the latest map data. If the upload is successful, the map data is already updated in the sharedAppData within the uploadFeatures function, so this would just be an extra fetch that may not be necessary.
+    private func refreshMap() async throws {
+        guard let workspaceId = workspaceViewModel.workspaceId else {
+            throw ARCameraViewError.workspaceConfigurationFailed
+        }
+        guard let accessToken = userStateViewModel.getAccessToken() else {
+            throw ARCameraViewError.authenticationError
+        }
+        let mapData = try await WorkspaceService.shared.fetchMapData(
+            workspaceId: workspaceId,
+            location: captureLocation,
+            radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+            accessToken: accessToken,
+            environment: userStateViewModel.selectedEnvironment
+        )
+        sharedAppData.currentMappingData.replace(
+            osmMapDataResponse: mapData,
+            accessibilityFeatureClasses: selectedClasses
+        )
+    }
+    
     private func moveToNextClass() throws {
         if isCurrentIndexLast() {
             self.dismiss()
@@ -682,11 +705,11 @@ struct AnnotationView: View {
             liveMappingData: sharedAppData.liveMappingData,
             inputs: apiChangesetUploadInputs
         )
-        guard let mappedAccessibilityFeatures = apiChangesetUploadResults.accessibilityFeatures else {
+        guard let mappedAccessibilityFeatures = apiChangesetUploadResults.accessibilityFeatures,
+              let mappedElements = apiChangesetUploadResults.oswElements else {
             throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
         }
         sharedAppData.liveMappingData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
-        let mappedElements: [any OSWElement] = mappedAccessibilityFeatures.map { $0.oswElement }
         sharedAppData.currentMappingData.updateFeatures(mappedElements, for: accessibilityFeatureClass)
         
         addFeaturesToCurrentDataset(

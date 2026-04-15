@@ -359,6 +359,9 @@ struct TestCameraView: View {
     private func cameraCapture() {
         Task {
             do {
+                guard !mappingDataStatusViewModel.isInProgress else {
+                    throw ARCameraViewError.mappingDataNotReady
+                }
                 guard let datadatasetCaptureData = datasetCaptureData else {
                     throw TestCameraViewError.captureDataUnavailable
                 }
@@ -432,6 +435,7 @@ struct TestCameraView: View {
         }
         Task {
             do {
+                mappingDataStatusViewModel.update(isInProgress: true)
                 guard let workspaceId = workspaceViewModel.workspaceId,
                       let location = newLocation?.coordinate else {
                     throw ARCameraViewError.workspaceConfigurationFailed
@@ -450,7 +454,9 @@ struct TestCameraView: View {
                     osmMapDataResponse: mapData,
                     accessibilityFeatureClasses: selectedClasses
                 )
+                mappingDataStatusViewModel.update(isInProgress: false)
             } catch {
+                mappingDataStatusViewModel.update(isInProgress: false)
                 mappingDataStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
         }
