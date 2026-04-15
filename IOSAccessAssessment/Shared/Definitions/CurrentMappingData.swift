@@ -255,7 +255,7 @@ class CurrentMappingData: CustomStringConvertible {
         }
     }
     
-    private func getFeature(featureId: String) -> (any OSWElement)? {
+    func getFeature(featureId: String) -> (any OSWElement)? {
         if let point = points[featureId] {
             return point
         } else if let lineString = lineStrings[featureId] {

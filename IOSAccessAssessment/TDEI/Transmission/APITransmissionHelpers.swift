@@ -103,6 +103,7 @@ struct APIChangesetUploadInputs {
 
 struct APIChangesetUploadResults: @unchecked Sendable {
     let accessibilityFeatures: [MappedAccessibilityFeature]?
+    let oswElements: [any OSWElement]?
     
     let failedFeatureUploads: Int
     let totalFeatureUploads: Int
@@ -111,11 +112,12 @@ struct APIChangesetUploadResults: @unchecked Sendable {
     
     init(
         accessibilityFeatures: [MappedAccessibilityFeature],
-        activeFeatures: [MappedAccessibilityFeature]? = nil,
+        oswElements: [any OSWElement],
         failedFeatureUploads: Int = 0, totalFeatureUploads: Int = 0,
         isFailedCaptureUpload: Bool = false
     ) {
         self.accessibilityFeatures = accessibilityFeatures
+        self.oswElements = oswElements
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
         self.isFailedCaptureUpload = isFailedCaptureUpload
@@ -123,6 +125,7 @@ struct APIChangesetUploadResults: @unchecked Sendable {
     
     init(failedFeatureUploads: Int, totalFeatureUploads: Int) {
         self.accessibilityFeatures = nil
+        self.oswElements = nil
         self.failedFeatureUploads = failedFeatureUploads
         self.totalFeatureUploads = totalFeatureUploads
         self.isFailedCaptureUpload = false
@@ -131,6 +134,7 @@ struct APIChangesetUploadResults: @unchecked Sendable {
     /// Clone method for overwriting isFailedCaptureUpload
     init(from other: APIChangesetUploadResults, isFailedCaptureUpload: Bool) {
         self.accessibilityFeatures = other.accessibilityFeatures
+        self.oswElements = other.oswElements
         self.failedFeatureUploads = other.failedFeatureUploads
         self.totalFeatureUploads = other.totalFeatureUploads
         self.isFailedCaptureUpload = isFailedCaptureUpload

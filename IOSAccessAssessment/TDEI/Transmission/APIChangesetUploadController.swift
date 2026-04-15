@@ -66,8 +66,16 @@ class APIChangesetUploadController: ObservableObject {
                 inputs: inputs
             )
         case .linestring:
+            /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk, and connect it to the previously uploaded linestring
+            var accessibilityFeaturesLocal = accessibilityFeatures
+            var shouldConnectLast = false
+            if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
+               let firstAccessibilityFeature = accessibilityFeatures.first {
+                accessibilityFeaturesLocal = [firstAccessibilityFeature]
+                shouldConnectLast = true
+            }
             apiChangesetUploadResults = try await uploadLineStrings(
-                accessibilityFeatures: accessibilityFeatures,
+                accessibilityFeatures: accessibilityFeaturesLocal,
                 liveMappingData: liveMappingData,
                 inputs: inputs
             )
@@ -127,6 +135,82 @@ class APIChangesetUploadController: ObservableObject {
 }
 
 /**
+ Extension to generalize transmission of all geometry types
+ */
+extension APIChangesetUploadController {
+    func uploadAllFeatures(
+        accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        liveMappingData: LiveMappingData,
+        inputs: APIChangesetUploadInputs,
+        shouldConnectLast: Bool = false
+    ) async throws -> APIChangesetUploadResults {
+        var accessibilityFeatures = accessibilityFeatures
+        var totalFeatures = accessibilityFeatures.count
+        guard totalFeatures > 0, let firstFeature = accessibilityFeatures.first else {
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+        }
+        /// Map Accessibility Features to OSW Elements
+        let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
+        let additionalTags: [String: String] = getAdditionalTags(
+            accessibilityFeatureClass: inputs.accessibilityFeatureClass,
+            captureData: inputs.captureData, liveMappingData: liveMappingData
+        )
+        for feature in accessibilityFeatures {
+            switch feature.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
+            case .point:
+                let diffOperations: [ChangesetDiffOperation] = featureToPoints(feature, additionalTags: additionalTags)
+            }
+        }
+                
+    }
+    
+    private func featureToPoints(
+        _ feature: any AccessibilityFeatureProtocol,
+        additionalTags: [String: String] = [:]
+    ) -> [ChangesetDiffOperation] {
+        guard var featureLocation = feature.getLastLocationCoordinate() else { return [] }
+        var isExisting = false
+        var id = String(idGenerator.nextId())
+        var version = "1"
+        /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property
+        var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+        if let editableFeature = feature as? EditableAccessibilityFeature {
+            calculatedAttributeValues = editableFeature.calculatedAttributeValues
+        }
+        /// Add location as additional tags as well
+        var additionalTags = additionalTags
+        additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
+        additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
+        /// If feature is of type editable accessibility feature and is existing, then use the existing id and version for the point
+        /// to update the existing point in OSM instead of creating a new one
+        if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
+            guard let existingPoint = editableFeature.oswElement as? OSWPoint else { return [] }
+            isExisting = true
+            id = existingPoint.id
+            version = existingPoint.version
+            featureLocation = CLLocationCoordinate2D(latitude: existingPoint.latitude, longitude: existingPoint.longitude)
+            /// Merge additional tags
+            additionalTags = additionalTags.merging(existingPoint.additionalTags) { current, existing in
+                return current
+            }
+        }
+        let oswPoint = OSWPoint(
+            id: id,
+            version: version,
+            oswElementClass: feature.accessibilityFeatureClass.oswPolicy.oswElementClass,
+            latitude: featureLocation.latitude,
+            longitude: featureLocation.longitude,
+            attributeValues: feature.attributeValues,
+            calculatedAttributeValues: calculatedAttributeValues,
+            experimentalAttributeValues: feature.experimentalAttributeValues,
+            additionalTags: additionalTags
+        )
+        let diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswPoint) : .create(oswPoint)
+        return [diffOperation]
+    }
+}
+
+/**
  Extension for methods to handle points transmission
  */
 extension APIChangesetUploadController {
@@ -152,6 +236,9 @@ extension APIChangesetUploadController {
                 isExisting: oswElementWithStatus?.isExisting ?? false
             )
         }
+        guard featureCache.getOSWPoints().count > 0 else {
+            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
+        }
         /// Prepare upload operations from the OSW Elements, and perform upload
         let uploadOperations: [ChangesetDiffOperation] = featureCache.getOSWElementsWithStatus().map {
             return $0.isExisting ? .modify($0.oswElement) : .create($0.oswElement)
@@ -161,9 +248,6 @@ extension APIChangesetUploadController {
             operations: uploadOperations,
             accessToken: inputs.accessToken
         )
-        guard featureCache.getOSWPoints().count > 0 else {
-            return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
-        }
         /// Get the new ids and other details for the OSW Elements, from the uploaded elements response
         let uploadedOSWElements = getUploadedOSWPoints(from: uploadedElements, featureCache: featureCache)
         guard !uploadedOSWElements.isEmpty else {
