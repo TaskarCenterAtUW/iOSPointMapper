@@ -11,11 +11,19 @@ import CoreLocation
 enum CurrentMappingDataError: Error, LocalizedError {
 }
 
+/**
+    This class serves as a centralized data structure to store and manage the current mapping data for accessibility features.
+    It maintains mappings of OSW elements (points, line strings, polygons) by their IDs for efficient access, as well as a mapping of accessibility feature classes to their corresponding feature IDs. This allows for quick retrieval and updates of features based on their unique identifiers and classes.
+ */
 class CurrentMappingData: CustomStringConvertible {
+    /// OSW elements mapped by their IDs for quick access. This allows for efficient retrieval and updates of features based on their unique identifiers.
+    var points: [String: OSWPoint] = [:]
+    var lineStrings: [String: OSWLineString] = [:]
+    var polygons: [String: OSWPolygon] = [:]
+//    var multiPolygons: [String: OSWMultiPolygon] = []
     
-    var featuresMap: [AccessibilityFeatureClass: [any OSWElement]] = [:]
-    var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
-//    var otherFeatures: [OSWElement] = []
+    /// Mapping from accessibility feature class to the list of feature IDs for that class. This is used to quickly check if a feature with a given ID already exists in the map data for a specific class, which can help avoid duplicates and facilitate updates.
+    var featuresMap: [AccessibilityFeatureClass: [String]] = [:]
     
     init() {
         
@@ -30,17 +38,12 @@ class CurrentMappingData: CustomStringConvertible {
     }
     
     init(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
-        self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
-        /// Rebuild the feature ID to index mapping after updating the features map
-        rebuildFeatureIdToIndexDictMap()
+        self.rebuildFeaturesFromResponse(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
         print("Initialized features map with OSM data. \n\(description)")
     }
     
-    /// Note: Replaces the feature map instead of incrementally updating it.
-    func update(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
-        self.featuresMap = getFeatures(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
-        /// Rebuild the feature ID to index mapping after updating the features map
-        rebuildFeatureIdToIndexDictMap()
+    func replace(osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]) {
+        self.rebuildFeaturesFromResponse(with: osmMapDataResponse, accessibilityFeatureClasses: accessibilityFeatureClasses)
         print("Updated features map with new OSM data. \n\(description)")
     }
     
@@ -49,7 +52,6 @@ class CurrentMappingData: CustomStringConvertible {
      */
     func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
         var existingFeatures = featuresMap[featureClass, default: []]
-        var featureIdToIndex: [String: Int] = featureIdToIndexDictMap[featureClass, default: [:]]
         elements.forEach { element in
             if let existingIndex = featureIdToIndex[element.id] {
                 // Update the existing feature
@@ -57,17 +59,19 @@ class CurrentMappingData: CustomStringConvertible {
             } else {
                 // Add the new feature
                 existingFeatures.append(element)
-                featureIdToIndex[element.id] = existingFeatures.count - 1
             }
         }
         featuresMap[featureClass] = existingFeatures
-        featureIdToIndexDictMap[featureClass] = featureIdToIndex
     }
     
-    func getFeatures(
+    func rebuildFeaturesFromResponse(
         with osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]
-    ) -> [AccessibilityFeatureClass: [any OSWElement]] {
-        var featuresMap: [AccessibilityFeatureClass: [any OSWElement]] = [:]
+    ) {
+        var points: [String: OSWPoint] = [:]
+        var lineStrings: [String: OSWLineString] = [:]
+        var polygons: [String: OSWPolygon] = [:]
+        var featuresMap: [AccessibilityFeatureClass: [String]] = [:]
+        
         let osmMapDataResponseElements: [OSMMapDataResponseElement] = osmMapDataResponse.elements
         let osmElements: [any OSMElement] = osmMapDataResponseElements.compactMap { element in
             return element.toOSMElement()
@@ -86,80 +90,68 @@ class CurrentMappingData: CustomStringConvertible {
         }
         
         for featureClass in accessibilityFeatureClasses {
-            if featuresMap[featureClass] == nil {
-                featuresMap[featureClass] = []
-            }
             let oswElementClass = featureClass.oswPolicy.oswElementClass
             let geometry = oswElementClass.geometry
             let identifyingFieldTags: [String: String] = oswElementClass.identifyingFieldTags
             
-            switch geometry.osmElementType {
-            case .node:
-                let matchingOSWPoints: [OSWPoint] = featureNodes.values.filter { node in
-                    return identifyingFieldTags.allSatisfy { tagKey, tagValue in
+            switch geometry {
+            case .point:
+                var matchingOSWPoints: [String: OSWPoint] = [:]
+                featureNodes.values.forEach { node in
+                    guard identifyingFieldTags.allSatisfy({ tagKey, tagValue in
                         return node.tags[tagKey] == tagValue
-                    }
-                }.compactMap { node in
-                    return OSWPoint(osmNode: node, oswElementClass: oswElementClass)
+                    }) else { return }
+                    let oswPoint = OSWPoint(osmNode: node, oswElementClass: oswElementClass)
+                    matchingOSWPoints[oswPoint.id] = oswPoint
                 }
-                featuresMap[featureClass]?.append(contentsOf: matchingOSWPoints)
-            case .way:
-                var filteredFeatureWays: [OSMWay] = featureWays.values.filter { way in
-                    return identifyingFieldTags.allSatisfy { tagKey, tagValue in
+                points.merge(matchingOSWPoints) { (_, new) in new }
+                featuresMap[featureClass] = Array(matchingOSWPoints.keys)
+            case .linestring:
+                var matchingOSWLineStrings: [String: OSWLineString] = [:]
+                var matchingOSWChildPoints: [String: OSWPoint] = [:]
+                featureWays.values.forEach { way in
+                    guard identifyingFieldTags.allSatisfy({ tagKey, tagValue in
                         return way.tags[tagKey] == tagValue
+                    }) else { return }
+                    let oswLineString = OSWLineString(osmWay: way, oswElementClass: oswElementClass)
+                    matchingOSWLineStrings[oswLineString.id] = oswLineString
+                    /// Add node refs as new points if they don't already exist in the points map
+                    way.nodeRefs.forEach { nodeRef in
+                        guard let osmNode = featureNodes[nodeRef] else { return }
+                        guard matchingOSWChildPoints[nodeRef] == nil && points[nodeRef] == nil else { return }
+                        let oswPoint = OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
+                        matchingOSWChildPoints[nodeRef] = oswPoint
                     }
                 }
-                if geometry == .polygon {
-                    /// For polygon features, we only want to consider closed ways (where the first and last node references are the same)
-                    filteredFeatureWays = filteredFeatureWays.filter { way in
-                        return way.nodeRefs.first == way.nodeRefs.last
+                lineStrings.merge(matchingOSWLineStrings) { (_, new) in new }
+                points.merge(matchingOSWChildPoints) { (_, new) in new }
+                featuresMap[featureClass] = Array(matchingOSWLineStrings.keys)
+            case .polygon:
+                var matchingOSWPolygons: [String: OSWPolygon] = [:]
+                var matchingOSWChildPoints: [String: OSWPoint] = [:]
+                featureWays.values.forEach { way in
+                    guard identifyingFieldTags.allSatisfy({ tagKey, tagValue in
+                        return way.tags[tagKey] == tagValue
+                    }) else { return }
+                    let oswPolygon = OSWPolygon(osmWay: way, oswElementClass: oswElementClass)
+                    matchingOSWPolygons[oswPolygon.id] = oswPolygon
+                    /// Add node refs as new points if they don't already exist in the points map
+                    way.nodeRefs.forEach { nodeRef in
+                        guard let osmNode = featureNodes[nodeRef] else { return }
+                        guard matchingOSWChildPoints[nodeRef] == nil && points[nodeRef] == nil else { return }
+                        let oswPoint = OSWPoint(osmNode: osmNode, oswElementClass: oswElementClass)
+                        matchingOSWChildPoints[nodeRef] = oswPoint
                     }
-                    let matchingOSWPolygons: [OSWPolygon] = filteredFeatureWays.compactMap { way in
-                        return OSWPolygon(
-                            osmWay: way, oswElementClass: oswElementClass,
-                            osmNodes: Array(featureNodes.values)
-                        )
-                    }
-                    featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
-                } else {
-                    let matchingOSWLineStrings: [OSWLineString] = filteredFeatureWays.compactMap { way in
-                        return OSWLineString(
-                            osmWay: way, oswElementClass: oswElementClass,
-                            osmNodes: Array(featureNodes.values)
-                        )
-                    }
-                    featuresMap[featureClass]?.append(contentsOf: matchingOSWLineStrings)
                 }
-            case .relation:
-                let matchingOSWPolygons: [OSWMultiPolygon] = featureRelations.values.filter { relation in
-                    return identifyingFieldTags.allSatisfy { tagKey, tagValue in
-                        return relation.tags[tagKey] == tagValue
-                    }
-                }.compactMap { relation in
-                    return OSWMultiPolygon(
-                        osmRelation: relation, oswElementClass: oswElementClass,
-                        osmMemberElements: osmElements
-                    )
-                }
-                featuresMap[featureClass]?.append(contentsOf: matchingOSWPolygons)
+                polygons.merge(matchingOSWPolygons) { (_, new) in new }
+                points.merge(matchingOSWChildPoints) { (_, new) in new }
+                featuresMap[featureClass] = Array(matchingOSWPolygons.keys)
             }
         }
-        return featuresMap
-    }
-    
-    /**
-     This function rebuilds the mapping from feature IDs to their indices in the features map for each accessibility feature class.
-     */
-    private func rebuildFeatureIdToIndexDictMap() {
-        var featureIdToIndexDictMap: [AccessibilityFeatureClass: [String: Int]] = [:]
-        for (featureClass, features) in featuresMap {
-            var featureIdToIndexDict: [String: Int] = [:]
-            for (index, feature) in features.enumerated() {
-                featureIdToIndexDict[feature.id] = index
-            }
-            featureIdToIndexDictMap[featureClass] = featureIdToIndexDict
-        }
-        self.featureIdToIndexDictMap = featureIdToIndexDictMap
+        self.points = points
+        self.lineStrings = lineStrings
+        self.polygons = polygons
+        self.featuresMap = featuresMap
     }
     
     /**
@@ -170,12 +162,16 @@ class CurrentMappingData: CustomStringConvertible {
         to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
-        guard let features = featuresMap[featureClass] else { return nil }
+        guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
         var nearestDistance: CLLocationDistance = distanceThreshold
+        let geometry = featureClass.oswPolicy.oswElementClass.geometry
         
-        for feature in features {
-            guard let featureOSMLocationDetails = feature.getOSMLocationDetails() else { continue }
+        for featureId in featureIds {
+            guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
+            guard let featureOSMLocationDetails = self.getFeatureOSMLocationDetails(
+                feature: feature, geometry: geometry
+            ) else { continue }
             guard let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
                 srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: osmLocationDetails
             ) else { continue }
@@ -194,18 +190,19 @@ class CurrentMappingData: CustomStringConvertible {
         to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
         captureId: UUID
     ) -> (any OSWElement)? {
-        guard let features = featuresMap[featureClass] else { return nil }
+        guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
+        let geometry = featureClass.oswPolicy.oswElementClass.geometry
         let captureIdString = captureId.uuidString
         
-        for feature in features {
+        for featureId in featureIds {
+            guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
             guard let featureCaptureId = feature.getCaptureId() else { continue }
             if featureCaptureId == captureIdString {
                 nearestFeature = feature
                 break
             }
         }
-        
         return nearestFeature
     }
     
@@ -229,5 +226,66 @@ class CurrentMappingData: CustomStringConvertible {
         return getNearestFeature(
             to: osmLocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
         )
+    }
+    
+    private func getFeature(
+        featureId: String, geometry: OSWGeometry
+    ) -> (any OSWElement)? {
+        switch geometry {
+        case .point:
+            return points[featureId]
+        case .linestring:
+            return lineStrings[featureId]
+        case .polygon:
+            return polygons[featureId]
+        }
+    }
+    
+    private func getFeature(featureId: String) -> (any OSWElement)? {
+        if let point = points[featureId] {
+            return point
+        } else if let lineString = lineStrings[featureId] {
+            return lineString
+        } else if let polygon = polygons[featureId] {
+            return polygon
+        }
+        return nil
+    }
+    
+    /// Note: OSWGeometry is not required as a parameter here since the feature itself carries geometry information based on the type of OSWElement it is.
+    private func getFeatureOSMLocationDetails(
+        feature: any OSWElement, geometry: OSWGeometry
+    ) -> OSMLocationDetails? {
+        switch geometry {
+        case .point:
+            guard let point = feature as? OSWPoint else { return nil }
+            let coordinates: [CLLocationCoordinate2D] = [CLLocationCoordinate2D(
+                latitude: point.latitude, longitude: point.longitude
+            )]
+            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+                coordinates: coordinates, isWay: false, isClosed: false
+            )
+            return OSMLocationDetails(locations: [osmLocationElement])
+        case .linestring:
+            guard let lineString = feature as? OSWLineString else { return nil }
+            let coordinates: [CLLocationCoordinate2D] = lineString.pointRefs.compactMap { pointRef in
+                guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
+                return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
+            }
+            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+                coordinates: coordinates, isWay: true, isClosed: false
+            )
+            return OSMLocationDetails(locations: [osmLocationElement])
+        case .polygon:
+            guard let polygon = feature as? OSWPolygon else { return nil }
+            let coordinates: [CLLocationCoordinate2D] = polygon.pointRefs.compactMap { pointRef in
+                guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
+                return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
+            }
+            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+                coordinates: coordinates, isWay: true, isClosed: true
+            )
+            return OSMLocationDetails(locations: [osmLocationElement])
+        }
     }
 }
