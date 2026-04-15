@@ -63,7 +63,7 @@
 		A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A355471D2EC1A47200F43AFD /* SharedAppData.swift */; };
 		A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */; };
 		A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C32EC1AF5500F43AFD /* CaptureData.swift */; };
-		A35547C82EC1B0DB00F43AFD /* LiveMappingData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* LiveMappingData.swift */; };
+		A35547C82EC1B0DB00F43AFD /* CurrentMappedFeaturesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */; };
 		A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */; };
 		A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CB2EC3018C00F43AFD /* AnnotationView.swift */; };
 		A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */; };
@@ -288,7 +288,7 @@
 		A355471D2EC1A47200F43AFD /* SharedAppData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppData.swift; sourceTree = "<group>"; };
 		A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
 		A35547C32EC1AF5500F43AFD /* CaptureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureData.swift; sourceTree = "<group>"; };
-		A35547C72EC1B0D900F43AFD /* LiveMappingData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMappingData.swift; sourceTree = "<group>"; };
+		A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMappedFeaturesData.swift; sourceTree = "<group>"; };
 		A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshSnapshot.swift; sourceTree = "<group>"; };
 		A35547CB2EC3018C00F43AFD /* AnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationView.swift; sourceTree = "<group>"; };
 		A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageViewController.swift; sourceTree = "<group>"; };
@@ -984,7 +984,7 @@
 			children = (
 				A3EE6E452F57FE6200F515E6 /* AppMode.swift */,
 				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
-				A35547C72EC1B0D900F43AFD /* LiveMappingData.swift */,
+				A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */,
 				A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
 				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
@@ -1450,7 +1450,7 @@
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
 				A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */,
-				A35547C82EC1B0DB00F43AFD /* LiveMappingData.swift in Sources */,
+				A35547C82EC1B0DB00F43AFD /* CurrentMappedFeaturesData.swift in Sources */,
 				A37E3EA02EFBAADD00B07B77 /* AccessibilityFeatureClassSnapshot.swift in Sources */,
 				A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */,
 				A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */,

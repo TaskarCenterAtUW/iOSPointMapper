@@ -22,7 +22,7 @@ final class SharedAppData: ObservableObject {
     var captureDataCapacity: Int
     
     var currentMappingData: CurrentMappingData = CurrentMappingData()
-    var liveMappingData: LiveMappingData = LiveMappingData()
+    var currentMappedFeaturesData: CurrentMappedFeaturesData = CurrentMappedFeaturesData()
     
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
@@ -39,7 +39,7 @@ final class SharedAppData: ObservableObject {
         self.currentDatasetDecoder = nil
         self.currentCaptureDataRecord = nil
         self.currentMappingData = CurrentMappingData()
-        self.liveMappingData = LiveMappingData()
+        self.currentMappedFeaturesData = CurrentMappedFeaturesData()
     }
     
     func saveCaptureData(_ data: CaptureData) {
