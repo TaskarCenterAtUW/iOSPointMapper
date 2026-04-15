@@ -90,7 +90,6 @@
 		A37C3C182F3141FF001F4248 /* Plane.metal in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C172F3141F9001F4248 /* Plane.metal */; };
 		A37C3C1A2F3144F7001F4248 /* PlaneAttributeProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */; };
 		A37C3C1C2F356254001F4248 /* IntersectionFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37C3C1B2F356254001F4248 /* IntersectionFilter.swift */; };
-		A37D4A2C2F79F9AC0025A91F /* CurrentMappingDataLegacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37D4A2B2F79F9AC0025A91F /* CurrentMappingDataLegacy.swift */; };
 		A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E3B2EED60F300B07B77 /* PngEncoder.mm */; };
 		A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E392EED60F300B07B77 /* lodepng.cpp */; };
 		A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37E3E942EFB66E600B07B77 /* CameraIntrinsicsCoder.swift */; };
@@ -316,7 +315,6 @@
 		A37C3C172F3141F9001F4248 /* Plane.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Plane.metal; sourceTree = "<group>"; };
 		A37C3C192F3144F4001F4248 /* PlaneAttributeProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneAttributeProcessor.swift; sourceTree = "<group>"; };
 		A37C3C1B2F356254001F4248 /* IntersectionFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntersectionFilter.swift; sourceTree = "<group>"; };
-		A37D4A2B2F79F9AC0025A91F /* CurrentMappingDataLegacy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMappingDataLegacy.swift; sourceTree = "<group>"; };
 		A37E3E382EED60F300B07B77 /* lodepng.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lodepng.h; sourceTree = "<group>"; };
 		A37E3E392EED60F300B07B77 /* lodepng.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lodepng.cpp; sourceTree = "<group>"; };
 		A37E3E3A2EED60F300B07B77 /* PngEncoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngEncoder.h; sourceTree = "<group>"; };
@@ -979,7 +977,6 @@
 				A3EE6E452F57FE6200F515E6 /* AppMode.swift */,
 				A35547C32EC1AF5500F43AFD /* CaptureData.swift */,
 				A35547C72EC1B0D900F43AFD /* LiveMappingData.swift */,
-				A37D4A2B2F79F9AC0025A91F /* CurrentMappingDataLegacy.swift */,
 				A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
 				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
@@ -1430,7 +1427,6 @@
 				A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */,
 				A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */,
 				A3B2DDC12DC99F44003416FB /* SegmentationModelRequestProcessor.swift in Sources */,
-				A37D4A2C2F79F9AC0025A91F /* CurrentMappingDataLegacy.swift in Sources */,
 				A3B2DDBF2DC99DEF003416FB /* HomographyRequestProcessor.swift in Sources */,
 				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,

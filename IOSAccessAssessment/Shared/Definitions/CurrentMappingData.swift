@@ -47,23 +47,6 @@ class CurrentMappingData: CustomStringConvertible {
         print("Updated features map with new OSM data. \n\(description)")
     }
     
-    /**
-     Updates the features map for a specific accessibility feature class by adding or replacing the features of that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
-     */
-    func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
-        var existingFeatures = featuresMap[featureClass, default: []]
-        elements.forEach { element in
-            if let existingIndex = featureIdToIndex[element.id] {
-                // Update the existing feature
-                existingFeatures[existingIndex] = element
-            } else {
-                // Add the new feature
-                existingFeatures.append(element)
-            }
-        }
-        featuresMap[featureClass] = existingFeatures
-    }
-    
     func rebuildFeaturesFromResponse(
         with osmMapDataResponse: OSMMapDataResponse, accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
@@ -152,6 +135,37 @@ class CurrentMappingData: CustomStringConvertible {
         self.lineStrings = lineStrings
         self.polygons = polygons
         self.featuresMap = featuresMap
+    }
+    
+    /**
+     Updates the features map for a specific accessibility feature class by adding or replacing the features related that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
+     */
+    func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
+        let oswElementClass = featureClass.oswPolicy.oswElementClass
+        let geometry = oswElementClass.geometry
+        
+        var featureIds = featuresMap[featureClass] ?? []
+        let featureIdSet = Set(featureIds)
+        
+        elements.forEach { element in
+            if let point = element as? OSWPoint {
+                self.points[point.id] = point
+                guard geometry == .point else { return }
+                guard !featureIdSet.contains(point.id) else { return }
+                featureIds.append(point.id)
+            } else if let lineString = element as? OSWLineString {
+                self.lineStrings[lineString.id] = lineString
+                guard geometry == .linestring else { return }
+                guard !featureIdSet.contains(lineString.id) else { return }
+                featureIds.append(lineString.id)
+            } else if let polygon = element as? OSWPolygon {
+                self.polygons[polygon.id] = polygon
+                guard geometry == .polygon else { return }
+                guard !featureIdSet.contains(polygon.id) else { return }
+                featureIds.append(polygon.id)
+            }
+        }
+        featuresMap[featureClass] = featureIds
     }
     
     /**

@@ -446,7 +446,7 @@ struct TestCameraView: View {
                     accessToken: accessToken,
                     environment: userStateViewModel.selectedEnvironment
                 )
-                sharedAppData.currentMappingData.update(
+                sharedAppData.currentMappingData.replace(
                     osmMapDataResponse: mapData,
                     accessibilityFeatureClasses: selectedClasses
                 )
