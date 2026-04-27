@@ -92,11 +92,12 @@ struct LoginView: View {
             do {
                 let _ = try await userState.login(username: username, password: password)
                 DispatchQueue.main.async {
-                    isLoading = false
+                    self.isLoading = false
                 }
             } catch let authError {
                 DispatchQueue.main.async {
                     self.errorMessage = authError.localizedDescription
+                    self.isLoading = false
                 }
             }
         }
