@@ -1,5 +1,5 @@
 //
-//  LiveMappingData.swift
+//  CurrentMappedFeaturesData.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 11/9/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum LiveMappingDataError: Error, LocalizedError {
+enum CurrentMappedFeaturesDataError: Error, LocalizedError {
     case accessibilityFeatureClassNotWay(AccessibilityFeatureClass)
     case noActiveWayForFeatureClass(AccessibilityFeatureClass)
     case accessibilityFeatureNodeNotPresent(AccessibilityFeatureClass)
@@ -24,7 +24,7 @@ enum LiveMappingDataError: Error, LocalizedError {
     }
 }
 
-class LiveMappingData: CustomStringConvertible {
+class CurrentMappedFeaturesData: CustomStringConvertible {
     var featuresMap: [AccessibilityFeatureClass: [MappedAccessibilityFeature]] = [:]
     var featureIdToIndexDictMap: [AccessibilityFeatureClass: [UUID: Int]] = [:]
     
@@ -51,7 +51,7 @@ class LiveMappingData: CustomStringConvertible {
     }
     
     var description: String {
-        var desc = "LiveMappingData:\n"
+        var desc = "CurrentMappedFeaturesData:\n"
         desc += "Feature Nodes:\n"
         featuresMap.forEach { (featureClass, featureData) in
             return featureData.forEach { feature in

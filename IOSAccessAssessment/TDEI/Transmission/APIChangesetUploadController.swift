@@ -44,7 +44,7 @@ class APIChangesetUploadController: ObservableObject {
     
     func uploadFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        liveMappingData: LiveMappingData,
+        currentMappedFeaturesData: CurrentMappedFeaturesData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         idGenerator = IntIdGenerator()
@@ -58,7 +58,7 @@ class APIChangesetUploadController: ObservableObject {
             }
         }
         let apiChangesetUploadResults: APIChangesetUploadResults = try await uploadAllFeatures(
-            accessibilityFeatures: accessibilityFeatures, liveMappingData: liveMappingData, inputs: inputs
+            accessibilityFeatures: accessibilityFeatures, currentMappedFeaturesData: currentMappedFeaturesData, inputs: inputs
         )
         return APIChangesetUploadResults(
             from: apiChangesetUploadResults,
@@ -92,7 +92,7 @@ class APIChangesetUploadController: ObservableObject {
     private func getAdditionalTags(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         captureData: CaptureData,
-        liveMappingData: LiveMappingData,
+        currentMappedFeaturesData: CurrentMappedFeaturesData
     ) -> [String: String] {
         var enhancedAnalysisMode: Bool = false
         switch captureData {
@@ -114,7 +114,7 @@ class APIChangesetUploadController: ObservableObject {
 extension APIChangesetUploadController {
     func uploadAllFeatures(
         accessibilityFeatures: [any AccessibilityFeatureProtocol],
-        liveMappingData: LiveMappingData,
+        currentMappedFeaturesData: CurrentMappedFeaturesData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
         var accessibilityFeatures = accessibilityFeatures
@@ -131,23 +131,17 @@ extension APIChangesetUploadController {
         let featureCache: APIChangesetUploadCache = APIChangesetUploadCache()
         let additionalTags: [String: String] = getAdditionalTags(
             accessibilityFeatureClass: inputs.accessibilityFeatureClass,
-            captureData: inputs.captureData, liveMappingData: liveMappingData
+            captureData: inputs.captureData, currentMappedFeaturesData: currentMappedFeaturesData,
         )
         for feature in accessibilityFeatures {
             var diffOperations: [ChangesetDiffOperation] = []
             switch feature.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
             case .point:
-                let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromPointFeature(
-                    feature, additionalTags: additionalTags
-                )
+                diffOperations = getDiffOperationsFromPointFeature(feature, additionalTags: additionalTags)
             case .linestring:
-                let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromLinestringFeature(
-                    feature, additionalTags: additionalTags
-                )
+                diffOperations = getDiffOperationsFromLinestringFeature(feature, additionalTags: additionalTags)
             case .polygon:
-                let diffOperations: [ChangesetDiffOperation] = getDiffOperationsFromPolygons(
-                    feature, additionalTags: additionalTags
-                )
+                diffOperations = getDiffOperationsFromPolygons(feature, additionalTags: additionalTags)
             }
             diffOperations.forEach { diffOperation in
                 let oswElement = diffOperation.oswElement
@@ -163,7 +157,7 @@ extension APIChangesetUploadController {
         if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
            let newDiffOperation = featureCache.getDiffOperations().first,
            case .create(let newOSWElement) = newDiffOperation,
-           let existingMappedFeature = liveMappingData.featuresMap[inputs.accessibilityFeatureClass]?.last,
+           let existingMappedFeature = currentMappedFeaturesData.featuresMap[inputs.accessibilityFeatureClass]?.last,
            var existingOSWLineString = existingMappedFeature.oswElement as? OSWLineString,
            let newOSWLineString = newOSWElement as? OSWLineString,
            let newOSWStartingPointRef = newOSWLineString.pointRefs.first
@@ -394,7 +388,7 @@ extension APIChangesetUploadController {
             pointRefs: pointDiffOperations.map { $0.oswElement.id },
             additionalTags: additionalTags
         )
-        var diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswLineString) : .create(oswLineString)
+        let diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswLineString) : .create(oswLineString)
         let allDiffOperations = pointDiffOperations + [diffOperation]
         return allDiffOperations
     }
@@ -459,7 +453,7 @@ extension APIChangesetUploadController {
             pointRefs: pointDiffOperations.map { $0.oswElement.id },
             additionalTags: additionalTags
         )
-        var diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswPolygon) : .create(oswPolygon)
+        let diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswPolygon) : .create(oswPolygon)
         let allDiffOperations = pointDiffOperations + [diffOperation]
         return allDiffOperations
     }
