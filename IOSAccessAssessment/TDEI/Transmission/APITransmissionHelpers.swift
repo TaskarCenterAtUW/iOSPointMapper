@@ -16,35 +16,34 @@ struct APIChangesetUploadCacheEntry: @unchecked Sendable {
     let diffOperation: ChangesetDiffOperation
 }
 
-class APIChangesetUploadCache {
-    /// OSM old ID to APIChangesetUploadCacheEntry
-    var cacheEntry: [APIChangesetUploadCacheEntry]
+class APIChangesetUploadCacheEntryList {
+    var entries: [APIChangesetUploadCacheEntry]
     
     init() {
-        self.cacheEntry = []
+        self.entries = []
     }
     
     func getIndexOf(osmOldId: String) -> Int? {
-        return cacheEntry.firstIndex { $0.osmOldId == osmOldId }
+        return entries.firstIndex { $0.osmOldId == osmOldId }
     }
     
     func getEntry(osmOldId: String) -> APIChangesetUploadCacheEntry? {
-        return cacheEntry.first { $0.osmOldId == osmOldId }
+        return entries.first { $0.osmOldId == osmOldId }
     }
     
     func addEntry(
         osmOldId: String, feature: (any AccessibilityFeatureProtocol)?, diffOperation: ChangesetDiffOperation
     ) {
         let entry = APIChangesetUploadCacheEntry(osmOldId: osmOldId, feature: feature, diffOperation: diffOperation)
-        cacheEntry.append(entry)
+        entries.append(entry)
     }
     
     func getDiffOperations() -> [ChangesetDiffOperation] {
-        return cacheEntry.map { $0.diffOperation }
+        return entries.map { $0.diffOperation }
     }
     
     func getOSWPoints() -> [OSWPoint] {
-        return cacheEntry.compactMap { entry in
+        return entries.compactMap { entry in
             if let point = entry.diffOperation.oswElement as? OSWPoint {
                 return point
             }
@@ -52,8 +51,17 @@ class APIChangesetUploadCache {
         }
     }
     
+    func getOSWPointDiffOperations() -> [ChangesetDiffOperation] {
+        return entries.compactMap { entry in
+            if entry.diffOperation.oswElement is OSWPoint {
+                return entry.diffOperation
+            }
+            return nil
+        }
+    }
+    
     func getOSWLineStrings() -> [OSWLineString] {
-        return cacheEntry.compactMap { entry in
+        return entries.compactMap { entry in
             if let lineString = entry.diffOperation.oswElement as? OSWLineString {
                 return lineString
             }
@@ -61,8 +69,17 @@ class APIChangesetUploadCache {
         }
     }
     
+    func getOSWLineStringDiffOperations() -> [ChangesetDiffOperation] {
+        return entries.compactMap { entry in
+            if entry.diffOperation.oswElement is OSWLineString {
+                return entry.diffOperation
+            }
+            return nil
+        }
+    }
+    
     func getOSWPolygons() -> [OSWPolygon] {
-        return cacheEntry.compactMap { entry in
+        return entries.compactMap { entry in
             if let polygon = entry.diffOperation.oswElement as? OSWPolygon {
                 return polygon
             }
@@ -70,15 +87,39 @@ class APIChangesetUploadCache {
         }
     }
     
+    func getOSWPolygonDiffOperations() -> [ChangesetDiffOperation] {
+        return entries.compactMap { entry in
+            if entry.diffOperation.oswElement is OSWPolygon {
+                return entry.diffOperation
+            }
+            return nil
+        }
+    }
+    
     /// TODO: Not used currently, but can be used in future if we support multi-polygons
 //    func getOSWMultiPolygons() -> [OSWMultiPolygon] {
-//        return cacheEntry.compactMap { entry in
+//        return entries.compactMap { entry in
 //            if let multiPolygon = entry.oswElement as? OSWMultiPolygon {
 //                return multiPolygon
 //            }
 //            return nil
 //        }
 //    }
+}
+
+class APIChangesetUploadCache {
+    /// OSM old ID to APIChangesetUploadCacheEntry
+    var mainEntryList: APIChangesetUploadCacheEntryList
+    var auxEntryList: APIChangesetUploadCacheEntryList
+    
+    init() {
+        self.mainEntryList = APIChangesetUploadCacheEntryList()
+        self.auxEntryList = APIChangesetUploadCacheEntryList()
+    }
+    
+    func getAllDiffOperations() -> [ChangesetDiffOperation] {
+        return mainEntryList.getDiffOperations() + auxEntryList.getDiffOperations()
+    }
 }
 
 struct APIChangesetUploadInputs {
