@@ -154,7 +154,7 @@ extension APIChangesetUploadController {
                 featureCache.auxEntryList.addEntry(osmOldId: osmOldId, feature: nil, diffOperation: diffOperation)
             }
         }
-        var uploadOperations: [ChangesetDiffOperation] = featureCache.getAllDiffOperations()
+        var uploadOperations: [ChangesetDiffOperation] = featureCache.auxEntryList.getDiffOperations() + featureCache.mainEntryList.getDiffOperations()
         guard uploadOperations.count > 0 else {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
@@ -210,6 +210,34 @@ extension APIChangesetUploadController {
         from uploadedElements: OSMChangesetUploadResponseElements,
         featureCache: APIChangesetUploadCache
     ) -> [any OSWElement] {
+        /// MARK: It is expected that the auxEntryList only contains points thanks to the way OSW schema
+        /// where the linestrings and polygons can only have points as their children.
+        /// Thus, we only need to create new OSW elements from the point list of auxEntryList.
+        /// WARNING: If in the future, the OSW schema changes and allows for linestrings or polygons to be children of the main entries, then this logic will need to be updated to also account for those geometry types in the auxEntryList.
+        let cachedAuxOSWPoints = featureCache.auxEntryList.getOSWPoints()
+        var uploadedAuxOSWPoints: [OSWPoint?] = Array(repeating: nil, count: cachedAuxOSWPoints.count)
+        uploadedElements.nodes.forEach { uploadedNode in
+            let uploadedNodeData = uploadedNode.value
+            let uploadedNodeOSMOldId = uploadedNodeData.oldId
+            guard let nodeIndex = cachedAuxOSWPoints.firstIndex(where: { $0.id == uploadedNodeOSMOldId }) else {
+                return
+            }
+            guard let matchedCachedEntry = featureCache.auxEntryList.getEntry(osmOldId: uploadedNodeOSMOldId),
+                  let matchedOriginalOSWPoint = matchedCachedEntry.diffOperation.oswElement as? OSWPoint else {
+                return
+            }
+            let uploadedOSWPoint = OSWPoint(
+                id: uploadedNodeData.newId, version: uploadedNodeData.newVersion,
+                oswElementClass: matchedOriginalOSWPoint.oswElementClass,
+                latitude: matchedOriginalOSWPoint.latitude, longitude: matchedOriginalOSWPoint.longitude,
+                attributeValues: matchedOriginalOSWPoint.attributeValues,
+                calculatedAttributeValues: matchedOriginalOSWPoint.calculatedAttributeValues,
+                experimentalAttributeValues: matchedOriginalOSWPoint.experimentalAttributeValues,
+                additionalTags: matchedOriginalOSWPoint.additionalTags
+            )
+            uploadedAuxOSWPoints[nodeIndex] = uploadedOSWPoint
+        }
+        /// Moving on to the mainEntryList, which can contain points, linestrings, and polygons, so we need to account for all geometry types here.
         let cachedOSWPoints = featureCache.mainEntryList.getOSWPoints()
         var uploadedOSWPoints: [OSWPoint?] = Array(repeating: nil, count: cachedOSWPoints.count)
         uploadedElements.nodes.forEach { uploadedNode in
@@ -233,6 +261,7 @@ extension APIChangesetUploadController {
             )
             uploadedOSWPoints[nodeIndex] = uploadedOSWPoint
         }
+        
         let cachedOSWLineStrings = featureCache.mainEntryList.getOSWLineStrings()
         var uploadedOSWLineStrings: [OSWLineString?] = Array(repeating: nil, count: cachedOSWLineStrings.count)
         uploadedElements.ways.forEach { uploadedWay in
@@ -241,7 +270,7 @@ extension APIChangesetUploadController {
             guard let lineStringIndex = cachedOSWLineStrings.firstIndex(where: { $0.id == uploadedWayOSMOldId }) else {
                 return
             }
-            guard let matchedCachedEntry = featureCache.auxEntryList.getEntry(osmOldId: uploadedWayOSMOldId),
+            guard let matchedCachedEntry = featureCache.mainEntryList.getEntry(osmOldId: uploadedWayOSMOldId),
                   let matchedOriginalOSWLineString = matchedCachedEntry.diffOperation.oswElement as? OSWLineString else {
                 return
             }
@@ -260,6 +289,7 @@ extension APIChangesetUploadController {
             )
             uploadedOSWLineStrings[lineStringIndex] = uploadedOSWLineString
         }
+        
         let cachedOSWPolygons = featureCache.mainEntryList.getOSWPolygons()
         var uploadedOSWPolygons: [OSWPolygon?] = Array(repeating: nil, count: cachedOSWPolygons.count)
         uploadedElements.ways.forEach { uploadedWay in
@@ -268,7 +298,7 @@ extension APIChangesetUploadController {
             guard let polygonIndex = cachedOSWPolygons.firstIndex(where: { $0.id == uploadedWayOSMOldId }) else {
                 return
             }
-            guard let matchedCachedEntry = featureCache.auxEntryList.getEntry(osmOldId: uploadedWayOSMOldId),
+            guard let matchedCachedEntry = featureCache.mainEntryList.getEntry(osmOldId: uploadedWayOSMOldId),
                   let matchedOriginalOSWPolygon = matchedCachedEntry.diffOperation.oswElement as? OSWPolygon else {
                 return
             }
@@ -287,7 +317,7 @@ extension APIChangesetUploadController {
             )
             uploadedOSWPolygons[polygonIndex] = uploadedOSWPolygon
         }
-        return (uploadedOSWPoints.compactMap { $0 }) +
+        return (uploadedOSWPoints.compactMap { $0 }) + (uploadedAuxOSWPoints.compactMap { $0 }) +
         (uploadedOSWLineStrings.compactMap { $0 }) + (uploadedOSWPolygons.compactMap { $0 })
     }
 }
@@ -363,6 +393,7 @@ extension APIChangesetUploadController {
         }
         var additionalTags = additionalTags
         var pointDiffOperations: [ChangesetDiffOperation] = []
+        var pointRefs: [String] = []
         if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
             guard let existingLineString = editableFeature.oswElement as? OSWLineString else {
                 /// If the feature is deemed to exist, but we cannot get an existing linestring for it, then we should not attempt to upload it.
@@ -372,6 +403,7 @@ extension APIChangesetUploadController {
             id = existingLineString.id
             version = existingLineString.version
 //            pointDiffOperations = existingLineString.points // Points are not being modified in the linestring upload.
+            pointRefs = existingLineString.pointRefs
             additionalTags = additionalTags.merging(existingLineString.additionalTags) { current, existing in
                 return current
             }
@@ -392,6 +424,7 @@ extension APIChangesetUploadController {
                 )
                 pointDiffOperations.append(.create(point))
             }
+            pointRefs = pointDiffOperations.map { $0.oswElement.id }
         }
         let oswLineString = OSWLineString(
             id: id,
@@ -400,7 +433,7 @@ extension APIChangesetUploadController {
             attributeValues: feature.attributeValues,
             calculatedAttributeValues: calculatedAttributeValues,
             experimentalAttributeValues: feature.experimentalAttributeValues,
-            pointRefs: pointDiffOperations.map { $0.oswElement.id },
+            pointRefs: pointRefs,
             additionalTags: additionalTags
         )
         let diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswLineString) : .create(oswLineString)
@@ -427,6 +460,7 @@ extension APIChangesetUploadController {
         }
         var additionalTags = additionalTags
         var pointDiffOperations: [ChangesetDiffOperation] = []
+        var pointRefs: [String] = []
         if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
             guard let existingPolygon = editableFeature.oswElement as? OSWPolygon else {
                 /// If the feature is deemed to exist, but we cannot get an existing polygon for it, then we should not attempt to upload it.
@@ -436,6 +470,7 @@ extension APIChangesetUploadController {
             id = existingPolygon.id
             version = existingPolygon.version
 //            pointDiffOperations = existingLineString.points // Points are not being modified in the polygon upload.
+            pointRefs = existingPolygon.pointRefs
             additionalTags = additionalTags.merging(existingPolygon.additionalTags) { current, existing in
                 return current
             }
@@ -456,6 +491,7 @@ extension APIChangesetUploadController {
                 )
                 pointDiffOperations.append(.create(point))
             }
+            pointRefs = pointDiffOperations.map { $0.oswElement.id }
         }
         let oswPolygon = OSWPolygon(
             id: id,
@@ -464,7 +500,7 @@ extension APIChangesetUploadController {
             attributeValues: feature.attributeValues,
             calculatedAttributeValues: calculatedAttributeValues,
             experimentalAttributeValues: feature.experimentalAttributeValues,
-            pointRefs: pointDiffOperations.map { $0.oswElement.id },
+            pointRefs: pointRefs,
             additionalTags: additionalTags
         )
         let diffOperation: ChangesetDiffOperation = isExisting ? .modify(oswPolygon) : .create(oswPolygon)
