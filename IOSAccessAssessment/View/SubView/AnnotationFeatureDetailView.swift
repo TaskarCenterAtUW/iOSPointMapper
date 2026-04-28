@@ -145,6 +145,17 @@ struct AnnotationFeatureDetailView: View {
                                 .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
                                 Spacer()
                             }
+                            if let oswElement = accessibilityFeature.oswElement {
+                                HStack {
+                                    Spacer()
+                                    Text("TDEI Element ID: \(oswElement.id)")
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, 4)
+                                .padding(.bottom, 4)
+                            }
                         }
                     } else {
                         Text(AnnotationFeatureDetailView.Constants.Texts.invalidTextKey)
