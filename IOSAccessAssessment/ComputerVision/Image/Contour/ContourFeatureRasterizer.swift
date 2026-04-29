@@ -7,6 +7,7 @@
 
 import CoreImage
 import UIKit
+import PointNMap
 
 /**
  A temporary struct to perform rasterization of detected objects.

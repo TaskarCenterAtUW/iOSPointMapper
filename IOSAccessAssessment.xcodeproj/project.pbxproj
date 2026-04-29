@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -58,10 +58,13 @@
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
 		A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */; };
+		A34509D22FA1A49F003157B0 /* PointNMap in Frameworks */ = {isa = PBXBuildFile; productRef = A34509D12FA1A49F003157B0 /* PointNMap */; };
+		A34509D42FA1A49F003157B0 /* ShaderTypes in Frameworks */ = {isa = PBXBuildFile; productRef = A34509D32FA1A49F003157B0 /* ShaderTypes */; };
+		A34509D82FA1A6FA003157B0 /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509D72FA1A6FA003157B0 /* SafeDeque.swift */; };
+		A34509DA2FA1A782003157B0 /* MetalBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509D92FA1A782003157B0 /* MetalBufferUtils.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
 		A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */; };
 		A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A355471D2EC1A47200F43AFD /* SharedAppData.swift */; };
-		A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */; };
 		A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C32EC1AF5500F43AFD /* CaptureData.swift */; };
 		A35547C82EC1B0DB00F43AFD /* CurrentMappedFeaturesData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */; };
 		A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */; };
@@ -109,7 +112,6 @@
 		A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */; };
 		A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */; };
 		A3A413A22EC9C3FA0039298C /* MeshRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A12EC9C3F60039298C /* MeshRasterizer.swift */; };
-		A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */; };
 		A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413A52ECD86260039298C /* AccessibilityFeature.swift */; };
 		A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A413AC2ECF94950039298C /* DBSCAN.swift */; };
 		A3A45F0A2EE7A4E10029F5AE /* UnionOfMasksPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */; };
@@ -123,7 +125,6 @@
 		A3B5BDA32F8329740036C6EC /* ProjectedWorldPointsExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BDA22F83296C0036C6EC /* ProjectedWorldPointsExtension.swift */; };
 		A3B5BDA52F8329A80036C6EC /* WorldPointsGridExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B5BDA42F8329A20036C6EC /* WorldPointsGridExtension.swift */; };
 		A3B61FC52F76480B0052AE2C /* EnvironmentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */; };
-		A3B61FC92F78F93B0052AE2C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FC82F78F9390052AE2C /* Extensions.swift */; };
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
 		A3BB5AFB2DB210AE008673ED /* BinaryMaskFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */; };
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
@@ -141,7 +142,6 @@
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
 		A3DA4DA82EB94D84005BB812 /* MeshGPUSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */; };
 		A3DA4DAE2EB98D70005BB812 /* MeshPipeline.metal in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */; };
-		A3DA4DB12EB99A5C005BB812 /* MetalBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB02EB99A5A005BB812 /* MetalBufferUtils.swift */; };
 		A3DA4DB62EBAE101005BB812 /* Stub.m in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DB52EBAE101005BB812 /* Stub.m */; };
 		A3DA4DBC2EBCB881005BB812 /* SegmentationMeshRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBB2EBCB87E005BB812 /* SegmentationMeshRecord.swift */; };
 		A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */; };
@@ -283,10 +283,11 @@
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
 		A3431E012F26FA2700B96610 /* LocationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationExtension.swift; sourceTree = "<group>"; };
 		A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherAttributeExtensionLegacy.swift; sourceTree = "<group>"; };
+		A34509D72FA1A6FA003157B0 /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
+		A34509D92FA1A782003157B0 /* MetalBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalBufferUtils.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
 		A35547142EC198A600F43AFD /* ContourRequestProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourRequestProcessor.swift; sourceTree = "<group>"; };
 		A355471D2EC1A47200F43AFD /* SharedAppData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppData.swift; sourceTree = "<group>"; };
-		A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
 		A35547C32EC1AF5500F43AFD /* CaptureData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureData.swift; sourceTree = "<group>"; };
 		A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentMappedFeaturesData.swift; sourceTree = "<group>"; };
 		A35547C92EC2045F00F43AFD /* CapturedMeshSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedMeshSnapshot.swift; sourceTree = "<group>"; };
@@ -336,7 +337,6 @@
 		A39C9F3C2DD9BE2600455E45 /* APIConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConstants.swift; sourceTree = "<group>"; };
 		A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageManager.swift; sourceTree = "<group>"; };
 		A3A413A12EC9C3F60039298C /* MeshRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRasterizer.swift; sourceTree = "<group>"; };
-		A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RasterizeConfig.swift; sourceTree = "<group>"; };
 		A3A413A52ECD86260039298C /* AccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeature.swift; sourceTree = "<group>"; };
 		A3A413AC2ECF94950039298C /* DBSCAN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBSCAN.swift; sourceTree = "<group>"; };
 		A3A45F092EE7A4DE0029F5AE /* UnionOfMasksPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnionOfMasksPolicy.swift; sourceTree = "<group>"; };
@@ -350,7 +350,6 @@
 		A3B5BDA22F83296C0036C6EC /* ProjectedWorldPointsExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectedWorldPointsExtension.swift; sourceTree = "<group>"; };
 		A3B5BDA42F8329A20036C6EC /* WorldPointsGridExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPointsGridExtension.swift; sourceTree = "<group>"; };
 		A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentService.swift; sourceTree = "<group>"; };
-		A3B61FC82F78F9390052AE2C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
 		A3BB5AFA2DB210A8008673ED /* BinaryMaskFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryMaskFilter.swift; sourceTree = "<group>"; };
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
@@ -367,7 +366,6 @@
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A3DA4DA72EB94D81005BB812 /* MeshGPUSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGPUSnapshot.swift; sourceTree = "<group>"; };
 		A3DA4DAD2EB98D70005BB812 /* MeshPipeline.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MeshPipeline.metal; sourceTree = "<group>"; };
-		A3DA4DB02EB99A5A005BB812 /* MetalBufferUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalBufferUtils.swift; sourceTree = "<group>"; };
 		A3DA4DB32EBAE05C005BB812 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
 		A3DA4DB52EBAE101005BB812 /* Stub.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Stub.m; sourceTree = "<group>"; };
@@ -430,8 +428,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A34509D22FA1A49F003157B0 /* PointNMap in Frameworks */,
 				A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */,
 				A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */,
+				A34509D42FA1A49F003157B0 /* ShaderTypes in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,7 +537,7 @@
 			isa = PBXGroup;
 			children = (
 				A37E720A2ED571A800CFE4EF /* Definitions */,
-				A35547C02EC1AE4600F43AFD /* Utils */,
+				A34509DB2FA1A7A7003157B0 /* Utils */,
 				A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */,
 				A355471D2EC1A47200F43AFD /* SharedAppData.swift */,
 				DAA7F8B42CA38C11003666D8 /* Constants.swift */,
@@ -820,6 +820,15 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
+		A34509DB2FA1A7A7003157B0 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A34509D92FA1A782003157B0 /* MetalBufferUtils.swift */,
+				A34509D72FA1A6FA003157B0 /* SafeDeque.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
 		A34B70CC2DDFE638007B191F /* ARCamera */ = {
 			isa = PBXGroup;
 			children = (
@@ -831,16 +840,6 @@
 				A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */,
 			);
 			path = ARCamera;
-			sourceTree = "<group>";
-		};
-		A35547C02EC1AE4600F43AFD /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				A3B61FC82F78F9390052AE2C /* Extensions.swift */,
-				A35547C12EC1AE4C00F43AFD /* SafeDeque.swift */,
-				A3DA4DB02EB99A5A005BB812 /* MetalBufferUtils.swift */,
-			);
-			path = Utils;
 			sourceTree = "<group>";
 		};
 		A35E050B2EDE359C003C26CF /* AttributeEstimation */ = {
@@ -987,7 +986,6 @@
 				A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */,
 				A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */,
 				A3DA4DBD2EBCB9F9005BB812 /* MetalContext.swift */,
-				A3A413A32ECD3C7B0039298C /* RasterizeConfig.swift */,
 			);
 			path = Definitions;
 			sourceTree = "<group>";
@@ -1385,6 +1383,7 @@
 			mainGroup = 3222F90D2B622DFD0019A079;
 			packageReferences = (
 				CAF812C12CFA0FD400D44B84 /* XCRemoteSwiftPackageReference "swift-collections" */,
+				A34509D02FA1A49F003157B0 /* XCLocalSwiftPackageReference "../PointNMap" */,
 			);
 			productRefGroup = 3222F9172B622DFD0019A079 /* Products */;
 			projectDirPath = "";
@@ -1467,7 +1466,6 @@
 				A30BED382ED162E7004A5B51 /* MeshDefinitions.swift in Sources */,
 				A374FAB72EE0173600055268 /* OSMChangesetUploadResponseElement.swift in Sources */,
 				A30F59D42F7EFAD400EE7804 /* SurfaceIntegrityExtension.swift in Sources */,
-				A35547C22EC1AE4E00F43AFD /* SafeDeque.swift in Sources */,
 				A3C55A492EAFFABF00F6CFDC /* CenterCropTransformUtilsExtension.swift in Sources */,
 				A3EE6E4A2F580D6200F515E6 /* TestCameraView.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
@@ -1521,6 +1519,7 @@
 				A3DC22F92DD036AF0020CE84 /* UnionOfMasksProcessor.swift in Sources */,
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
 				A32D66FD2F7EF10F00DC4173 /* DamageDetectionPipeline.swift in Sources */,
+				A34509DA2FA1A782003157B0 /* MetalBufferUtils.swift in Sources */,
 				A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */,
 				A30D05842E2B1DB400316FB5 /* bisenetv2_11_640_640.mlpackage in Sources */,
 				A30801682EC0AE7700B1BA3A /* MeshInstancePolicy.swift in Sources */,
@@ -1547,12 +1546,10 @@
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
 				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
 				A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */,
-				A3DA4DB12EB99A5C005BB812 /* MetalBufferUtils.swift in Sources */,
 				A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */,
 				A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */,
 				A37E72102ED66A6400CFE4EF /* SegmentationAnnotationPipeline.swift in Sources */,
 				A329434C2EE7CFE800C4C1BC /* OSWField.swift in Sources */,
-				A3A413A42ECD3C7E0039298C /* RasterizeConfig.swift in Sources */,
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */,
@@ -1565,6 +1562,7 @@
 				A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
+				A34509D82FA1A6FA003157B0 /* SafeDeque.swift in Sources */,
 				A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */,
 				A3E161D22F3A8AF6002D4D08 /* CenterCropTransformUtils.swift in Sources */,
 				A35E050D2EDE35E1003C26CF /* LocalizationProcessor.swift in Sources */,
@@ -1606,7 +1604,6 @@
 				A30BED3A2ED162F1004A5B51 /* ConnectedComponents.swift in Sources */,
 				A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */,
 				A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */,
-				A3B61FC92F78F93B0052AE2C /* Extensions.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* Constants.swift in Sources */,
 				A30F59D22F7EFACD00EE7804 /* CrossSlopeExtension.swift in Sources */,
 			);
@@ -1973,6 +1970,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		A34509D02FA1A49F003157B0 /* XCLocalSwiftPackageReference "../PointNMap" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../PointNMap;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1993,6 +1997,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A34509D12FA1A49F003157B0 /* PointNMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PointNMap;
+		};
+		A34509D32FA1A49F003157B0 /* ShaderTypes */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ShaderTypes;
+		};
 		A3C22FD72CF2F0C300533BF7 /* DequeModule */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */;

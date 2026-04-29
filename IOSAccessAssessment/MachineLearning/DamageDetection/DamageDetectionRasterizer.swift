@@ -7,6 +7,7 @@
 
 import CoreImage
 import UIKit
+import PointNMap
 
 struct DamageDetectionRasterizer {
     static func rasterizeDamageDetection(

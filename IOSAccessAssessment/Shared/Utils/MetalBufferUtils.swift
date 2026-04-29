@@ -9,11 +9,11 @@ import RealityKit
 import Metal
 import simd
 
-enum MetalBufferUtilsError: Error, LocalizedError {
+public enum MetalBufferUtilsError: Error, LocalizedError {
     case bufferTooSmall(expected: Int, actual: Int)
     case bufferCreationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .bufferTooSmall(let expected, let actual):
             return "The provided buffer is too small. Expected at least \(expected) bytes, but got \(actual) bytes."
@@ -24,11 +24,11 @@ enum MetalBufferUtilsError: Error, LocalizedError {
 }
 
 
-struct MetalBufferUtils {
-    static let defaultBufferSize: Int = 1024
+public struct MetalBufferUtils {
+    public static let defaultBufferSize: Int = 1024
     
     @inline(__always)
-    static func copyContiguous(srcPtr: UnsafeRawPointer, dst: MTLBuffer, byteCount: Int) throws {
+    public static func copyContiguous(srcPtr: UnsafeRawPointer, dst: MTLBuffer, byteCount: Int) throws {
         guard byteCount <= dst.length else {
             throw MetalBufferUtilsError.bufferTooSmall(expected: byteCount, actual: dst.length)
         }
@@ -37,7 +37,7 @@ struct MetalBufferUtils {
     }
     
     @inline(__always)
-    static func copyStrided(count: Int, srcPtr: UnsafeRawPointer, srcStride: Int,
+    public static func copyStrided(count: Int, srcPtr: UnsafeRawPointer, srcStride: Int,
                      dst: MTLBuffer, elemSize: Int) throws {
         guard count * elemSize <= dst.length else {
             throw MetalBufferUtilsError.bufferTooSmall(expected: count * elemSize, actual: dst.length)
@@ -51,7 +51,7 @@ struct MetalBufferUtils {
     }
     
     @inline(__always)
-    static func ensureCapacity(device: MTLDevice, buf: inout MTLBuffer, requiredBytes: Int) throws {
+    public static func ensureCapacity(device: MTLDevice, buf: inout MTLBuffer, requiredBytes: Int) throws {
         if buf.length < requiredBytes {
             let newCapacity = nextCap(requiredBytes)
             buf = try makeBuffer(device: device, length: newCapacity, options: .storageModeShared)
@@ -59,7 +59,7 @@ struct MetalBufferUtils {
     }
     
     @inline(__always)
-    static func makeBuffer(device: MTLDevice, length: Int, options: MTLResourceOptions = .storageModeShared) throws -> MTLBuffer {
+    public static func makeBuffer(device: MTLDevice, length: Int, options: MTLResourceOptions = .storageModeShared) throws -> MTLBuffer {
         guard let buffer = device.makeBuffer(length: length, options: options) else {
             throw MetalBufferUtilsError.bufferCreationFailed
         }
@@ -70,7 +70,7 @@ struct MetalBufferUtils {
     Calculate the next power-of-two capacity greater than or equal to needed
      */
     @inline(__always)
-    static func nextCap(_ needed: Int, minimum: Int = 1024) -> Int {
+    public static func nextCap(_ needed: Int, minimum: Int = 1024) -> Int {
         let maximum: Int = Int.max >> 2
         if needed > maximum {
             return Int.max

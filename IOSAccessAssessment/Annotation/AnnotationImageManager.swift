@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import DequeModule
+import PointNMap
 
 enum AnnotationImageManagerError: Error, LocalizedError {
     case notConfigured
