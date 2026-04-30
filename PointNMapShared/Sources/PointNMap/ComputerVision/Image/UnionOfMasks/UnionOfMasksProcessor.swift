@@ -10,7 +10,7 @@ import CoreImage
 import MetalKit
 import PointNMapShared
 
-enum UnionOfMasksProcessorError: Error, LocalizedError {
+public enum UnionOfMasksProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case invalidInputImage
@@ -19,7 +19,7 @@ enum UnionOfMasksProcessorError: Error, LocalizedError {
     case outputImageCreationFailed
     case invalidPixelFormat
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -43,7 +43,7 @@ enum UnionOfMasksProcessorError: Error, LocalizedError {
  UnionOfMasksProcessor is a class that processes an array of CIImages to compute the union of masks using Metal.
  It performs a simple weighted union operation on the input images, where each image is treated as a mask. Only the last frame can be weighted differently from the rest.
  */
-class UnionOfMasksProcessor {
+public class UnionOfMasksProcessor {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -52,13 +52,13 @@ class UnionOfMasksProcessor {
     
     private let ciContext: CIContext
     
-    var arrayTexture: MTLTexture?
-    var imageCount: Int = 0
-    var format: MTLPixelFormat = .rgba8Unorm
-    var width: Int = 0
-    var height: Int = 0
+    public var arrayTexture: MTLTexture?
+    public var imageCount: Int = 0
+    public var format: MTLPixelFormat = .rgba8Unorm
+    public var width: Int = 0
+    public var height: Int = 0
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw UnionOfMasksProcessorError.metalInitializationFailed
@@ -83,7 +83,7 @@ class UnionOfMasksProcessor {
             - images: An array of CIImage objects to be combined into an array texture.
             - format: The pixel format for the texture. Default is .rgba8Unorm.
      */
-    func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .r8Unorm) throws {
+    public func setArrayTexture(images: [CIImage], format: MTLPixelFormat = .r8Unorm) throws {
         let imageCount = images.count
         guard imageCount > 0 else {
             throw UnionOfMasksProcessorError.invalidInputImage
@@ -139,7 +139,7 @@ class UnionOfMasksProcessor {
         self.format = format
     }
     
-    func apply(targetValue: UInt8, unionOfMasksPolicy: UnionOfMasksPolicy = UnionOfMasksPolicy.default) throws -> CIImage {
+    public func apply(targetValue: UInt8, unionOfMasksPolicy: UnionOfMasksPolicy = UnionOfMasksPolicy.default) throws -> CIImage {
         guard let inputImages = self.arrayTexture else {
             throw UnionOfMasksProcessorError.arrayTextureNotSet
         }

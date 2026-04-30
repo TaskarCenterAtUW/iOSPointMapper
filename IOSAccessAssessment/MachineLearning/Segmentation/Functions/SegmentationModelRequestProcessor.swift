@@ -7,6 +7,7 @@
 import CoreML
 import Vision
 import CoreImage
+import PointNMapShared
 
 enum SegmentationModelError: Error, LocalizedError {
     case modelLoadingError

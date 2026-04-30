@@ -7,7 +7,7 @@
 
 import UIKit
 
-extension CGImage {
+public extension CGImage {
     // TODO: Need to check if this is applicable to all image types
     func getByteSize() -> Int {
         var bytesPerRow: Int = 4 * self.width

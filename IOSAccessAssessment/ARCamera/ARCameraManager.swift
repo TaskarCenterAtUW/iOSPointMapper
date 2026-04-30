@@ -8,6 +8,7 @@ import ARKit
 import RealityKit
 import Combine
 import simd
+import PointNMapShared
 
 enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed

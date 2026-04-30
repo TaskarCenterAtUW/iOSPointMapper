@@ -9,6 +9,7 @@ import ARKit
 import RealityKit
 import Combine
 import simd
+import PointNMapShared
 
 final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []

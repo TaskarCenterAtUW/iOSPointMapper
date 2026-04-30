@@ -13,13 +13,13 @@ import PointNMapShared
  A temporary struct to perform rasterization of detected objects.
  TODO: This should be replaced by a lower-level rasterization function that uses Metal or Core Graphics directly.
  */
-struct ContourFeatureRasterizer {
-    static func colorForClass(_ classLabel: UInt8, labelToColorMap: [UInt8: CIColor]) -> UIColor {
+public struct ContourFeatureRasterizer {
+    public static func colorForClass(_ classLabel: UInt8, labelToColorMap: [UInt8: CIColor]) -> UIColor {
         let color = labelToColorMap[classLabel] ?? CIColor(red: 0, green: 0, blue: 0)
         return UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1.0)
     }
     
-    static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
+    public static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
         let path = UIBezierPath()
         guard let firstPoint = points.first else { return path }
         

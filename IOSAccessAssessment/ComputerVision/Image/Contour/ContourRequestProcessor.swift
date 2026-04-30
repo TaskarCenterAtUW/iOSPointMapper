@@ -7,11 +7,11 @@
 import Vision
 import CoreImage
 
-enum ContourRequestProcessorError: Error, LocalizedError {
+public enum ContourRequestProcessorError: Error, LocalizedError {
     case contourProcessingFailed
     case binaryMaskGenerationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .contourProcessingFailed:
             return "Contour processing failed."
@@ -29,7 +29,7 @@ enum ContourRequestProcessorError: Error, LocalizedError {
     This can cause confusion in the app because it pre-dominantly uses Core Video, ARKit, etc. which use a coordinate system with the origin at the top-left corner.
     To reduce confusion, we can preemptively convert the coordinates to the top-left origin. We would also need to change ContourDetails to reflect this change, by not using CGPoint, CGRect, etc. which are based on the bottom-left origin, and instead use a custom struct that can represent the coordinates in the top-left origin.
  */
-struct ContourRequestProcessor {
+public struct ContourRequestProcessor {
     var contourEpsilon: Float = 0.01
     /// For normalized points
     var perimeterThreshold: Float = 0.01

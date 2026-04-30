@@ -7,19 +7,19 @@
 
 import Vision
 
-struct ContourUtils {
+public struct ContourUtils {
     /**
      Function to compute the centroid, bounding box, and perimeter of a contour more efficiently
      
      TODO: Check if the performance can be improved by using SIMD operations
      */
-    static func getCentroidAreaBounds(
+    public static func getCentroidAreaBounds(
         contour: VNContour
     ) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
         let points = contour.normalizedPoints
         return getCentroidAreaBounds(normalizedPoints: points)
     }
-    static func getCentroidAreaBounds(
+    public static func getCentroidAreaBounds(
         normalizedPoints points: [simd_float2]
     ) -> (centroid: CGPoint, boundingBox: CGRect, perimeter: Float, area: Float) {
         guard !points.isEmpty else { return (CGPoint.zero, .zero, 0, 0) }
@@ -34,11 +34,11 @@ struct ContourUtils {
     /**
      Use shoelace formula to calculate the area and centroid of the contour together.
      */
-    static func getCentroidAndArea(contour: VNContour) -> (centroid: CGPoint, area: Float) {
+    public static func getCentroidAndArea(contour: VNContour) -> (centroid: CGPoint, area: Float) {
         let points = contour.normalizedPoints
         return getCentroidAndArea(normalizedPoints: points)
     }
-    static func getCentroidAndArea(normalizedPoints points: [simd_float2]) -> (centroid: CGPoint, area: Float) {
+    public static func getCentroidAndArea(normalizedPoints points: [simd_float2]) -> (centroid: CGPoint, area: Float) {
         guard !points.isEmpty else { return (CGPoint.zero, 0) }
         
         let count = points.count
@@ -74,11 +74,11 @@ struct ContourUtils {
         return (centroid, area)
     }
     
-    static func getBoundingBox(contour: VNContour) -> CGRect {
+    public static func getBoundingBox(contour: VNContour) -> CGRect {
         let points = contour.normalizedPoints
         return getBoundingBox(normalizedPoints: points)
     }
-    static func getBoundingBox(normalizedPoints points: [simd_float2]) -> CGRect {
+    public static func getBoundingBox(normalizedPoints points: [simd_float2]) -> CGRect {
         guard !points.isEmpty else { return .zero }
         
         var minX = points[0].x
@@ -99,11 +99,11 @@ struct ContourUtils {
         )
     }
     
-    static func getPerimeter(contour: VNContour) -> Float {
+    public static func getPerimeter(contour: VNContour) -> Float {
         let points = contour.normalizedPoints
         return getPerimeter(normalizedPoints: points)
     }
-    static func getPerimeter(normalizedPoints points: [simd_float2]) -> Float {
+    public static func getPerimeter(normalizedPoints points: [simd_float2]) -> Float {
         guard !points.isEmpty else { return 0 }
         
         var perimeter: Float = 0.0
@@ -125,7 +125,7 @@ struct ContourUtils {
 /**
  NOTE: Methods that need to be replaced. 
  */
-extension ContourUtils {
+public extension ContourUtils {
     /**
         Function to get the bounding box of the contour as a trapezoid. This is the largest trapezoid that can be contained in the contour and has horizontal lines.
         - Parameters:

@@ -8,11 +8,11 @@
 import UIKit
 import MetalKit
 
-enum CIImageUtilsError: Error, LocalizedError {
+public enum CIImageUtilsError: Error, LocalizedError {
     case pixelBufferCreationError
     case segmentationTextureError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .pixelBufferCreationError:
             return "Failed to create pixel buffer from CIImage."
@@ -22,7 +22,7 @@ enum CIImageUtilsError: Error, LocalizedError {
     }
 }
 
-extension CIImage {
+public extension CIImage {
     func croppedToCenter(size: CGSize) -> CIImage {
         let x = (extent.width - size.width) / 2
         let y = (extent.height - size.height) / 2
@@ -48,7 +48,7 @@ extension CIImage {
 /**
     Extensions for converting CIImage to CVPixelBuffer.
  */
-extension CIImage {
+public extension CIImage {
     func toPixelBuffer(
         context: CIContext, pixelFormatType: OSType = kCVPixelFormatType_32BGRA, colorSpace: CGColorSpace? = nil
     ) throws -> CVPixelBuffer {
@@ -94,7 +94,7 @@ extension CIImage {
 /**
  Supporting enum for CIImage to MTLTexture conversion.
  */
-enum CIImageToMTLTextureOrientation: Sendable {
+public enum CIImageToMTLTextureOrientation: Sendable {
     case cICanonical
     case metalTopLeft
 }
@@ -102,7 +102,7 @@ enum CIImageToMTLTextureOrientation: Sendable {
 /**
  Extensions for converting CIImage to MTLTexture.
  */
-extension CIImage {
+public extension CIImage {
     /**
         Converts the CIImage to a MTLTexture using the provided device, command buffer, pixel format, CIContext, and color space.
      
@@ -171,7 +171,7 @@ extension CIImage {
 /**
  Debugging functions
  */
-extension CIImage {
+public extension CIImage {
     /**
         Function to check if the CIImage has backed data. This is useful for debugging purposes to check what the CIImage is backed by, and the relevant formats.
      */

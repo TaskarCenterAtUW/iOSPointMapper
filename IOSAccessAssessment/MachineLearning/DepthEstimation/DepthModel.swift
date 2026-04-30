@@ -9,6 +9,7 @@ import Vision
 import CoreML
 import CoreImage
 import os
+import PointNMapShared
 
 enum DepthError: Error, LocalizedError {
     case emptyDepth

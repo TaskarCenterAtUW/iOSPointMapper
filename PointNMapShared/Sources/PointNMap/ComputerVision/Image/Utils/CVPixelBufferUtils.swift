@@ -8,11 +8,11 @@
 import UIKit
 import Accelerate
 
-struct CVPixelBufferUtils {
+public struct CVPixelBufferUtils {
     /**
         This function creates a CVPixelBuffer with the specified width, height, and pixel format.
      */
-    static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
+    public static func createPixelBuffer(width: Int, height: Int, pixelFormat: OSType = kCVPixelFormatType_DepthFloat32) -> CVPixelBuffer? {
         var pixelBuffer: CVPixelBuffer?
         let attrs = [
             kCVPixelBufferCGImageCompatibilityKey: true,
@@ -35,7 +35,7 @@ struct CVPixelBufferUtils {
         return pixelBuffer
     }
 
-    static func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
+    public static func createBlankDepthPixelBuffer(targetSize: CGSize) -> CVPixelBuffer? {
         let width = Int(targetSize.width)
         let height = Int(targetSize.height)
         
@@ -57,7 +57,7 @@ struct CVPixelBufferUtils {
      gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
         and returns both the unique values and their corresponding indices.
      */
-    static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
+    public static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
         
@@ -86,7 +86,7 @@ struct CVPixelBufferUtils {
 /**
  Archived methods to be removed later if not needed.
  */
-extension CVPixelBufferUtils {
+public extension CVPixelBufferUtils {
     // TODO: Check if any of the methods can be sped up using GPU
     // TODO: Check if the forced unwrapping used all over the functions is safe in the given context
     static func cropCenterOfPixelBuffer(_ pixelBuffer: CVPixelBuffer, cropSize: CGSize) -> CVPixelBuffer? {
@@ -195,7 +195,7 @@ extension CVPixelBufferUtils {
     }
 }
 
-extension CVPixelBuffer {
+public extension CVPixelBuffer {
     /**
         Returns a string representation of the pixel format type of the pixel buffer.
      */

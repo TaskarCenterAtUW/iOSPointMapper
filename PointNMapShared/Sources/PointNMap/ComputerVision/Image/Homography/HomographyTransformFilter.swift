@@ -1,24 +1,23 @@
 //
-//  BinaryMaskCIFilter.swift
+//  HomographyProcessor.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 4/17/25.
+//  Created by Himanshu on 5/9/25.
 //
-
 
 import UIKit
 import Metal
 import CoreImage
 import MetalKit
 
-enum DimensionBasedMaskFilterError: Error, LocalizedError {
+public enum HomographyTransformFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
     case metalPipelineCreationError
     case outputImageCreationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -34,12 +33,10 @@ enum DimensionBasedMaskFilterError: Error, LocalizedError {
     }
 }
 
-
 /**
-    A struct that applies a binary mask to an image using Metal.
-    The mask is applied based on a target value and specified bounds.
+    HomographyTransformFilter is a class that applies a homography transformation to a CIImage using Metal.
  */
-struct DimensionBasedMaskFilter {
+public struct HomographyTransformFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -47,12 +44,11 @@ struct DimensionBasedMaskFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
-    private let outputColorSpace = CGColorSpaceCreateDeviceRGB()
-
-    init() throws {
+    
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
-              let commandQueue = device.makeCommandQueue() else {
-            throw DimensionBasedMaskFilterError.metalInitializationFailed
+              let commandQueue = device.makeCommandQueue() else  {
+            throw HomographyTransformFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -60,44 +56,55 @@ struct DimensionBasedMaskFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "dimensionBasedMaskingKernel"),
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            throw DimensionBasedMaskFilterError.metalInitializationFailed
+            throw HomographyTransformFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
+    
+    /**
+        Applies a homography transformation to the input CIImage using the provided transformation matrix.
 
-    func apply(to inputImage: CIImage, bounds: CGRect) throws -> CIImage {
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+        - Parameters:
+            - inputImage: The input CIImage to be transformed. Of color space nil, single-channel.
+            - transformMatrix: A 3x3 matrix representing the homography transformation.
+     */
+    public func apply(
+        to inputImage: CIImage, transformMatrix: simd_float3x3,
+        inputPixelFormat: MTLPixelFormat = .r8Unorm,
+        outputPixelFormat: MTLPixelFormat = .r8Unorm
+    ) throws -> CIImage {
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: outputPixelFormat,
+            width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false
+        )
         descriptor.usage = [.shaderRead, .shaderWrite]
         
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw DimensionBasedMaskFilterError.metalPipelineCreationError
+            throw HomographyTransformFilterError.metalPipelineCreationError
         }
         
         let inputTexture = try inputImage.toMTLTexture(
-            device: self.device, commandBuffer: commandBuffer, pixelFormat: .r8Unorm,
+            device: self.device, commandBuffer: commandBuffer, pixelFormat: inputPixelFormat,
             context: self.ciContext,
-            colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
+            colorSpace: CGColorSpaceCreateDeviceRGB(), /// Dummy color space
+            cIImageToMTLTextureOrientation: .metalTopLeft
         )
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
-            throw DimensionBasedMaskFilterError.textureCreationFailed
+            throw HomographyTransformFilterError.textureCreationFailed
         }
-        var boundsParams = BoundsParams(
-            minX: Float(bounds.minX), minY: Float(bounds.minY),
-            maxX: Float(bounds.maxX), maxY: Float(bounds.maxY)
-        )
+        var transformMatrixLocal = transformMatrix
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw DimensionBasedMaskFilterError.metalPipelineCreationError
+            throw HomographyTransformFilterError.metalPipelineCreationError
         }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
-        commandEncoder.setBytes(&boundsParams, length: MemoryLayout<BoundsParams>.size, index: 0)
+        commandEncoder.setBytes(&transformMatrixLocal, length: MemoryLayout<simd_float3x3>.size, index: 0)
         
-//        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
         let threadgroups = MTLSize(width: (Int(inputImage.extent.width) + threadgroupSize.width - 1) / threadgroupSize.width,
                                    height: (Int(inputImage.extent.height) + threadgroupSize.height - 1) / threadgroupSize.height,
@@ -108,11 +115,12 @@ struct DimensionBasedMaskFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        guard let resultCIImage = CIImage(
-            mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace]
-        ) else {
-            throw DimensionBasedMaskFilterError.outputImageCreationFailed
+        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+            throw HomographyTransformFilterError.outputImageCreationFailed
         }
-        return resultCIImage
+        let resultImageOriented = resultImage
+            .transformed(by: CGAffineTransform(scaleX: 1, y: -1))
+            .transformed(by: CGAffineTransform(translationX: 0, y: resultImage.extent.height))
+        return resultImageOriented
     }
 }

@@ -11,14 +11,14 @@ import Metal
 import CoreImage
 import MetalKit
 
-enum IntersectionFilterError: Error, LocalizedError {
+public enum IntersectionFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
     case metalPipelineCreationError
     case outputImageCreationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -34,7 +34,7 @@ enum IntersectionFilterError: Error, LocalizedError {
     }
 }
 
-struct IntersectionFilter {
+public struct IntersectionFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -43,7 +43,7 @@ struct IntersectionFilter {
     
     private let ciContext: CIContext
 
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw IntersectionFilterError.metalInitializationFailed
@@ -64,7 +64,7 @@ struct IntersectionFilter {
     /**
         Applies the intersection filter to two input images and returns the resulting image.
      */
-    func apply(inputImage1: CIImage, inputImage2: CIImage) throws -> CIImage {
+    public func apply(inputImage1: CIImage, inputImage2: CIImage) throws -> CIImage {
         let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage1.extent.width), height: Int(inputImage1.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
         

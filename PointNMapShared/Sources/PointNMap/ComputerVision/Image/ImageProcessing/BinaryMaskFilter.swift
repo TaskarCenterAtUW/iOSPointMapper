@@ -1,23 +1,24 @@
 //
-//  GrayscaleToColorFilter.swift
+//  BinaryMaskCIFilter.swift
 //  IOSAccessAssessment
 //
-//  Created by TCAT on 9/27/24.
+//  Created by Himanshu on 4/17/25.
 //
+
 
 import UIKit
 import Metal
 import CoreImage
 import MetalKit
 
-enum GrayscaleToColorFilterError: Error, LocalizedError {
+public enum BinaryMaskFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
     case metalPipelineCreationError
     case outputImageCreationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -33,7 +34,7 @@ enum GrayscaleToColorFilterError: Error, LocalizedError {
     }
 }
 
-struct GrayscaleToColorFilter {
+public struct BinaryMaskFilter {
     // Metal-related properties
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -41,12 +42,11 @@ struct GrayscaleToColorFilter {
     private let textureLoader: MTKTextureLoader
     
     private let ciContext: CIContext
-    private let outputColorSpace = CGColorSpaceCreateDeviceRGB()
 
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            throw GrayscaleToColorFilterError.metalInitializationFailed
+            throw BinaryMaskFilterError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -54,27 +54,26 @@ struct GrayscaleToColorFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernelLUT"),
+        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binaryMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
-            throw GrayscaleToColorFilterError.metalInitializationFailed
+            throw BinaryMaskFilterError.metalInitializationFailed
         }
         self.pipeline = pipeline
     }
 
     /**
-        Applies the grayscale to color mapping filter to the input CIImage.
+        Applies the binary mask filter to the input CIImage.
      
         - Parameters:
-            - inputImage: The input CIImage in grayscale format. Of color space nil, single-channel.
-            - grayscaleValues: An array of Float values representing the grayscale levels (0.0 to 1.0).
-            - colorValues: An array of CIColor values corresponding to the grayscale levels.
+            - inputImage: The input CIImage to be processed. Of color space nil, single-channel.
+            - targetValue: The target pixel value to create the binary mask.
      */
-    func apply(to inputImage: CIImage, grayscaleValues: [Float], colorValues: [CIColor]) throws -> CIImage {
-        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
+    public func apply(to inputImage: CIImage, targetValue: UInt8) throws -> CIImage {
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: Int(inputImage.extent.width), height: Int(inputImage.extent.height), mipmapped: false)
         descriptor.usage = [.shaderRead, .shaderWrite]
-
+        
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
-            throw GrayscaleToColorFilterError.metalPipelineCreationError
+            throw BinaryMaskFilterError.metalPipelineCreationError
         }
         
         let inputTexture = try inputImage.toMTLTexture(
@@ -82,24 +81,19 @@ struct GrayscaleToColorFilter {
             context: self.ciContext,
             colorSpace: CGColorSpaceCreateDeviceRGB() /// Dummy color space
         )
-//        let inputTexture = try inputImage.toMTLTexture(textureLoader: textureLoader, context: ciContext)
         guard let outputTexture = self.device.makeTexture(descriptor: descriptor) else {
-            throw GrayscaleToColorFilterError.textureCreationFailed
+            throw BinaryMaskFilterError.textureCreationFailed
         }
-        
-        let grayscaleToColorLUT: [SIMD3<Float>] = self.getGrayscaleToColorLookupTable(
-            grayscaleValues: grayscaleValues, colorValues: colorValues
-        )
-        let grayscaleToColorLUTBuffer = self.device.makeBuffer(bytes: grayscaleToColorLUT, length: grayscaleToColorLUT.count * MemoryLayout<SIMD3<Float>>.size, options: [])
+        var targetValueVar = targetValue
         
         guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            throw GrayscaleToColorFilterError.metalPipelineCreationError
+            throw BinaryMaskFilterError.metalPipelineCreationError
         }
         
         commandEncoder.setComputePipelineState(self.pipeline)
         commandEncoder.setTexture(inputTexture, index: 0)
         commandEncoder.setTexture(outputTexture, index: 1)
-        commandEncoder.setBuffer(grayscaleToColorLUTBuffer, offset: 0, index: 0)
+        commandEncoder.setBytes(&targetValueVar, length: MemoryLayout<UInt8>.size, index: 0)
         
 //        let threadgroupSize = MTLSize(width: 16, height: 16, depth: 1)
         let threadgroupSize = MTLSize(width: pipeline.threadExecutionWidth, height: pipeline.maxTotalThreadsPerThreadgroup / pipeline.threadExecutionWidth, depth: 1)
@@ -112,18 +106,9 @@ struct GrayscaleToColorFilter {
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
 
-        guard let resultImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: outputColorSpace]) else {
-            throw GrayscaleToColorFilterError.outputImageCreationFailed
+        guard let resultCIImage = CIImage(mtlTexture: outputTexture, options: [.colorSpace: NSNull()]) else {
+            throw BinaryMaskFilterError.outputImageCreationFailed
         }
-        return resultImage
-    }
-    
-    private func getGrayscaleToColorLookupTable(grayscaleValues: [Float], colorValues: [CIColor]) -> [SIMD3<Float>] {
-        var grayscaleToColorLUT: [SIMD3<Float>] = Array(repeating: SIMD3<Float>(0, 0, 0), count: 256)
-        for (i, grayscaleValue) in grayscaleValues.enumerated() {
-            let index = min(Int((grayscaleValue * 255).rounded()), 255)
-            grayscaleToColorLUT[index] = SIMD3<Float>(Float(colorValues[i].red), Float(colorValues[i].green), Float(colorValues[i].blue))
-        }
-        return grayscaleToColorLUT
+        return resultCIImage
     }
 }

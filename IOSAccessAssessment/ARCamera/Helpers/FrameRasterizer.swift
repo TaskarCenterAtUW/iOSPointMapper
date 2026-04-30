@@ -7,6 +7,7 @@
 
 import CoreImage
 import UIKit
+import PointNMapShared
 
 /**
  A custom Image that displays a bounding box around the region of processing

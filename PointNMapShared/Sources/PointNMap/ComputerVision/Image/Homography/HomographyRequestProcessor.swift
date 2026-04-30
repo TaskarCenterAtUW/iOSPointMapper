@@ -8,10 +8,10 @@ import Vision
 import simd
 import CoreImage
 
-enum HomographyRequestProcessorError: Error, LocalizedError {
+public enum HomographyRequestProcessorError: Error, LocalizedError {
     case homographyProcessingError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .homographyProcessingError:
             return "Error occurred while processing the homography request."
@@ -19,9 +19,9 @@ enum HomographyRequestProcessorError: Error, LocalizedError {
     }
 }
 
-struct HomographyRequestProcessor {
+public struct HomographyRequestProcessor {
     /// Computes the homography transform for the reference image and the floating image.
-    func getHomographyTransform(
+    public func getHomographyTransform(
         referenceImage: CIImage, floatingImage: CIImage, orientation: CGImagePropertyOrientation = .up
     ) throws -> simd_float3x3 {
         let imageRequestHandler = VNImageRequestHandler(ciImage: referenceImage, orientation: orientation, options: [:])
