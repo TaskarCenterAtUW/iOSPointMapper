@@ -8,6 +8,7 @@
 import CoreLocation
 import UIKit
 import MapKit
+import Combine
 
 public enum LocationManagerError: Error, LocalizedError {
     case locationUnavailable

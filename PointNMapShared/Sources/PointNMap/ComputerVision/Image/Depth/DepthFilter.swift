@@ -9,6 +9,7 @@ import UIKit
 import Metal
 import CoreImage
 import MetalKit
+import PointNMapShaderTypes
 
 public enum DepthFilterError: Error, LocalizedError {
     case metalInitializationFailed
@@ -56,7 +57,8 @@ public struct DepthFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "depthFilteringKernel"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "depthFilteringKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw DepthFilterError.metalInitializationFailed
         }

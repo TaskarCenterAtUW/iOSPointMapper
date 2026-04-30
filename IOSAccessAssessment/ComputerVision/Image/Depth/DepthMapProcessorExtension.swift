@@ -1,85 +1,13 @@
 //
-//  DepthMapProcessor.swift
+//  DepthMapProcessorExtension.swift
 //  IOSAccessAssessment
 //
-//  Created by Himanshu on 11/29/25.
+//  Created by Himanshu on 4/30/26.
 //
 
-import CoreImage
-import CoreVideo
+import PointNMapShared
 
-enum DepthMapProcessorError: Error, LocalizedError {
-    case unableToAccessDepthData
-    case invalidDepth
-    
-    var errorDescription: String? {
-        switch self {
-        case .unableToAccessDepthData:
-            return "Unable to access depth data from the depth map."
-        case .invalidDepth:
-            return "The depth value retrieved is invalid."
-        }
-    }
-}
-
-struct DepthMapProcessor {
-    let depthImage: CIImage
-    
-    private let context: CIContext
-    
-    private let depthWidth: Int
-    private let depthHeight: Int
-    private let depthBuffer: CVPixelBuffer
-    
-    init(depthImage: CIImage) throws {
-        self.depthImage = depthImage
-        self.context = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
-        self.depthWidth = Int(depthImage.extent.width)
-        self.depthHeight = Int(depthImage.extent.height)
-        self.depthBuffer = try depthImage.toPixelBuffer(
-            context: context,
-            pixelFormatType: kCVPixelFormatType_DepthFloat32,
-            colorSpace: nil
-        )
-    }
-    
-    private func getDepthAtPoint(point: CGPoint) throws -> Float {
-        CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
-        
-        guard let depthBaseAddress = CVPixelBufferGetBaseAddress(depthBuffer) else {
-            throw DepthMapProcessorError.unableToAccessDepthData
-        }
-        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
-        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
-        
-        let depthIndexRow = Int(point.y)
-        let depthIndexCol = Int(point.x)
-        let depthIndex = depthIndexRow * (depthBytesPerRow / MemoryLayout<Float>.size) + depthIndexCol
-        let depthAtPoint = depthBuffer[depthIndex]
-        return depthAtPoint
-    }
-    
-    private func getDepthsAtPoints(points: [CGPoint]) throws -> [Float] {
-        CVPixelBufferLockBaseAddress(depthBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthBuffer, .readOnly) }
-        
-        guard let depthBaseAddress = CVPixelBufferGetBaseAddress(depthBuffer) else {
-            throw DepthMapProcessorError.unableToAccessDepthData
-        }
-        let depthBytesPerRow = CVPixelBufferGetBytesPerRow(depthBuffer)
-        let depthBuffer = depthBaseAddress.assumingMemoryBound(to: Float.self)
-        
-        var depths: [Float] = points.map { _ in 0.0 }
-        for (index, point) in points.enumerated() {
-            let depthIndexRow = Int(point.y)
-            let depthIndexCol = Int(point.x)
-            let depthIndex = depthIndexRow * (depthBytesPerRow / MemoryLayout<Float>.size) + depthIndexCol
-            depths[index] = depthBuffer[depthIndex]
-        }
-        return depths
-    }
-    
+extension DepthMapProcessor {
     /**
         Retrieves the depth value at the centroid of the given accessibility feature.
      
@@ -159,17 +87,6 @@ struct DepthMapProcessor {
             )
         }
         let depths = try getDepthsAtPoints(points: featureBoundPoints)
-        return depths
-    }
-    
-    func getFeatureDepthsAtNormalizedPoints(_ points: [SIMD2<Float>]) throws -> [Float] {
-        let featurePoints: [CGPoint] = points.map { point in
-            CGPoint(
-                x: CGFloat(point.x * Float(depthWidth)),
-                y: CGFloat((1 - point.y) * Float(depthHeight))
-            )
-        }
-        let depths = try getDepthsAtPoints(points: featurePoints)
         return depths
     }
 }

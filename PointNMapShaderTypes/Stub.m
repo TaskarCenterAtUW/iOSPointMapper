@@ -6,3 +6,4 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "ShaderTypes.h"

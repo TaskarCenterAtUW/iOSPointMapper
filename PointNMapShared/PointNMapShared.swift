@@ -7,3 +7,10 @@
 
 import Foundation
 
+public final class PointNMapSharedBundleToken {}
+
+public enum PointNMapSharedResources {
+    public static var bundle: Bundle {
+        Bundle(for: PointNMapSharedBundleToken.self)
+    }
+}

@@ -8,6 +8,7 @@ import UIKit
 import Metal
 import CoreImage
 import MetalKit
+import PointNMapShared
 
 enum UnionOfMasksProcessorError: Error, LocalizedError {
     case metalInitializationFailed

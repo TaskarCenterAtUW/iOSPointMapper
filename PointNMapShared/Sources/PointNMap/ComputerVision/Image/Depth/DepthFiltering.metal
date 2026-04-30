@@ -8,7 +8,7 @@
 #include <metal_stdlib>
 #include <CoreImage/CoreImage.h>
 using namespace metal;
-#import "../../../ShaderTypes.h"
+#import "ShaderTypes.h"
 
 extern "C" kernel void depthFilteringKernel(
     texture2d<float, access::read> inputTexture [[texture(0)]],
