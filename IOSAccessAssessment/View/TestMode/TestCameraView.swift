@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMap
 
 /**
  Additional constants unique to TestCameraView (not used in ARCameraView)

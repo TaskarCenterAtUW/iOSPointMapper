@@ -64,7 +64,7 @@ struct OSMLocationElement: Codable, Sendable {
  For relation support: we can treat OSMLocationDetails as a tree of OSMLocationElement structs, where each OSMLocationElement can either have a set of coordinates (for nodes and ways) or a set of child OSMLocationElements (for relations). This way, we can represent the hierarchical nature of OSM data while still maintaining a clear structure for each element type. This will be an easier modification because we can simply add an optional `members` property to OSMLocationElement that can hold child elements, and update the encoding/decoding logic to handle this new property appropriately.
  However, this will need modification to caller code that constructs/uses/modifies OSMLocationDetails, because they will need to account for the possibility of nested members when working with OSM data.
  */
-struct OSMLocationDetails: Codable, Sendable {
+public struct OSMLocationDetails: Codable, Sendable {
     var locations: [OSMLocationElement]
     
     init(locations: [OSMLocationElement]) {
@@ -75,12 +75,12 @@ struct OSMLocationDetails: Codable, Sendable {
         case locations
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(locations, forKey: .locations)
     }
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.locations = try container.decode([OSMLocationElement].self, forKey: .locations)
     }

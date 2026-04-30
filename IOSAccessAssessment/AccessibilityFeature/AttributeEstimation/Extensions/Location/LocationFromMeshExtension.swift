@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMap
 
 extension AttributeEstimationPipeline {
     func getLocationFromMeshForLineStringByPlane(

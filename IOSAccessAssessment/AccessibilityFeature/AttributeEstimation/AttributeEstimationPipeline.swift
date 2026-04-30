@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreLocation
 import MapKit
+import PointNMap
 
 enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)

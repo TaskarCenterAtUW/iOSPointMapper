@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import CoreLocation
+import PointNMap
 
 /**
  Extension for attribute calculation with rudimentary methods.
