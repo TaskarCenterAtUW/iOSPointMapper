@@ -15,7 +15,7 @@
  
  TODO: Move the logic to Metal for performance improvements.
  */
-struct DBSCAN<Value: Equatable> {
+public struct DBSCAN<Value: Equatable> {
     private class Point: Equatable {
         typealias Label = Int
 
@@ -46,7 +46,7 @@ struct DBSCAN<Value: Equatable> {
      - distanceFunction: A function that computes
                          the distance between two values.
      */
-    init(epsilon: Double, minimumNumberOfPoints: Int, distanceFunction: @escaping (Value, Value) throws -> Double) {
+    public init(epsilon: Double, minimumNumberOfPoints: Int, distanceFunction: @escaping (Value, Value) throws -> Double) {
         self.epsilon = epsilon
         self.minimumNumberOfPoints = minimumNumberOfPoints
         self.distanceFunction = distanceFunction

@@ -70,12 +70,13 @@ public struct PlaneAttributeProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let binPointKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binProjectedPoints"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let binPointKernelFunction = library.makeFunction(name: "binProjectedPoints"),
               let binPointPipeline = try? device.makeComputePipelineState(function: binPointKernelFunction) else {
             throw PlaneAttributeProcessorError.metalInitializationFailed
         }
         self.binPointPipeline = binPointPipeline
-        guard let binTriangleKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binMeshTriangles"),
+        guard let binTriangleKernelFunction = library.makeFunction(name: "binMeshTriangles"),
               let binTrianglePipeline = try? device.makeComputePipelineState(function: binTriangleKernelFunction) else {
             throw PlaneAttributeProcessorError.metalInitializationFailed
         }

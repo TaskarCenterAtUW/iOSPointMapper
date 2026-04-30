@@ -9,27 +9,28 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
+import PointNMapShaderTypes
 
-struct SurfaceNormalsForPointsGrid: Sendable {
-    let width: Int
-    let height: Int
-    var data: [SurfaceNormalsForPointsGridCell]
+public struct SurfaceNormalsForPointsGrid: Sendable {
+    public let width: Int
+    public let height: Int
+    public var data: [SurfaceNormalsForPointsGridCell]
     
     /// TODO: Handle out-of-bounds access more robustly, possibly with a custom error or by returning an optional.
-    subscript(x: Int, y: Int) -> SurfaceNormalsForPointsGridCell {
+    public subscript(x: Int, y: Int) -> SurfaceNormalsForPointsGridCell {
         get { return data[y * width + x] }
         set { data[y * width + x] = newValue }
     }
 }
 
-enum SurfaceNormalsProcessorError: Error, LocalizedError {
+public enum SurfaceNormalsProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
     case invalidProjectedPlaneVectors
     case unableToProcessBufferData
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -45,7 +46,7 @@ enum SurfaceNormalsProcessorError: Error, LocalizedError {
     }
 }
 
-struct SurfaceNormalsProcessor {
+public struct SurfaceNormalsProcessor {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     
@@ -55,7 +56,7 @@ struct SurfaceNormalsProcessor {
     
     let ciContext: CIContext
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw SurfaceNormalsProcessorError.metalInitializationFailed
@@ -66,11 +67,12 @@ struct SurfaceNormalsProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let computeKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeSurfaceNormals"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let computeKernelFunction = library.makeFunction(name: "computeSurfaceNormals"),
               let computePipeline = try? device.makeComputePipelineState(function: computeKernelFunction) else {
             throw SurfaceNormalsProcessorError.metalInitializationFailed
         }
-        guard let boundsKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "getSurfaceNormalsWithinBounds"),
+        guard let boundsKernelFunction = library.makeFunction(name: "getSurfaceNormalsWithinBounds"),
               let boundsPipeline = try? device.makeComputePipelineState(function: boundsKernelFunction) else {
             throw SurfaceNormalsProcessorError.metalInitializationFailed
         }
@@ -96,7 +98,7 @@ struct SurfaceNormalsProcessor {
      - Note:
      The sampling is done in DDA-style (Digital Differential Analyzer) to ensure that the neighbors are equidistant and opposite to the point in the grid.
      */
-    func getSurfaceNormalsFromWorldPoints(
+    public func getSurfaceNormalsFromWorldPoints(
         worldPointsGrid: WorldPointsGrid,
         plane: Plane,
         projectedPlane: ProjectedPlane,
@@ -201,7 +203,7 @@ struct SurfaceNormalsProcessor {
         return surfaceNormalsGrid
     }
     
-    func getSurfaceNormalsFromWorldPointsCPU(
+    public func getSurfaceNormalsFromWorldPointsCPU(
         worldPointsGrid: WorldPointsGrid,
         plane: Plane,
         projectedPlane: ProjectedPlane,
@@ -306,7 +308,7 @@ struct SurfaceNormalsProcessor {
         return dir / maxComp
     }
     
-    func debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: SurfaceNormalsForPointsGrid) {
+    public func debugSurfaceNormalsFromWorldPoints(surfaceNormalsGrid: SurfaceNormalsForPointsGrid) {
         var validPointCount = 0
         var validSurfaceNormalCount = 0
         let upVector = simd_float3(0, 1, 0)

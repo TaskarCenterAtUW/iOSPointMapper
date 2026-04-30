@@ -9,11 +9,11 @@ import Vision
 import CoreImage
 import PointNMapShared
 
-enum SegmentationModelError: Error, LocalizedError {
+public enum SegmentationModelError: Error, LocalizedError {
     case modelLoadingError
     case segmentationProcessingError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .modelLoadingError:
             return "Failed to load the segmentation model."
@@ -27,12 +27,12 @@ enum SegmentationModelError: Error, LocalizedError {
     A struct to handle the segmentation model request processing.
     Processes the segmentation model request and returns the segmentation mask as well as the segmented indices.
  */
-struct SegmentationModelRequestProcessor {
-    var visionModel: VNCoreMLModel
+public struct SegmentationModelRequestProcessor {
+    public var visionModel: VNCoreMLModel
     
-    var selectedClasses: [AccessibilityFeatureClass] = []
+    public var selectedClasses: [AccessibilityFeatureClass] = []
     
-    init(selectedClasses: [AccessibilityFeatureClass]) throws {
+    public init(selectedClasses: [AccessibilityFeatureClass]) throws {
         guard let modelURL = SharedAppConstants.SelectedAccessibilityFeatureConfig.modelURL else {
             throw SegmentationModelError.modelLoadingError
         }
@@ -42,7 +42,7 @@ struct SegmentationModelRequestProcessor {
         self.selectedClasses = selectedClasses
     }
     
-    mutating func setSelectedClasses(_ classes: [AccessibilityFeatureClass]) {
+    public mutating func setSelectedClasses(_ classes: [AccessibilityFeatureClass]) {
         self.selectedClasses = classes
     }
     
@@ -51,7 +51,7 @@ struct SegmentationModelRequestProcessor {
         request.imageCropAndScaleOption = .scaleFill
     }
     
-    func processSegmentationRequest(
+    public func processSegmentationRequest(
         with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up
     ) throws -> (segmentationImage: CIImage, segmentedClasses: [AccessibilityFeatureClass]) {
         let segmentationRequest = VNCoreMLRequest(model: self.visionModel)

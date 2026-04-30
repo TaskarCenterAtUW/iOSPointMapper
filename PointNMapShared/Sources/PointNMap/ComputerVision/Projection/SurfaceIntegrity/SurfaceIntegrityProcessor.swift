@@ -9,9 +9,9 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
-import PointNMapShared
+import PointNMapShaderTypes
 
-enum SurfaceIntegrityProcessorError: Error, LocalizedError {
+public enum SurfaceIntegrityProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
@@ -19,7 +19,7 @@ enum SurfaceIntegrityProcessorError: Error, LocalizedError {
     case unableToProcessBufferData
     case meshPipelineBlitEncoderError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -53,23 +53,23 @@ enum SurfaceIntegrityProcessorError: Error, LocalizedError {
 //    }
 //}
 
-struct IntegrityStatusDetails {
-    var status: SurfaceIntegrityStatus
-    var details: String
+public struct IntegrityStatusDetails {
+    public var status: SurfaceIntegrityStatus
+    public var details: String
     
-    init(status: SurfaceIntegrityStatus = .intact, details: String = "") {
+    public init(status: SurfaceIntegrityStatus = .intact, details: String = "") {
         self.status = status
         self.details = details
     }
 }
 
-struct IntegrityResults {
-    var surfaceNormalStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
-    var boundingBoxAreaStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
-    var boundingBoxSurfaceNormalStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
+public struct IntegrityResults {
+    public var surfaceNormalStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
+    public var boundingBoxAreaStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
+    public var boundingBoxSurfaceNormalStatusDetails: IntegrityStatusDetails = IntegrityStatusDetails()
 }
 
-struct SurfaceIntegrityProcessor {
+public struct SurfaceIntegrityProcessor {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     
@@ -82,7 +82,7 @@ struct SurfaceIntegrityProcessor {
     
     let ciContext: CIContext
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
@@ -123,7 +123,7 @@ struct SurfaceIntegrityProcessor {
     /**
         Main function to get surface integrity results from mesh data. Calls individual integrity assessment functions and aggregates results.
      */
-    func getIntegrityResultsFromMesh(
+    public func getIntegrityResultsFromMesh(
         meshTriangles: [MeshTriangle],
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
@@ -156,7 +156,7 @@ struct SurfaceIntegrityProcessor {
         return integrityResults
     }
     
-    func getIntegrityResultsFromMeshCPU(
+    public func getIntegrityResultsFromMeshCPU(
         meshPolygons: [MeshPolygon],
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
@@ -192,7 +192,7 @@ struct SurfaceIntegrityProcessor {
     /**
         Main function to get surface integrity results from image data. Calls individual integrity assessment functions and aggregates results.
      */
-    func getIntegrityResultsFromImage(
+    public func getIntegrityResultsFromImage(
         worldPointsGrid: WorldPointsGrid,
         plane: Plane,
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
@@ -232,7 +232,7 @@ struct SurfaceIntegrityProcessor {
     /**
      CPU implementation for surface integrity assessment from image. Used for benchmarking and fallback when Metal processing is not available.
      */
-    func getIntegrityResultsFromImageCPU(
+    public func getIntegrityResultsFromImageCPU(
         worldPointsGrid: WorldPointsGrid,
         plane: Plane,
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
@@ -279,7 +279,7 @@ struct SurfaceIntegrityProcessor {
     /**
      Get angular deviation between normalized vectors v1 and v2 in degrees.
      */
-    func getAngularDeviation(_ nv1: simd_float3, _ nv2: simd_float3) -> Float {
+    public func getAngularDeviation(_ nv1: simd_float3, _ nv2: simd_float3) -> Float {
         let dotProduct = simd_dot(nv1, nv2)
         let angleInRadians = acos(dotProduct)
         let angleInDegrees = angleInRadians * (180.0 / .pi)

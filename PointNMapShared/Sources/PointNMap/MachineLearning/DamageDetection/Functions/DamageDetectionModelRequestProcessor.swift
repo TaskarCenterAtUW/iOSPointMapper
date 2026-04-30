@@ -8,12 +8,13 @@
 import CoreML
 import Vision
 import CoreImage
+import PointNMapShaderTypes
 
-enum DamageDetectionModelError: Error, LocalizedError {
+public enum DamageDetectionModelError: Error, LocalizedError {
     case modelLoadingError
     case detectionProcessingError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .modelLoadingError:
             return "Failed to load the damage detection model."
@@ -30,14 +31,14 @@ enum DamageDetectionModelError: Error, LocalizedError {
  - confidence: A VNConfidence value (between 0 and 1) indicating the confidence level of the detection.
  - label: A String representing the label or category of the detected damage.
  */
-struct DamageDetectionResult: Sendable, Hashable {
-    var boundingBox: CGRect
-    var confidence: VNConfidence
-    var label: String
+public struct DamageDetectionResult: Sendable, Hashable {
+    public var boundingBox: CGRect
+    public var confidence: VNConfidence
+    public var label: String
     
     /// The bounding box returned by the model is in normalized coordinates (0 to 1) with the origin at the bottom-left corner.
     /// To convert it to pixel coordinates, we need to adjust the y-coordinate and scale it according to the image size.
-    func getPixelCGRect(for imageSize: CGSize) -> CGRect {
+    public func getPixelCGRect(for imageSize: CGSize) -> CGRect {
         return CGRect(
             x: CGFloat(boundingBox.origin.x) * imageSize.width,
             y: CGFloat(1.0 - boundingBox.origin.y - boundingBox.size.height) * imageSize.height,
@@ -49,7 +50,7 @@ struct DamageDetectionResult: Sendable, Hashable {
     /**
         This function calculates the parameters needed to get the bounds of the detected damage in pixel coordinates, given the size of the image.
      */
-    func getBoundsParams(for imageSize: CGSize) -> BoundsParams {
+    public func getBoundsParams(for imageSize: CGSize) -> BoundsParams {
         let pixelRect: CGRect = self.getPixelCGRect(for: imageSize)
         let minX = max(Float(pixelRect.minX), 0)
         let maxX = min(Float(pixelRect.maxX), Float(imageSize.width) - 1)
@@ -66,11 +67,11 @@ struct DamageDetectionResult: Sendable, Hashable {
  - CGRect: (x, y, width, height) in normalized coordinates (0 to 1), where x and y represent the bottom-left corner of the bounding box relative to the image dimensions.
  - Confidence Score: A value between 0 and 1 indicating the confidence level of the detection
  */
-struct DamageDetectionModelRequestProcessor {
-    var visionModel: VNCoreMLModel
+public struct DamageDetectionModelRequestProcessor {
+    public var visionModel: VNCoreMLModel
     
-    init() throws {
-        guard let modelURL = SharedAppConstants.DamageDetectionConstants.damageDetectionModelURL else {
+    public init() throws {
+        guard let modelURL = PointNMapConstants.DamageDetectionConstants.damageDetectionModelURL else {
             throw DamageDetectionModelError.modelLoadingError
         }
         let configuration: MLModelConfiguration = MLModelConfiguration()
@@ -83,7 +84,7 @@ struct DamageDetectionModelRequestProcessor {
         request.imageCropAndScaleOption = .scaleFill
     }
     
-    func processDetectionRequest(
+    public func processDetectionRequest(
         with cIImage: CIImage, orientation: CGImagePropertyOrientation = .up
     ) throws -> [DamageDetectionResult] {
         let detectionRequest = VNCoreMLRequest(model: self.visionModel)

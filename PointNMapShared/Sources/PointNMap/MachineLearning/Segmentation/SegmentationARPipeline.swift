@@ -13,7 +13,7 @@ import OrderedCollections
 import simd
 import PointNMapShared
 
-enum SegmentationARPipelineError: Error, LocalizedError {
+public enum SegmentationARPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case segmentationResourcesNotConfigured
@@ -22,7 +22,7 @@ enum SegmentationARPipelineError: Error, LocalizedError {
     case invalidTransform
     case unexpectedError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .isProcessingTrue:
             return "The Segmentation Image Pipeline is already processing a request."
@@ -42,14 +42,14 @@ enum SegmentationARPipelineError: Error, LocalizedError {
     }
 }
 
-struct SegmentationARPipelineResults {
-    var segmentationImage: CIImage
-    var originalSegmentationImage: CIImage
-    var segmentationColorImage: CIImage
-    var segmentedClasses: [AccessibilityFeatureClass]
-    var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
+public struct SegmentationARPipelineResults {
+    public var segmentationImage: CIImage
+    public var originalSegmentationImage: CIImage
+    public var segmentationColorImage: CIImage
+    public var segmentedClasses: [AccessibilityFeatureClass]
+    public var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
     
-    init(segmentationImage: CIImage, segmentationColorImage: CIImage,
+    public init(segmentationImage: CIImage, segmentationColorImage: CIImage,
          segmentedClasses: [AccessibilityFeatureClass], detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
          originalSegmentationImage: CIImage
     ) {
@@ -66,7 +66,7 @@ struct SegmentationARPipelineResults {
  
     TODO: Rename this to `SegmentationImagePipeline` since AR is not a necessary component here.
  */
-final class SegmentationARPipeline: ObservableObject {
+public final class SegmentationARPipeline: ObservableObject {
     private var isProcessing = false
     private var currentTask: Task<SegmentationARPipelineResults, Error>?
     private var timeoutInSeconds: Double = 1.0
@@ -87,7 +87,7 @@ final class SegmentationARPipeline: ObservableObject {
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
     
-    func configure() throws {
+    public func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
             selectedClasses: self.selectedClasses)
         self.contourRequestProcessor = try ContourRequestProcessor(
@@ -98,12 +98,12 @@ final class SegmentationARPipeline: ObservableObject {
         self.depthFilter = try DepthFilter()
     }
     
-    func reset() {
+    public func reset() {
         self.isProcessing = false
         self.setSelectedClasses([])
     }
     
-    func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+    public func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
         self.selectedClasses = selectedClasses
         self.selectedClassLabels = selectedClasses.map { $0.labelValue }
         self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
@@ -116,7 +116,7 @@ final class SegmentationARPipeline: ObservableObject {
     /**
         Function to process the segmentation request with the given CIImage.
      */
-    func processRequest(
+    public func processRequest(
         with cIImage: CIImage, depthImage: CIImage? = nil,
         highPriority: Bool = false
     ) async throws -> SegmentationARPipelineResults {

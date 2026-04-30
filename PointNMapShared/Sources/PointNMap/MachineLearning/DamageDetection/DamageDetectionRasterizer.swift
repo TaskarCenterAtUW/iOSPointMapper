@@ -7,10 +7,9 @@
 
 import CoreImage
 import UIKit
-import PointNMapShared
 
-struct DamageDetectionRasterizer {
-    static func rasterizeDamageDetection(
+public struct DamageDetectionRasterizer {
+    public static func rasterizeDamageDetection(
         damageDetectionResults: [DamageDetectionResult],
         size: CGSize,
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .red, width: 8.0)

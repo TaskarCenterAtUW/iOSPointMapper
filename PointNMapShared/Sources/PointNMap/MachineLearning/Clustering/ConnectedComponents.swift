@@ -10,7 +10,7 @@
  
     TODO: Move the logic to Metal for performance improvements.
  */
-struct ConnectedComponents<Value: Equatable> {
+public struct ConnectedComponents<Value: Equatable> {
     private class Point: Equatable {
         typealias Label = Int
 
@@ -38,7 +38,7 @@ struct ConnectedComponents<Value: Equatable> {
         - adjacencyFunction: A function that checks if two values are adjacent (connected).
             If they are not, checks if their distance is within a threshold.
      */
-    init(
+    public init(
         minimumNumberOfPoints: Int,
         adjacencyFunction: @escaping (Value, Value, Float) throws -> Bool, adjacencyThreshold: Float = 0.0
     ) {

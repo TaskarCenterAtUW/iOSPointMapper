@@ -6,13 +6,14 @@
 //
 
 import SwiftUI
+import Combine
 import Vision
 import CoreML
 
-enum DamageDetectionPipelineError: Error, LocalizedError {
+public enum DamageDetectionPipelineError: Error, LocalizedError {
     case detectionResourcesNotConfigured
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .detectionResourcesNotConfigured:
             return "The Detection Image Pipeline resources are not configured"
@@ -25,14 +26,14 @@ enum DamageDetectionPipelineError: Error, LocalizedError {
  This class serves as the main interface for processing damage detection requests.
  In the future, it can include logic for asynchronous processing, request queuing, and more. 
  */
-final class DamageDetectionPipeline: ObservableObject {
+public final class DamageDetectionPipeline: ObservableObject {
     private var damageDetectionModelRequestProcessor: DamageDetectionModelRequestProcessor?
     
-    func configure() throws {
+    public func configure() throws {
         self.damageDetectionModelRequestProcessor = try DamageDetectionModelRequestProcessor()
     }
     
-    func processRequest(with cIImage: CIImage) throws -> [DamageDetectionResult] {
+    public func processRequest(with cIImage: CIImage) throws -> [DamageDetectionResult] {
         guard let damageDetectionModelRequestProcessor = self.damageDetectionModelRequestProcessor else {
             throw DamageDetectionPipelineError.detectionResourcesNotConfigured
         }

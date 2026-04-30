@@ -12,7 +12,7 @@ import OrderedCollections
 import simd
 import PointNMapShared
 
-enum SegmentationAnnotationPipelineError: Error, LocalizedError {
+public enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     case isProcessingTrue
     case homographyTransformFilterNil
     case imageHistoryEmpty
@@ -21,7 +21,7 @@ enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     case homographyRequestProcessorNil
     case invalidUnionImageResult
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .isProcessingTrue:
             return "The SegmentationAnnotationPipeline is already processing a request."
@@ -50,9 +50,9 @@ enum SegmentationAnnotationPipelineError: Error, LocalizedError {
  MARK: Also, instead of runnin the whole pipeline at once, this class needs to run individual steps of the pipeline separately, as they occur at different steps in the app flow.
  Hence, it gives full control to the caller to run the steps as needed.
  */
-final class SegmentationAnnotationPipeline: ObservableObject {
+public final class SegmentationAnnotationPipeline: ObservableObject {
     /// This will be useful only when we are using the pipeline in asynchronous mode.
-    var isProcessing = false
+    public var isProcessing = false
 //    private var currentTask: Task<SegmentationARPipelineResults, Error>?
 //    private var timeoutInSeconds: Double = 3.0
     
@@ -62,10 +62,10 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     private var selectedClassColors: [CIColor] = []
     
     // TODO: Check what would be the appropriate value for this
-    var contourEpsilon: Float = 0.01
+    public var contourEpsilon: Float = 0.01
     // TODO: Check what would be the appropriate value for this
     // For normalized points
-    var perimeterThreshold: Float = 0.2
+    public var perimeterThreshold: Float = 0.2
     
     private var contourRequestProcessor: ContourRequestProcessor?
     private var homographyRequestProcessor: HomographyRequestProcessor?
@@ -75,7 +75,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
     /// TODO: Replace with the global Metal context
     private let context = CIContext()
     
-    func configure() throws {
+    public func configure() throws {
         self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
             perimeterThreshold: self.perimeterThreshold,
@@ -86,12 +86,12 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         self.unionOfMasksProcessor = try UnionOfMasksProcessor()
     }
     
-    func reset() {
+    public func reset() {
         self.isProcessing = false
         self.setSelectedClasses([])
     }
     
-    func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+    public func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
         self.selectedClasses = selectedClasses
         self.selectedClassLabels = selectedClasses.map { $0.labelValue }
         self.selectedClassGrayscaleValues = selectedClasses.map { $0.grayscaleValue }
@@ -100,7 +100,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         self.contourRequestProcessor?.setSelectedClasses(self.selectedClasses)
     }
     
-    func processAlignImageDataRequest(
+    public func processAlignImageDataRequest(
         currentCaptureData: CaptureImageData, captureDataHistory: [CaptureImageData]
     ) throws -> [CIImage] {
         if self.isProcessing {
@@ -168,14 +168,14 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         return homographyTransform
     }
     
-    func setupUnionOfMasksRequest(alignedSegmentationLabelImages: [CIImage]) throws {
+    public func setupUnionOfMasksRequest(alignedSegmentationLabelImages: [CIImage]) throws {
         guard let unionOfMasksProcessor = self.unionOfMasksProcessor else {
             throw SegmentationAnnotationPipelineError.unionOfMasksProcessorNil
         }
         try unionOfMasksProcessor.setArrayTexture(images: alignedSegmentationLabelImages)
     }
     
-    func processUnionOfMasksRequest(
+    public func processUnionOfMasksRequest(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         orientation: CGImagePropertyOrientation = .up
     ) throws -> CIImage {
@@ -207,7 +207,7 @@ final class SegmentationAnnotationPipeline: ObservableObject {
         return unionImage
     }
     
-    func processContourRequest(
+    public func processContourRequest(
         segmentationLabelImage: CIImage, accessibilityFeatureClass: AccessibilityFeatureClass,
         orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {

@@ -68,17 +68,18 @@ public struct WorldPointsProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let worldPointskernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "computeWorldPoints"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let worldPointskernelFunction = library.makeFunction(name: "computeWorldPoints"),
               let worldPointsPipeline = try? device.makeComputePipelineState(function: worldPointskernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.worldPointsPipeline = worldPointsPipeline
-        guard let projectionKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "projectPointsToPlane"),
+        guard let projectionKernelFunction = library.makeFunction(name: "projectPointsToPlane"),
               let projectionPipeline = try? device.makeComputePipelineState(function: projectionKernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
         self.projectionPipeline = projectionPipeline
-        guard let gridKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "restructureWorldPointsToGrid"),
+        guard let gridKernelFunction = library.makeFunction(name: "restructureWorldPointsToGrid"),
               let gridPipeline = try? device.makeComputePipelineState(function: gridKernelFunction) else {
             throw WorldPointsProcessorError.metalInitializationFailed
         }
