@@ -8,7 +8,7 @@ import SwiftUI
 import CoreLocation
 import PointNMapShared
 
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func getLocationFromImageByCentroid(
         depthMapProcessor: DepthMapProcessor,
         localizationProcessor: LocalizationProcessor,

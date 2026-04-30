@@ -29,10 +29,6 @@
 		A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttributeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttributeExtension.swift */; };
 		A30C67E62EE27331006E4321 /* EditableAccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30C67E52EE2732D006E4321 /* EditableAccessibilityFeature.swift */; };
 		A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30C67E72EE27336006E4321 /* MappedAccessibilityFeature.swift */; };
-		A30F59CE2F7EFAC000EE7804 /* WidthExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59CD2F7EFABC00EE7804 /* WidthExtension.swift */; };
-		A30F59D02F7EFAC700EE7804 /* RunninSlopeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59CF2F7EFAC400EE7804 /* RunninSlopeExtension.swift */; };
-		A30F59D22F7EFACD00EE7804 /* CrossSlopeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59D12F7EFACA00EE7804 /* CrossSlopeExtension.swift */; };
-		A30F59D42F7EFAD400EE7804 /* SurfaceIntegrityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59D32F7EFAD100EE7804 /* SurfaceIntegrityExtension.swift */; };
 		A312FD862FA3391C0044808E /* PointNMapShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FD7B2FA3391B0044808E /* PointNMapShared.framework */; };
 		A312FD902FA3391C0044808E /* PointNMapShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FD7B2FA3391B0044808E /* PointNMapShared.framework */; };
 		A312FD912FA3391C0044808E /* PointNMapShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A312FD7B2FA3391B0044808E /* PointNMapShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -53,8 +49,6 @@
 		A32D66532F7C3F2F00DC4173 /* OSWMultiPolygon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */; };
 		A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */; };
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
-		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
-		A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */; };
 		A34509D82FA1A6FA003157B0 /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509D72FA1A6FA003157B0 /* SafeDeque.swift */; };
 		A34509E32FA31DCC003157B0 /* LocationHelpersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509E02FA31DCC003157B0 /* LocationHelpersExtension.swift */; };
 		A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */; };
@@ -70,7 +64,6 @@
 		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
 		A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */; };
 		A35E05162EDEA050003C26CF /* APIChangesetUploadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05152EDEA04B003C26CF /* APIChangesetUploadController.swift */; };
-		A35E05182EDEA476003C26CF /* AttributeEstimationPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */; };
 		A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05192EDFB015003C26CF /* OSMPayload.swift */; };
 		A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051B2EDFB093003C26CF /* OSMNode.swift */; };
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
@@ -113,10 +106,6 @@
 		A3EE6E4E2F5A258B00F515E6 /* TestCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */; };
 		A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */; };
 		A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */; };
-		A3EE6E542F67A41100F515E6 /* UtilityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */; };
-		A3EE6EFC2F69285600F515E6 /* LocationFromImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */; };
-		A3EE6EFE2F69287F00F515E6 /* LocationFromMeshExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */; };
-		A3EE6F002F6A29F500F515E6 /* LocationDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6EFF2F6A29F300F515E6 /* LocationDetails.swift */; };
 		A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */; };
 		A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F38C4B2D38A2C500900547 /* DepthModel.swift */; };
 		A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = A3FCC2FA2DA4E1880037AB43 /* OrderedCollections */; };
@@ -237,10 +226,6 @@
 		A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttributeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureAttributeExtension.swift; sourceTree = "<group>"; };
 		A30C67E52EE2732D006E4321 /* EditableAccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditableAccessibilityFeature.swift; sourceTree = "<group>"; };
 		A30C67E72EE27336006E4321 /* MappedAccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedAccessibilityFeature.swift; sourceTree = "<group>"; };
-		A30F59CD2F7EFABC00EE7804 /* WidthExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidthExtension.swift; sourceTree = "<group>"; };
-		A30F59CF2F7EFAC400EE7804 /* RunninSlopeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunninSlopeExtension.swift; sourceTree = "<group>"; };
-		A30F59D12F7EFACA00EE7804 /* CrossSlopeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrossSlopeExtension.swift; sourceTree = "<group>"; };
-		A30F59D32F7EFAD100EE7804 /* SurfaceIntegrityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceIntegrityExtension.swift; sourceTree = "<group>"; };
 		A312FD7B2FA3391B0044808E /* PointNMapShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = PointNMapShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A312FD852FA3391C0044808E /* PointNMapSharedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PointNMapSharedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A312FDCC2FA3DBD10044808E /* DepthMapProcessorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapProcessorExtension.swift; sourceTree = "<group>"; };
@@ -258,8 +243,6 @@
 		A32D66522F7C3F2F00DC4173 /* OSWMultiPolygon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWMultiPolygon.swift; sourceTree = "<group>"; };
 		A33EB5AA2F76080B008ABFB7 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
 		A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEnvironment.swift; sourceTree = "<group>"; };
-		A3431E012F26FA2700B96610 /* LocationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationExtension.swift; sourceTree = "<group>"; };
-		A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherAttributeExtensionLegacy.swift; sourceTree = "<group>"; };
 		A34509D72FA1A6FA003157B0 /* SafeDeque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafeDeque.swift; sourceTree = "<group>"; };
 		A34509E02FA31DCC003157B0 /* LocationHelpersExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationHelpersExtension.swift; sourceTree = "<group>"; };
 		A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2.mlpackage; sourceTree = "<group>"; };
@@ -275,7 +258,6 @@
 		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
 		A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvalidContentView.swift; sourceTree = "<group>"; };
 		A35E05152EDEA04B003C26CF /* APIChangesetUploadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIChangesetUploadController.swift; sourceTree = "<group>"; };
-		A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeEstimationPipeline.swift; sourceTree = "<group>"; };
 		A35E05192EDFB015003C26CF /* OSMPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMPayload.swift; sourceTree = "<group>"; };
 		A35E051B2EDFB093003C26CF /* OSMNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMNode.swift; sourceTree = "<group>"; };
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
@@ -321,10 +303,6 @@
 		A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraManager.swift; sourceTree = "<group>"; };
 		A3EE6E4F2F5A3EF100F515E6 /* TestCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCameraViewController.swift; sourceTree = "<group>"; };
 		A3EE6E512F5F9F1100F515E6 /* APITransmissionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APITransmissionHelpers.swift; sourceTree = "<group>"; };
-		A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityExtension.swift; sourceTree = "<group>"; };
-		A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromImageExtension.swift; sourceTree = "<group>"; };
-		A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationFromMeshExtension.swift; sourceTree = "<group>"; };
-		A3EE6EFF2F6A29F300F515E6 /* LocationDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationDetails.swift; sourceTree = "<group>"; };
 		A3F27DB22D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2SmallF16.mlpackage; sourceTree = "<group>"; };
 		A3F38C4B2D38A2C500900547 /* DepthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthModel.swift; sourceTree = "<group>"; };
 		A3FE16602E18BA5600DAE5BE /* RGBCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBCoder.swift; sourceTree = "<group>"; };
@@ -526,7 +504,6 @@
 			children = (
 				A33EB5AD2F761BFC008ABFB7 /* ModelZoo */,
 				A3F38C4A2D38A2BF00900547 /* DepthEstimation */,
-				DAA7F8BE2CA683DC003666D8 /* Segmentation */,
 			);
 			path = MachineLearning;
 			sourceTree = "<group>";
@@ -636,28 +613,6 @@
 			path = Definitions;
 			sourceTree = "<group>";
 		};
-		A30F59CA2F7EFA8A00EE7804 /* OtherAttributes */ = {
-			isa = PBXGroup;
-			children = (
-				A30F59CD2F7EFABC00EE7804 /* WidthExtension.swift */,
-				A30F59CF2F7EFAC400EE7804 /* RunninSlopeExtension.swift */,
-				A30F59D12F7EFACA00EE7804 /* CrossSlopeExtension.swift */,
-				A30F59D32F7EFAD100EE7804 /* SurfaceIntegrityExtension.swift */,
-			);
-			path = OtherAttributes;
-			sourceTree = "<group>";
-		};
-		A30F59CB2F7EFA9500EE7804 /* Location */ = {
-			isa = PBXGroup;
-			children = (
-				A3431E012F26FA2700B96610 /* LocationExtension.swift */,
-				A3EE6EFB2F69285100F515E6 /* LocationFromImageExtension.swift */,
-				A3EE6EFD2F69287A00F515E6 /* LocationFromMeshExtension.swift */,
-				A3EE6EFF2F6A29F300F515E6 /* LocationDetails.swift */,
-			);
-			path = Location;
-			sourceTree = "<group>";
-		};
 		A312FE1F2FA3EC710044808E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -673,14 +628,6 @@
 				DAA7F8B62CA3E4E7003666D8 /* SpinnerView.swift */,
 			);
 			path = UI;
-			sourceTree = "<group>";
-		};
-		A3247B2C2F31325600F915A9 /* Archive */ = {
-			isa = PBXGroup;
-			children = (
-				A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */,
-			);
-			path = Archive;
 			sourceTree = "<group>";
 		};
 		A329433D2EE7BF0200C4C1BC /* Others */ = {
@@ -724,10 +671,6 @@
 		A3431E002F26FA0C00B96610 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				A3247B2C2F31325600F915A9 /* Archive */,
-				A30F59CB2F7EFA9500EE7804 /* Location */,
-				A30F59CA2F7EFA8A00EE7804 /* OtherAttributes */,
-				A3EE6E532F67A40B00F515E6 /* UtilityExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -765,7 +708,6 @@
 			isa = PBXGroup;
 			children = (
 				A3431E002F26FA0C00B96610 /* Extensions */,
-				A35E05172EDEA470003C26CF /* AttributeEstimationPipeline.swift */,
 			);
 			path = AttributeEstimation;
 			sourceTree = "<group>";
@@ -1072,13 +1014,6 @@
 			path = ViewModel;
 			sourceTree = "<group>";
 		};
-		DAA7F8BE2CA683DC003666D8 /* Segmentation */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Segmentation;
-			sourceTree = "<group>";
-		};
 		DAA7F8C62CA76514003666D8 /* Image */ = {
 			isa = PBXGroup;
 			children = (
@@ -1370,13 +1305,10 @@
 				A308015F2EC09BB700B1BA3A /* MapillaryCustom11ClassConfig.swift in Sources */,
 				A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */,
 				A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */,
-				A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */,
-				A30F59D02F7EFAC700EE7804 /* RunninSlopeExtension.swift in Sources */,
 				A30801602EC09BB700B1BA3A /* VOCClassConfig.swift in Sources */,
 				A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */,
 				A30801612EC09BB700B1BA3A /* CocoCustom53ClassConfig.swift in Sources */,
 				A374FAB72EE0173600055268 /* OSMChangesetUploadResponseElement.swift in Sources */,
-				A30F59D42F7EFAD400EE7804 /* SurfaceIntegrityExtension.swift in Sources */,
 				A3EE6E4A2F580D6200F515E6 /* TestCameraView.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
 				A38338BF2EDA889C00F1A402 /* CustomPicker.swift in Sources */,
@@ -1400,21 +1332,18 @@
 				A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */,
 				A30801532EC09B2600B1BA3A /* AccessibilityFeatureConfig.swift in Sources */,
 				A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */,
-				A35E05182EDEA476003C26CF /* AttributeEstimationPipeline.swift in Sources */,
 				CAA947792CDE700A000C6918 /* AuthService.swift in Sources */,
 				A34509E32FA31DCC003157B0 /* LocationHelpersExtension.swift in Sources */,
 				A30C67E62EE27331006E4321 /* EditableAccessibilityFeature.swift in Sources */,
 				A37E72182ED95D0600CFE4EF /* CapturedMeshDefinitions.swift in Sources */,
 				A37E720E2ED5783600CFE4EF /* SharedAppContext.swift in Sources */,
 				A3F38C4C2D38A2C700900547 /* DepthModel.swift in Sources */,
-				A3EE6EFC2F69285600F515E6 /* LocationFromImageExtension.swift in Sources */,
 				55659C102BB7863F0094DF01 /* SetupView.swift in Sources */,
 				A3F27DB42D34E07C0071D6F3 /* DepthAnythingV2SmallF16.mlpackage in Sources */,
 				A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */,
 				A30801682EC0AE7700B1BA3A /* MeshInstancePolicy.swift in Sources */,
 				DAA7F8B72CA3E4E7003666D8 /* SpinnerView.swift in Sources */,
 				A3EE6E4C2F580E2B00F515E6 /* DatasetLister.swift in Sources */,
-				A3EE6EFE2F69287F00F515E6 /* LocationFromMeshExtension.swift in Sources */,
 				A3FE16652E18C54000DAE5BE /* CameraTransformCoder.swift in Sources */,
 				A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */,
 				CAA9477B2CDE70D9000C6918 /* KeychainService.swift in Sources */,
@@ -1423,7 +1352,6 @@
 				A3A413A02EC86D410039298C /* AnnotationImageManager.swift in Sources */,
 				CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */,
 				3222F91A2B622DFD0019A079 /* IOSAccessAssessmentApp.swift in Sources */,
-				A3EE6F002F6A29F500F515E6 /* LocationDetails.swift in Sources */,
 				A32943572EE81BF700C4C1BC /* OSWLineString.swift in Sources */,
 				A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */,
 				A32943532EE814A700C4C1BC /* OSWElement.swift in Sources */,
@@ -1434,7 +1362,6 @@
 				A39C9F3B2DD9B03300455E45 /* OSMElement.swift in Sources */,
 				A39C9F3D2DD9BE2800455E45 /* APIConstants.swift in Sources */,
 				A38338C22EDA9E6F00F1A402 /* AnnotationFeatureDetailView.swift in Sources */,
-				A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */,
 				A3A413A62ECD862B0039298C /* AccessibilityFeature.swift in Sources */,
 				A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */,
 				A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */,
@@ -1445,14 +1372,12 @@
 				A37E3E9B2EFB8F7500B07B77 /* HeadingCoder.swift in Sources */,
 				A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */,
 				A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */,
-				A30F59CE2F7EFAC000EE7804 /* WidthExtension.swift in Sources */,
 				DAA7F8C22CA684AF003666D8 /* ProgressBar.swift in Sources */,
 				A37E3E952EFB66EB00B07B77 /* CameraIntrinsicsCoder.swift in Sources */,
 				A35547152EC198A600F43AFD /* ContourRequestProcessor.swift in Sources */,
 				A30801642EC0A8AA00B1BA3A /* DetectedFeature.swift in Sources */,
 				A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */,
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
-				A3EE6E542F67A41100F515E6 /* UtilityExtension.swift in Sources */,
 				A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */,
 				A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
@@ -1468,7 +1393,6 @@
 				A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */,
 				A35547CA2EC2045F00F43AFD /* CapturedMeshSnapshot.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* SharedAppConstants.swift in Sources */,
-				A30F59D22F7EFACD00EE7804 /* CrossSlopeExtension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

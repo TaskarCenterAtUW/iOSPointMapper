@@ -6,7 +6,6 @@
 //
 import SwiftUI
 import CoreLocation
-import PointNMapShared
 
 /**
  Extension for attribute calculation with rudimentary methods.
@@ -14,7 +13,7 @@ import PointNMapShared
  
  NOTE: Legacy Implementation. Needs to be improved.
  */
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func calculateWidthLegacy(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {

@@ -10,7 +10,7 @@ import CoreLocation
 import MapKit
 import PointNMapShared
 
-enum AttributeEstimationPipelineError: Error, LocalizedError {
+public enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
     case missingCaptureData
     case missingDepthImage
@@ -18,7 +18,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     case invalidAttributeData
     case attributeAssignmentError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .configurationError(let missingDetail):
             return NSLocalizedString("Error occurred during pipeline configuration. Details: \(missingDetail)", comment: "")
@@ -36,54 +36,54 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
     }
 }
 
-struct LocationRequestResult: Sendable {
-    let locationDetails: LocationDetails
-    let locationDelta: SIMD2<Float>
-    let lidarDepth: Float
+public struct LocationRequestResult: Sendable {
+    public let locationDetails: LocationDetails
+    public let locationDelta: SIMD2<Float>
+    public let lidarDepth: Float
 }
 
-enum AttributeEstimationPipelineConstants {
-    enum Texts {
-        static let depthMapProcessorKey = "Depth Map Processor"
-        static let localizationProcessorKey = "Localization Processor"
-        static let planeProcessorKey = "Plane Processor"
-        static let planeAttributeProcessorKey = "Plane Attribute Processor"
-        static let worldPointsProcessorKey = "World Points Processor"
+public enum AttributeEstimationPipelineConstants {
+    public enum Texts {
+        public static let depthMapProcessorKey = "Depth Map Processor"
+        public static let localizationProcessorKey = "Localization Processor"
+        public static let planeProcessorKey = "Plane Processor"
+        public static let planeAttributeProcessorKey = "Plane Attribute Processor"
+        public static let worldPointsProcessorKey = "World Points Processor"
     }
 }
 
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
  */
-class AttributeEstimationPipeline: ObservableObject {
-    struct PrerequisiteCache: Sendable {
-        var worldPoints: [WorldPoint]? = nil
-        var worldPointsGrid: WorldPointsGrid? = nil
-        var pointAlignedPlane: Plane? = nil
-        var pointProjectedPlane: ProjectedPlane? = nil
-        var meshContents: MeshContents? = nil
-        var meshPolygons: [MeshPolygon]? = nil
-        var meshTriangles: [MeshTriangle]? = nil
-        var meshAlignedPlane: Plane? = nil
-        var meshProjectedPlane: ProjectedPlane? = nil
+public class AttributeEstimationPipeline: ObservableObject {
+    public struct PrerequisiteCache: Sendable {
+        public var worldPoints: [WorldPoint]? = nil
+        public var worldPointsGrid: WorldPointsGrid? = nil
+        public var pointAlignedPlane: Plane? = nil
+        public var pointProjectedPlane: ProjectedPlane? = nil
+        public var meshContents: MeshContents? = nil
+        public var meshPolygons: [MeshPolygon]? = nil
+        public var meshTriangles: [MeshTriangle]? = nil
+        public var meshAlignedPlane: Plane? = nil
+        public var meshProjectedPlane: ProjectedPlane? = nil
     }
     
-    var captureImageData: (any CaptureImageDataProtocol)?
-    var captureMeshData: (any CaptureMeshDataProtocol)?
+    public var captureImageData: (any CaptureImageDataProtocol)?
+    public var captureMeshData: (any CaptureMeshDataProtocol)?
     
-    var depthMapProcessor: DepthMapProcessor?
-    var localizationProcessor: LocalizationProcessor?
-    var worldPointsProcessor: WorldPointsProcessor?
-    var planeProcessor: PlaneProcessor?
-    var planeAttributeProcessor: PlaneAttributeProcessor?
-    var damageDetectionPipeline: DamageDetectionPipeline?
-    var surfaceNormalsProcessor: SurfaceNormalsProcessor?
-    var surfaceIntegrityProcessor: SurfaceIntegrityProcessor?
+    public var depthMapProcessor: DepthMapProcessor?
+    public var localizationProcessor: LocalizationProcessor?
+    public var worldPointsProcessor: WorldPointsProcessor?
+    public var planeProcessor: PlaneProcessor?
+    public var planeAttributeProcessor: PlaneAttributeProcessor?
+    public var damageDetectionPipeline: DamageDetectionPipeline?
+    public var surfaceNormalsProcessor: SurfaceNormalsProcessor?
+    public var surfaceIntegrityProcessor: SurfaceIntegrityProcessor?
     
-    var prerequisiteCache = PrerequisiteCache()
+    public var prerequisiteCache = PrerequisiteCache()
     
     /// TODO: MESH PROCESSING: Add mesh data processing components when needed.
-    func configure(
+    public func configure(
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol)?
     ) throws {
@@ -106,7 +106,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.damageDetectionPipeline = damageDetectionPipeline
     }
     
-    func setPrerequisites(
+    public func setPrerequisites(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
@@ -159,7 +159,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.prerequisiteCache.meshProjectedPlane = meshProjectedPlane
     }
     
-    func clearPrerequisites() {
+    public func clearPrerequisites() {
         self.prerequisiteCache.worldPoints = nil
         self.prerequisiteCache.pointAlignedPlane = nil
         self.prerequisiteCache.meshContents = nil
@@ -168,7 +168,7 @@ class AttributeEstimationPipeline: ObservableObject {
         self.prerequisiteCache.meshAlignedPlane = nil
     }
     
-    func processLocationRequest(
+    public func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
@@ -210,7 +210,7 @@ class AttributeEstimationPipeline: ObservableObject {
            
     }
     
-    func processIsExistingRequest(
+    public func processIsExistingRequest(
         deviceLocation: CLLocationCoordinate2D,
         mappingData: CurrentMappingData,
         accessibilityFeature: EditableAccessibilityFeature
@@ -235,7 +235,7 @@ class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature.setOSWElement(oswElement: matchedElement)
     }
     
-    func processAttributeRequest(
+    public func processAttributeRequest(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
         var attributeAssignmentFlagError = false

@@ -8,26 +8,26 @@
 import Foundation
 import CoreLocation
 
-struct LocationElement: Codable, Sendable {
-    var coordinates: [CLLocationCoordinate2D]
+public struct LocationElement: Codable, Sendable {
+    public var coordinates: [CLLocationCoordinate2D]
     /// TODO: We can add an optional `members` property to LocationElement that can hold child elements, and update the encoding/decoding logic to handle this new property appropriately. This way, we can represent the hierarchical nature of OSM data while still maintaining a clear structure for each element type.
 //    var members: [LocationElement]?
-    var isWay: Bool
-    var isClosed: Bool
+    public var isWay: Bool
+    public var isClosed: Bool
     
-    init(coordinates: [CLLocationCoordinate2D], isWay: Bool, isClosed: Bool) {
+    public init(coordinates: [CLLocationCoordinate2D], isWay: Bool, isClosed: Bool) {
         self.coordinates = coordinates
         self.isWay = isWay
         self.isClosed = isClosed
     }
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case coordinates
         case isWay
         case isClosed
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let encodedCoordinates = coordinates.map { coordinate in
             [coordinate.latitude, coordinate.longitude]
@@ -35,7 +35,7 @@ struct LocationElement: Codable, Sendable {
         try container.encode(encodedCoordinates, forKey: .coordinates)
     }
     
-    init(from decoder: any Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let decodedCoordinates = try container.decode([[Double]].self, forKey: .coordinates)
         self.coordinates = try decodedCoordinates.map { coordinateArray in
@@ -65,13 +65,13 @@ struct LocationElement: Codable, Sendable {
  However, this will need modification to caller code that constructs/uses/modifies LocationDetails, because they will need to account for the possibility of nested members when working with OSM data.
  */
 public struct LocationDetails: Codable, Sendable {
-    var locations: [LocationElement]
+    public var locations: [LocationElement]
     
-    init(locations: [LocationElement]) {
+    public init(locations: [LocationElement]) {
         self.locations = locations
     }
     
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case locations
     }
     

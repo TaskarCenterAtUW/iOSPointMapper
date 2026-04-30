@@ -8,7 +8,7 @@ import SwiftUI
 import CoreLocation
 import PointNMapShared
 
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func calculateLocation(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
@@ -45,7 +45,7 @@ extension AttributeEstimationPipeline {
 /**
  Extension for additional location processing methods.
  */
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func calculateLocationFromImageForPoint(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature
@@ -143,7 +143,7 @@ extension AttributeEstimationPipeline {
     }
 }
 
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func calculateLocationFromMeshForLineString(
         deviceLocation: CLLocationCoordinate2D,
         accessibilityFeature: EditableAccessibilityFeature

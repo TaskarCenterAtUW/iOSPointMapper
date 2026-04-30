@@ -6,11 +6,12 @@
 //
 import SwiftUI
 import CoreLocation
+import PointNMapShaderTypes
 
 /**
  Extension for utilities related to world point extraction and plane calculation.
  */
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     /**
      Get world points corresponding to the feature based on the segmentation label image and depth map, using the world points processor.
      */
@@ -110,7 +111,7 @@ extension AttributeEstimationPipeline {
 /**
  Extension for utilities related to mesh polygon extraction and plane calculation.
  */
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func getMeshContents(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> MeshContents {

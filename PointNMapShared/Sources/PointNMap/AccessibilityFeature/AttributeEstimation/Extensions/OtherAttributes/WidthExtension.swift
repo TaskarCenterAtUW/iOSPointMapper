@@ -7,9 +7,8 @@
 
 import SwiftUI
 import CoreLocation
-import PointNMapShared
 
-extension AttributeEstimationPipeline {
+public extension AttributeEstimationPipeline {
     func calculateWidth(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> AccessibilityFeatureAttribute.Value {
