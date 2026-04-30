@@ -9,8 +9,9 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
+import PointNMapShaderTypes
 
-enum WorldPointsProcessorError: Error, LocalizedError {
+public enum WorldPointsProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
@@ -20,7 +21,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
     case unableToProcessBufferData
     case noWorldPointsToProcess
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -45,7 +46,7 @@ enum WorldPointsProcessorError: Error, LocalizedError {
 /**
  Extacting 3D world points.
  */
-struct WorldPointsProcessor {
+public struct WorldPointsProcessor {
     let device: MTLDevice
     let commandQueue: MTLCommandQueue
     
@@ -56,7 +57,7 @@ struct WorldPointsProcessor {
     
     let ciContext: CIContext
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw WorldPointsProcessorError.metalInitializationFailed
@@ -87,12 +88,14 @@ struct WorldPointsProcessor {
     /**
         Extract world points from segmentation and depth images (GPU version).
      */
-    func getWorldPoints(
+    public func getWorldPoints(
         segmentationLabelImage: CIImage,
         depthImage: CIImage,
         targetValue: UInt8,
         cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3
+        cameraIntrinsics: simd_float3x3,
+        depthMinThreshold: Float = PointNMapConstants.DepthConstants.depthMinThreshold,
+        depthMaxThreshold: Float = PointNMapConstants.DepthConstants.depthMaxThreshold
     ) throws -> [WorldPoint] {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw WorldPointsProcessorError.metalPipelineCreationError
@@ -117,8 +120,8 @@ struct WorldPointsProcessor {
         var targetValueVar = targetValue
         var params = WorldPointsParams(
             imageSize: imageSize,
-            minDepthThreshold: Constants.DepthConstants.depthMinThreshold,
-            maxDepthThreshold: Constants.DepthConstants.depthMaxThreshold,
+            minDepthThreshold: depthMinThreshold,
+            maxDepthThreshold: depthMaxThreshold,
             cameraTransform: cameraTransform,
             invIntrinsics: invIntrinsics
         )
@@ -191,15 +194,15 @@ struct WorldPointsProcessor {
     /**
         Extract world points from segmentation and depth images (CPU version).
      */
-    func getWorldPointsCPU(
+    public func getWorldPointsCPU(
         segmentationLabelImage: CIImage,
         depthImage: CIImage,
         targetValue: UInt8,
         cameraTransform: simd_float4x4,
-        cameraIntrinsics: simd_float3x3
+        cameraIntrinsics: simd_float3x3,
+        minDepthThreshold: Float = PointNMapConstants.DepthConstants.depthMinThreshold,
+        maxDepthThreshold: Float = PointNMapConstants.DepthConstants.depthMaxThreshold
     ) throws -> [WorldPoint] {
-        let minDepthThreshold = Constants.DepthConstants.depthMinThreshold
-        let maxDepthThreshold = Constants.DepthConstants.depthMaxThreshold
         let invIntrinsics = simd_inverse(cameraIntrinsics)
         
         /// Get CVPixelBuffer from segmentation image
@@ -288,7 +291,7 @@ struct WorldPointsProcessor {
 /**
  Extension for debugging world points statistics.
  */
-extension WorldPointsProcessor {
+public extension WorldPointsProcessor {
     private func debugWorldPoints(_ worldPoints: [WorldPoint]) {
         debugAxis(worldPoints, axisIndex: 0, axisLabel: "X")
         debugAxis(worldPoints, axisIndex: 1, axisLabel: "Y")

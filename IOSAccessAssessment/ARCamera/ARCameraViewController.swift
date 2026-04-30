@@ -359,7 +359,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     ) {
         var totalVertexCount = 0
         for accessibilityFeatureClass in accessibilityFeatureClasses {
-            guard Constants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
+            guard SharedAppConstants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
                 print("Invalid segmentation class: \(accessibilityFeatureClass)")
                 continue
             }

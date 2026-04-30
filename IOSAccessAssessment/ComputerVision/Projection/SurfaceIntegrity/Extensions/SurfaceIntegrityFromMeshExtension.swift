@@ -16,8 +16,8 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
-        deviantPointProportionThreshold: Float = Constants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        deviantPointProportionThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
     ) throws -> IntegrityStatusDetails {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
@@ -91,7 +91,7 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        boundingBoxAreaThreshold: Float = Constants.SurfaceIntegrityConstants.meshBoundingBoxAreaThreshold
+        boundingBoxAreaThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshBoundingBoxAreaThreshold
     ) throws -> IntegrityStatusDetails {
         let totalBoundingBoxes = damageDetectionResults.count
         var deviantBoundingBoxes = 0
@@ -121,8 +121,8 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
-        boundingBoxAngularStdThreshold: Float = Constants.SurfaceIntegrityConstants.meshBoundingBoxAngularStdThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        boundingBoxAngularStdThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshBoundingBoxAngularStdThreshold
     ) throws -> IntegrityStatusDetails {
         let totalBoundingBoxes = damageDetectionResults.count
         var deviantBoundingBoxes = 0
@@ -324,8 +324,8 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
-        deviantPolygonProportion: Float = Constants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        deviantPolygonProportion: Float = SharedAppConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
     ) throws -> IntegrityStatusDetails {
         let planeNormal = plane.normalVector
         var totalDeviantPolygons = 0
@@ -351,7 +351,7 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        boundingBoxAreaThreshold: Float = Constants.SurfaceIntegrityConstants.meshBoundingBoxAreaThreshold
+        boundingBoxAreaThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshBoundingBoxAreaThreshold
     ) throws -> IntegrityStatusDetails {
         let viewMatrix = captureData.cameraTransform.inverse
         let totalBoundingBoxes = damageDetectionResults.count
@@ -404,8 +404,8 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
-        boundingBoxAngularStdThreshold: Float = Constants.SurfaceIntegrityConstants.meshBoundingBoxAngularStdThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        boundingBoxAngularStdThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.meshBoundingBoxAngularStdThreshold
     ) throws -> IntegrityStatusDetails {
         let viewMatrix = captureData.cameraTransform.inverse
         let planeNormal = plane.normalVector

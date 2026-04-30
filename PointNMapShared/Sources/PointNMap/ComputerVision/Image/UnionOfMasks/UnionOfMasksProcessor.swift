@@ -8,7 +8,6 @@ import UIKit
 import Metal
 import CoreImage
 import MetalKit
-import PointNMapShared
 
 public enum UnionOfMasksProcessorError: Error, LocalizedError {
     case metalInitializationFailed
@@ -69,7 +68,8 @@ public class UnionOfMasksProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "unionOfMasksKernel"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "unionOfMasksKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw UnionOfMasksProcessorError.metalInitializationFailed
         }

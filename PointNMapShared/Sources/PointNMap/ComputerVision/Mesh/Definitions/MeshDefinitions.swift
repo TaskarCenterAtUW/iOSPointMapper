@@ -7,17 +7,18 @@
 
 import Foundation
 import simd
+import PointNMapShaderTypes
 
-struct MeshContents: Sendable {
-    var positions: [packed_float3]
-    var indices: [UInt32]
-    var classifications: [UInt8]? = nil
-    var colorR8: Int
-    var colorG8: Int
-    var colorB8: Int
+public struct MeshContents: Sendable {
+    public var positions: [packed_float3]
+    public var indices: [UInt32]
+    public var classifications: [UInt8]? = nil
+    public var colorR8: Int
+    public var colorG8: Int
+    public var colorB8: Int
     
     /// - Warning: Ideally, this property should be avoided for performance reasons.
-    var polygons: [MeshPolygon] {
+    public var polygons: [MeshPolygon] {
         var result: [MeshPolygon] = []
         for i in stride(from: 0, to: indices.count, by: 3) {
             let i0 = Int(indices[i])
@@ -41,7 +42,7 @@ struct MeshContents: Sendable {
     }
     
     /// TODO: The efficiency of this can be improved through GPU acceleration if needed.
-    var triangles: [MeshTriangle] {
+    public var triangles: [MeshTriangle] {
         var result: [MeshTriangle] = []
         for i in stride(from: 0, to: indices.count, by: 3) {
             let i0 = Int(indices[i])
@@ -57,31 +58,31 @@ struct MeshContents: Sendable {
 }
 
 /// - Warning: Ideally, this struct should be avoided for performance reasons. It is recommended to use the `MeshContents` properties directly for efficient processing.
-struct MeshPolygon: Sendable {
-    let v0: simd_float3
-    let v1: simd_float3
-    let v2: simd_float3
+public struct MeshPolygon: Sendable {
+    public let v0: simd_float3
+    public let v1: simd_float3
+    public let v2: simd_float3
     
-    let index0: Int
-    let index1: Int
-    let index2: Int
+    public let index0: Int
+    public let index1: Int
+    public let index2: Int
     
-    var centroid: simd_float3 {
+    public var centroid: simd_float3 {
         return (v0 + v1 + v2) / 3.0
     }
     
-    var vertices: [simd_float3] {
+    public var vertices: [simd_float3] {
         return [v0, v1, v2]
     }
     
-    var area: Float {
+    public var area: Float {
         let edge1 = v1 - v0
         let edge2 = v2 - v0
         let crossProduct = simd_cross(edge1, edge2)
         return simd_length(crossProduct) / 2.0
     }
     
-    var normal: simd_float3 {
+    public var normal: simd_float3 {
         let edge1 = v1 - v0
         let edge2 = v2 - v0
         return simd_normalize(simd_cross(edge1, edge2))
@@ -91,7 +92,7 @@ struct MeshPolygon: Sendable {
 /**
     Enum representing the dimensions of a mesh.
  */
-enum MeshDimension: CaseIterable, Codable, Sendable {
+public enum MeshDimension: CaseIterable, Codable, Sendable {
     /// The X dimension. Horizontal axis. Matches the latitude direction as measured by Location services.
     case x
     /// The Y dimension. Vertical axis.
@@ -102,7 +103,7 @@ enum MeshDimension: CaseIterable, Codable, Sendable {
     /**
         Provides the index corresponding to the dimension.
      */
-    var index: Int {
+    public var index: Int {
         switch self {
         case .x:
             return 0

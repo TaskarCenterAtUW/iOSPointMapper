@@ -12,7 +12,7 @@ import simd
 /**
  Struct that contains utility functions related to projection and coordinate transformations, such as projecting world points to screen space or calculating view directions. This can be used across the application wherever such transformations are needed, especially in the context of accessibility feature estimation and visualization.
  */
-struct ProjectionUtils {
+public struct ProjectionUtils {
     /**
         Projects a 2D pixel point with depth information to a 3D world point using the camera's transform and intrinsics.
      
@@ -25,7 +25,7 @@ struct ProjectionUtils {
         - NOTE:
         Because of the inefficiency of matrix inversion, it's recommended to precompute the inverse of the camera intrinsics matrix if projecting multiple points, and use the version of this function that accepts the inverse directly.
      */
-    static func projectPixelToWorld(
+    public static func projectPixelToWorld(
         pixelPoint: CGPoint,
         depth: Float,
         cameraTransform: simd_float4x4,
@@ -47,7 +47,7 @@ struct ProjectionUtils {
         - cameraTransform: The 4x4 transformation matrix representing the camera's position and orientation in world space.
         - invCameraIntrinsics: The precomputed inverse of the camera's intrinsic parameters matrix.
      */
-    static func projectPixelToWorld(
+    public static func projectPixelToWorld(
         pixelPoint: CGPoint,
         depth: Float,
         cameraTransform: simd_float4x4,
@@ -82,7 +82,7 @@ struct ProjectionUtils {
         - NOTE:
         Because of the inefficiency of matrix inversion, it's recommended to precompute the inverse of the camera transform if projecting multiple points, and use the version of this function that accepts the view matrix directly.
      */
-    static func unprojectWorldToPixel(
+    public static func unprojectWorldToPixel(
         worldPoint: simd_float3,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
@@ -103,7 +103,7 @@ struct ProjectionUtils {
             - cameraIntrinsics: The 3x3 matrix containing the camera's intrinsic parameters.
             - imageSize: The size of the image in pixels, used to check if the projected point is within the image bounds.
      */
-    static func unprojectWorldToPixel(
+    public static func unprojectWorldToPixel(
         worldPoint: simd_float3,
         viewMatrix: simd_float4x4,
         cameraIntrinsics: simd_float3x3,

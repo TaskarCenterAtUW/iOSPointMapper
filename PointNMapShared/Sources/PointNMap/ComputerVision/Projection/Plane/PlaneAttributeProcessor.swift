@@ -10,14 +10,15 @@ import RealityKit
 import MetalKit
 import Accelerate
 import simd
+import PointNMapShaderTypes
 
-enum PlaneAttributeProcessorError: Error, LocalizedError {
+public enum PlaneAttributeProcessorError: Error, LocalizedError {
     case metalInitializationFailed
     case metalPipelineCreationError
     case metalPipelineBlitEncoderError
     case endpointsComputationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -31,24 +32,24 @@ enum PlaneAttributeProcessorError: Error, LocalizedError {
     }
 }
 
-struct ProjectedPointBin: Sendable {
-    let binValueCount: Int
-    let binValues: [Float]
-    let sRange: (Float, Float)
+public struct ProjectedPointBin: Sendable {
+    public let binValueCount: Int
+    public let binValues: [Float]
+    public let sRange: (Float, Float)
 }
 
-struct ProjectedPointBins: Sendable {
-    let binCount: Int
-    let binSize: Float
-    let bins: [ProjectedPointBin]
+public struct ProjectedPointBins: Sendable {
+    public let binCount: Int
+    public let binSize: Float
+    public let bins: [ProjectedPointBin]
 }
 
-struct BinWidth: Sendable {
-    let width: Float
-    let count: Int
+public struct BinWidth: Sendable {
+    public let width: Float
+    public let count: Int
 }
 
-struct PlaneAttributeProcessor {
+public struct PlaneAttributeProcessor {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     
@@ -58,10 +59,10 @@ struct PlaneAttributeProcessor {
     
     private let ciContext: CIContext
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
-            throw WorldPointsProcessorError.metalInitializationFailed
+            throw PlaneAttributeProcessorError.metalInitializationFailed
         }
         self.device = device
         self.commandQueue = commandQueue
@@ -71,12 +72,12 @@ struct PlaneAttributeProcessor {
         
         guard let binPointKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binProjectedPoints"),
               let binPointPipeline = try? device.makeComputePipelineState(function: binPointKernelFunction) else {
-            throw WorldPointsProcessorError.metalInitializationFailed
+            throw PlaneAttributeProcessorError.metalInitializationFailed
         }
         self.binPointPipeline = binPointPipeline
         guard let binTriangleKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "binMeshTriangles"),
               let binTrianglePipeline = try? device.makeComputePipelineState(function: binTriangleKernelFunction) else {
-            throw WorldPointsProcessorError.metalInitializationFailed
+            throw PlaneAttributeProcessorError.metalInitializationFailed
         }
         self.binTrianglePipeline = binTrianglePipeline
     }
@@ -90,7 +91,7 @@ struct PlaneAttributeProcessor {
      
         - Returns: A ProjectedPointBinValues object containing the binned values.
      */
-    func binProjectedPoints(
+    public func binProjectedPoints(
         projectedPoints: [ProjectedPoint],
         binSize: Float = 0.25
     ) throws -> ProjectedPointBins {
@@ -211,7 +212,7 @@ struct PlaneAttributeProcessor {
      
         - Returns: An array of BinWidth representing the computed widths for each bin.
      */
-    func computeWidthByBin(
+    public func computeWidthByBin(
         projectedPointBins: ProjectedPointBins,
         minCount: Int = 100,
         trimLow: Float = 0.05, trimHigh: Float = 0.95
@@ -241,7 +242,7 @@ struct PlaneAttributeProcessor {
     /**
      Get the endpoints of the sidewalk along the 's' axis by analyzing the projected points.
      */
-    func getEndpointsFromBins(
+    public func getEndpointsFromBins(
         projectedPointBins: ProjectedPointBins,
         trimLow: Float = 0.05, trimHigh: Float = 0.95
     ) throws -> (ProjectedPoint, ProjectedPoint) {
@@ -267,7 +268,7 @@ struct PlaneAttributeProcessor {
     }
 }
 
-extension PlaneAttributeProcessor {
+public extension PlaneAttributeProcessor {
     /**
         Bin projected points for mesh triangles using a reference projected point binning along the 's' axis.
     */

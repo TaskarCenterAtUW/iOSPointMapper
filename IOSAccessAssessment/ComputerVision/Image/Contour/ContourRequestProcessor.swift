@@ -6,6 +6,7 @@
 //
 import Vision
 import CoreImage
+import PointNMapShared
 
 public enum ContourRequestProcessorError: Error, LocalizedError {
     case contourProcessingFailed

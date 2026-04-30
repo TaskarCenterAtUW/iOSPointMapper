@@ -13,7 +13,7 @@ import PointNMapShared
     Sub-view of the `AnnotationView`.
  */
 struct AnnotationFeatureDetailView: View {
-    enum Constants {
+    enum SharedAppConstants {
         enum Texts {
             /// Alert texts
             static let statusAlertTitleKey: String = "Error"
@@ -119,13 +119,13 @@ struct AnnotationFeatureDetailView: View {
                                 Text(
                                     locationFormatter.string(
                                         from: NSNumber(value: featureLocation.latitude)
-                                    ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
+                                    ) ?? AnnotationFeatureDetailView.SharedAppConstants.Texts.invalidTextKey
                                 )
                                 .padding(.horizontal)
                                 Text(
                                     locationFormatter.string(
                                         from: NSNumber(value: featureLocation.longitude)
-                                    ) ?? AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
+                                    ) ?? AnnotationFeatureDetailView.SharedAppConstants.Texts.invalidTextKey
                                 )
                                 .padding(.horizontal)
                                 Spacer()
@@ -139,7 +139,7 @@ struct AnnotationFeatureDetailView: View {
                                         accessibilityFeature.setIsExisting(newValue)
                                     }
                                 )) {
-                                    Text(AnnotationFeatureDetailView.Constants.Texts.isExistingTitle)
+                                    Text(AnnotationFeatureDetailView.SharedAppConstants.Texts.isExistingTitle)
                                 }
                                 .disabled(accessibilityFeature.oswElement == nil)
                                 .foregroundStyle(accessibilityFeature.oswElement == nil ? .secondary : .primary)
@@ -159,7 +159,7 @@ struct AnnotationFeatureDetailView: View {
                             }
                         }
                     } else {
-                        Text(AnnotationFeatureDetailView.Constants.Texts.invalidTextKey)
+                        Text(AnnotationFeatureDetailView.SharedAppConstants.Texts.invalidTextKey)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -291,7 +291,7 @@ struct AnnotationFeatureDetailView: View {
                 HStack {
                     Label(
                         attributeStatus.errorMessage,
-                        systemImage: AnnotationFeatureDetailView.Constants.Images.statusAlertImageNameKey
+                        systemImage: AnnotationFeatureDetailView.SharedAppConstants.Images.statusAlertImageNameKey
                     )
                         .foregroundStyle(.red)
                         .font(.caption)
@@ -335,7 +335,7 @@ struct AnnotationFeatureDetailView: View {
             guard let attributeValue = accessibilityFeature.experimentalAttributeValues[attribute],
                   let attributeValue,
                   let attributeBindableValue = attributeValue.toDouble() else {
-                return AnnotationFeatureDetailView.Constants.Texts.invalidTextKey
+                return AnnotationFeatureDetailView.SharedAppConstants.Texts.invalidTextKey
             }
             return String(attributeBindableValue)
         }()
@@ -345,7 +345,7 @@ struct AnnotationFeatureDetailView: View {
                 HStack {
                     Label(
                         attributeStatus.errorMessage,
-                        systemImage: AnnotationFeatureDetailView.Constants.Images.statusAlertImageNameKey
+                        systemImage: AnnotationFeatureDetailView.SharedAppConstants.Images.statusAlertImageNameKey
                     )
                         .foregroundStyle(.red)
                         .font(.caption)

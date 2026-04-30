@@ -10,6 +10,7 @@ import UIKit
 import Metal
 import CoreImage
 import MetalKit
+import PointNMapShaderTypes
 
 public enum DimensionBasedMaskFilterError: Error, LocalizedError {
     case metalInitializationFailed
@@ -60,7 +61,8 @@ public struct DimensionBasedMaskFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "dimensionBasedMaskingKernel"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "dimensionBasedMaskingKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw DimensionBasedMaskFilterError.metalInitializationFailed
         }

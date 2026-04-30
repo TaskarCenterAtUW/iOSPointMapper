@@ -33,7 +33,7 @@ struct SegmentationModelRequestProcessor {
     var selectedClasses: [AccessibilityFeatureClass] = []
     
     init(selectedClasses: [AccessibilityFeatureClass]) throws {
-        guard let modelURL = Constants.SelectedAccessibilityFeatureConfig.modelURL else {
+        guard let modelURL = SharedAppConstants.SelectedAccessibilityFeatureConfig.modelURL else {
             throw SegmentationModelError.modelLoadingError
         }
         let configuration: MLModelConfiguration = MLModelConfiguration()
@@ -71,7 +71,7 @@ struct SegmentationModelRequestProcessor {
         
         let uniqueGrayScaleValues = CVPixelBufferUtils.extractUniqueGrayscaleValues(from: segmentationBuffer)
         
-        let grayscaleValuesToClassMap = Constants.SelectedAccessibilityFeatureConfig.labelToClassMap
+        let grayscaleValuesToClassMap = SharedAppConstants.SelectedAccessibilityFeatureConfig.labelToClassMap
         var segmentedClasses = uniqueGrayScaleValues.compactMap { grayscaleValuesToClassMap[$0] }
         let segmentedClassSet = Set(segmentedClasses)
         segmentedClasses = self.selectedClasses.filter{ segmentedClassSet.contains($0) }

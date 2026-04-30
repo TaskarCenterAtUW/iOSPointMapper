@@ -10,6 +10,7 @@ import Vision
 
 import OrderedCollections
 import simd
+import PointNMapShared
 
 enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     case isProcessingTrue

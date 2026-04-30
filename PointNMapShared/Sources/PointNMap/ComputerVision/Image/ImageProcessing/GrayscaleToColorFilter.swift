@@ -54,7 +54,8 @@ public struct GrayscaleToColorFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "colorMatchingKernelLUT"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "colorMatchingKernelLUT"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw GrayscaleToColorFilterError.metalInitializationFailed
         }

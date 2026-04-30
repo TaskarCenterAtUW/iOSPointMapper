@@ -1,5 +1,5 @@
 //
-//  Constants.swift
+//  SharedAppConstants.swift
 //  IOSAccessAssessment
 //
 //  Created by TCAT on 9/24/24.
@@ -8,35 +8,35 @@
 import SwiftUI
 
 /**
- Global Constants used across the app.
+ Global SharedAppConstants used across the app.
  */
-struct Constants {
+struct SharedAppConstants {
     // Supported Classes
     static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
     
     struct DepthConstants {
-        /// Model-specific constants
+        /// Model-specific SharedAppConstants
         static let inputSize: CGSize = CGSize(width: 518, height: 392)
         
-        /// General constants
+        /// General SharedAppConstants
         static let depthMinThreshold: Float = 0.0
         static let depthMaxThreshold: Float = 5.0
     }
     
     struct DamageDetectionConstants {
-        /// Model-specific constants
+        /// Model-specific SharedAppConstants
         static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "v8n_175_16_960", withExtension: "mlmodelc")
         static let inputSize: CGSize = CGSize(width: 640, height: 640)
     }
     
     struct SurfaceIntegrityConstants {
-        /// Image (world point) based constants
+        /// Image (world point) based SharedAppConstants
         static let imagePlaneAngularDeviationThreshold: Float = 15.0 // Unit: degrees
         static let imageDeviantPointProportionThreshold: Float = 0.1 // Unit: percentage (0 to 1)
         static let imageBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2
         static let imageBoundingBoxAngularStdThreshold: Float = 10.0 // Unit: degrees
         
-        /// Mesh based constants
+        /// Mesh based SharedAppConstants
         static let meshPlaneAngularDeviationThreshold: Float = 7.5 // Unit: degrees
         static let meshDeviantPolygonProportionThreshold: Float = 0.1 // Unit: percentage (0 to 1)
         static let meshBoundingBoxAreaThreshold: Float = 0.1 // Unit: m2

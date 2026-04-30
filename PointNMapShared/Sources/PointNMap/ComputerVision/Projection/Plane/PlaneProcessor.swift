@@ -7,14 +7,16 @@
 
 import Accelerate
 import CoreImage
+import simd
+import PointNMapShaderTypes
 
-enum PlaneProcessorError: Error, LocalizedError {
+public enum PlaneProcessorError: Error, LocalizedError {
     case initializationError(message: String)
     case invalidPointData
     case invalidPlaneData
     case invalidProjectionData
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .initializationError(let message):
             return "PlaneFit Initialization Error: \(message)"
@@ -28,15 +30,15 @@ enum PlaneProcessorError: Error, LocalizedError {
     }
 }
 
-struct Plane: Sendable, CustomStringConvertible {
-    var firstVector: simd_float3
-    var secondVector: simd_float3
-    var normalVector: simd_float3 // Normal vector
-    var d: Float      // Offset from origin
+public struct Plane: Sendable, CustomStringConvertible {
+    public var firstVector: simd_float3
+    public var secondVector: simd_float3
+    public var normalVector: simd_float3 // Normal vector
+    public var d: Float      // Offset from origin
     
-    var origin: simd_float3
+    public var origin: simd_float3
     
-    var description: String {
+    public var description: String {
         return "Plane(firstVector: \(firstVector), \nsecondVector: \(secondVector), \nnormalVector: \(normalVector), \nd: \(d), \norigin: \(origin))"
     }
 }
@@ -45,28 +47,28 @@ struct Plane: Sendable, CustomStringConvertible {
  ProjectedPlane represents the 2D projection of a 3D plane onto the image plane, containing the projected origin and vectors.
  Each vector is a tuple of two points in 2D pixel coordinates, representing the start and end of the projected vector.
  */
-struct ProjectedPlane: Sendable, CustomStringConvertible {
-    var origin: SIMD2<Float>
-    var firstVector: (SIMD2<Float>, SIMD2<Float>)
-    var secondVector: (SIMD2<Float>, SIMD2<Float>)
-    var normalVector: (SIMD2<Float>, SIMD2<Float>)
+public struct ProjectedPlane: Sendable, CustomStringConvertible {
+    public var origin: SIMD2<Float>
+    public var firstVector: (SIMD2<Float>, SIMD2<Float>)
+    public var secondVector: (SIMD2<Float>, SIMD2<Float>)
+    public var normalVector: (SIMD2<Float>, SIMD2<Float>)
     
     /// Can contain reference vectors for debugging or visualization
-    var additionalVectors: [(SIMD2<Float>, SIMD2<Float>)]
+    public var additionalVectors: [(SIMD2<Float>, SIMD2<Float>)]
     
-    var description: String {
+    public var description: String {
         return "ProjectedPlane(firstVector: \(firstVector), \nsecondVector: \(secondVector), \nnormalVector: \(normalVector), additionalVectorsCount: \(additionalVectors.count), \norigin: \(origin))"
     }
 }
 
-struct PlaneProcessor {
+public struct PlaneProcessor {
     private let worldPointsProcessor: WorldPointsProcessor
     
-    init(worldPointsProcessor: WorldPointsProcessor) {
+    public init(worldPointsProcessor: WorldPointsProcessor) {
         self.worldPointsProcessor = worldPointsProcessor
     }
     
-    func fitPlanePCA(worldPoints: [WorldPoint]) throws -> Plane {
+    public func fitPlanePCA(worldPoints: [WorldPoint]) throws -> Plane {
         guard worldPoints.count>=3 else {
             throw PlaneProcessorError.invalidPointData
         }
@@ -124,7 +126,7 @@ struct PlaneProcessor {
         return plane
     }
     
-    func fitPlanePCA(points: [WorldPoint], weights: [Float]? = nil) throws -> Plane {
+    public func fitPlanePCA(points: [WorldPoint], weights: [Float]? = nil) throws -> Plane {
         guard points.count>=3 else {
             throw PlaneProcessorError.invalidPointData
         }
@@ -193,7 +195,7 @@ struct PlaneProcessor {
 /**
  Extension for aligning planes based on camera view direction.
  */
-extension PlaneProcessor {
+public extension PlaneProcessor {
     /**
         Function to align the plane's vectors based on camera view direction.
      
@@ -205,9 +207,9 @@ extension PlaneProcessor {
         plane: Plane,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
-        imageSize: CGSize
+        imageSize: CGSize,
+        alignmentThreshold: Float = PointNMapConstants.OtherConstants.directionAlignmentDotProductThreshold
     ) throws -> Plane {
-        let alignmentThreshold = Constants.OtherConstants.directionAlignmentDotProductThreshold
         let viewVector = simd_normalize(simd_float3(
             cameraTransform.columns.2.x,
             cameraTransform.columns.2.y,
@@ -278,7 +280,7 @@ extension PlaneProcessor {
 /**
  Extension for projecting planes to 2D pixel coordinates.
  */
-extension PlaneProcessor {
+public extension PlaneProcessor {
     /**
         Function to project a 3D plane to 2D pixel coordinates.
         Can be used for visualization or debugging purposes.

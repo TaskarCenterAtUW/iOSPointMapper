@@ -248,7 +248,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.metalContext = metalContext
         self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
-        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+        try setUpPreAllocatedPixelBufferPools(size: SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
@@ -382,7 +382,7 @@ extension ARCameraManager {
         }
         /// Pre-process the image: orient, center-crop, and back to pixel buffer
         let originalSize: CGSize = image.extent.size
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

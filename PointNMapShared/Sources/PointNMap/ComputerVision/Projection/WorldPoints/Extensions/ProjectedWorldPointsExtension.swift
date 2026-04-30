@@ -9,11 +9,12 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
+import PointNMapShaderTypes
 
 /**
  Extension for projecting world points to plane and unprojecting them back to world coordinates.
  */
-extension WorldPointsProcessor {
+public extension WorldPointsProcessor {
     func projectPointsToPlane(
         worldPoints: [WorldPoint],
         plane: Plane,

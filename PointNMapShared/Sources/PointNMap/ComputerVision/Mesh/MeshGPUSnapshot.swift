@@ -10,9 +10,9 @@ import RealityKit
 /**
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
-final class MeshGPUSnapshotGenerator: NSObject {
-    // MARK: These constants can be made configurable later
-    // But make sure that the snapshot from MeshContents extension continues to use the original constants.
+public final class MeshGPUSnapshotGenerator: NSObject {
+    // MARK: These SharedAppConstants can be made configurable later
+    // But make sure that the snapshot from MeshContents extension continues to use the original SharedAppConstants.
     private let defaultBufferSize: Int = 1024
     private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
     private let vertexOffset: Int = 0
@@ -30,21 +30,21 @@ final class MeshGPUSnapshotGenerator: NSObject {
     private let anchorLifetimeThreshold: Int = 10
     
     private let device: MTLDevice
-    var currentSnapshot: MeshGPUSnapshot?
+    public var currentSnapshot: MeshGPUSnapshot?
     
-    init(device: MTLDevice) {
+    public init(device: MTLDevice) {
         self.device = device
     }
     
-    func reset() {
+    public func reset() {
         currentSnapshot = nil
     }
     
-    func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
+    public func buffers(for anchorId: UUID) -> MeshGPUAnchor? {
         return currentSnapshot?.anchors[anchorId]
     }
     
-    func snapshotAnchors(_ anchors: [ARAnchor]) throws {
+    public func snapshotAnchors(_ anchors: [ARAnchor]) throws {
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
         let meshAnchorIds: Set<UUID> = Set(meshAnchors.map { $0.identifier })
         var meshGPUAnchors: [UUID: MeshGPUAnchor] = [:]
@@ -79,7 +79,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
         )
     }
     
-    func removeAnchors(_ anchors: [ARAnchor]) {
+    public func removeAnchors(_ anchors: [ARAnchor]) {
         let meshAnchors = anchors.compactMap { $0 as? ARMeshAnchor }
         var meshGPUAnchors = currentSnapshot?.anchors ?? [:]
         for (_, meshAnchor) in meshAnchors.enumerated() {
@@ -98,7 +98,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
      
      TODO: Check possibility of blitting directly to MTLBuffer using a blit command encoder for better performance
      */
-    func createSnapshot(meshAnchor: ARMeshAnchor) throws -> MeshGPUAnchor {
+    public func createSnapshot(meshAnchor: ARMeshAnchor) throws -> MeshGPUAnchor {
         let geometry = meshAnchor.geometry
         let vertices = geometry.vertices               // ARGeometrySource (format .float3)
         let faces = geometry.faces                  // ARGeometryElement
@@ -177,7 +177,7 @@ final class MeshGPUSnapshotGenerator: NSObject {
 /**
  Extension to generate snapshot from MeshContents.
  */
-extension MeshGPUSnapshotGenerator {
+public extension MeshGPUSnapshotGenerator {
     /**
      Uses MeshContents to create a snapshot that can be used for GPU processing.
      This is useful for testing and visualization purposes where we want to bypass ARKit and directly feed in mesh data.

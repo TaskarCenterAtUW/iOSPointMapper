@@ -8,12 +8,12 @@
 import Foundation
 import simd
 
-struct MeshClusteringUtils {
-    static func distanceFunction(polygonA: MeshPolygon, polygonB: MeshPolygon) -> Float {
+public struct MeshClusteringUtils {
+    public static func distanceFunction(polygonA: MeshPolygon, polygonB: MeshPolygon) -> Float {
         return simd_distance(polygonA.centroid, polygonB.centroid)
     }
     
-    static func adjacencyFunction(polygonA: MeshPolygon, polygonB: MeshPolygon, threshold: Float) -> Bool {
+    public static func adjacencyFunction(polygonA: MeshPolygon, polygonB: MeshPolygon, threshold: Float) -> Bool {
         for vertexA in polygonA.vertices {
             for vertexB in polygonB.vertices {
                 /// Check if the vertex is the same. We use a small epsilon to account for floating point errors

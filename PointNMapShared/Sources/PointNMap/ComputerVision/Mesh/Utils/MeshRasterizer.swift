@@ -12,8 +12,8 @@ import PointNMapShared
 /**
     Functions to rasterize mesh triangles into an image.
  */
-struct MeshRasterizer {
-    static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
+public struct MeshRasterizer {
+    public static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
         let path = UIBezierPath()
         guard let firstPoint = points.first else { return path }
         
@@ -37,7 +37,7 @@ struct MeshRasterizer {
             - size: The size of the output image.
             - boundsConfig: Configuration for drawing triangle bounds, including color and line width.
      */
-    static func rasterizeMesh(
+    public static func rasterizeMesh(
         polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)], size: CGSize,
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0)
     ) -> CGImage? {

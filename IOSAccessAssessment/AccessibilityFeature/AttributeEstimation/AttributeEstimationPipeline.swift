@@ -216,7 +216,7 @@ class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature: EditableAccessibilityFeature
     ) {
         /// Threshold needs to be in Map Units
-        let distanceThreshold = Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
+        let distanceThreshold = SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
         guard let LocationDetails = accessibilityFeature.locationDetails else {
             accessibilityFeature.setIsExisting(false)
             return

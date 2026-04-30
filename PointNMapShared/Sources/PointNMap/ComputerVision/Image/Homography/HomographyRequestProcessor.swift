@@ -20,6 +20,8 @@ public enum HomographyRequestProcessorError: Error, LocalizedError {
 }
 
 public struct HomographyRequestProcessor {
+    public init() {}
+    
     /// Computes the homography transform for the reference image and the floating image.
     public func getHomographyTransform(
         referenceImage: CIImage, floatingImage: CIImage, orientation: CGImagePropertyOrientation = .up

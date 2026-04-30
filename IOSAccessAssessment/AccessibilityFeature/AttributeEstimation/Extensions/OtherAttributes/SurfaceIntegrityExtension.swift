@@ -104,7 +104,7 @@ extension AttributeEstimationPipeline {
         }
         /// Run damage detection
         let cameraImage = captureImageData.cameraImage
-        let croppedSize = Constants.DamageDetectionConstants.inputSize
+        let croppedSize = SharedAppConstants.DamageDetectionConstants.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: captureImageData.interfaceOrientation
         )

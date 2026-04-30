@@ -4,6 +4,7 @@
 //
 //  Created by Himanshu on 11/9/25.
 //
+import PointNMapShared
 
 struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     let centroid: CGPoint

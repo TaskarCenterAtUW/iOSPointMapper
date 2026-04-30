@@ -6,12 +6,13 @@
 //
 
 import simd
+import CoreGraphics
 
 /**
     Helper functions for processing mesh polygons on the CPU.
  */
-struct MeshHelpers {
-    static func getPolygonsCoordinates(
+public struct MeshHelpers {
+    public static func getPolygonsCoordinates(
         meshPolygons: [MeshPolygon],
         viewMatrix: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
@@ -41,7 +42,7 @@ struct MeshHelpers {
         return trianglePoints
     }
     
-    static func projectWorldToPixel(
+    public static func projectWorldToPixel(
         _ world: simd_float3,
         viewMatrix: simd_float4x4, // (world->camera)
         intrinsics K: simd_float3x3,

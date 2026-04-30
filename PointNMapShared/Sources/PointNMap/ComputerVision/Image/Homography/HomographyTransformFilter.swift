@@ -56,7 +56,8 @@ public struct HomographyTransformFilter {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "homographyWarpKernel"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "homographyWarpKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw HomographyTransformFilterError.metalInitializationFailed
         }

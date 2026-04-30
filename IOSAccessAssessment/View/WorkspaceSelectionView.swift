@@ -241,7 +241,7 @@ struct WorkspaceSelectionView: View {
             )
             // MARK: Eventually, we should ensure that even primary workspaces have externalAppAccess enabled
             let primaryWorkspaces = workspaces.filter { workspace in
-                return Constants.WorkspaceConstants.primaryWorkspaceIds.contains("\(workspace.id)")
+                return SharedAppConstants.WorkspaceConstants.primaryWorkspaceIds.contains("\(workspace.id)")
             }
             workspaces = workspaces.filter { workspace in
                 return workspace.externalAppAccess == 1

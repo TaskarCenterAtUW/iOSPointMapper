@@ -7,13 +7,12 @@
 
 import CoreImage
 import UIKit
-import PointNMapShared
 
-struct PlaneRasterizer {
+public struct PlaneRasterizer {
     /**
      The path points for ProjectedPlane are unnormalized.
      */
-    static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
+    public static func createPath(points: [SIMD2<Float>], size: CGSize) -> UIBezierPath {
         let path = UIBezierPath()
         guard let firstPoint = points.first else { return path }
         
@@ -29,14 +28,14 @@ struct PlaneRasterizer {
         return path
     }
     
-    static func createCircle(point: SIMD2<Float>, size: CGSize, radius: CGFloat) -> UIBezierPath {
+    public static func createCircle(point: SIMD2<Float>, size: CGSize, radius: CGFloat) -> UIBezierPath {
         let path = UIBezierPath()
         let pixelPoint = CGPoint(x: CGFloat(point.x), y: (size.height - CGFloat(point.y)))
         path.addArc(withCenter: pixelPoint, radius: radius, startAngle: 0, endAngle: CGFloat(2 * Double.pi), clockwise: true)
         return path
     }
     
-    static func rasterizePlane(
+    public static func rasterizePlane(
         projectedPlane: ProjectedPlane,
         size: CGSize,
         linesConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 4.0)

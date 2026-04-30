@@ -190,8 +190,8 @@ final class SegmentationARPipeline: ObservableObject {
         var depthFilteredSegmentationImage: CIImage? = nil
         if let depthImage, let depthFilter = self.depthFilter {
             // Apply depth filtering to the segmentation image
-            let depthMinThresholdValue = Constants.DepthConstants.depthMinThreshold
-            let depthMaxThresholdValue = Constants.DepthConstants.depthMaxThreshold
+            let depthMinThresholdValue = SharedAppConstants.DepthConstants.depthMinThreshold
+            let depthMaxThresholdValue = SharedAppConstants.DepthConstants.depthMaxThreshold
             depthFilteredSegmentationImage = try depthFilter.apply(
                 to: segmentationImage, depthImage: depthImage,
                 depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue

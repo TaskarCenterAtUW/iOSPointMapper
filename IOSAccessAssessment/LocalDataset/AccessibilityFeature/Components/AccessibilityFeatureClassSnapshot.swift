@@ -19,7 +19,7 @@ struct AccessibilityFeatureClassSnapshot: Codable, Identifiable, Sendable {
     
     /// Get AccessibilityFeatureClass from snapshot
     func getAccessibilityFeatureClass() -> AccessibilityFeatureClass? {
-        let matchedClass = Constants.SelectedAccessibilityFeatureConfig.classes.first { $0.id == self.id }
+        let matchedClass = SharedAppConstants.SelectedAccessibilityFeatureConfig.classes.first { $0.id == self.id }
         return matchedClass
     }
 }

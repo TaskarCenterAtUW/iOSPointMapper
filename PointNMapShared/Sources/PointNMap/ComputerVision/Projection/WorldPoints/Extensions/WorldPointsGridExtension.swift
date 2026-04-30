@@ -9,16 +9,17 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
+import PointNMapShaderTypes
 
 /**
  A grid of world points structured for efficient spatial queries based on their projected pixel coordinates.
  */
-struct WorldPointsGrid: Sendable {
-    let width: Int
-    let height: Int
-    var data: [WorldPointsGridCell]
+public struct WorldPointsGrid: Sendable {
+    public let width: Int
+    public let height: Int
+    public var data: [WorldPointsGridCell]
     
-    subscript(x: Int, y: Int) -> WorldPointsGridCell {
+    public subscript(x: Int, y: Int) -> WorldPointsGridCell {
         get { return data[y * width + x] }
         set { data[y * width + x] = newValue }
     }
@@ -27,7 +28,7 @@ struct WorldPointsGrid: Sendable {
 /**
  Extension for restructuring world points array into more efficient data structures for improved post-processing.
  */
-extension WorldPointsProcessor {
+public extension WorldPointsProcessor {
     /**
         Restructure world points into a 2D grid based on their projected pixel coordinates, for more efficient spatial queries. This method uses the GPU for parallel processing of world points, which can significantly speed up the operation for large point clouds.
      */

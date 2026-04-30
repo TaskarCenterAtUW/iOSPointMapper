@@ -54,8 +54,8 @@ class DepthModel: ObservableObject {
         var buffer: CVPixelBuffer!
         let status = CVPixelBufferCreate(
             kCFAllocatorDefault,
-            Int(Constants.DepthConstants.inputSize.width),
-            Int(Constants.DepthConstants.inputSize.height),
+            Int(SharedAppConstants.DepthConstants.inputSize.width),
+            Int(SharedAppConstants.DepthConstants.inputSize.height),
             kCVPixelFormatType_32ARGB,
             nil,
             &buffer
@@ -88,7 +88,7 @@ class DepthModel: ObservableObject {
             return CIImage(cvPixelBuffer: CVPixelBufferUtils.createBlankDepthPixelBuffer(targetSize: originalSize)!)
         }
         
-        let inputImage = ciImage.resized(to: Constants.DepthConstants.inputSize)
+        let inputImage = ciImage.resized(to: SharedAppConstants.DepthConstants.inputSize)
         context.render(inputImage, to: inputPixelBuffer)
         guard let result = try? visionModel.prediction(image: inputPixelBuffer) else {
             return CIImage(cvPixelBuffer: CVPixelBufferUtils.createBlankDepthPixelBuffer(targetSize: originalSize)!)

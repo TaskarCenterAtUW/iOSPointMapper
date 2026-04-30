@@ -303,7 +303,7 @@ extension AnnotationImageManager {
         let cameraImage = captureImageData.cameraImage
         let interfaceOrientation = captureImageData.interfaceOrientation
 //        let originalSize = captureImageData.originalSize
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
@@ -401,7 +401,7 @@ extension AnnotationImageManager {
         )
         
         let interfaceOrientation = captureImageData.interfaceOrientation
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
@@ -512,7 +512,7 @@ extension AnnotationImageManager {
         interfaceOrientation: UIInterfaceOrientation
     ) throws -> CIImage {
         let raterizedFeaturesCIImage = CIImage(cgImage: raterizedFeaturesImage)
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
@@ -550,7 +550,7 @@ extension AnnotationImageManager {
         
         let rasterizedMeshCIImage = CIImage(cgImage: rasterizedMeshImage)
         let interfaceOrientation = captureMeshData.interfaceOrientation
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
@@ -625,7 +625,7 @@ extension AnnotationImageManager {
         ) else { return nil }
         let rasterizedPlaneCIImage = CIImage(cgImage: rasterizedPlaneCGImage)
         let interfaceOrientation = captureImageData.interfaceOrientation
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )
@@ -651,7 +651,7 @@ extension AnnotationImageManager {
         ) else { return nil }
         let rasterizedDamageDetectionCIImage = CIImage(cgImage: rasterizedDamageDetectionCGImage)
         let interfaceOrientation = captureImageData.interfaceOrientation
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

@@ -14,7 +14,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
     let name: String
     
     /**
-     Segmentation-related constants
+     Segmentation-related SharedAppConstants
      */
     /// Grayscale value output for the accessibility feature class, by the relevant segmentation model
     let grayscaleValue: Float
@@ -24,13 +24,13 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
     let color: CIColor
     
     /**
-     Constants related to mesh
+     SharedAppConstants related to mesh
      */
     /// Optional mesh classification for the segmentation class
     let meshClassification: Set<ARMeshClassification>
     
     /**
-     Post-Processing related constants.
+     Post-Processing related SharedAppConstants.
      */
     /// Optional bounds for the segmentation class. Is kept optional to prevent unnecessary dimension based masking.
     let bounds: CGRect?
@@ -44,7 +44,7 @@ struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, 
     let experimentalAttributes: Set<AccessibilityFeatureAttribute>
     
     /**
-     Mapping-related constants
+     Mapping-related SharedAppConstants
      */
     let oswPolicy: OSWPolicy
     

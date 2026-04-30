@@ -20,8 +20,8 @@ extension SurfaceIntegrityProcessor {
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureImageDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
-        deviantPointProportionThreshold: Float = Constants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
+        deviantPointProportionThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
     ) throws -> IntegrityStatusDetails {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
@@ -109,7 +109,7 @@ extension SurfaceIntegrityProcessor {
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureImageDataProtocol),
-        boundingBoxAngularStdThreshold: Float = Constants.SurfaceIntegrityConstants.imageBoundingBoxAngularStdThreshold
+        boundingBoxAngularStdThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imageBoundingBoxAngularStdThreshold
     ) throws -> IntegrityStatusDetails {
         let totalBoundingBoxes = damageDetectionResults.count
         var deviantBoundingBoxes = 0
@@ -245,8 +245,8 @@ extension SurfaceIntegrityProcessor {
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureImageDataProtocol),
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
-        deviantPointProportionThreshold: Float = Constants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
+        deviantPointProportionThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
     ) throws -> IntegrityStatusDetails {
         let width = surfaceNormalsForPointsGrid.width
         let height = surfaceNormalsForPointsGrid.height
@@ -273,7 +273,7 @@ extension SurfaceIntegrityProcessor {
         plane: Plane,
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         bounds: BoundsParams,
-        angularDeviationThreshold: Float = Constants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold
+        angularDeviationThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold
     ) -> (deviantPointCount: Int, totalPointCount: Int) {
         let planeNormal = plane.normalVector
         var totalDeviantPoints = 0
@@ -306,7 +306,7 @@ extension SurfaceIntegrityProcessor {
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureImageDataProtocol),
-        boundingBoxAreaThreshold: Float = Constants.SurfaceIntegrityConstants.imageBoundingBoxAreaThreshold,
+        boundingBoxAreaThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imageBoundingBoxAreaThreshold,
         boundingBoxWorldPointRetrievalRadius: Float = 3.0
     ) throws -> IntegrityStatusDetails {
         let width = surfaceNormalsForPointsGrid.width
@@ -387,7 +387,7 @@ extension SurfaceIntegrityProcessor {
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureImageDataProtocol),
-        boundingBoxAngularStdThreshold: Float = Constants.SurfaceIntegrityConstants.imageBoundingBoxAngularStdThreshold
+        boundingBoxAngularStdThreshold: Float = SharedAppConstants.SurfaceIntegrityConstants.imageBoundingBoxAngularStdThreshold
     ) throws -> IntegrityStatusDetails {
         let totalBoundingBoxes = damageDetectionResults.count
         var deviantBoundingBoxes = 0

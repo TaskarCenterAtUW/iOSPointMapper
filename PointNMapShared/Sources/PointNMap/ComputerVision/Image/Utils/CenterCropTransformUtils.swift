@@ -89,7 +89,8 @@ public struct CenterCropTransformUtils {
         guard let destTexture = self.device.makeTexture(descriptor: descriptor) else {
             throw CenterCropTransformUtilsError.textureCreationFailed
         }
-        guard let kernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "revertCenterCropAspectFitKernel"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let kernelFunction = library.makeFunction(name: "revertCenterCropAspectFitKernel"),
               let pipeline = try? device.makeComputePipelineState(function: kernelFunction) else {
             throw CenterCropTransformUtilsError.metalInitializationFailed
         }

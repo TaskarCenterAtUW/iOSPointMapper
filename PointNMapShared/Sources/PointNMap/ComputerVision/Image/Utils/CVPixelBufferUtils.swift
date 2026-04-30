@@ -53,9 +53,7 @@ public struct CVPixelBufferUtils {
     }
 
     /**
-     This function extracts unique grayscale values from a pixel buffer,
-     gets the indices of these values from Constants.SelectedAccessibilityFeatureConfig.grayscaleValues,
-        and returns both the unique values and their corresponding indices.
+     This function extracts unique grayscale values from a pixel buffer
      */
     public static func extractUniqueGrayscaleValues(from pixelBuffer: CVPixelBuffer) -> Set<UInt8> {
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)

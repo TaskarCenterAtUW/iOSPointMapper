@@ -643,7 +643,7 @@ struct AnnotationView: View {
         let mapData = try await WorkspaceService.shared.fetchMapData(
             workspaceId: workspaceId,
             location: captureLocation,
-            radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+            radius: SharedAppConstants.WorkspaceConstants.fetchRadiusInMeters,
             accessToken: accessToken,
             environment: userStateViewModel.selectedEnvironment
         )
