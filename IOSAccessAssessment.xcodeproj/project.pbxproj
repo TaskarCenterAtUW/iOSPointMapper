@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -38,6 +38,13 @@
 		A30F59D02F7EFAC700EE7804 /* RunninSlopeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59CF2F7EFAC400EE7804 /* RunninSlopeExtension.swift */; };
 		A30F59D22F7EFACD00EE7804 /* CrossSlopeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59D12F7EFACA00EE7804 /* CrossSlopeExtension.swift */; };
 		A30F59D42F7EFAD400EE7804 /* SurfaceIntegrityExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30F59D32F7EFAD100EE7804 /* SurfaceIntegrityExtension.swift */; };
+		A312FD682FA3308F0044808E /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD662FA3308F0044808E /* LocationManager.swift */; };
+		A312FD692FA3308F0044808E /* LocationHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD652FA3308F0044808E /* LocationHelpers.swift */; };
+		A312FD6A2FA3308F0044808E /* LocalizationProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD642FA3308F0044808E /* LocalizationProcessor.swift */; };
+		A312FD702FA330B80044808E /* RasterizeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD6B2FA330B80044808E /* RasterizeConfig.swift */; };
+		A312FD712FA330B80044808E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD6D2FA330B80044808E /* Extensions.swift */; };
+		A312FD742FA336020044808E /* DepthFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FD722FA336020044808E /* DepthFilter.swift */; };
+		A312FD752FA336020044808E /* DepthFiltering.metal in Sources */ = {isa = PBXBuildFile; fileRef = A312FD732FA336020044808E /* DepthFiltering.metal */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
 		A3281AEE2F3950210003E396 /* MTLTextureUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3281AED2F39501E0003E396 /* MTLTextureUtils.swift */; };
 		A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */; };
@@ -57,8 +64,6 @@
 		A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3420F1B2E8D82E400CD617E /* APIEnvironment.swift */; };
 		A3431E022F26FA2C00B96610 /* LocationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E012F26FA2700B96610 /* LocationExtension.swift */; };
 		A3431E042F26FA7200B96610 /* OtherAttributeExtensionLegacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3431E032F26FA6B00B96610 /* OtherAttributeExtensionLegacy.swift */; };
-		A34509D22FA1A49F003157B0 /* PointNMap in Frameworks */ = {isa = PBXBuildFile; productRef = A34509D12FA1A49F003157B0 /* PointNMap */; };
-		A34509D42FA1A49F003157B0 /* ShaderTypes in Frameworks */ = {isa = PBXBuildFile; productRef = A34509D32FA1A49F003157B0 /* ShaderTypes */; };
 		A34509D82FA1A6FA003157B0 /* SafeDeque.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509D72FA1A6FA003157B0 /* SafeDeque.swift */; };
 		A34509DA2FA1A782003157B0 /* MetalBufferUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509D92FA1A782003157B0 /* MetalBufferUtils.swift */; };
 		A34509E32FA31DCC003157B0 /* LocationHelpersExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34509E02FA31DCC003157B0 /* LocationHelpersExtension.swift */; };
@@ -79,8 +84,6 @@
 		A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05192EDFB015003C26CF /* OSMPayload.swift */; };
 		A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051B2EDFB093003C26CF /* OSMNode.swift */; };
 		A35E051E2EDFB09A003C26CF /* OSMWay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E051D2EDFB099003C26CF /* OSMWay.swift */; };
-		A364B5332F25576000325E5C /* DepthFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5322F25575D00325E5C /* DepthFilter.swift */; };
-		A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5342F25589600325E5C /* DepthFiltering.metal */; };
 		A364B5D92F259AD700325E5C /* PlaneProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5D82F259AD600325E5C /* PlaneProcessor.swift */; };
 		A364B5DD2F259AFE00325E5C /* WorldPoints.metal in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DC2F259AF900325E5C /* WorldPoints.metal */; };
 		A364B5DF2F26DB5700325E5C /* WorldPointsProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */; };
@@ -261,6 +264,13 @@
 		A30F59CF2F7EFAC400EE7804 /* RunninSlopeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunninSlopeExtension.swift; sourceTree = "<group>"; };
 		A30F59D12F7EFACA00EE7804 /* CrossSlopeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrossSlopeExtension.swift; sourceTree = "<group>"; };
 		A30F59D32F7EFAD100EE7804 /* SurfaceIntegrityExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceIntegrityExtension.swift; sourceTree = "<group>"; };
+		A312FD642FA3308F0044808E /* LocalizationProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationProcessor.swift; sourceTree = "<group>"; };
+		A312FD652FA3308F0044808E /* LocationHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationHelpers.swift; sourceTree = "<group>"; };
+		A312FD662FA3308F0044808E /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		A312FD6B2FA330B80044808E /* RasterizeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RasterizeConfig.swift; sourceTree = "<group>"; };
+		A312FD6D2FA330B80044808E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		A312FD722FA336020044808E /* DepthFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthFilter.swift; sourceTree = "<group>"; };
+		A312FD732FA336020044808E /* DepthFiltering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DepthFiltering.metal; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
 		A3281AED2F39501E0003E396 /* MTLTextureUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTLTextureUtils.swift; sourceTree = "<group>"; };
 		A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolicy.swift; sourceTree = "<group>"; };
@@ -300,8 +310,6 @@
 		A35E05192EDFB015003C26CF /* OSMPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMPayload.swift; sourceTree = "<group>"; };
 		A35E051B2EDFB093003C26CF /* OSMNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMNode.swift; sourceTree = "<group>"; };
 		A35E051D2EDFB099003C26CF /* OSMWay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMWay.swift; sourceTree = "<group>"; };
-		A364B5322F25575D00325E5C /* DepthFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthFilter.swift; sourceTree = "<group>"; };
-		A364B5342F25589600325E5C /* DepthFiltering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = DepthFiltering.metal; sourceTree = "<group>"; };
 		A364B5D82F259AD600325E5C /* PlaneProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaneProcessor.swift; sourceTree = "<group>"; };
 		A364B5DC2F259AF900325E5C /* WorldPoints.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = WorldPoints.metal; sourceTree = "<group>"; };
 		A364B5DE2F26DB5300325E5C /* WorldPointsProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldPointsProcessor.swift; sourceTree = "<group>"; };
@@ -424,10 +432,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A34509D22FA1A49F003157B0 /* PointNMap in Frameworks */,
 				A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */,
 				A3FCC2FB2DA4E1880037AB43 /* OrderedCollections in Frameworks */,
-				A34509D42FA1A49F003157B0 /* ShaderTypes in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -471,7 +477,7 @@
 		3222F9182B622DFD0019A079 /* IOSAccessAssessment */ = {
 			isa = PBXGroup;
 			children = (
-				A34509DC2FA31D9C003157B0 /* New Group */,
+				A312FD612FA330620044808E /* PointNMapShared */,
 				A3FE166A2E18DD2A00DAE5BE /* Info.plist */,
 				A39C9F392DD9B01200455E45 /* TDEI */,
 				A30801512EC0984F00B1BA3A /* AccessibilityFeature */,
@@ -679,6 +685,66 @@
 			path = Location;
 			sourceTree = "<group>";
 		};
+		A312FD612FA330620044808E /* PointNMapShared */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD622FA3307D0044808E /* Sources */,
+			);
+			path = PointNMapShared;
+			sourceTree = "<group>";
+		};
+		A312FD622FA3307D0044808E /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD632FA330840044808E /* PointNMap */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		A312FD632FA330840044808E /* PointNMap */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD672FA3308F0044808E /* Geospatial */,
+				A312FD6F2FA330B80044808E /* Shared */,
+			);
+			path = PointNMap;
+			sourceTree = "<group>";
+		};
+		A312FD672FA3308F0044808E /* Geospatial */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD642FA3308F0044808E /* LocalizationProcessor.swift */,
+				A312FD652FA3308F0044808E /* LocationHelpers.swift */,
+				A312FD662FA3308F0044808E /* LocationManager.swift */,
+			);
+			path = Geospatial;
+			sourceTree = "<group>";
+		};
+		A312FD6C2FA330B80044808E /* Definitions */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD6B2FA330B80044808E /* RasterizeConfig.swift */,
+			);
+			path = Definitions;
+			sourceTree = "<group>";
+		};
+		A312FD6E2FA330B80044808E /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD6D2FA330B80044808E /* Extensions.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		A312FD6F2FA330B80044808E /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A312FD6C2FA330B80044808E /* Definitions */,
+				A312FD6E2FA330B80044808E /* Utils */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		A31A1E772EAC49E3008B30B7 /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -814,13 +880,6 @@
 				A34509D72FA1A6FA003157B0 /* SafeDeque.swift */,
 			);
 			path = Utils;
-			sourceTree = "<group>";
-		};
-		A34509DC2FA31D9C003157B0 /* New Group */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = "New Group";
 			sourceTree = "<group>";
 		};
 		A34509E22FA31DCC003157B0 /* Geospatial */ = {
@@ -1021,8 +1080,8 @@
 		A38338C42EDAF3DC00F1A402 /* Depth */ = {
 			isa = PBXGroup;
 			children = (
-				A364B5342F25589600325E5C /* DepthFiltering.metal */,
-				A364B5322F25575D00325E5C /* DepthFilter.swift */,
+				A312FD722FA336020044808E /* DepthFilter.swift */,
+				A312FD732FA336020044808E /* DepthFiltering.metal */,
 				A38338C52EDAF3E500F1A402 /* DepthMapProcessor.swift */,
 			);
 			path = Depth;
@@ -1385,7 +1444,6 @@
 			mainGroup = 3222F90D2B622DFD0019A079;
 			packageReferences = (
 				CAF812C12CFA0FD400D44B84 /* XCRemoteSwiftPackageReference "swift-collections" */,
-				A34509D02FA1A49F003157B0 /* XCLocalSwiftPackageReference "../PointNMap" */,
 			);
 			productRefGroup = 3222F9172B622DFD0019A079 /* Products */;
 			projectDirPath = "";
@@ -1450,7 +1508,6 @@
 				A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
-				A364B5352F25589B00325E5C /* DepthFiltering.metal in Sources */,
 				A35547C82EC1B0DB00F43AFD /* CurrentMappedFeaturesData.swift in Sources */,
 				A37E3EA02EFBAADD00B07B77 /* AccessibilityFeatureClassSnapshot.swift in Sources */,
 				A35547C42EC1AF5700F43AFD /* CaptureData.swift in Sources */,
@@ -1488,7 +1545,6 @@
 				A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */,
 				A3FE16612E18BA5900DAE5BE /* RGBCoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
-				A364B5332F25576000325E5C /* DepthFilter.swift in Sources */,
 				A3DA4DBE2EBCB9F9005BB812 /* MetalContext.swift in Sources */,
 				A3A739452DD4BA3F0073C7D2 /* CustomXMLParser.swift in Sources */,
 				A35E051C2EDFB094003C26CF /* OSMNode.swift in Sources */,
@@ -1545,6 +1601,8 @@
 				A37C3C1A2F3144F7001F4248 /* PlaneAttributeProcessor.swift in Sources */,
 				A32943532EE814A700C4C1BC /* OSWElement.swift in Sources */,
 				A30801502EC0926800B1BA3A /* ContourUtils.swift in Sources */,
+				A312FD742FA336020044808E /* DepthFilter.swift in Sources */,
+				A312FD752FA336020044808E /* DepthFiltering.metal in Sources */,
 				A32943482EE7C0DD00C4C1BC /* OSWElementClass.swift in Sources */,
 				A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */,
 				A3B5BD9D2F81CEDD0036C6EC /* DamageDetectionRasterizer.swift in Sources */,
@@ -1561,6 +1619,9 @@
 				A3281AEE2F3950210003E396 /* MTLTextureUtils.swift in Sources */,
 				A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */,
 				A30C67E82EE2733B006E4321 /* MappedAccessibilityFeature.swift in Sources */,
+				A312FD682FA3308F0044808E /* LocationManager.swift in Sources */,
+				A312FD692FA3308F0044808E /* LocationHelpers.swift in Sources */,
+				A312FD6A2FA3308F0044808E /* LocalizationProcessor.swift in Sources */,
 				A3A413AD2ECF94970039298C /* DBSCAN.swift in Sources */,
 				A3471BA02DAF7ABF00FEB845 /* bisenetv2.mlpackage in Sources */,
 				A34509D82FA1A6FA003157B0 /* SafeDeque.swift in Sources */,
@@ -1581,6 +1642,8 @@
 				A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */,
 				A3DC22EF2DCF119A0020CE84 /* HomographyTransformFilter.swift in Sources */,
 				A3EE6E542F67A41100F515E6 /* UtilityExtension.swift in Sources */,
+				A312FD702FA330B80044808E /* RasterizeConfig.swift in Sources */,
+				A312FD712FA330B80044808E /* Extensions.swift in Sources */,
 				A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */,
 				A3C1D7442F886D3500833411 /* SurfaceIntegrity.metal in Sources */,
 				A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */,
@@ -1970,13 +2033,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		A34509D02FA1A49F003157B0 /* XCLocalSwiftPackageReference "../PointNMap" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../PointNMap;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1997,14 +2053,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A34509D12FA1A49F003157B0 /* PointNMap */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = PointNMap;
-		};
-		A34509D32FA1A49F003157B0 /* ShaderTypes */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = ShaderTypes;
-		};
 		A3C22FD72CF2F0C300533BF7 /* DequeModule */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A3C22FD62CF2F0C300533BF7 /* XCRemoteSwiftPackageReference "swift-collections" */;

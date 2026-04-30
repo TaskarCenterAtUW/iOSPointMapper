@@ -10,16 +10,21 @@ import CoreImage
 import CoreLocation
 import simd
 
-struct PointWithDepth: Sendable, Equatable, Hashable, Codable {
-    let point: CGPoint
-    let depth: Float
+public struct PointWithDepth: Sendable, Equatable, Hashable, Codable {
+    public let point: CGPoint
+    public let depth: Float
+    
+    public init(point: CGPoint, depth: Float) {
+        self.point = point
+        self.depth = depth
+    }
 }
 
-enum LocalizationProcessorError: Error, LocalizedError {
+public enum LocalizationProcessorError: Error, LocalizedError {
     case invalidBounds
     case divisionByZero
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .invalidBounds:
             return "The provided bounds for localization are invalid."
@@ -29,8 +34,10 @@ enum LocalizationProcessorError: Error, LocalizedError {
     }
 }
 
-struct LocalizationProcessor {
+public struct LocalizationProcessor {
     let RADIUS = 6378137.0
+    
+    public init() { }
     
     /**
         Calculate the location of an object at a given point with depth in the image.
@@ -49,7 +56,7 @@ struct LocalizationProcessor {
      
         - Note: Assumes that ARKit has the world alignment set to `ARWorldAlignment.gravityAndHeading`.
      */
-    func calculateLocation(
+    public func calculateLocation(
         point: CGPoint, depth: Float, imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3,
@@ -68,7 +75,7 @@ struct LocalizationProcessor {
         )
     }
     
-    func calculateLocation(
+    public func calculateLocation(
         worldPoint: SIMD3<Float>,
         cameraTransform: simd_float4x4,
         deviceLocation: CLLocationCoordinate2D
@@ -90,7 +97,7 @@ struct LocalizationProcessor {
      
         - NOTE: This method is primarily for testing and debugging purposes.
      */
-    func calculateDelta(
+    public func calculateDelta(
         point: CGPoint, depth: Float, imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
@@ -103,7 +110,7 @@ struct LocalizationProcessor {
         return SIMD2<Float>( -delta.z, delta.x )
     }
     
-    func calculateDelta(
+    public func calculateDelta(
         worldPoint: SIMD3<Float>,
         cameraTransform: simd_float4x4
     ) -> SIMD2<Float> {
@@ -114,7 +121,7 @@ struct LocalizationProcessor {
         return SIMD2<Float>( -delta.z, delta.x )
     }
     
-    func calculateLocation(
+    public func calculateLocation(
         latitudeDelta: Float, longitudeDelta: Float,
         deviceLocation: CLLocationCoordinate2D
     ) -> CLLocationCoordinate2D {
@@ -146,7 +153,7 @@ struct LocalizationProcessor {
         )
     }
     
-    func getDeltaFromPoint(
+    public func getDeltaFromPoint(
         point: CGPoint, depth: Float, imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
@@ -213,7 +220,7 @@ extension LocalizationProcessor {
      
         TODO: Improve upon this basic width calculation method.
      */
-    func calculateWidth(
+    public func calculateWidth(
         trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
@@ -262,7 +269,7 @@ extension LocalizationProcessor {
      
         TODO: Improve upon this basic slope calculation method.
      */
-    func calculateRunningSlope(
+    public func calculateRunningSlope(
         trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3
@@ -300,7 +307,7 @@ extension LocalizationProcessor {
         return slopeInDegrees
     }
     
-    func calculateCrossSlope(
+    public func calculateCrossSlope(
         trapezoidBoundsWithDepth: [PointWithDepth], imageSize: CGSize,
         cameraTransform: simd_float4x4,
         cameraIntrinsics: simd_float3x3

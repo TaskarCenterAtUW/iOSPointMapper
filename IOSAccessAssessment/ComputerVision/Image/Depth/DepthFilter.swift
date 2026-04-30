@@ -10,14 +10,14 @@ import Metal
 import CoreImage
 import MetalKit
 
-enum DepthFilterError: Error, LocalizedError {
+public enum DepthFilterError: Error, LocalizedError {
     case metalInitializationFailed
     case invalidInputImage
     case textureCreationFailed
     case metalPipelineCreationError
     case outputImageCreationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalInitializationFailed:
             return "Failed to initialize Metal resources."
@@ -36,7 +36,7 @@ enum DepthFilterError: Error, LocalizedError {
 /**
     DepthFilter applies depth-based filtering to images using Metal.
  */
-struct DepthFilter {
+public struct DepthFilter {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let pipeline: MTLComputePipelineState
@@ -45,7 +45,7 @@ struct DepthFilter {
     private let ciContext: CIContext
     private let outputColorSpace: CGColorSpace? = nil //CGColorSpace(name: CGColorSpace.linearGray)
     
-    init() throws {
+    public init() throws {
         guard let device = MTLCreateSystemDefaultDevice(),
               let commandQueue = device.makeCommandQueue() else  {
             throw DepthFilterError.metalInitializationFailed
@@ -63,7 +63,7 @@ struct DepthFilter {
         self.pipeline = pipeline
     }
     
-    func apply(
+    public func apply(
         to inputImage: CIImage, depthImage: CIImage,
         depthMinThreshold: Float, depthMaxThreshold: Float
     ) throws -> CIImage {

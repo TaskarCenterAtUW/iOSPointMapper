@@ -9,11 +9,11 @@ import CoreLocation
 import UIKit
 import MapKit
 
-enum LocationManagerError: Error, LocalizedError {
+public enum LocationManagerError: Error, LocalizedError {
     case locationUnavailable
     case headingUnavailable
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .locationUnavailable:
             return "Location data is unavailable."
@@ -27,17 +27,17 @@ enum LocationManagerError: Error, LocalizedError {
  A wrapper around CLLocationManager to manage location and heading updates in a more controlled and safe manner.
  */
 @MainActor
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+public class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager: CLLocationManager = CLLocationManager()
     
-    @Published var currentLocation: CLLocation?
-    @Published var currentHeading: CLHeading?
+    @Published public var currentLocation: CLLocation?
+    @Published public var currentHeading: CLHeading?
     
-    override init() {
+    public override init() {
         super.init()
     }
     
-    func startLocationUpdates() {
+    public func startLocationUpdates() {
         setupLocationManager()
     }
     
@@ -77,7 +77,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let latestLocation = locations.last else { return }
         guard let horizontalAccuracy = latestLocation.horizontalAccuracy as CLLocationAccuracy?,
                 let verticalAccuracy = latestLocation.verticalAccuracy as CLLocationAccuracy?,
@@ -89,7 +89,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+    nonisolated public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
         guard let headingAccuracy = newHeading.headingAccuracy as CLLocationDirection?,
               headingAccuracy > 0 else {
             return
@@ -99,7 +99,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    func stopLocationUpdates() {
+    public func stopLocationUpdates() {
         locationManager.stopUpdatingLocation()
     }
 }

@@ -11,6 +11,7 @@ import CoreML
 
 import OrderedCollections
 import simd
+import PointNMap
 
 enum SegmentationARPipelineError: Error, LocalizedError {
     case isProcessingTrue
