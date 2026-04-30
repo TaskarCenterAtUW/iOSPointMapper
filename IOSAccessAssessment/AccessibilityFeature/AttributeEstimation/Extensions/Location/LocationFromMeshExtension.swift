@@ -7,7 +7,7 @@
 
 import SwiftUI
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 extension AttributeEstimationPipeline {
     func getLocationFromMeshForLineStringByPlane(
@@ -65,8 +65,8 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        let locationElement = OSMLocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
-        let locationDetails = OSMLocationDetails(locations: [locationElement])
+        let locationElement = LocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
+        let locationDetails = LocationDetails(locations: [locationElement])
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = locationDeltas.map { simd_length($0) }.reduce(0, +) / Float(locationDeltas.count)
         return LocationRequestResult(

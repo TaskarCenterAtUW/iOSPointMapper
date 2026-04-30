@@ -6,6 +6,7 @@
 //
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 protocol OSWElement: Sendable, CustomStringConvertible {
     var osmElementType: OSMElementType { get }

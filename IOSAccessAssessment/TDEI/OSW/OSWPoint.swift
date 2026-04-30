@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 struct OSWPoint: OSWElement {
     let osmElementType: OSMElementType = .node

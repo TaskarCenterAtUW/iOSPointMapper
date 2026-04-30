@@ -6,7 +6,7 @@
 //
 import SwiftUI
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 extension AttributeEstimationPipeline {
     func calculateLocation(

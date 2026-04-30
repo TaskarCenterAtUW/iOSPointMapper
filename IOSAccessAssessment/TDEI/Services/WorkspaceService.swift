@@ -7,7 +7,7 @@
 
 import Foundation
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 struct Workspace: Codable, Hashable {
     let id: Int

@@ -8,7 +8,7 @@
 import SwiftUI
 import CoreLocation
 import MapKit
-import PointNMap
+import PointNMapShared
 
 enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
@@ -37,7 +37,7 @@ enum AttributeEstimationPipelineError: Error, LocalizedError {
 }
 
 struct LocationRequestResult: Sendable {
-    let locationDetails: OSMLocationDetails
+    let locationDetails: LocationDetails
     let locationDelta: SIMD2<Float>
     let lidarDepth: Float
 }
@@ -217,12 +217,12 @@ class AttributeEstimationPipeline: ObservableObject {
     ) {
         /// Threshold needs to be in Map Units
         let distanceThreshold = Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
-        guard let osmLocationDetails = accessibilityFeature.locationDetails else {
+        guard let LocationDetails = accessibilityFeature.locationDetails else {
             accessibilityFeature.setIsExisting(false)
             return
         }
         let matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
-            to: osmLocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
+            to: LocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
             captureId: self.captureImageData?.id,
             distanceThreshold: distanceThreshold
         )

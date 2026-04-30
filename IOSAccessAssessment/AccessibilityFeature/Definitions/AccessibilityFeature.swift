@@ -6,6 +6,7 @@
 //
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 enum AccessibilityFeatureError: Error, LocalizedError {
     case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttribute.Value)
@@ -23,14 +24,14 @@ protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
     
     var accessibilityFeatureClass: AccessibilityFeatureClass { get }
     
-    var locationDetails: OSMLocationDetails? { get set }
+    var locationDetails: LocationDetails? { get set }
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     var experimentalAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] { get set }
     
     func getLastLocationCoordinate() -> CLLocationCoordinate2D?
     
-    mutating func setLocationDetails(locationDetails: OSMLocationDetails)
+    mutating func setLocationDetails(locationDetails: LocationDetails)
     
     mutating func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,

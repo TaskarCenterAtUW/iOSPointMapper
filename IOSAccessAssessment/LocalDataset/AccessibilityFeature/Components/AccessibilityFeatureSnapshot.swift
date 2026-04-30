@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     var frames: [UUID] = []
@@ -20,7 +21,7 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     
     var selectedAnnotationOption: String
     
-    var locationDetails: OSMLocationDetails?
+    var locationDetails: LocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]

@@ -8,7 +8,7 @@
 import SwiftUI
 import DequeModule
 import simd
-import PointNMap
+import PointNMapShared
 
 @MainActor
 final class SharedAppData: ObservableObject {

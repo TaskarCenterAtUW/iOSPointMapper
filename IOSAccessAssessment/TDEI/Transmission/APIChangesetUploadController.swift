@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMapShared
 
 enum APIChangesetUploadError: Error, LocalizedError {
     case featureClassNotLineString(AccessibilityFeatureClass)
@@ -379,7 +380,7 @@ extension APIChangesetUploadController {
     ) -> (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation]) {
         let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .linestring else { return ([], []) }
-        guard let featureLocationElement: OSMLocationElement = feature.locationDetails?.locations.first,
+        guard let featureLocationElement: LocationElement = feature.locationDetails?.locations.first,
               featureLocationElement.isWay, !featureLocationElement.isClosed else {
             return ([], [])
         }
@@ -446,7 +447,7 @@ extension APIChangesetUploadController {
     ) -> (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation]) {
         let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .polygon else { return ([], []) }
-        guard let featureLocationElement: OSMLocationElement = feature.locationDetails?.locations.first,
+        guard let featureLocationElement: LocationElement = feature.locationDetails?.locations.first,
               featureLocationElement.isWay, featureLocationElement.isClosed else {
             return ([], [])
         }

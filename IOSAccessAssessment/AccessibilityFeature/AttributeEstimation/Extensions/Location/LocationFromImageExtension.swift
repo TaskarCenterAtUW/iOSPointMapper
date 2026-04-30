@@ -6,7 +6,7 @@
 //
 import SwiftUI
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 extension AttributeEstimationPipeline {
     func getLocationFromImageByCentroid(
@@ -33,8 +33,8 @@ extension AttributeEstimationPipeline {
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             deviceLocation: deviceLocation
         )
-        let locationElement = OSMLocationElement(coordinates: [locationCoordinate], isWay: false, isClosed: false)
-        let locationDetails = OSMLocationDetails(locations: [locationElement])
+        let locationElement = LocationElement(coordinates: [locationCoordinate], isWay: false, isClosed: false)
+        let locationDetails = LocationDetails(locations: [locationElement])
         return LocationRequestResult(
             locationDetails: locationDetails, locationDelta: locationDelta, lidarDepth: featureDepthValue
         )
@@ -84,8 +84,8 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        let locationElement = OSMLocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
-        let locationDetails = OSMLocationDetails(locations: [locationElement])
+        let locationElement = LocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
+        let locationDetails = LocationDetails(locations: [locationElement])
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = locationDeltas.map { simd_length($0) }.reduce(0, +) / Float(locationDeltas.count)
         return LocationRequestResult(
@@ -133,8 +133,8 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        let locationElement = OSMLocationElement(coordinates: locationCoordinates, isWay: true, isClosed: true)
-        let locationDetails = OSMLocationDetails(locations: [locationElement])
+        let locationElement = LocationElement(coordinates: locationCoordinates, isWay: true, isClosed: true)
+        let locationDetails = LocationDetails(locations: [locationElement])
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
         return LocationRequestResult(
@@ -184,8 +184,8 @@ extension AttributeEstimationPipeline {
                 deviceLocation: deviceLocation
             )
         }
-        let locationElement = OSMLocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
-        let locationDetails = OSMLocationDetails(locations: [locationElement])
+        let locationElement = LocationElement(coordinates: locationCoordinates, isWay: true, isClosed: false)
+        let locationDetails = LocationDetails(locations: [locationElement])
         let locationDelta = locationDeltas.reduce(SIMD2<Float>(0, 0), +) / Float(locationDeltas.count)
         let lidarDepth = pointDepthValues.reduce(0, +) / Float(pointDepthValues.count)
         return LocationRequestResult(

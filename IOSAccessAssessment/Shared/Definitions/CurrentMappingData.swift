@@ -7,7 +7,7 @@
 
 import Foundation
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 enum CurrentMappingDataError: Error, LocalizedError {
 }
@@ -174,7 +174,7 @@ class CurrentMappingData: CustomStringConvertible {
      It iterates through the features of the specified class, calculates the distance from each feature to the given OSM location details, and keeps track of the nearest feature found that is within the distance threshold. If no features are found within the threshold, it returns nil.
      */
     func getNearestFeature(
-        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
+        to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
         guard let featureIds = featuresMap[featureClass] else { return nil }
@@ -188,7 +188,7 @@ class CurrentMappingData: CustomStringConvertible {
                 feature: feature, geometry: geometry
             ) else { continue }
             guard let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
-                srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: osmLocationDetails
+                srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: LocationDetails
             ) else { continue }
             if distance < nearestDistance {
                 nearestFeature = feature
@@ -202,7 +202,7 @@ class CurrentMappingData: CustomStringConvertible {
      This function takes in OSM location details, an accessibility feature class, and a capture ID, and returns the feature of that class whose capture ID matches the given capture ID.
      */
     func getCaptureMatchedFeature(
-        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
+        to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
         captureId: UUID
     ) -> (any OSWElement)? {
         guard let featureIds = featuresMap[featureClass] else { return nil }
@@ -226,20 +226,20 @@ class CurrentMappingData: CustomStringConvertible {
      It first attempts to find a feature that matches the capture ID, and if it finds one, it directly returns it. Else,  it falls back to finding the nearest feature within the distance threshold.
      */
     func getMatchedFeature(
-        to osmLocationDetails: OSMLocationDetails, featureClass: AccessibilityFeatureClass,
+        to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
         captureId: UUID?,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
         if let captureId = captureId {
             let captureMatchedFeature = getCaptureMatchedFeature(
-                to: osmLocationDetails, featureClass: featureClass, captureId: captureId
+                to: LocationDetails, featureClass: featureClass, captureId: captureId
             )
             if let captureMatchedFeature = captureMatchedFeature {
                 return captureMatchedFeature
             }
         }
         return getNearestFeature(
-            to: osmLocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
+            to: LocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
         )
     }
     
@@ -270,37 +270,37 @@ class CurrentMappingData: CustomStringConvertible {
     /// Note: OSWGeometry is not required as a parameter here since the feature itself carries geometry information based on the type of OSWElement it is.
     private func getFeatureOSMLocationDetails(
         feature: any OSWElement, geometry: OSWGeometry
-    ) -> OSMLocationDetails? {
+    ) -> LocationDetails? {
         switch geometry {
         case .point:
             guard let point = feature as? OSWPoint else { return nil }
             let coordinates: [CLLocationCoordinate2D] = [CLLocationCoordinate2D(
                 latitude: point.latitude, longitude: point.longitude
             )]
-            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+            let LocationElement: LocationElement = LocationElement(
                 coordinates: coordinates, isWay: false, isClosed: false
             )
-            return OSMLocationDetails(locations: [osmLocationElement])
+            return LocationDetails(locations: [LocationElement])
         case .linestring:
             guard let lineString = feature as? OSWLineString else { return nil }
             let coordinates: [CLLocationCoordinate2D] = lineString.pointRefs.compactMap { pointRef in
                 guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
                 return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
             }
-            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+            let LocationElement: LocationElement = LocationElement(
                 coordinates: coordinates, isWay: true, isClosed: false
             )
-            return OSMLocationDetails(locations: [osmLocationElement])
+            return LocationDetails(locations: [LocationElement])
         case .polygon:
             guard let polygon = feature as? OSWPolygon else { return nil }
             let coordinates: [CLLocationCoordinate2D] = polygon.pointRefs.compactMap { pointRef in
                 guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
                 return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
             }
-            let osmLocationElement: OSMLocationElement = OSMLocationElement(
+            let LocationElement: LocationElement = LocationElement(
                 coordinates: coordinates, isWay: true, isClosed: true
             )
-            return OSMLocationDetails(locations: [osmLocationElement])
+            return LocationDetails(locations: [LocationElement])
         }
     }
 }

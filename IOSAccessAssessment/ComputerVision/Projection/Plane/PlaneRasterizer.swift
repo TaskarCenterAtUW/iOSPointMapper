@@ -7,7 +7,7 @@
 
 import CoreImage
 import UIKit
-import PointNMap
+import PointNMapShared
 
 struct PlaneRasterizer {
     /**

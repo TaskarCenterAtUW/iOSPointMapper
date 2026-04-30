@@ -6,6 +6,7 @@
 //
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatureProtocol, DetectedFeatureProtocol {
     let id: UUID
@@ -16,7 +17,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
     
     var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
-    var locationDetails: OSMLocationDetails?
+    var locationDetails: LocationDetails?
     /// If isExisting is false, even if an osw element is associated, it means the feature is new.
     /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
     var isExisting: Bool = false
@@ -51,7 +52,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
-        locationDetails: OSMLocationDetails?,
+        locationDetails: LocationDetails?,
         isExisting: Bool = false,
         oswElement: (any OSWElement)? = nil,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
@@ -79,7 +80,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         return lastCoordinate
     }
     
-    func setLocationDetails(locationDetails: OSMLocationDetails) {
+    func setLocationDetails(locationDetails: LocationDetails) {
         self.locationDetails = locationDetails
     }
     

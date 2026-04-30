@@ -8,7 +8,7 @@
 import CoreLocation
 import UIKit
 import MapKit
-import PointNMap
+import PointNMapShared
 
 public extension LocationHelpers {
     /**
@@ -20,7 +20,7 @@ public extension LocationHelpers {
      First, checks the geometry types of the source and destination location details (e.g., point, linestring, polygon) based on the properties of their last location element. Then, based on the geometry types, it calls the appropriate distance calculation method (e.g., distanceBetweenPoints, distanceFromPointToLineString, distanceFromPointToPolygon, distanceBetweenLineStrings, distanceFromLineStringToPolygon, distanceBetweenPolygons) to compute the distance between the two locations.
      */
     static func distanceBetweenSimilarOSMLocationDetails(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLastLocationElement = srcLocationDetails.locations.last else {
             return nil
@@ -54,7 +54,7 @@ public extension LocationHelpers {
      Unit of distance is determined by MapKit's MKMapPoint.
      */
     static func distanceBetweenPoints(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == false, srcLocationElement.isClosed == false,
@@ -77,7 +77,7 @@ public extension LocationHelpers {
         Converts the coordinates of the linestring into map points, then iterates through each line segment of the linestring and calculates the distance from the point to that line segment using the distanceFromPointToLineSegment method. The minimum distance found across all segments is returned as the distance from the point to the linestring.
      */
     static func distanceFromPointToLineString(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == false, srcLocationElement.isClosed == false,
@@ -112,7 +112,7 @@ public extension LocationHelpers {
         Converts the coordinates of the polygon into map points, then iterates through each edge of the polygon and calculates the distance from the point to that edge using the distanceFromPointToLineSegment method. The minimum distance found across all edges is returned as the distance from the point to the polygon. If the point is inside the polygon, the distance returned is 0.
      */
     static func distanceFromPointToPolygon(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == false, srcLocationElement.isClosed == false,
@@ -130,14 +130,14 @@ public extension LocationHelpers {
     }
     
 //    static func distanceFromPointToMultiPolygon(
-//        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+//        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
 //    ) -> Double? {
 //        var minDistance: Double = Double.infinity
 //        dstLocationDetails.locations.forEach { locationElement in
 //            guard locationElement.isWay == true, locationElement.isClosed == true else {
 //                return
 //            }
-//            let singlePolygonLocationDetails = OSMLocationDetails(locations: [locationElement])
+//            let singlePolygonLocationDetails = LocationDetails(locations: [locationElement])
 //            if let distance = distanceFromPointToPolygon(srcLocationDetails: srcLocationDetails, dstLocationDetails: singlePolygonLocationDetails) {
 //                minDistance = min(minDistance, distance)
 //            }
@@ -156,7 +156,7 @@ public extension LocationHelpers {
         The logic for overlapping linestring needs to be updated, so that it captures the degree of overlap instead of just returning 0. This is because in some cases, two linestrings may partially overlap with each other, and the distance should reflect how much of the linestrings are outside of each other rather than just indicating that there is some overlap.
      */
     static func distanceBetweenLineStrings(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == true, srcLocationElement.isClosed == false,
@@ -197,7 +197,7 @@ public extension LocationHelpers {
      The logic for overlapping linestring needs to be updated, so that it captures the degree of overlap instead of just returning 0. This is because in some cases, a linestring may partially overlap with a polygon, and the distance should reflect how much of the linestring is outside the polygon rather than just indicating that there is some overlap.
      */
     static func distanceFromLineStringToPolygon(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == true, srcLocationElement.isClosed == false,
@@ -228,14 +228,14 @@ public extension LocationHelpers {
     }
     
 //    static func distanceFromLineStringToMultiPolygon(
-//        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+//        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
 //    ) -> Double? {
 //        var minDistance: Double = Double.infinity
 //        dstLocationDetails.locations.forEach { locationElement in
 //            guard locationElement.isWay == true, locationElement.isClosed == true else {
 //                return
 //            }
-//            let singlePolygonLocationDetails = OSMLocationDetails(locations: [locationElement])
+//            let singlePolygonLocationDetails = LocationDetails(locations: [locationElement])
 //            if let distance = distanceFromLineStringToPolygon(srcLocationDetails: srcLocationDetails, dstLocationDetails: singlePolygonLocationDetails) {
 //                minDistance = min(minDistance, distance)
 //            }
@@ -254,7 +254,7 @@ public extension LocationHelpers {
         The logic for overlapping polygons needs to be updated, so that it captures the degree of overlap instead of just returning 0. This is because in some cases, two polygons may partially overlap with each other, and the distance should reflect how much of the polygons are outside of each other rather than just indicating that there is some overlap.
      */
     static func distanceBetweenPolygons(
-        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
     ) -> Double? {
         guard let srcLocationElement = srcLocationDetails.locations.last,
               srcLocationElement.isWay == true, srcLocationElement.isClosed == true,
@@ -293,7 +293,7 @@ public extension LocationHelpers {
      Currently, this algorithm doesn't actually consider the relation role of each multi-polygon member (e.g. outer vs inner), which can lead to inaccurate distance calculations in some cases. For example, if one of the multi-polygons has an inner member that overlaps with the other multi-polygon, the distance should be negative to reflect the degree of overlap. However, without considering the relation type, the algorithm may simply return a distance of 0 for this case, which does not accurately capture the spatial relationship between the two multi-polygons.
      */
 //    static func distanceBetweenMultiPolygons(
-//        srcLocationDetails: OSMLocationDetails, dstLocationDetails: OSMLocationDetails
+//        srcLocationDetails: LocationDetails, dstLocationDetails: LocationDetails
 //    ) -> Double? {
 //        let srcLocationCoordinateArrays = srcLocationDetails.locations
 //        let dstLocationCoordinateArrays = dstLocationDetails.locations
@@ -304,8 +304,8 @@ public extension LocationHelpers {
 //        var minDistance: Double = Double.infinity
 //        for srcLocationCoordinateArray in srcLocationCoordinateArrays {
 //            for dstLocationCoordinateArray in dstLocationCoordinateArrays {
-//                let srcOSMLocationDetails = OSMLocationDetails(locations: [srcLocationCoordinateArray])
-//                let dstOSMLocationDetails = OSMLocationDetails(locations: [dstLocationCoordinateArray])
+//                let srcOSMLocationDetails = LocationDetails(locations: [srcLocationCoordinateArray])
+//                let dstOSMLocationDetails = LocationDetails(locations: [dstLocationCoordinateArray])
 //                /// While deciding the geometry, we are not using the .polygon enumeration, since that actually represents a multipolygon in OSW.
 //                let srcGeometry: OSWGeometry = srcLocationCoordinateArray.isWay ? .linestring : .point
 //                let isSrcPolygon = srcLocationCoordinateArray.isWay && srcLocationCoordinateArray.isClosed

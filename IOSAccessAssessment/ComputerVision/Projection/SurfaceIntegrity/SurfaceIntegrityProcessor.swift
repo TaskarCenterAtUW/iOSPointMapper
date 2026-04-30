@@ -9,6 +9,7 @@ import ARKit
 import RealityKit
 import MetalKit
 import simd
+import PointNMapShared
 
 enum SurfaceIntegrityProcessorError: Error, LocalizedError {
     case metalInitializationFailed

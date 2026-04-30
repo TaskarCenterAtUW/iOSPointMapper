@@ -12,7 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 import CoreLocation
-import PointNMap
+import PointNMapShared
 
 enum ARCameraViewConstants {
     enum Texts {

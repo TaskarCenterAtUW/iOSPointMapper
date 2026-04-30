@@ -7,6 +7,7 @@
 
 import CoreImage
 import ARKit
+import PointNMapShared
 
 struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, CustomStringConvertible {
     let id: String

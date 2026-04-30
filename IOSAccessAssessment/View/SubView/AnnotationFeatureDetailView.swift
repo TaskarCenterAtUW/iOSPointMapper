@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PointNMapShared
 
 /**
     A view that displays detailed information about an accessibility feature annotation.

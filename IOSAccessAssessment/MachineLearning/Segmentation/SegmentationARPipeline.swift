@@ -11,7 +11,7 @@ import CoreML
 
 import OrderedCollections
 import simd
-import PointNMap
+import PointNMapShared
 
 enum SegmentationARPipelineError: Error, LocalizedError {
     case isProcessingTrue
