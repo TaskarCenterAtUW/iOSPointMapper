@@ -30,6 +30,8 @@ public enum CapturedMeshSnapshotError: Error, LocalizedError {
 
 @MainActor
 public final class CapturedMeshSnapshotGenerator {
+    public init() { }
+    
     public func snapshotSegmentationRecords(
         from: [AccessibilityFeatureClass: SegmentationMeshRecord],
         vertexStride: Int,
@@ -104,6 +106,8 @@ public final class CapturedMeshSnapshotGenerator {
     Can be used for processing the mesh snapshot, even outside the main actor.
  */
 public final class CapturedMeshSnapshotHelper {
+    public init() { }
+    
     /**
      TODO: Instead of simd3<Float>, use packed simd types that match the vertex format in the snapshot to avoid unnecessary conversions.
      */

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 @MainActor
 protocol AnnotationImageProcessingOutputConsumer: AnyObject {

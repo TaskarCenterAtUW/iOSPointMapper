@@ -14,6 +14,12 @@ public struct CaptureImageDataResults: Sendable {
     public let segmentedClasses: [AccessibilityFeatureClass]
     /// Map of detected accessibility features with their UUIDs. Not currently used but reserved for potential future use.
     public let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
+    
+    public init(segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass], detectedFeatureMap: [UUID : DetectedAccessibilityFeature]) {
+        self.segmentationLabelImage = segmentationLabelImage
+        self.segmentedClasses = segmentedClasses
+        self.detectedFeatureMap = detectedFeatureMap
+    }
 }
 
 public struct CaptureMeshDataResults: Sendable {

@@ -11,6 +11,7 @@ import ARKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import simd
+import PointNMapShared
 
 @MainActor
 protocol TestCameraProcessingOutputConsumer: AnyObject {

@@ -8,7 +8,6 @@ import ARKit
 import RealityKit
 import Combine
 import simd
-import PointNMapShared
 
 enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed
@@ -237,7 +236,8 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
         metalContext: MetalContext?,
         isEnhancedAnalysisEnabled: Bool,
-        cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
+        cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil,
+        pixelBufferPoolSize: CGSize = PointNMapConstants.SelectedAccessibilityFeatureConfig.inputSize
     ) throws {
         self.selectedClasses = selectedClasses
         self.segmentationPipeline = segmentationPipeline
@@ -248,7 +248,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.metalContext = metalContext
         self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
-        try setUpPreAllocatedPixelBufferPools(size: SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize)
+        try setUpPreAllocatedPixelBufferPools(size: pixelBufferPoolSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
@@ -371,7 +371,8 @@ extension ARCameraManager {
         depthImage: CIImage? = nil,
         interfaceOrientation: UIInterfaceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
-        highPriority: Bool = false
+        highPriority: Bool = false,
+        croppedSize: CGSize = PointNMapConstants.SelectedAccessibilityFeatureConfig.inputSize
     ) async throws -> ARCameraImageResults {
         guard let cameraCroppedPixelBufferPool = cameraCroppedPixelBufferPool,
               let segmentationPixelBufferPool = segmentationMaskPixelBufferPool else {
@@ -382,7 +383,6 @@ extension ARCameraManager {
         }
         /// Pre-process the image: orient, center-crop, and back to pixel buffer
         let originalSize: CGSize = image.extent.size
-        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

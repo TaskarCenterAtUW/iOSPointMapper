@@ -15,20 +15,22 @@ import simd
 /// The consumer of post-processed camera outputs (e.g., overlay images).
 @MainActor
 protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
-    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
-                           metalContext: MetalContext,
-                           segmentationImage: CIImage?,
-                           segmentationBoundingFrameImage: CIImage?,
-                           for frame: ARFrame?
+    func cameraOutputImage(
+        _ delegate: ARSessionCameraProcessingDelegate,
+        metalContext: MetalContext,
+        segmentationImage: CIImage?,
+        segmentationBoundingFrameImage: CIImage?,
+        for frame: ARFrame?
     )
-    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
-                           metalContext: MetalContext,
-                           meshGPUSnapshot: MeshGPUSnapshot,
-                           for meshAnchors: [ARMeshAnchor]?,
-                           cameraTransform: simd_float4x4,
-                           cameraIntrinsics: simd_float3x3,
-                           segmentationLabelImage: CIImage,
-                           accessibilityFeatureClasses: [AccessibilityFeatureClass]
+    func cameraOutputMesh(
+        _ delegate: ARSessionCameraProcessingDelegate,
+        metalContext: MetalContext,
+        meshGPUSnapshot: MeshGPUSnapshot,
+        for meshAnchors: [ARMeshAnchor]?,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        segmentationLabelImage: CIImage,
+        accessibilityFeatureClasses: [AccessibilityFeatureClass]
     )
     func getMeshRecordDetails() -> (
         records: [AccessibilityFeatureClass: SegmentationMeshRecord],
@@ -333,10 +335,12 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         self.meshOtherDetails = nil
     }
     
-    func cameraOutputImage(_ delegate: ARSessionCameraProcessingDelegate,
-                           metalContext: MetalContext,
-                           segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
-                           for frame: ARFrame?) {
+    func cameraOutputImage(
+        _ delegate: ARSessionCameraProcessingDelegate,
+        metalContext: MetalContext,
+        segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
+        for frame: ARFrame?
+    ) {
         if let segmentationImage = segmentationImage,
            let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
             self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)
@@ -348,18 +352,19 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func cameraOutputMesh(_ delegate: ARSessionCameraProcessingDelegate,
-                           metalContext: MetalContext,
-                           meshGPUSnapshot: MeshGPUSnapshot,
-                           for meshAnchors: [ARMeshAnchor]?,
-                           cameraTransform: simd_float4x4,
-                           cameraIntrinsics: simd_float3x3,
-                           segmentationLabelImage: CIImage,
-                           accessibilityFeatureClasses: [AccessibilityFeatureClass]
+    func cameraOutputMesh(
+        _ delegate: ARSessionCameraProcessingDelegate,
+        metalContext: MetalContext,
+        meshGPUSnapshot: MeshGPUSnapshot,
+        for meshAnchors: [ARMeshAnchor]?,
+        cameraTransform: simd_float4x4,
+        cameraIntrinsics: simd_float3x3,
+        segmentationLabelImage: CIImage,
+        accessibilityFeatureClasses: [AccessibilityFeatureClass]
     ) {
         var totalVertexCount = 0
         for accessibilityFeatureClass in accessibilityFeatureClasses {
-            guard SharedAppConstants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
+            guard PointNMapConstants.SelectedAccessibilityFeatureConfig.classes.contains(accessibilityFeatureClass) else {
                 print("Invalid segmentation class: \(accessibilityFeatureClass)")
                 continue
             }
