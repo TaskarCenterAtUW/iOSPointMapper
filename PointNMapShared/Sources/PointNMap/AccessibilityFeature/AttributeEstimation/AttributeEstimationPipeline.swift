@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import Combine
 import CoreLocation
 import MapKit
-import PointNMapShared
+import PointNMapShaderTypes
 
 public enum AttributeEstimationPipelineError: Error, LocalizedError {
     case configurationError(String)
@@ -216,7 +217,7 @@ public class AttributeEstimationPipeline: ObservableObject {
         accessibilityFeature: EditableAccessibilityFeature
     ) {
         /// Threshold needs to be in Map Units
-        let distanceThreshold = SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
+        let distanceThreshold = PointNMapConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
         guard let LocationDetails = accessibilityFeature.locationDetails else {
             accessibilityFeature.setIsExisting(false)
             return

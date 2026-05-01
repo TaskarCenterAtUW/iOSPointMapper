@@ -6,11 +6,10 @@
 //
 
 import SwiftUI
+import Combine
 import Vision
 
-import OrderedCollections
 import simd
-import PointNMapShared
 
 public enum SegmentationAnnotationPipelineError: Error, LocalizedError {
     case isProcessingTrue
@@ -226,7 +225,8 @@ public final class SegmentationAnnotationPipeline: ObservableObject {
         /// TODO: Handle sidewalk feature differently if needed, and improve the relevant trapezoid-creation logic.
         let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.area > $1.contourDetails.area}).first
         guard let largestFeature = largestFeature,
-              accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk else {
+              let largestFeatureClassKind = accessibilityFeatureClass.kind,
+              largestFeatureClassKind == .sidewalk else {
             self.isProcessing = false
             return detectedFeatures
         }

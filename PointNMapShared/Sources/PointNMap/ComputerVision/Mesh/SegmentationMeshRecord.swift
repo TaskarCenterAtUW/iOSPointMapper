@@ -7,8 +7,9 @@
 import ARKit
 import RealityKit
 import MetalKit
+import PointNMapShaderTypes
 
-enum SegmentationMeshRecordError: Error, LocalizedError {
+public enum SegmentationMeshRecordError: Error, LocalizedError {
     case isProcessingTrue
     case emptySegmentation
     case segmentationTextureError
@@ -19,7 +20,7 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
     case meshPipelineBlitEncoderError
     case unexpectedError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .isProcessingTrue:
             return "The Segmentation Mesh Pipeline is already processing a request."
@@ -44,23 +45,23 @@ enum SegmentationMeshRecordError: Error, LocalizedError {
 }
 
 @MainActor
-final class SegmentationMeshRecord {
-    let entity: ModelEntity
-    let name: String
-    let color: UIColor
-    let opacity: Float
+public final class SegmentationMeshRecord {
+    public let entity: ModelEntity
+    public let name: String
+    public let color: UIColor
+    public let opacity: Float
     
-    var mesh: LowLevelMesh
-    var vertexCount: Int
-    var indexCount: Int
+    public var mesh: LowLevelMesh
+    public var vertexCount: Int
+    public var indexCount: Int
     
-    let accessibilityFeatureClass: AccessibilityFeatureClass
-    let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
+    public let accessibilityFeatureClass: AccessibilityFeatureClass
+    public let accessibilityFeatureMeshClassificationParams: AccessibilityFeatureMeshClassificationParams
     
-    let context: MetalContext
-    let pipelineState: MTLComputePipelineState
+    public let context: MetalContext
+    public let pipelineState: MTLComputePipelineState
     
-    init(
+    public init(
         _ context: MetalContext,
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
@@ -68,7 +69,10 @@ final class SegmentationMeshRecord {
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws {
         self.context = context
-        guard let kernelFunction = context.device.makeDefaultLibrary()?.makeFunction(name: "processMesh") else {
+        let library = try context.device.makeDefaultLibrary(
+            bundle: PointNMapSharedResources.bundle
+        )
+        guard let kernelFunction = library.makeFunction(name: "processMesh") else {
             throw SegmentationMeshRecordError.metalInitializationError
         }
         self.pipelineState = try context.device.makeComputePipelineState(function: kernelFunction)
@@ -95,7 +99,7 @@ final class SegmentationMeshRecord {
         )
     }
     
-    func replace(
+    public func replace(
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
@@ -107,7 +111,7 @@ final class SegmentationMeshRecord {
         )
     }
     
-    func update(
+    public func update(
         meshGPUSnapshot: MeshGPUSnapshot,
         segmentationImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3
@@ -319,7 +323,7 @@ final class SegmentationMeshRecord {
     /**
         Function to set up the AccessibilityFeatureMeshClassificationParams struct based on the provided AccessibilityFeatureClass.
      */
-    static func getAccessibilityFeatureMeshClassificationParams(
+    public static func getAccessibilityFeatureMeshClassificationParams(
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> AccessibilityFeatureMeshClassificationParams {
         let accessibilityFeatureMeshClassificationLookupTable = getAccessibilityFeatureMeshClassificationLookupTable(
@@ -344,7 +348,7 @@ final class SegmentationMeshRecord {
      Return an array of booleans for metal, indicating which accessibility feature classes are to be considered.
      If the accessibilityFeatureClass.meshClassification is empty, all classes are considered valid.
      */
-    static func getAccessibilityFeatureMeshClassificationLookupTable(
+    public static func getAccessibilityFeatureMeshClassificationLookupTable(
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) -> [UInt32] {
         // MARK: Assuming a maximum of 256 classes
@@ -361,7 +365,7 @@ final class SegmentationMeshRecord {
         return lookupTable
     }
     
-    static func createDescriptor(meshGPUSnapshot: MeshGPUSnapshot) -> LowLevelMesh.Descriptor {
+    public static func createDescriptor(meshGPUSnapshot: MeshGPUSnapshot) -> LowLevelMesh.Descriptor {
         let vertexCount = meshGPUSnapshot.anchors.values.reduce(0) { $0 + $1.vertexCount }
         let indexCount = meshGPUSnapshot.anchors.values.reduce(0) { $0 + $1.indexCount }
         var descriptor = LowLevelMesh.Descriptor()
@@ -379,7 +383,7 @@ final class SegmentationMeshRecord {
         return descriptor
     }
     
-    static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
+    public static func generateEntity(mesh: LowLevelMesh, color: UIColor, opacity: Float, name: String) throws -> ModelEntity {
         let resource = try MeshResource(from: mesh)
         var material = UnlitMaterial(color: color.withAlphaComponent(CGFloat(opacity)))
         material.triangleFillMode = .fill

@@ -6,28 +6,27 @@
 //
 import Foundation
 import CoreLocation
-import PointNMapShared
 
-class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatureProtocol, DetectedFeatureProtocol {
-    let id: UUID
+public class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatureProtocol, DetectedFeatureProtocol {
+    public let id: UUID
     
-    let accessibilityFeatureClass: AccessibilityFeatureClass
+    public let accessibilityFeatureClass: AccessibilityFeatureClass
     
-    let contourDetails: ContourDetails
+    public let contourDetails: ContourDetails
     
-    var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
+    public var selectedAnnotationOption: AnnotationOption = .individualOption(.default)
     
-    var locationDetails: LocationDetails?
+    public var locationDetails: LocationDetails?
     /// If isExisting is false, even if an osw element is associated, it means the feature is new.
     /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
-    var isExisting: Bool = false
-    var oswElement: (any OSWElement)?
+    public var isExisting: Bool = false
+    public var oswElement: (any OSWElement)?
     
-    var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:]
+    public var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    public var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    public var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:]
     
-    init(
+    public init(
         id: UUID = UUID(),
         detectedAccessibilityFeature: DetectedAccessibilityFeature
     ) {
@@ -48,7 +47,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         })
     }
     
-    init(
+    public init(
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails,
@@ -70,29 +69,29 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         self.experimentalAttributeValues = experimentalAttributeValues
     }
     
-    func setAnnotationOption(_ option: AnnotationOption) {
+    public func setAnnotationOption(_ option: AnnotationOption) {
         self.selectedAnnotationOption = option
     }
     
-    func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
+    public func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
         guard let locationDetails else { return nil }
         guard let lastCoordinate = locationDetails.locations.last?.coordinates.last else { return nil }
         return lastCoordinate
     }
     
-    func setLocationDetails(locationDetails: LocationDetails) {
+    public func setLocationDetails(locationDetails: LocationDetails) {
         self.locationDetails = locationDetails
     }
     
-    func setIsExisting(_ isExisting: Bool) {
+    public func setIsExisting(_ isExisting: Bool) {
         self.isExisting = isExisting
     }
     
-    func setOSWElement(oswElement: any OSWElement) {
+    public func setOSWElement(oswElement: any OSWElement) {
         self.oswElement = oswElement
     }
     
-    func setAttributeValue(
+    public func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute,
         isCalculated: Bool = false,
@@ -109,14 +108,14 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         }
     }
     
-    func setAttributeValue(
+    public func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute
     ) throws {
         try setAttributeValue(value, for: attribute, isCalculated: false, isFinal: true)
     }
     
-    func setExperimentalAttributeValue(
+    public func setExperimentalAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value,
         for attribute: AccessibilityFeatureAttribute
     ) throws {
@@ -126,7 +125,7 @@ class EditableAccessibilityFeature: Identifiable, Equatable, AccessibilityFeatur
         experimentalAttributeValues[attribute] = value
     }
     
-    static func == (lhs: EditableAccessibilityFeature, rhs: EditableAccessibilityFeature) -> Bool {
+    public static func == (lhs: EditableAccessibilityFeature, rhs: EditableAccessibilityFeature) -> Bool {
         return lhs.id == rhs.id
     }
 }

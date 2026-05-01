@@ -6,12 +6,11 @@
 //
 
 import SwiftUI
+import Combine
 import Vision
 import CoreML
 
-import OrderedCollections
 import simd
-import PointNMapShared
 
 public enum SegmentationARPipelineError: Error, LocalizedError {
     case isProcessingTrue
@@ -190,8 +189,8 @@ public final class SegmentationARPipeline: ObservableObject {
         var depthFilteredSegmentationImage: CIImage? = nil
         if let depthImage, let depthFilter = self.depthFilter {
             // Apply depth filtering to the segmentation image
-            let depthMinThresholdValue = SharedAppConstants.DepthConstants.depthMinThreshold
-            let depthMaxThresholdValue = SharedAppConstants.DepthConstants.depthMaxThreshold
+            let depthMinThresholdValue = PointNMapConstants.DepthConstants.depthMinThreshold
+            let depthMaxThresholdValue = PointNMapConstants.DepthConstants.depthMaxThreshold
             depthFilteredSegmentationImage = try depthFilter.apply(
                 to: segmentationImage, depthImage: depthImage,
                 depthMinThreshold: depthMinThresholdValue, depthMaxThreshold: depthMaxThresholdValue

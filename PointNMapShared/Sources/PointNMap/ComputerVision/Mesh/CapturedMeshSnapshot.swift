@@ -6,14 +6,15 @@
 //
 import ARKit
 import RealityKit
+import PointNMapShaderTypes
 
-enum CapturedMeshSnapshotError: Error, LocalizedError {
+public enum CapturedMeshSnapshotError: Error, LocalizedError {
     case invalidMeshData
     case invalidVertexData
     case invalidIndexData
     case meshClassNotFound(AccessibilityFeatureClass)
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .invalidMeshData:
             return "The mesh data in the segmentation mesh record is invalid"
@@ -28,8 +29,8 @@ enum CapturedMeshSnapshotError: Error, LocalizedError {
 }
 
 @MainActor
-final class CapturedMeshSnapshotGenerator {
-    func snapshotSegmentationRecords(
+public final class CapturedMeshSnapshotGenerator {
+    public func snapshotSegmentationRecords(
         from: [AccessibilityFeatureClass: SegmentationMeshRecord],
         vertexStride: Int,
         vertexOffset: Int,
@@ -56,7 +57,7 @@ final class CapturedMeshSnapshotGenerator {
         )
     }
     
-    func createSnapshot(
+    public func createSnapshot(
         segmentationRecord: SegmentationMeshRecord
     ) throws -> CapturedMeshAnchorSnapshot {
         let lowLevelMesh = segmentationRecord.mesh
@@ -102,11 +103,11 @@ final class CapturedMeshSnapshotGenerator {
     Helper class for CapturedMeshSnapshot related operations.
     Can be used for processing the mesh snapshot, even outside the main actor.
  */
-final class CapturedMeshSnapshotHelper {
+public final class CapturedMeshSnapshotHelper {
     /**
      TODO: Instead of simd3<Float>, use packed simd types that match the vertex format in the snapshot to avoid unnecessary conversions.
      */
-    static func readFeatureSnapshot(
+    public static func readFeatureSnapshot(
         capturedMeshSnapshot: CapturedMeshSnapshot,
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> [MeshPolygon] {
@@ -172,7 +173,7 @@ final class CapturedMeshSnapshotHelper {
         ).polygons
     }
     
-    static func readFeatureSnapshot(
+    public static func readFeatureSnapshot(
         capturedMeshSnapshot: CapturedMeshSnapshot,
         accessibilityFeatureClass: AccessibilityFeatureClass
     ) throws -> MeshContents {

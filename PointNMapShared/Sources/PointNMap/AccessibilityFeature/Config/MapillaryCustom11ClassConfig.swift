@@ -6,8 +6,9 @@
 //
 import Foundation
 import CoreImage
+import ARKit
 
-extension AccessibilityFeatureConfig {
+public extension AccessibilityFeatureConfig {
     static let mapillaryCustom11Config: AccessibilityFeatureClassConfig = AccessibilityFeatureClassConfig(
         modelURL: Bundle.main.url(forResource: "bisenetv2_11_640_640", withExtension: "mlmodelc"),
         classes: [
@@ -18,7 +19,8 @@ extension AccessibilityFeatureConfig {
 //                              )),
             
             AccessibilityFeatureClass(
-                id: "sidewalk", name: "Sidewalk", grayscaleValue: 1.0 / 255.0, labelValue: 1,
+                id: "sidewalk", name: "Sidewalk", kind: .sidewalk,
+                grayscaleValue: 1.0 / 255.0, labelValue: 1,
                 color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
                 meshClassification: [.floor],
                 attributes: [
@@ -26,37 +28,36 @@ extension AccessibilityFeatureConfig {
                     .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
                     .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
                 ],
-                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true)
             ),
             
             AccessibilityFeatureClass(
-                id: "building", name: "Building", grayscaleValue: 2.0 / 255.0, labelValue: 2,
+                id: "building", name: "Building", kind: .building,
+                grayscaleValue: 2.0 / 255.0, labelValue: 2,
                 color: CIColor(red: 0.275, green: 0.275, blue: 0.275),
-                oswPolicy: OSWPolicy(oswElementClass: .Building, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
-                id: "pole", name: "Pole", grayscaleValue: 3.0 / 255.0, labelValue: 3,
+                id: "pole", name: "Pole", kind: .pole,
+                grayscaleValue: 3.0 / 255.0, labelValue: 3,
                 color: CIColor(red: 0.600, green: 0.600, blue: 0.600),
-                oswPolicy: OSWPolicy(oswElementClass: .Pole, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
-                id: "traffic_light", name: "Traffic light", grayscaleValue: 4.0 / 255.0, labelValue: 4,
-                color: CIColor(red: 0.980, green: 0.667, blue: 0.118),
-                oswPolicy: OSWPolicy(oswElementClass: .TrafficLight, isExistingFirst: false)
+                id: "traffic_light", name: "Traffic light", kind: .trafficLight,
+                grayscaleValue: 4.0 / 255.0, labelValue: 4,
+                color: CIColor(red: 0.980, green: 0.667, blue: 0.118)
             ),
             
             AccessibilityFeatureClass(
-                id: "traffic_sign", name: "Traffic sign", grayscaleValue: 5.0 / 255.0, labelValue: 5,
+                id: "traffic_sign", name: "Traffic sign", kind: .trafficSign,
+                grayscaleValue: 5.0 / 255.0, labelValue: 5,
                 color: CIColor(red: 0.863, green: 0.863, blue: 0.000),
-                oswPolicy: OSWPolicy(oswElementClass: .TrafficSign, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(
-                id: "vegetation", name: "Vegetation", grayscaleValue: 6.0 / 255.0, labelValue: 6,
+                id: "vegetation", name: "Vegetation", kind: .vegetation,
+                grayscaleValue: 6.0 / 255.0, labelValue: 6,
                 color: CIColor(red: 0.420, green: 0.557, blue: 0.137),
-                oswPolicy: OSWPolicy(oswElementClass: .Vegetation, isExistingFirst: false)
             ),
             
             AccessibilityFeatureClass(

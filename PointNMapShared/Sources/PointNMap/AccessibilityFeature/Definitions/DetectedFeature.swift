@@ -4,20 +4,20 @@
 //
 //  Created by Himanshu on 11/9/25.
 //
-import PointNMapShared
+import CoreGraphics
 
-struct ContourDetails: Sendable, Codable, Equatable, Hashable {
-    let centroid: CGPoint
+public struct ContourDetails: Sendable, Codable, Equatable, Hashable {
+    public let centroid: CGPoint
     /// Bounding box in the normalized coordinates.
-    let boundingBox: CGRect
-    let normalizedPoints: [SIMD2<Float>]
-    let area: Float
-    let perimeter: Float
+    public let boundingBox: CGRect
+    public let normalizedPoints: [SIMD2<Float>]
+    public let area: Float
+    public let perimeter: Float
     
     /// Specialized property to hold the 4 points of the trapezoid that approximates the contour, if applicable.
-    let trapezoidPoints: [SIMD2<Float>]?
+    public let trapezoidPoints: [SIMD2<Float>]?
     
-    init(
+    public init(
         centroid: CGPoint, boundingBox: CGRect, normalizedPoints: [SIMD2<Float>], area: Float, perimeter: Float,
         trapezoidPoints: [SIMD2<Float>]? = nil
     ) {
@@ -29,7 +29,7 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
         self.trapezoidPoints = trapezoidPoints
     }
     
-    init(normalizedPoints: [SIMD2<Float>], trapezoidPoints: [SIMD2<Float>]? = nil) {
+    public init(normalizedPoints: [SIMD2<Float>], trapezoidPoints: [SIMD2<Float>]? = nil) {
         let contourDetails = ContourUtils.getCentroidAreaBounds(normalizedPoints: normalizedPoints)
         self.centroid = contourDetails.centroid
         self.boundingBox = contourDetails.boundingBox
@@ -39,7 +39,7 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
         self.trapezoidPoints = trapezoidPoints
     }
     
-    init(contourDetails: ContourDetails, trapezoidPoints: [SIMD2<Float>]? = nil) {
+    public init(contourDetails: ContourDetails, trapezoidPoints: [SIMD2<Float>]? = nil) {
         self.centroid = contourDetails.centroid
         self.boundingBox = contourDetails.boundingBox
         self.normalizedPoints = contourDetails.normalizedPoints
@@ -49,7 +49,7 @@ struct ContourDetails: Sendable, Codable, Equatable, Hashable {
     }
 }
 
-protocol DetectedFeatureProtocol: Equatable {
+public protocol DetectedFeatureProtocol: Equatable {
     var accessibilityFeatureClass: AccessibilityFeatureClass { get }
     var contourDetails: ContourDetails { get }
 }
@@ -63,11 +63,11 @@ protocol DetectedFeatureProtocol: Equatable {
     Eventually, the goal is to generalize this struct to include all details that would be used to represent a detected accessibility feature.
     This may include a sub-mesh, depth information, etc.
  */
-struct DetectedAccessibilityFeature: Sendable, Equatable, Hashable, DetectedFeatureProtocol {
-    let accessibilityFeatureClass: AccessibilityFeatureClass
-    let contourDetails: ContourDetails
+public struct DetectedAccessibilityFeature: Sendable, Equatable, Hashable, DetectedFeatureProtocol {
+    public let accessibilityFeatureClass: AccessibilityFeatureClass
+    public let contourDetails: ContourDetails
     
-    init(
+    public init(
         accessibilityFeatureClass: AccessibilityFeatureClass,
         contourDetails: ContourDetails
     ) {

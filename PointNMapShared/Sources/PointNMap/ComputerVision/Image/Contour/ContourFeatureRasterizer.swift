@@ -7,7 +7,6 @@
 
 import CoreImage
 import UIKit
-import PointNMapShared
 
 /**
  A temporary struct to perform rasterization of detected objects.
@@ -34,7 +33,7 @@ public struct ContourFeatureRasterizer {
         return path
     }
     
-    static func rasterizeFeatures(
+    public static func rasterizeFeatures(
         detectedFeatures: [any DetectedFeatureProtocol], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
         boundsConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
@@ -90,7 +89,7 @@ public struct ContourFeatureRasterizer {
         return cgImage
     }
     
-    static func updateRasterizedFeatures(
+    public static func updateRasterizedFeatures(
         baseImage: CGImage,
         detectedFeature: [any DetectedFeatureProtocol], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 2.0),
@@ -153,7 +152,7 @@ public struct ContourFeatureRasterizer {
     /**
     Rasterizes filled contours for the given detected features. This is used for generating segmentation masks.
      */
-    static func rasterizeFeaturesFill(
+    public static func rasterizeFeaturesFill(
         detectedFeatures: [any DetectedFeatureProtocol], size: CGSize,
         polygonConfig: RasterizeConfig = RasterizeConfig(color: .white, width: 1.0)
     ) -> CGImage? {

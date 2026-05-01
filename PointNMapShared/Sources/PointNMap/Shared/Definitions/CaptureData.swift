@@ -6,22 +6,21 @@
 //
 
 import SwiftUI
-import DequeModule
 import simd
 import ARKit
 
-struct CaptureImageDataResults: Sendable {
-    let segmentationLabelImage: CIImage
-    let segmentedClasses: [AccessibilityFeatureClass]
+public struct CaptureImageDataResults: Sendable {
+    public let segmentationLabelImage: CIImage
+    public let segmentedClasses: [AccessibilityFeatureClass]
     /// Map of detected accessibility features with their UUIDs. Not currently used but reserved for potential future use.
-    let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
+    public let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
 }
 
-struct CaptureMeshDataResults: Sendable {
-    let segmentedMesh: CapturedMeshSnapshot
-    let meshAnchors: [ARMeshAnchor]?
+public struct CaptureMeshDataResults: Sendable {
+    public let segmentedMesh: CapturedMeshSnapshot
+    public let meshAnchors: [ARMeshAnchor]?
     
-    init(segmentedMesh: CapturedMeshSnapshot, meshAnchors: [ARMeshAnchor]? = nil) {
+    public init(segmentedMesh: CapturedMeshSnapshot, meshAnchors: [ARMeshAnchor]? = nil) {
         self.segmentedMesh = segmentedMesh
         self.meshAnchors = meshAnchors
     }
@@ -32,7 +31,7 @@ struct CaptureMeshDataResults: Sendable {
  
  NOTE: This protocol is designed to prevent over-dependence on mesh data in scenarios where LIDAR is unavailable or ARKit fails to provide mesh data.
  */
-protocol CaptureDataProtocol: Sendable, Identifiable {
+public protocol CaptureDataProtocol: Sendable, Identifiable {
     var id: UUID { get }
     var timestamp: TimeInterval { get }
     var cameraImage: CIImage { get }
@@ -46,31 +45,31 @@ protocol CaptureDataProtocol: Sendable, Identifiable {
     var confidenceImage: CIImage? { get }
 }
 
-protocol CaptureImageDataProtocol: CaptureDataProtocol {
+public protocol CaptureImageDataProtocol: CaptureDataProtocol {
     var captureImageDataResults: CaptureImageDataResults { get }
 }
 
-protocol CaptureMeshDataProtocol: CaptureDataProtocol {
+public protocol CaptureMeshDataProtocol: CaptureDataProtocol {
     var captureMeshDataResults: CaptureMeshDataResults { get }
 }
 
-struct CaptureImageData: CaptureImageDataProtocol {
-    let id: UUID
-    let timestamp: TimeInterval
+public struct CaptureImageData: CaptureImageDataProtocol {
+    public let id: UUID
+    public let timestamp: TimeInterval
     
-    let cameraImage: CIImage
-    let cameraTransform: simd_float4x4
-    let cameraIntrinsics: simd_float3x3
+    public let cameraImage: CIImage
+    public let cameraTransform: simd_float4x4
+    public let cameraIntrinsics: simd_float3x3
     
-    let interfaceOrientation: UIInterfaceOrientation
-    let originalSize: CGSize
+    public let interfaceOrientation: UIInterfaceOrientation
+    public let originalSize: CGSize
     
-    let depthImage: CIImage?
-    let confidenceImage: CIImage?
+    public let depthImage: CIImage?
+    public let confidenceImage: CIImage?
     
-    let captureImageDataResults: CaptureImageDataResults
+    public let captureImageDataResults: CaptureImageDataResults
     
-    init(
+    public init(
         id: UUID, timestamp: TimeInterval,
         cameraImage: CIImage, cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation, originalSize: CGSize,
@@ -89,7 +88,7 @@ struct CaptureImageData: CaptureImageDataProtocol {
         self.captureImageDataResults = captureImageDataResults
     }
     
-    init(_ captureImageData: (any CaptureImageDataProtocol)) {
+    public init(_ captureImageData: (any CaptureImageDataProtocol)) {
         self.id = captureImageData.id
         self.timestamp = captureImageData.timestamp
         self.cameraImage = captureImageData.cameraImage
@@ -103,24 +102,24 @@ struct CaptureImageData: CaptureImageDataProtocol {
     }
 }
 
-struct CaptureImageAndMeshData: CaptureImageDataProtocol, CaptureMeshDataProtocol {
-    let id: UUID
-    let timestamp: TimeInterval
+public struct CaptureImageAndMeshData: CaptureImageDataProtocol, CaptureMeshDataProtocol {
+    public let id: UUID
+    public let timestamp: TimeInterval
     
-    let cameraImage: CIImage
-    let cameraTransform: simd_float4x4
-    let cameraIntrinsics: simd_float3x3
+    public let cameraImage: CIImage
+    public let cameraTransform: simd_float4x4
+    public let cameraIntrinsics: simd_float3x3
     
-    let interfaceOrientation: UIInterfaceOrientation
-    let originalSize: CGSize
+    public let interfaceOrientation: UIInterfaceOrientation
+    public let originalSize: CGSize
     
-    let depthImage: CIImage?
-    let confidenceImage: CIImage?
+    public let depthImage: CIImage?
+    public let confidenceImage: CIImage?
     
-    let captureImageDataResults: CaptureImageDataResults
-    let captureMeshDataResults: CaptureMeshDataResults
+    public let captureImageDataResults: CaptureImageDataResults
+    public let captureMeshDataResults: CaptureMeshDataResults
     
-    init(
+    public init(
         id: UUID, timestamp: TimeInterval,
         cameraImage: CIImage, cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         interfaceOrientation: UIInterfaceOrientation, originalSize: CGSize,
@@ -141,7 +140,7 @@ struct CaptureImageAndMeshData: CaptureImageDataProtocol, CaptureMeshDataProtoco
         self.captureMeshDataResults = captureMeshDataResults
     }
     
-    init(captureImageData: CaptureImageData, captureMeshDataResults: CaptureMeshDataResults) {
+    public init(captureImageData: CaptureImageData, captureMeshDataResults: CaptureMeshDataResults) {
         self.id = captureImageData.id
         self.timestamp = captureImageData.timestamp
         self.cameraImage = captureImageData.cameraImage
@@ -159,11 +158,11 @@ struct CaptureImageAndMeshData: CaptureImageDataProtocol, CaptureMeshDataProtoco
 /**
  We need a type wrapper that can conditionally represent one of CaptureImageData, CaptureImageAndMeshData, etc.
  */
-enum CaptureData: Sendable, Identifiable {
+public enum CaptureData: Sendable, Identifiable {
     case imageData(CaptureImageData)
     case imageAndMeshData(CaptureImageAndMeshData)
     
-    var id: UUID {
+    public var id: UUID {
         switch self {
         case .imageData(let data):
             return data.id
@@ -172,7 +171,7 @@ enum CaptureData: Sendable, Identifiable {
         }
     }
     
-    var imageData: any CaptureImageDataProtocol {
+    public var imageData: any CaptureImageDataProtocol {
         switch self {
         case .imageData(let data):
             return data
@@ -181,7 +180,7 @@ enum CaptureData: Sendable, Identifiable {
         }
     }
     
-    var meshData: (any CaptureMeshDataProtocol)? {
+    public var meshData: (any CaptureMeshDataProtocol)? {
         switch self {
         case .imageData(_):
             return nil

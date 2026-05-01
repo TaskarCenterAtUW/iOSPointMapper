@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
@@ -103,7 +104,7 @@ public extension AttributeEstimationPipeline {
         }
         /// Run damage detection
         let cameraImage = captureImageData.cameraImage
-        let croppedSize = SharedAppConstants.DamageDetectionConstants.inputSize
+        let croppedSize = PointNMapConstants.DamageDetectionConstants.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: captureImageData.interfaceOrientation
         )

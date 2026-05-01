@@ -6,20 +6,19 @@
 //
 import Foundation
 import CoreLocation
-import PointNMapShared
 
-struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, CustomStringConvertible {
-    let id: UUID
+public struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, CustomStringConvertible {
+    public let id: UUID
     
-    let accessibilityFeatureClass: AccessibilityFeatureClass
+    public let accessibilityFeatureClass: AccessibilityFeatureClass
     
-    var locationDetails: LocationDetails?
-    var oswElement: any OSWElement
+    public var locationDetails: LocationDetails?
+    public var oswElement: any OSWElement
     
-    var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-    var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
+    public var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    public var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     
-    init (
+    public init (
         id: UUID = UUID(),
         accessibilityFeature: (any AccessibilityFeatureProtocol),
         oswElement: any OSWElement
@@ -32,7 +31,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         self.oswElement = oswElement
     }
     
-    init(
+    public init(
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
         locationDetails: LocationDetails?,
@@ -48,17 +47,17 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         self.locationDetails = locationDetails
     }
     
-    func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
+    public func getLastLocationCoordinate() -> CLLocationCoordinate2D? {
         guard let locationDetails else { return nil }
         guard let lastCoordinate = locationDetails.locations.last?.coordinates.last else { return nil }
         return lastCoordinate
     }
     
-    mutating func setLocationDetails(locationDetails: LocationDetails) {
+    public mutating func setLocationDetails(locationDetails: LocationDetails) {
         self.locationDetails = locationDetails
     }
     
-    mutating func setAttributeValue(
+    public mutating func setAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value, for attribute: AccessibilityFeatureAttribute
     ) throws {
         guard attribute.isCompatible(with: value) else {
@@ -67,7 +66,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         attributeValues[attribute] = value
     }
     
-    mutating func setExperimentalAttributeValue(
+    public mutating func setExperimentalAttributeValue(
         _ value: AccessibilityFeatureAttribute.Value, for attribute: AccessibilityFeatureAttribute
     ) throws {
         guard attribute.isCompatible(with: value) else {
@@ -76,15 +75,15 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         experimentalAttributeValues[attribute] = value
     }
     
-    mutating func setOSWElement(_ oswElement: any OSWElement) {
+    public mutating func setOSWElement(_ oswElement: any OSWElement) {
         self.oswElement = oswElement
     }
     
-    static func == (lhs: MappedAccessibilityFeature, rhs: MappedAccessibilityFeature) -> Bool {
+    public static func == (lhs: MappedAccessibilityFeature, rhs: MappedAccessibilityFeature) -> Bool {
         return lhs.id == rhs.id
     }
     
-    var description: String {
+    public var description: String {
         return "MappedAccessibilityFeature(id: \(id), class: \(accessibilityFeatureClass), location: \(String(describing: locationDetails)), attributes: \(attributeValues), oswElement: \(oswElement))"
     }
 }

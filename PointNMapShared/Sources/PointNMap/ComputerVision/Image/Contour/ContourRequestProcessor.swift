@@ -6,7 +6,6 @@
 //
 import Vision
 import CoreImage
-import PointNMapShared
 
 public enum ContourRequestProcessorError: Error, LocalizedError {
     case contourProcessingFailed
@@ -31,15 +30,15 @@ public enum ContourRequestProcessorError: Error, LocalizedError {
     To reduce confusion, we can preemptively convert the coordinates to the top-left origin. We would also need to change ContourDetails to reflect this change, by not using CGPoint, CGRect, etc. which are based on the bottom-left origin, and instead use a custom struct that can represent the coordinates in the top-left origin.
  */
 public struct ContourRequestProcessor {
-    var contourEpsilon: Float = 0.01
+    public var contourEpsilon: Float = 0.01
     /// For normalized points
-    var perimeterThreshold: Float = 0.01
-    var selectedClasses: [AccessibilityFeatureClass] = []
+    public var perimeterThreshold: Float = 0.01
+    public var selectedClasses: [AccessibilityFeatureClass] = []
 //    var selectedClassLabels: [UInt8] = []
     
-    var binaryMaskFilter: BinaryMaskFilter
+    public var binaryMaskFilter: BinaryMaskFilter
     
-    init(
+    public init(
         contourEpsilon: Float = 0.01, perimeterThreshold: Float = 0.01, selectedClasses: [AccessibilityFeatureClass] = []
     ) throws {
         self.contourEpsilon = contourEpsilon
@@ -48,7 +47,7 @@ public struct ContourRequestProcessor {
         self.binaryMaskFilter = try BinaryMaskFilter()
     }
     
-    mutating func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
+    public mutating func setSelectedClasses(_ selectedClasses: [AccessibilityFeatureClass]) {
         self.selectedClasses = selectedClasses
     }
     
@@ -60,7 +59,7 @@ public struct ContourRequestProcessor {
     /**
         Function to rasterize the detected objects on the image. Creates a unique request and handler since it is run on a separate thread
     */
-    func getFeaturesFromBinaryImage(
+    public func getFeaturesFromBinaryImage(
         for binaryImage: CIImage, targetClass: AccessibilityFeatureClass, orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {
         let contourRequest = VNDetectContoursRequest()
@@ -99,7 +98,7 @@ public struct ContourRequestProcessor {
             Processes each class in parallel to get the objects.
      */
     // TODO: Using DispatchQueue.concurrentPerform for parallel processing may not be the best approach for CPU-bound tasks.
-    func processRequest(
+    public func processRequest(
         from segmentationImage: CIImage, orientation: CGImagePropertyOrientation = .up
     ) throws -> [DetectedAccessibilityFeature] {
         var detectedFeatures: [DetectedAccessibilityFeature] = []

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateWidth(

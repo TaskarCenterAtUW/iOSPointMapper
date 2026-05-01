@@ -6,7 +6,6 @@
 //
 import Foundation
 import CoreLocation
-import PointNMapShared
 
 enum AccessibilityFeatureError: Error, LocalizedError {
     case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttribute.Value)

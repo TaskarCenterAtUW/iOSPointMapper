@@ -11,11 +11,11 @@ import RealityKit
 import simd
 import MetalKit
 
-enum MetalContextError: Error, LocalizedError {
+public enum MetalContextError: Error, LocalizedError {
     case metalDeviceUnavailable
     case metalInitializationError
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .metalDeviceUnavailable:
             return NSLocalizedString("Metal device is unavailable on this device.", comment: "")
@@ -25,17 +25,17 @@ enum MetalContextError: Error, LocalizedError {
     }
 }
 
-final class MetalContext {
-    let device: MTLDevice
-    let commandQueue: MTLCommandQueue
+public final class MetalContext {
+    public let device: MTLDevice
+    public let commandQueue: MTLCommandQueue
 //    let pipelineState: MTLComputePipelineState
-    let textureCache: CVMetalTextureCache
-    let textureLoader: MTKTextureLoader
+    public let textureCache: CVMetalTextureCache
+    public let textureLoader: MTKTextureLoader
     
-    let ciContext: CIContext
-    let ciContextNoColorSpace: CIContext
+    public let ciContext: CIContext
+    public let ciContextNoColorSpace: CIContext
     
-    init() throws {
+    public init() throws {
         let device = MTLCreateSystemDefaultDevice()
         guard let device = device else {
             throw MetalContextError.metalDeviceUnavailable

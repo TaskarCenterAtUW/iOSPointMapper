@@ -16,14 +16,14 @@
  
     TODO: Instead of using only the number of polygons for minClusterSize, we can also consider using the total area of the polygons in the cluster.
  */
-struct MeshInstancePolicy: Sendable, Codable, Equatable, Hashable {
-    let clusterDistanceThreshold: Float
-    let minClusterSize: Int
-    let meshClusteringDimensions: Set<MeshDimension>
+public struct MeshInstancePolicy: Sendable, Codable, Equatable, Hashable {
+    public let clusterDistanceThreshold: Float
+    public let minClusterSize: Int
+    public let meshClusteringDimensions: Set<MeshDimension>
     
-    let maxClustersToConsider: Int?
+    public let maxClustersToConsider: Int?
     
-    init(
+    public init(
         clusterDistanceThreshold: Float, minClusterSize: Int,
         meshClusteringDimensions: Set<MeshDimension>, maxClustersToConsider: Int? = nil
     ) {
@@ -34,7 +34,7 @@ struct MeshInstancePolicy: Sendable, Codable, Equatable, Hashable {
     }
 }
 
-extension MeshInstancePolicy {
+public extension MeshInstancePolicy {
     static let `default` = MeshInstancePolicy(
         clusterDistanceThreshold: 0.05,
         minClusterSize: 10,
