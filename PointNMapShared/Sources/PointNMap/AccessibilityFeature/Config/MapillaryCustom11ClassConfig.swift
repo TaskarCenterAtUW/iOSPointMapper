@@ -10,7 +10,7 @@ import ARKit
 
 public extension AccessibilityFeatureConfig {
     static let mapillaryCustom11Config: AccessibilityFeatureClassConfig = AccessibilityFeatureClassConfig(
-        modelURL: Bundle.main.url(forResource: "bisenetv2_11_640_640", withExtension: "mlmodelc"),
+        modelURL: PointNMapSharedResources.bundle.url(forResource: "bisenetv2_11_640_640", withExtension: "mlmodelc"),
         classes: [
 //            AccessibilityFeatureClass(name: "Road", grayscaleValue: 0.0 / 255.0, labelValue: 0,
 //                              color: CIColor(red: 0.502, green: 0.251, blue: 0.502),

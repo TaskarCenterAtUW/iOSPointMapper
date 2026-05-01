@@ -93,27 +93,28 @@ public struct SurfaceIntegrityProcessor {
         
         self.ciContext = CIContext(mtlDevice: device, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
         
-        guard let countKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "countDeviantNormals"),
+        let library = try device.makeDefaultLibrary(bundle: PointNMapSharedResources.bundle)
+        guard let countKernelFunction = library.makeFunction(name: "countDeviantNormals"),
               let countPipeline = try? device.makeComputePipelineState(function: countKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.countPipeline = countPipeline
-        guard let stdKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "stdFromNormals"),
+        guard let stdKernelFunction = library.makeFunction(name: "stdFromNormals"),
               let stdPipeline = try? device.makeComputePipelineState(function: stdKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.stdPipeline = stdPipeline
-        guard let countPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "countDeviantPolygonNormals"),
+        guard let countPolygonKernelFunction = library.makeFunction(name: "countDeviantPolygonNormals"),
               let countPolygonPipeline = try? device.makeComputePipelineState(function: countPolygonKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.countPolygonPipeline = countPolygonPipeline
-        guard let areaWithinBoundsPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "areaWithinBoundsPolygon"),
+        guard let areaWithinBoundsPolygonKernelFunction = library.makeFunction(name: "areaWithinBoundsPolygon"),
               let areaWithinBoundsPolygonPipeline = try? device.makeComputePipelineState(function: areaWithinBoundsPolygonKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }
         self.areaWithinBoundsPolygonPipeline = areaWithinBoundsPolygonPipeline
-        guard let stdPolygonKernelFunction = device.makeDefaultLibrary()?.makeFunction(name: "stdFromPolygonNormals"),
+        guard let stdPolygonKernelFunction = library.makeFunction(name: "stdFromPolygonNormals"),
               let stdPolygonPipeline = try? device.makeComputePipelineState(function: stdPolygonKernelFunction) else {
             throw SurfaceIntegrityProcessorError.metalInitializationFailed
         }

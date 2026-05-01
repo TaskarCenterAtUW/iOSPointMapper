@@ -310,6 +310,7 @@ struct ARCameraView: View {
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
+                default: break
                 }
                 try manager.pause()
                 locationManager.stopLocationUpdates()

@@ -429,6 +429,10 @@ public final class ARCameraViewController: UIViewController, ARSessionCameraProc
 public struct HostedARCameraViewContainer: UIViewControllerRepresentable {
     public var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
     
+    public init(arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate) {
+        self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
+    }
+    
     public func makeUIViewController(context: Context) -> ARCameraViewController {
         let vc = ARCameraViewController(arSessionCameraProcessingDelegate: arSessionCameraProcessingDelegate)
         return vc

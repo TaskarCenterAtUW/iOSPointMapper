@@ -379,6 +379,7 @@ struct TestCameraView: View {
                     {
                         throw TestCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
+                default: break
                 }
                 let captureLocation = datadatasetCaptureData.location
                 let captureHeading = datadatasetCaptureData.heading

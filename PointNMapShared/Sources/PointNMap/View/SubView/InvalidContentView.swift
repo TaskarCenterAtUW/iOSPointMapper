@@ -7,19 +7,24 @@
 
 import SwiftUI
 
-enum InvalidContentViewConstants {
-    enum Images {
-        static let closeIcon: String = "xmark"
+public enum InvalidContentViewConstants {
+    public enum Images {
+        public static let closeIcon: String = "xmark"
     }
 }
 
-struct InvalidContentView: View {
-    let title: String
-    let message: String
+public struct InvalidContentView: View {
+    public let title: String
+    public let message: String
     
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) public var dismiss
     
-    var body: some View {
+    public init(title: String, message: String) {
+        self.title = title
+        self.message = message
+    }
+    
+    public var body: some View {
         VStack {
             HStack {
                 Spacer()
