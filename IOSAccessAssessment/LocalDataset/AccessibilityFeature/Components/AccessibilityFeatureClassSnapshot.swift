@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 struct AccessibilityFeatureClassSnapshot: Codable, Identifiable, Sendable {
     let id: String

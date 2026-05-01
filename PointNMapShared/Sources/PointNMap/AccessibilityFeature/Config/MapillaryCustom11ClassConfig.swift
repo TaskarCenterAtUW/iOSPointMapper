@@ -22,12 +22,7 @@ public extension AccessibilityFeatureConfig {
                 id: "sidewalk", name: "Sidewalk", kind: .sidewalk,
                 grayscaleValue: 1.0 / 255.0, labelValue: 1,
                 color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
-                meshClassification: [.floor],
-                attributes: [
-                    .width, .runningSlope, .crossSlope, .surfaceIntegrity,
-                    .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
-                    .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
-                ],
+                meshClassification: [.floor]
             ),
             
             AccessibilityFeatureClass(

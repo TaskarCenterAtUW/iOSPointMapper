@@ -14,7 +14,7 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
     public let kind: AccessibilityFeatureKind?
     
     /**
-     Segmentation-related SharedAppConstants
+     Segmentation-related constants
      */
     /// Grayscale value output for the accessibility feature class, by the relevant segmentation model
     public let grayscaleValue: Float
@@ -24,13 +24,13 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
     public let color: CIColor
     
     /**
-     SharedAppConstants related to mesh
+     Constants related to mesh
      */
     /// Optional mesh classification for the segmentation class
     public let meshClassification: Set<ARMeshClassification>
     
     /**
-     Post-Processing related SharedAppConstants.
+     Post-Processing related Constants.
      */
     /// Optional bounds for the segmentation class. Is kept optional to prevent unnecessary dimension based masking.
     public let bounds: CGRect?
@@ -38,13 +38,9 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
     public let unionOfMasksPolicy: UnionOfMasksPolicy
     /// Properties related to mesh post-processing
     public let meshInstancePolicy: MeshInstancePolicy
-    /// Attributes associated with the accessibility feature class
-    public let attributes: Set<AccessibilityFeatureAttribute>
-    /// Experimental attributes associated with the accessibility feature class
-    public let experimentalAttributes: Set<AccessibilityFeatureAttribute>
     
     /**
-     Mapping-related SharedAppConstants
+     Mapping-related Constants
      */
 //    public let oswPolicy: OSWPolicy
     
@@ -52,9 +48,10 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
         id: String, name: String, kind: AccessibilityFeatureKind? = nil,
         grayscaleValue: Float, labelValue: UInt8, color: CIColor,
         bounds: CGRect? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
-        meshClassification: Set<ARMeshClassification> = [], meshInstancePolicy: MeshInstancePolicy = .default,
-        attributes: Set<AccessibilityFeatureAttribute> = [],
-        experimentalAttributes: Set<AccessibilityFeatureAttribute> = [],
+        meshClassification: Set<ARMeshClassification> = [],
+        meshInstancePolicy: MeshInstancePolicy = .default,
+//        attributes: Set<AccessibilityFeatureAttribute> = [],
+//        experimentalAttributes: Set<AccessibilityFeatureAttribute> = [],
 //        oswPolicy: OSWPolicy = .default
     ) {
         self.id = id
@@ -67,8 +64,8 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
         self.unionOfMasksPolicy = unionOfMasksPolicy
         self.meshClassification = meshClassification
         self.meshInstancePolicy = meshInstancePolicy
-        self.attributes = attributes
-        self.experimentalAttributes = experimentalAttributes
+//        self.attributes = attributes
+//        self.experimentalAttributes = experimentalAttributes
 //        self.oswPolicy = oswPolicy
     }
     
@@ -85,6 +82,12 @@ public struct AccessibilityFeatureClassConfig {
     public let modelURL: URL?
     public let classes: [AccessibilityFeatureClass]
     public let inputSize: CGSize
+    
+    public init(modelURL: URL?, classes: [AccessibilityFeatureClass], inputSize: CGSize) {
+        self.modelURL = modelURL
+        self.classes = classes
+        self.inputSize = inputSize
+    }
     
     public var classNames: [String] {
         return classes.map { $0.name }

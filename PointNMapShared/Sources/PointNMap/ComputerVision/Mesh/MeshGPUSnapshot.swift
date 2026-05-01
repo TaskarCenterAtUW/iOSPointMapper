@@ -11,8 +11,8 @@ import RealityKit
  Functionality to capture ARMeshAnchor data as a GPU-friendly snapshot
  */
 public final class MeshGPUSnapshotGenerator: NSObject {
-    // MARK: These SharedAppConstants can be made configurable later
-    // But make sure that the snapshot from MeshContents extension continues to use the original SharedAppConstants.
+    // MARK: These constants can be made configurable later
+    // But make sure that the snapshot from MeshContents extension continues to use the original constants.
     private let defaultBufferSize: Int = 1024
     private let vertexElemSize: Int = MemoryLayout<Float>.stride * 3
     private let vertexOffset: Int = 0

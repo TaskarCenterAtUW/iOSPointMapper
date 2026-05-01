@@ -5,6 +5,10 @@
 //  Created by Himanshu on 12/8/25.
 //
 
+/**
+ - WARNING: We may want to merge this with the FeatureGeometry enum in the future.
+    Else, we will have a disconnect between the geometry of the AccessibilityFeature and the geometry of the associated OSW element.
+ */
 enum OSWGeometry: String, CaseIterable, Hashable, Codable {
     case point
     case linestring

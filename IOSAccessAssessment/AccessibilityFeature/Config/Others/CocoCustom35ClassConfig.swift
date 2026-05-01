@@ -6,6 +6,7 @@
 //
 import Foundation
 import CoreImage
+import PointNMapShared
 
 extension AccessibilityFeatureConfig {
     static let cocoCustom35Config: AccessibilityFeatureClassConfig = AccessibilityFeatureClassConfig(
@@ -14,14 +15,12 @@ extension AccessibilityFeatureConfig {
             AccessibilityFeatureClass(
                 id: "road", name: "Road", grayscaleValue: 27.0 / 255.0, labelValue: 27,
                 color: CIColor(red: 0.502, green: 0.251, blue: 0.502),
-                bounds: CGRect(x: 0.0, y: 0.1, width: 1.0, height: 0.4),
-                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true), // Temporarily set for testing
+                bounds: CGRect(x: 0.0, y: 0.1, width: 1.0, height: 0.4)
             ),
             AccessibilityFeatureClass(
                 id: "sidewalk", name: "Sidewalk", grayscaleValue: 22.0 / 255.0, labelValue: 22,
                 color: CIColor(red: 0.957, green: 0.137, blue: 0.910),
-                bounds: CGRect(x: 0.0, y: 0.1, width: 1.0, height: 0.4),
-                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true), // Temporarily set for testing
+                bounds: CGRect(x: 0.0, y: 0.1, width: 1.0, height: 0.4)
             ),
             AccessibilityFeatureClass(
                 id: "building", name: "Building", grayscaleValue: 16.0 / 255.0, labelValue: 16,

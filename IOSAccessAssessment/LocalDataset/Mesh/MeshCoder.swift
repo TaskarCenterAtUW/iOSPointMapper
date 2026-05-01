@@ -9,6 +9,7 @@ import Foundation
 import Accelerate
 import ARKit
 import RealityKit
+import PointNMapShared
 
 enum MeshCoderError: Error, LocalizedError {
     case modelEntityHasNoModel

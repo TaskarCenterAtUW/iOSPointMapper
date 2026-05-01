@@ -7,6 +7,9 @@
 
 import PointNMapShared
 
+/**
+ Extension to add mapping-related logic to AccessibilityFeatureKind.
+ */
 extension AccessibilityFeatureKind {
     var oswPolicy: OSWPolicy {
         switch self {

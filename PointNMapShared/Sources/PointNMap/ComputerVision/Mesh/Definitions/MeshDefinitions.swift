@@ -17,6 +17,15 @@ public struct MeshContents: Sendable {
     public var colorG8: Int
     public var colorB8: Int
     
+    public init(positions: [packed_float3], indices: [UInt32], classifications: [UInt8]? = nil, colorR8: Int, colorG8: Int, colorB8: Int) {
+        self.positions = positions
+        self.indices = indices
+        self.classifications = classifications
+        self.colorR8 = colorR8
+        self.colorG8 = colorG8
+        self.colorB8 = colorB8
+    }
+    
     /// - Warning: Ideally, this property should be avoided for performance reasons.
     public var polygons: [MeshPolygon] {
         var result: [MeshPolygon] = []

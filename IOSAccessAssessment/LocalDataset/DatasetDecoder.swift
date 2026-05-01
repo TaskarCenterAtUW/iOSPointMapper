@@ -9,6 +9,7 @@ import Foundation
 import ARKit
 import CryptoKit
 import CoreLocation
+import PointNMapShared
 
 enum DatasetDecoderError: Error, LocalizedError {
     case directoryRetrievalFailed

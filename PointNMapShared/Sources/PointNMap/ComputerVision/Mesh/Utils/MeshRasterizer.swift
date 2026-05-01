@@ -7,7 +7,6 @@
 
 import CoreImage
 import UIKit
-import PointNMapShared
 
 /**
     Functions to rasterize mesh triangles into an image.

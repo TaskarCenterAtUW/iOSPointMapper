@@ -9,7 +9,7 @@ import SwiftUI
 import PointNMapShared
 
 /**
- Global SharedAppConstants used across the app.
+ Global Constants used across the app.
  */
 struct SharedAppConstants {
     // Supported Classes

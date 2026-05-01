@@ -6,7 +6,6 @@
 //
 import SwiftUI
 import CoreLocation
-import PointNMapShared
 
 public extension AttributeEstimationPipeline {
     func calculateLocation(
@@ -14,8 +13,7 @@ public extension AttributeEstimationPipeline {
         accessibilityFeature: EditableAccessibilityFeature
     ) throws -> LocationRequestResult {
         let isMeshEnabled: Bool = self.captureMeshData != nil
-        let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
-        let oswGeometry = oswElementClass.geometry
+        let oswGeometry = accessibilityFeature.accessibilityFeatureClass.kind?.geometry ?? FeatureGeometry.default
         switch(oswGeometry) {
         case .linestring:
             if isMeshEnabled {

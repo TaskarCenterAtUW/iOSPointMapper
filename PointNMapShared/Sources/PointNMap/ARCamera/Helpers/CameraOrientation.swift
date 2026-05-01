@@ -10,9 +10,9 @@ import UIKit
 /**
  A class that contains helper methods to manage camera orientation related tasks.
  */
-class CameraOrientation {
+public class CameraOrientation {
     
-    static func getCGImageOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
+    public static func getCGImageOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
         switch currentDeviceOrientation {
             case .portrait:
                 return .right                // Camera is rotated 90° CW to be upright
@@ -27,7 +27,7 @@ class CameraOrientation {
         }
     }
     
-    static func getCGImageReverseOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
+    public static func getCGImageReverseOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> CGImagePropertyOrientation {
         switch currentDeviceOrientation {
         case .portrait:
             return .left                 // Camera is rotated 90° CCW to revert to original orientation
@@ -42,7 +42,7 @@ class CameraOrientation {
         }
     }
     
-    static func getUIImageOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> UIImage.Orientation {
+    public static func getUIImageOrientationForBackCamera(currentDeviceOrientation: UIDeviceOrientation) -> UIImage.Orientation {
         switch currentDeviceOrientation {
             case .portrait:
                 return .right
@@ -57,7 +57,7 @@ class CameraOrientation {
         }
     }
     
-    static func getCGImageOrientationForInterface(currentInterfaceOrientation: UIInterfaceOrientation) -> CGImagePropertyOrientation {
+    public static func getCGImageOrientationForInterface(currentInterfaceOrientation: UIInterfaceOrientation) -> CGImagePropertyOrientation {
         switch currentInterfaceOrientation {
             case .portrait:
                 return .right                // Camera is rotated 90° CW to be upright
@@ -74,12 +74,12 @@ class CameraOrientation {
     
     // Since people tend to hold devices in portrait mode by default when using the camera,
     // we can assume that the camera is in portrait mode when the device orientation is unknown.
-    static func isLandscapeOrientation(currentDeviceOrientation: UIDeviceOrientation) -> Bool {
+    public static func isLandscapeOrientation(currentDeviceOrientation: UIDeviceOrientation) -> Bool {
         return currentDeviceOrientation == .landscapeLeft || currentDeviceOrientation == .landscapeRight
     }
 }
 
-extension CGImagePropertyOrientation {
+public extension CGImagePropertyOrientation {
     func inverted() -> CGImagePropertyOrientation {
         switch self {
         case .up: return .up

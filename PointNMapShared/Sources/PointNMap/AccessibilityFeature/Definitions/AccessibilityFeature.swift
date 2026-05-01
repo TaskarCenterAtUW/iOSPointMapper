@@ -7,10 +7,10 @@
 import Foundation
 import CoreLocation
 
-enum AccessibilityFeatureError: Error, LocalizedError {
+public enum AccessibilityFeatureError: Error, LocalizedError {
     case attributeValueMismatch(attribute: AccessibilityFeatureAttribute, value: AccessibilityFeatureAttribute.Value)
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .attributeValueMismatch(let attribute, let value):
             return "The value \(value) does not match the expected type for attribute \(attribute)."
@@ -18,7 +18,7 @@ enum AccessibilityFeatureError: Error, LocalizedError {
     }
 }
 
-protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
+public protocol AccessibilityFeatureProtocol: Identifiable, Equatable {
     var id: UUID { get }
     
     var accessibilityFeatureClass: AccessibilityFeatureClass { get }

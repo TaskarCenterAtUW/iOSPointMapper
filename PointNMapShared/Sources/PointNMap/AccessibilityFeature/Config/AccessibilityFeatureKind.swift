@@ -19,4 +19,33 @@ public enum AccessibilityFeatureKind: String, Identifiable, Codable, CaseIterabl
     public var id: String {
         return self.rawValue
     }
+    
+    public var geometry: FeatureGeometry {
+        switch self {
+        case .sidewalk: return .linestring
+        case .building: return .polygon
+        case .pole, .trafficLight, .trafficSign: return .point
+        default: return .point
+        }
+    }
+    
+    /// Attributes associated with the accessibility feature class
+    public var attributes: Set<AccessibilityFeatureAttribute>
+    {
+        switch self {
+        case .sidewalk: return [
+            .width, .runningSlope, .crossSlope, .surfaceIntegrity,
+            .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
+            .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
+        ]
+        default : return []
+        }
+    }
+    
+    /// Experimental attributes associated with the accessibility feature class
+    public var experimentalAttributes: Set<AccessibilityFeatureAttribute> {
+        switch self {
+            default : return []
+        }
+    }
 }

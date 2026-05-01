@@ -30,6 +30,7 @@
 		A312FE162FA3EBE80044808E /* PointNMapShaderTypes.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A312FE202FA3EC710044808E /* PointNMapShaderTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; };
 		A312FF232FA430510044808E /* AccessibilityFeatureKindExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FF222FA4304D0044808E /* AccessibilityFeatureKindExtension.swift */; };
+		A312FF2B2FA436CB0044808E /* IsExistingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FF2A2FA436C60044808E /* IsExistingExtension.swift */; };
 		A31A1E742EAC426C008B30B7 /* ARCameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */; };
 		A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */; };
 		A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */; };
@@ -51,7 +52,6 @@
 		A35547CE2EC3048700F43AFD /* AnnotationImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */; };
 		A35A8BCF2E5D0CD100CC8AA7 /* WorkspaceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */; };
 		A35A8BD12E5D0D1200CC8AA7 /* WorkspaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */; };
-		A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */; };
 		A35E05102EDE60C0003C26CF /* InvalidContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */; };
 		A35E05162EDEA050003C26CF /* APIChangesetUploadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05152EDEA04B003C26CF /* APIChangesetUploadController.swift */; };
 		A35E051A2EDFB017003C26CF /* OSMPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35E05192EDFB015003C26CF /* OSMPayload.swift */; };
@@ -77,7 +77,6 @@
 		A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */; };
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
-		A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
 		A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshCoder.swift */; };
@@ -100,9 +99,7 @@
 		A3FE166C2E1C29CB00DAE5BE /* OtherDetailsCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE166B2E1C29C800DAE5BE /* OtherDetailsCoder.swift */; };
 		A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */; };
 		A3FFAA752DE00F3B002B99BD /* ARCameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */; };
-		A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */; };
 		A3FFAA7A2DE01A0F002B99BD /* ARCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA792DE01A0F002B99BD /* ARCameraView.swift */; };
-		A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */; };
 		A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */; };
 		CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA924A922CEB9AB000FCA928 /* ChangesetService.swift */; };
 		CAA947762CDE6FBD000C6918 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA947752CDE6FBB000C6918 /* LoginView.swift */; };
@@ -208,6 +205,7 @@
 		A312FD852FA3391C0044808E /* PointNMapSharedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PointNMapSharedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = PointNMapShaderTypes.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A312FF222FA4304D0044808E /* AccessibilityFeatureKindExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureKindExtension.swift; sourceTree = "<group>"; };
+		A312FF2A2FA436C60044808E /* IsExistingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsExistingExtension.swift; sourceTree = "<group>"; };
 		A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraViewController.swift; sourceTree = "<group>"; };
 		A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWPolicy.swift; sourceTree = "<group>"; };
 		A32943452EE7C07A00C4C1BC /* OSWGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWGeometry.swift; sourceTree = "<group>"; };
@@ -229,7 +227,6 @@
 		A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationImageViewController.swift; sourceTree = "<group>"; };
 		A35A8BCE2E5D0CCD00CC8AA7 /* WorkspaceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSelectionView.swift; sourceTree = "<group>"; };
 		A35A8BD02E5D0D0D00CC8AA7 /* WorkspaceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceService.swift; sourceTree = "<group>"; };
-		A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOrientation.swift; sourceTree = "<group>"; };
 		A35E050F2EDE60BC003C26CF /* InvalidContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvalidContentView.swift; sourceTree = "<group>"; };
 		A35E05152EDEA04B003C26CF /* APIChangesetUploadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIChangesetUploadController.swift; sourceTree = "<group>"; };
 		A35E05192EDFB015003C26CF /* OSMPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMPayload.swift; sourceTree = "<group>"; };
@@ -256,7 +253,6 @@
 		A3B61FC42F7647FC0052AE2C /* EnvironmentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentService.swift; sourceTree = "<group>"; };
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
-		A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameRasterizer.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -281,9 +277,7 @@
 		A3FE166B2E1C29C800DAE5BE /* OtherDetailsCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherDetailsCoder.swift; sourceTree = "<group>"; };
 		A3FE166D2E1C2AEF00DAE5BE /* SegmentationEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationEncoder.swift; sourceTree = "<group>"; };
 		A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraManager.swift; sourceTree = "<group>"; };
-		A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraUtils.swift; sourceTree = "<group>"; };
 		A3FFAA792DE01A0F002B99BD /* ARCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARCameraView.swift; sourceTree = "<group>"; };
-		A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationOption.swift; sourceTree = "<group>"; };
 		A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_53_640_640.mlpackage; sourceTree = "<group>"; };
 		CA924A922CEB9AB000FCA928 /* ChangesetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangesetService.swift; sourceTree = "<group>"; };
 		CAA947752CDE6FBB000C6918 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -299,9 +293,6 @@
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		A312FDE12FA3DF580044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Sources/PointNMap/ComputerVision/Mesh/Utils/MeshRasterizer.swift,
-			);
 			platformFiltersByRelativePath = {
 				PointNMapShared.h = (
 					ios,
@@ -320,17 +311,10 @@
 			);
 			target = A312FE0C2FA3EBE80044808E /* PointNMapShaderTypes */;
 		};
-		A312FE932FA3F6860044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Sources/PointNMap/ComputerVision/Mesh/Utils/MeshRasterizer.swift,
-			);
-			target = 3222F9152B622DFD0019A079 /* IOSAccessAssessment */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A312FD7C2FA3391B0044808E /* PointNMapShared */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A312FE932FA3F6860044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, A312FDE12FA3DF580044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PointNMapShared; sourceTree = "<group>"; };
+		A312FD7C2FA3391B0044808E /* PointNMapShared */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A312FDE12FA3DF580044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PointNMapShared; sourceTree = "<group>"; };
 		A312FD8B2FA3391C0044808E /* PointNMapSharedTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PointNMapSharedTests; sourceTree = "<group>"; };
 		A312FE0E2FA3EBE80044808E /* PointNMapShaderTypes */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A312FE172FA3EBE80044808E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PointNMapShaderTypes; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -518,9 +502,9 @@
 		A30801512EC0984F00B1BA3A /* AccessibilityFeature */ = {
 			isa = PBXGroup;
 			children = (
+				A312FF282FA4362C0044808E /* AttributeEstimation */,
 				A38338C32EDAF25400F1A402 /* Attributes */,
 				A30801662EC0AE6B00B1BA3A /* Components */,
-				A30801622EC0A89E00B1BA3A /* Definitions */,
 				A30801552EC09BA200B1BA3A /* Config */,
 			);
 			path = AccessibilityFeature;
@@ -533,13 +517,6 @@
 				A329433D2EE7BF0200C4C1BC /* Others */,
 			);
 			path = Config;
-			sourceTree = "<group>";
-		};
-		A30801622EC0A89E00B1BA3A /* Definitions */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Definitions;
 			sourceTree = "<group>";
 		};
 		A30801662EC0AE6B00B1BA3A /* Components */ = {
@@ -555,6 +532,22 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A312FF282FA4362C0044808E /* AttributeEstimation */ = {
+			isa = PBXGroup;
+			children = (
+				A312FF292FA436390044808E /* Extensions */,
+			);
+			path = AttributeEstimation;
+			sourceTree = "<group>";
+		};
+		A312FF292FA436390044808E /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A312FF2A2FA436C60044808E /* IsExistingExtension.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		A31A1E772EAC49E3008B30B7 /* UI */ = {
@@ -615,8 +608,6 @@
 		A34B70CC2DDFE638007B191F /* ARCamera */ = {
 			isa = PBXGroup;
 			children = (
-				A3FFAA762DE01631002B99BD /* Helpers */,
-				A3DA4DC12EBE87B6005BB812 /* Utils */,
 				A3FFAA742DE00F2C002B99BD /* ARCameraManager.swift */,
 				A31A1E732EAC4265008B30B7 /* ARCameraViewController.swift */,
 				A3EE6E4D2F5A258700F515E6 /* TestCameraManager.swift */,
@@ -835,14 +826,6 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
-		A3DA4DC12EBE87B6005BB812 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				A3FFAA772DE01634002B99BD /* ARCameraUtils.swift */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
 		A3E162762F3AFC51002D4D08 /* Mesh */ = {
 			isa = PBXGroup;
 			children = (
@@ -856,7 +839,6 @@
 			children = (
 				A3A4139F2EC86D210039298C /* AnnotationImageManager.swift */,
 				A35547CD2EC3048200F43AFD /* AnnotationImageViewController.swift */,
-				A3FFAA7F2DE444C3002B99BD /* AnnotationOption.swift */,
 			);
 			path = Annotation;
 			sourceTree = "<group>";
@@ -876,15 +858,6 @@
 				A3F38C4B2D38A2C500900547 /* DepthModel.swift */,
 			);
 			path = DepthEstimation;
-			sourceTree = "<group>";
-		};
-		A3FFAA762DE01631002B99BD /* Helpers */ = {
-			isa = PBXGroup;
-			children = (
-				A35BB2852DC30383009A3FE0 /* CameraOrientation.swift */,
-				A3C55A462EAF513800F6CFDC /* FrameRasterizer.swift */,
-			);
-			path = Helpers;
 			sourceTree = "<group>";
 		};
 		CAA947772CDE7001000C6918 /* Auth */ = {
@@ -1176,7 +1149,6 @@
 			files = (
 				A3FE16632E18BAEB00DAE5BE /* ConfidenceEncoder.swift in Sources */,
 				A355471E2EC1A47400F43AFD /* SharedAppData.swift in Sources */,
-				A3FFAA802DE444C6002B99BD /* AnnotationOption.swift in Sources */,
 				CAF812C42CFA108100D44B84 /* UserStateViewModel.swift in Sources */,
 				A37E3E3C2EED60F300B07B77 /* PngEncoder.mm in Sources */,
 				A37E3E3D2EED60F300B07B77 /* lodepng.cpp in Sources */,
@@ -1203,10 +1175,10 @@
 				A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */,
+				A312FF2B2FA436CB0044808E /* IsExistingExtension.swift in Sources */,
 				A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttributeExtension.swift in Sources */,
 				A35E05162EDEA050003C26CF /* APIChangesetUploadController.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
-				A35BB2862DC30386009A3FE0 /* CameraOrientation.swift in Sources */,
 				A35547CC2EC3018E00F43AFD /* AnnotationView.swift in Sources */,
 				A3FE16612E18BA5900DAE5BE /* RGBCoder.swift in Sources */,
 				CA924A932CEB9AB000FCA928 /* ChangesetService.swift in Sources */,
@@ -1256,14 +1228,12 @@
 				A3EE6E522F5F9F1600F515E6 /* APITransmissionHelpers.swift in Sources */,
 				A3EE6E502F5A3EF100F515E6 /* TestCameraViewController.swift in Sources */,
 				A3420F1C2E8D82E700CD617E /* APIEnvironment.swift in Sources */,
-				A3C55A472EAF513B00F6CFDC /* FrameRasterizer.swift in Sources */,
 				A374B4AC2F8EF654003E030D /* CurrentMappingData.swift in Sources */,
 				A3B61FC52F76480B0052AE2C /* EnvironmentService.swift in Sources */,
 				A3FE16672E18C81800DAE5BE /* LocationCoder.swift in Sources */,
 				A3FFAA832DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage in Sources */,
 				A3FFAA7A2DE01A0F002B99BD /* ARCameraView.swift in Sources */,
 				A37E3E9E2EFBAA8700B07B77 /* AccessibilityFeatureSnapshot.swift in Sources */,
-				A3FFAA782DE01637002B99BD /* ARCameraUtils.swift in Sources */,
 				A3FE166E2E1C2AF200DAE5BE /* SegmentationEncoder.swift in Sources */,
 				A32943462EE7C07E00C4C1BC /* OSWGeometry.swift in Sources */,
 				DAA7F8B52CA38C11003666D8 /* SharedAppConstants.swift in Sources */,

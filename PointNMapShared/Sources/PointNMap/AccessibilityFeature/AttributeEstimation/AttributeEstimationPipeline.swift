@@ -110,7 +110,7 @@ public class AttributeEstimationPipeline: ObservableObject {
     public func setPrerequisites(
         accessibilityFeature: EditableAccessibilityFeature
     ) throws {
-        let oswElementClass = accessibilityFeature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        let accessibilityFeatureKind = accessibilityFeature.accessibilityFeatureClass.kind
         let isMeshEnabled: Bool = captureMeshData != nil
         var worldPoints: [WorldPoint]? = nil
         var worldPointsGrid: WorldPointsGrid? = nil
@@ -121,8 +121,8 @@ public class AttributeEstimationPipeline: ObservableObject {
         var meshTriangles: [MeshTriangle]? = nil
         var meshAlignedPlane: Plane? = nil
         var meshProjectedPlane: ProjectedPlane? = nil
-        switch(oswElementClass) {
-        case .Sidewalk:
+        switch(accessibilityFeatureKind) {
+        case .sidewalk:
             if isMeshEnabled {
                 meshContents = try self.getMeshContents(accessibilityFeature: accessibilityFeature)
                 meshPolygons = meshContents?.polygons
@@ -209,31 +209,6 @@ public class AttributeEstimationPipeline: ObservableObject {
             }
         }
            
-    }
-    
-    public func processIsExistingRequest(
-        deviceLocation: CLLocationCoordinate2D,
-        mappingData: CurrentMappingData,
-        accessibilityFeature: EditableAccessibilityFeature
-    ) {
-        /// Threshold needs to be in Map Units
-        let distanceThreshold = PointNMapConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
-        guard let LocationDetails = accessibilityFeature.locationDetails else {
-            accessibilityFeature.setIsExisting(false)
-            return
-        }
-        let matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
-            to: LocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
-            captureId: self.captureImageData?.id,
-            distanceThreshold: distanceThreshold
-        )
-        guard let matchedElement = matchedElement else {
-            accessibilityFeature.setIsExisting(false)
-            return
-        }
-        let isExisting = accessibilityFeature.accessibilityFeatureClass.oswPolicy.isExistingFirst
-        accessibilityFeature.setIsExisting(isExisting)
-        accessibilityFeature.setOSWElement(oswElement: matchedElement)
     }
     
     public func processAttributeRequest(

@@ -4,6 +4,7 @@
 //
 //  Created by Himanshu on 11/24/25.
 //
+import PointNMapShared
 
 final class SharedAppContext: ObservableObject {
     var metalContext: MetalContext?

@@ -7,16 +7,15 @@
 
 import CoreImage
 import UIKit
-import PointNMapShared
 
 /**
  A custom Image that displays a bounding box around the region of processing
  */
-struct FrameRasterizer {
+public struct FrameRasterizer {
     /**
      This function creates a CGImage with a bounding box drawn on it.
      */
-    static func create(imageSize: CGSize, frameSize: CGSize) -> CGImage? {
+    public static func create(imageSize: CGSize, frameSize: CGSize) -> CGImage? {
         UIGraphicsBeginImageContextWithOptions(imageSize, false, 1.0)
         guard let context = UIGraphicsGetCurrentContext() else { return nil }
         

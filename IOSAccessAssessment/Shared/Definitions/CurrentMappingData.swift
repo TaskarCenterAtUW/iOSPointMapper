@@ -74,7 +74,7 @@ class CurrentMappingData: CustomStringConvertible {
         }
         
         for featureClass in accessibilityFeatureClasses {
-            let oswElementClass = featureClass.oswPolicy.oswElementClass
+            let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
             let geometry = oswElementClass.geometry
             let identifyingFieldTags: [String: String] = oswElementClass.identifyingFieldTags
             
@@ -142,7 +142,7 @@ class CurrentMappingData: CustomStringConvertible {
      Updates the features map for a specific accessibility feature class by adding or replacing the features related that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
      */
     func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
-        let oswElementClass = featureClass.oswPolicy.oswElementClass
+        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
         let geometry = oswElementClass.geometry
         
         var featureIds = featuresMap[featureClass] ?? []
@@ -180,7 +180,8 @@ class CurrentMappingData: CustomStringConvertible {
         guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
         var nearestDistance: CLLocationDistance = distanceThreshold
-        let geometry = featureClass.oswPolicy.oswElementClass.geometry
+        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+        let geometry = oswElementClass.geometry
         
         for featureId in featureIds {
             guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
@@ -207,7 +208,8 @@ class CurrentMappingData: CustomStringConvertible {
     ) -> (any OSWElement)? {
         guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
-        let geometry = featureClass.oswPolicy.oswElementClass.geometry
+        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+        let geometry = oswElementClass.geometry
         let captureIdString = captureId.uuidString
         
         for featureId in featureIds {

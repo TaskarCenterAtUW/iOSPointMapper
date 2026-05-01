@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PointNMapShared
 
 enum AccessibilityFeatureEncoderError: Error, LocalizedError {
     case fileCreationFailed
