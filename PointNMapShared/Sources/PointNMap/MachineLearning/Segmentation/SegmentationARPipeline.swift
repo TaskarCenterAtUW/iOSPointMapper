@@ -86,6 +86,8 @@ public final class SegmentationARPipeline: ObservableObject {
     private var segmentationModelRequestProcessor: SegmentationModelRequestProcessor?
     private var contourRequestProcessor: ContourRequestProcessor?
     
+    public init() {}
+    
     public func configure() throws {
         self.segmentationModelRequestProcessor = try SegmentationModelRequestProcessor(
             selectedClasses: self.selectedClasses)

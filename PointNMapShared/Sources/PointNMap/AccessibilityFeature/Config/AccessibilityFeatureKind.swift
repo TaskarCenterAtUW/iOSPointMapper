@@ -15,12 +15,13 @@ public enum AccessibilityFeatureKind: String, Identifiable, Codable, CaseIterabl
     case trafficLight = "traffic_light"
     case trafficSign = "traffic_sign"
     case vegetation = "vegetation"
+    case unknown = "unknown"
     
     public var id: String {
         return self.rawValue
     }
     
-    public var geometry: FeatureGeometry {
+    public var geometry: MappingGeometry {
         switch self {
         case .sidewalk: return .linestring
         case .building: return .polygon
@@ -48,4 +49,8 @@ public enum AccessibilityFeatureKind: String, Identifiable, Codable, CaseIterabl
             default : return []
         }
     }
+}
+
+extension AccessibilityFeatureKind {
+    public static let `default`: AccessibilityFeatureKind = .unknown
 }

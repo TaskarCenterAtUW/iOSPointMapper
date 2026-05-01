@@ -28,7 +28,7 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     
     var oswElement: String?
     
-    init(from accessibilityFeature: EditableAccessibilityFeature) {
+    init(from accessibilityFeature: any EditableAccessibilityFeatureProtocol) {
         self.id = accessibilityFeature.id
         self.accessibilityFeatureClass = .init(from: accessibilityFeature.accessibilityFeatureClass)
         self.contourDetails = accessibilityFeature.contourDetails
@@ -39,7 +39,7 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
         self.experimentalAttributeValues = accessibilityFeature.experimentalAttributeValues
     }
     
-    mutating func update(from accessibilityFeature: EditableAccessibilityFeature) {
+    mutating func update(from accessibilityFeature: any EditableAccessibilityFeatureProtocol) {
         self.selectedAnnotationOption = accessibilityFeature.selectedAnnotationOption.rawValue
         self.locationDetails = accessibilityFeature.locationDetails
         self.calculatedAttributeValues = accessibilityFeature.calculatedAttributeValues

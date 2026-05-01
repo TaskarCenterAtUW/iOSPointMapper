@@ -14,7 +14,7 @@ import simd
 
 /// The consumer of post-processed camera outputs (e.g., overlay images).
 @MainActor
-protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
+public protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func cameraOutputImage(
         _ delegate: ARSessionCameraProcessingDelegate,
         metalContext: MetalContext,
@@ -40,7 +40,7 @@ protocol ARSessionCameraProcessingOutputConsumer: AnyObject {
     func pauseSession()
 }
 
-protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
+public protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
     /// Set by the host (e.g., ARCameraViewController) to receive processed overlays.
     @MainActor
     var outputConsumer: ARSessionCameraProcessingOutputConsumer? { get set }
@@ -54,13 +54,21 @@ protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
 /**
  A small struct to save other important attributes of the mesh to maintain sync.
  */
-struct MeshOtherDetails: Sendable {
-    let vertexStride: Int
-    let vertexOffset: Int
-    let indexStride: Int
-    let classificationStride: Int
+public struct MeshOtherDetails: Sendable {
+    public let vertexStride: Int
+    public let vertexOffset: Int
+    public let indexStride: Int
+    public let classificationStride: Int
     
-    let totalVertexCount: Int
+    public let totalVertexCount: Int
+    
+    public init(vertexStride: Int, vertexOffset: Int, indexStride: Int, classificationStride: Int, totalVertexCount: Int) {
+        self.vertexStride = vertexStride
+        self.vertexOffset = vertexOffset
+        self.indexStride = indexStride
+        self.classificationStride = classificationStride
+        self.totalVertexCount = totalVertexCount
+    }
 }
 
 /**
@@ -71,8 +79,8 @@ struct MeshOtherDetails: Sendable {
     Also processes the mesh data and (optionally) maintains the mesh entities in the ARView scene.
  */
 @MainActor
-final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
-    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
+public final class ARCameraViewController: UIViewController, ARSessionCameraProcessingOutputConsumer {
+    public var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
     
     /**
      Sub-view containing the other views
@@ -125,16 +133,16 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     private var meshRecords: [AccessibilityFeatureClass: SegmentationMeshRecord] = [:]
     private var meshOtherDetails: MeshOtherDetails? = nil
     
-    init(arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate) {
+    public init(arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate) {
         self.arSessionCameraProcessingDelegate = arSessionCameraProcessingDelegate
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         view.clipsToBounds = true
         
@@ -236,7 +244,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func getOrientation() -> UIInterfaceOrientation {
+    public func getOrientation() -> UIInterfaceOrientation {
         // TODO: While we are requested to replace usage with effectiveGeometry.interfaceOrientation,
         //  it seems to cause issues with getting the correct orientation.
         //  Need to investigate further.
@@ -254,23 +262,23 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         return getOrientation().isPortrait
     }
     
-    func applyDebugIfNeeded() {
+    public func applyDebugIfNeeded() {
         arView.environment.sceneUnderstanding.options.insert(.occlusion)
         /// TODO: MESH PROCESSING: Use the mesh processing visualization
 //        arView.debugOptions.insert(.showSceneUnderstanding)
     }
     
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         runSessionIfNeeded()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
+    public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         pauseSession()
     }
     
-    override func viewDidLayoutSubviews() {
+    public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateFitConstraints()
         updateAlignConstraints()
@@ -278,7 +286,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         arSessionCameraProcessingDelegate.setOrientation(getOrientation())
     }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate(alongsideTransition: { _ in
             self.updateFitConstraints()
@@ -293,7 +301,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
 //        pauseSession()
 //    }
     
-    func runSessionIfNeeded() {
+    public func runSessionIfNeeded() {
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravityAndHeading
         if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
@@ -318,7 +326,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     /**
     Resumes the AR session and sets its delegate.
      */
-    func resumeSession() {
+    public func resumeSession() {
         arView.session.delegate = arSessionCameraProcessingDelegate
         runSessionIfNeeded()
     }
@@ -326,7 +334,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     /**
     Pauses the AR session and removes its delegate.
      */
-    func pauseSession() {
+    public func pauseSession() {
         arView.session.delegate = nil
         arView.session.pause()
         self.anchorEntity.removeFromParent()
@@ -335,7 +343,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         self.meshOtherDetails = nil
     }
     
-    func cameraOutputImage(
+    public func cameraOutputImage(
         _ delegate: ARSessionCameraProcessingDelegate,
         metalContext: MetalContext,
         segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
@@ -352,7 +360,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         }
     }
     
-    func cameraOutputMesh(
+    public func cameraOutputMesh(
         _ delegate: ARSessionCameraProcessingDelegate,
         metalContext: MetalContext,
         meshGPUSnapshot: MeshGPUSnapshot,
@@ -410,7 +418,7 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
         )
     }
     
-    func getMeshRecordDetails() -> (
+    public func getMeshRecordDetails() -> (
         records: [AccessibilityFeatureClass: SegmentationMeshRecord],
         otherDetails: MeshOtherDetails?
     ) {
@@ -418,17 +426,17 @@ final class ARCameraViewController: UIViewController, ARSessionCameraProcessingO
     }
 }
 
-struct HostedARCameraViewContainer: UIViewControllerRepresentable {
-    var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
+public struct HostedARCameraViewContainer: UIViewControllerRepresentable {
+    public var arSessionCameraProcessingDelegate: ARSessionCameraProcessingDelegate
     
-    func makeUIViewController(context: Context) -> ARCameraViewController {
+    public func makeUIViewController(context: Context) -> ARCameraViewController {
         let vc = ARCameraViewController(arSessionCameraProcessingDelegate: arSessionCameraProcessingDelegate)
         return vc
     }
     
-    func updateUIViewController(_ uiViewController: ARCameraViewController, context: Context) {
+    public func updateUIViewController(_ uiViewController: ARCameraViewController, context: Context) {
     }
     
-    static func dismantleUIViewController(_ uiViewController: ARCameraViewController, coordinator: ()) {
+    public static func dismantleUIViewController(_ uiViewController: ARCameraViewController, coordinator: ()) {
     }
 }

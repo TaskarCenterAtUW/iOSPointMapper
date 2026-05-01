@@ -11,7 +11,7 @@ import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateSurfaceIntegrity(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
@@ -21,7 +21,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateSurfaceIntegrityFromImage(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -61,7 +61,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateSurfaceIntegrityFromMesh(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let captureMeshData = self.captureMeshData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -95,7 +95,7 @@ public extension AttributeEstimationPipeline {
         return surfaceIntegrityAttributeValue
     }
     
-    func getDamageDetectionResults(accessibilityFeature: EditableAccessibilityFeature) throws -> [DamageDetectionResult] {
+    func getDamageDetectionResults(accessibilityFeature: any EditableAccessibilityFeatureProtocol) throws -> [DamageDetectionResult] {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }

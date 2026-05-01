@@ -83,6 +83,8 @@ public class AttributeEstimationPipeline: ObservableObject {
     
     public var prerequisiteCache = PrerequisiteCache()
     
+    public init() {}
+    
     /// TODO: MESH PROCESSING: Add mesh data processing components when needed.
     public func configure(
         captureImageData: (any CaptureImageDataProtocol),
@@ -108,7 +110,7 @@ public class AttributeEstimationPipeline: ObservableObject {
     }
     
     public func setPrerequisites(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws {
         let accessibilityFeatureKind = accessibilityFeature.accessibilityFeatureClass.kind
         let isMeshEnabled: Bool = captureMeshData != nil
@@ -171,7 +173,7 @@ public class AttributeEstimationPipeline: ObservableObject {
     
     public func processLocationRequest(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws {
         let locationRequestResult = try self.calculateLocation(
             deviceLocation: deviceLocation,
@@ -212,11 +214,11 @@ public class AttributeEstimationPipeline: ObservableObject {
     }
     
     public func processAttributeRequest(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws {
         var attributeAssignmentFlagError = false
         
-        for attribute in accessibilityFeature.accessibilityFeatureClass.attributes {
+        for attribute in accessibilityFeature.accessibilityFeatureClass.kind.attributes {
             do {
                 switch attribute {
                 case .width:

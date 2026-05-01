@@ -9,10 +9,10 @@ import CoreLocation
 import MapKit
 
 extension AttributeEstimationPipeline {
-    public func processIsExistingRequest(
+    func processIsExistingRequest(
         deviceLocation: CLLocationCoordinate2D,
         mappingData: CurrentMappingData,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: MappedEditableAccessibilityFeature
     ) {
         /// Threshold needs to be in Map Units
         let distanceThreshold = PointNMapConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
@@ -29,7 +29,7 @@ extension AttributeEstimationPipeline {
             accessibilityFeature.setIsExisting(false)
             return
         }
-        let isExisting = accessibilityFeature.accessibilityFeatureClass.kind?.oswPolicy.isExistingFirst ?? false
+        let isExisting = accessibilityFeature.accessibilityFeatureClass.kind.oswPolicy.isExistingFirst
         accessibilityFeature.setIsExisting(isExisting)
         accessibilityFeature.setOSWElement(oswElement: matchedElement)
     }

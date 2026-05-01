@@ -16,7 +16,7 @@ public extension AttributeEstimationPipeline {
      Get world points corresponding to the feature based on the segmentation label image and depth map, using the world points processor.
      */
     func getWorldPoints(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> [WorldPoint] {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -39,7 +39,7 @@ public extension AttributeEstimationPipeline {
     /**
      Restructure world points into a 2D grid based on their projected pixel coordinates, for more efficient spatial queries.
      */
-    func getWorldPointsGrid(accessibilityFeature: EditableAccessibilityFeature) throws -> WorldPointsGrid {
+    func getWorldPointsGrid(accessibilityFeature: any EditableAccessibilityFeatureProtocol) throws -> WorldPointsGrid {
         guard let captureImageData = self.captureImageData else {
             throw AttributeEstimationPipelineError.missingCaptureData
         }
@@ -64,7 +64,7 @@ public extension AttributeEstimationPipeline {
      Intermediary method to calculate the plane of the feature given the accessibility feature.
      */
     func calculateAlignedPlane(
-        accessibilityFeature: EditableAccessibilityFeature,
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol,
         worldPoints: [WorldPoint]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {
@@ -88,7 +88,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateProjectedPlane(
-        accessibilityFeature: EditableAccessibilityFeature,
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol,
         plane: Plane
     ) throws -> ProjectedPlane {
         guard let planeProcessor = self.planeProcessor else {
@@ -113,7 +113,7 @@ public extension AttributeEstimationPipeline {
  */
 public extension AttributeEstimationPipeline {
     func getMeshContents(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> MeshContents {
         guard let captureMeshData = self.captureMeshData else {
             throw AttributeEstimationPipelineError.missingCaptureData
@@ -129,7 +129,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateAlignedPlane(
-        accessibilityFeature: EditableAccessibilityFeature,
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol,
         meshPolygons: [MeshPolygon]? = nil
     ) throws -> Plane {
         guard let planeProcessorLocal = self.planeProcessor else {

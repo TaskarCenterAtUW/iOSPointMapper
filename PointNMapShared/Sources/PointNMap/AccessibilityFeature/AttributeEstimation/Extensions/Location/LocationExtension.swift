@@ -10,11 +10,11 @@ import CoreLocation
 public extension AttributeEstimationPipeline {
     func calculateLocation(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         let isMeshEnabled: Bool = self.captureMeshData != nil
-        let oswGeometry = accessibilityFeature.accessibilityFeatureClass.kind?.geometry ?? FeatureGeometry.default
-        switch(oswGeometry) {
+        let geometry = accessibilityFeature.accessibilityFeatureClass.kind.geometry
+        switch(geometry) {
         case .linestring:
             if isMeshEnabled {
                 return try self.calculateLocationFromMeshForLineString(
@@ -46,7 +46,7 @@ public extension AttributeEstimationPipeline {
 public extension AttributeEstimationPipeline {
     func calculateLocationFromImageForPoint(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
@@ -69,7 +69,7 @@ public extension AttributeEstimationPipeline {
     
     func calculateLocationFromImageForLineString(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
@@ -109,7 +109,7 @@ public extension AttributeEstimationPipeline {
     
     func calculateLocationFromImageForPolygon(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
@@ -144,7 +144,7 @@ public extension AttributeEstimationPipeline {
 public extension AttributeEstimationPipeline {
     func calculateLocationFromMeshForLineString(
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)

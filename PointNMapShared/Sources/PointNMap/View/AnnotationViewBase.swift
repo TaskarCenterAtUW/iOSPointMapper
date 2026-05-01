@@ -1,17 +1,17 @@
 //
-//  AnnotationView.swift
+//  AnnotationViewBase.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 11/10/25.
 //
 
 import SwiftUI
+import Combine
 import TipKit
 import CoreLocation
 import simd
-import PointNMapShared
 
-enum AnnotationViewConstants {
+enum AnnotationViewBaseConstants {
     enum Texts {
         static let annotationViewTitle = "Annotation"
         
@@ -66,7 +66,7 @@ enum AnnotationViewConstants {
     }
 }
 
-enum AnnotationViewError: Error, LocalizedError {
+enum AnnotationViewBaseError: Error, LocalizedError {
     case classIndexOutofBounds
     case instanceIndexOutofBounds
     case invalidCaptureDataRecord
@@ -75,7 +75,6 @@ enum AnnotationViewError: Error, LocalizedError {
     case workspaceConfigurationFailed
     case attributeEstimationFailed(Error)
     case uploadFailed
-    case apiChangesetUploadFailed(APIChangesetUploadResults)
     
     var errorDescription: String? {
         switch self {
@@ -95,41 +94,39 @@ enum AnnotationViewError: Error, LocalizedError {
             return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
         case .uploadFailed:
             return "Failed to upload annotations."
-        case .apiChangesetUploadFailed(let results):
-            return "API Transmission failed with \(results.failedFeatureUploads) failed uploads."
         }
     }
 }
 
-struct SelectFeatureInfoTip: Tip {
+struct SelectFeatureInfoTipBase: Tip {
     
     var title: Text {
-        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipTitle)
+        Text(AnnotationViewBaseConstants.Texts.selectFeatureInfoTipTitle)
     }
     var message: Text? {
-        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipMessage)
+        Text(AnnotationViewBaseConstants.Texts.selectFeatureInfoTipMessage)
     }
     var image: Image? {
-        Image(systemName: AnnotationViewConstants.Images.infoIcon)
+        Image(systemName: AnnotationViewBaseConstants.Images.infoIcon)
             .resizable()
     }
     var actions: [Action] {
         // Define a learn more button.
         Action(
-            id: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle,
-            title: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle
+            id: AnnotationViewBaseConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle,
+            title: AnnotationViewBaseConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle
         )
     }
 }
 
-class AnnotationFeatureClassSelectionViewModel: ObservableObject {
+class AnnotationFeatureClassSelectionViewBaseModel: ObservableObject {
     @Published var currentIndex: Int? = nil
     @Published var currentClass: AccessibilityFeatureClass? = nil
     @Published var selectedAnnotationOption: AnnotationOption = .classOption(.default)
     
     func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
         guard index < classes.count else {
-            throw AnnotationViewError.classIndexOutofBounds
+            throw AnnotationViewBaseError.classIndexOutofBounds
         }
         self.currentIndex = index
         self.currentClass = classes[index]
@@ -140,15 +137,15 @@ class AnnotationFeatureClassSelectionViewModel: ObservableObject {
     }
 }
 
-class AnnotationFeatureSelectionViewModel: ObservableObject {
-    @Published var instances: [MappedEditableAccessibilityFeature] = []
+class AnnotationFeatureSelectionViewBaseModel: ObservableObject {
+    @Published var instances: [EditableAccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
-    @Published var currentFeature: MappedEditableAccessibilityFeature? = nil
+    @Published var currentFeature: EditableAccessibilityFeature? = nil
     
-    func setInstances(_ instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
         /// If the class is sidewalk, we always select the first instance, as there should be only one sidewalk instance.
-        if (currentClass.kind.oswPolicy.oswElementClass == .Sidewalk) {
+        if (currentClass.kind == .sidewalk) {
             try setIndex(index: 0)
         } else {
             try setIndex(index: nil)
@@ -162,13 +159,13 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
             return
         }
         guard index < instances.count else {
-            throw AnnotationViewError.instanceIndexOutofBounds
+            throw AnnotationViewBaseError.instanceIndexOutofBounds
         }
         self.currentIndex = index
         self.currentFeature = instances[index]
     }
     
-    func setCurrent(index: Int?, instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setCurrent(index: Int?, instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         try setInstances(instances, currentClass: currentClass)
         try setIndex(index: index)
     }
@@ -181,10 +178,14 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     }
 }
 
-class AnnotationViewStatusViewModel: ObservableObject {
+class AnnotationViewStatusViewBaseModel: ObservableObject {
     @Published var isFailed: Bool = false
     @Published var errorMessage: String = ""
     @Published var shouldDismiss: Bool = true
+    
+    init(shouldDismiss: Bool = true) {
+        self.shouldDismiss = shouldDismiss
+    }
     
     func update(isFailed: Bool, errorMessage: String, shouldDismiss: Bool = true) {
         self.isFailed = isFailed
@@ -195,65 +196,41 @@ class AnnotationViewStatusViewModel: ObservableObject {
     func update(isFailed: Bool, error: Error, shouldDismiss: Bool = true) {
         self.isFailed = isFailed
         let dismissKey = shouldDismiss ?
-        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey :
-        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey
+        AnnotationViewBaseConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey :
+        AnnotationViewBaseConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey
         self.errorMessage = "\(error.localizedDescription) \(dismissKey)"
         self.shouldDismiss = shouldDismiss
     }
 }
 
-class APIChangesetUploadStatusViewModel: ObservableObject {
-    @Published var isFailed: Bool = false
-    @Published var errorMessage: String = ""
-    
-    func update(isFailed: Bool, errorMessage: String) {
-        self.isFailed = isFailed
-        self.errorMessage = errorMessage
-    }
-    
-    func update(apiChangesetUploadResults: APIChangesetUploadResults) {
-        let failedFeatureUploads = apiChangesetUploadResults.failedFeatureUploads
-        if failedFeatureUploads == 0 {
-            self.isFailed = true
-            self.errorMessage = "Unknown Error Occurred."
-        } else {
-            self.isFailed = true
-            self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiChangesetUploadStatusAlertMessageSuffixKey)"
-        }
-    }
-}
-
-struct AnnotationView: View {
+public struct AnnotationViewBase: View {
     let selectedClasses: [AccessibilityFeatureClass]
     let captureLocation: CLLocationCoordinate2D
-    let apiChangesetUploadController: APIChangesetUploadController
     
-    @EnvironmentObject var userStateViewModel: UserStateViewModel
-    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
-    @EnvironmentObject var sharedAppData: SharedAppData
+    @EnvironmentObject var sharedAppData: SharedBaseData
+    @EnvironmentObject var sharedBaseContext: SharedBaseContext
     @Environment(\.dismiss) var dismiss
     
-    @StateObject var manager: AnnotationImageManager = AnnotationImageManager<MappedEditableAccessibilityFeature>()
+    @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
     @StateObject var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
     
-    @StateObject private var managerStatusViewModel = AnnotationViewStatusViewModel()
-    @StateObject private var apiChangesetUploadStatusViewModel = APIChangesetUploadStatusViewModel()
+    @StateObject private var managerStatusViewModel = AnnotationViewStatusViewBaseModel()
     @State private var interfaceOrientation: UIInterfaceOrientation = .portrait // To bind one-way with manager's orientation
     
-    @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
-    @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewModel()
+    @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewBaseModel()
+    @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewBaseModel()
     @State private var isShowingAnnotationFeatureDetailView: Bool = false
     
-//    var selectFeatureInfoTip = SelectFeatureInfoTip()
+//    var selectFeatureInfoTipBase = SelectFeatureInfoTipBase()
     @State private var showSelectFeatureLearnMoreSheet = false
     
-    var body: some View {
+    public var body: some View {
         VStack {
             HStack {
                 Spacer()
-                Text(AnnotationViewConstants.Texts.annotationViewTitle)
+                Text(AnnotationViewBaseConstants.Texts.annotationViewTitle)
                     .font(.headline)
                     .padding()
                 Spacer()
@@ -264,7 +241,7 @@ struct AnnotationView: View {
                     Button(action: {
                         dismiss()
                     }) {
-                        Image(systemName: AnnotationViewConstants.Images.closeIcon)
+                        Image(systemName: AnnotationViewBaseConstants.Images.closeIcon)
                             .resizable()
                             .frame(width: 20, height: 20)
                     }
@@ -294,13 +271,15 @@ struct AnnotationView: View {
             if let currentFeature = featureSelectionViewModel.currentFeature,
                let currentFeatureIndex = featureSelectionViewModel.currentIndex
             {
-                AnnotationFeatureDetailView(
+                AnnotationFeatureDetailViewBase(
                     accessibilityFeature: currentFeature,
                     title: "\(currentFeature.accessibilityFeatureClass.name.capitalized): \(currentFeatureIndex)"
-                )
+                ) { feature in
+                    EmptyView()
+                }
                     .presentationDetents([.medium, .large])
             } else {
-                Text(AnnotationViewConstants.Texts.featureDetailNotAvailableText)
+                Text(AnnotationViewBaseConstants.Texts.featureDetailNotAvailableText)
                     .presentationDetents([.medium, .large])
             }
         }
@@ -308,8 +287,8 @@ struct AnnotationView: View {
             SelectFeatureLearnMoreSheetView()
                 .presentationDetents([.medium, .large])
         }
-        .alert(AnnotationViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
-            Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
+        .alert(AnnotationViewBaseConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerStatusViewModel.isFailed, actions: {
+            Button(AnnotationViewBaseConstants.Texts.managerStatusAlertDismissButtonKey) {
                 let shouldDismiss = managerStatusViewModel.shouldDismiss
                 managerStatusViewModel.update(isFailed: false, errorMessage: "")
                 if shouldDismiss {
@@ -319,25 +298,12 @@ struct AnnotationView: View {
         }, message: {
             Text(managerStatusViewModel.errorMessage)
         })
-        .alert(AnnotationViewConstants.Texts.apiChangesetUploadStatusAlertTitleKey,
-               isPresented: $apiChangesetUploadStatusViewModel.isFailed, actions: {
-            Button(AnnotationViewConstants.Texts.managerStatusAlertDismissButtonKey) {
-                apiChangesetUploadStatusViewModel.update(isFailed: false, errorMessage: "")
-                do {
-                    try moveToNextClass()
-                } catch {
-                    managerStatusViewModel.update(isFailed: true, error: error)
-                }
-            }
-        }, message: {
-            Text(apiChangesetUploadStatusViewModel.errorMessage)
-        })
     }
     
     private func loadingPageView() -> some View {
         VStack {
             Spacer()
-            Text(AnnotationViewConstants.Texts.loadingPageText)
+            Text(AnnotationViewBaseConstants.Texts.loadingPageText)
             SpinnerView()
             Spacer()
         }
@@ -354,21 +320,21 @@ struct AnnotationView: View {
     private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
         let isDisabledFeatureDetailButton = featureSelectionViewModel.currentFeature == nil
         orientationStack {
-            HostedAnnotationImageViewController<MappedEditableAccessibilityFeature>(annotationImageManager: manager)
+            HostedAnnotationImageViewController(annotationImageManager: manager)
             
             VStack {
                 HStack {
                     Spacer()
-                    Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
+                    Text("\(AnnotationViewBaseConstants.Texts.currentClassPrefixText): \(currentClass.name)")
                     Spacer()
                 }
                 
                 HStack {
                     Spacer()
                     CustomPicker (
-                        label: AnnotationViewConstants.Texts.selectObjectText,
+                        label: AnnotationViewBaseConstants.Texts.selectObjectText,
                         selection: $featureSelectionViewModel.currentIndex,
-                        isContainsAll: currentClass.kind.oswPolicy.oswElementClass != .Sidewalk
+                        isContainsAll: currentClass.kind != .sidewalk
                     ) {
                         ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                             Text("\(currentClass.name.capitalized): \(featureIndex)")
@@ -378,7 +344,7 @@ struct AnnotationView: View {
                     Button(action: {
                         isShowingAnnotationFeatureDetailView = true
                     }) {
-                        Image(systemName: AnnotationViewConstants.Images.ellipsisIcon)
+                        Image(systemName: AnnotationViewBaseConstants.Images.ellipsisIcon)
                     }
                     .buttonStyle(.bordered)
                     .padding(.horizontal, 5)
@@ -393,7 +359,7 @@ struct AnnotationView: View {
                         Button(action: {
                             showSelectFeatureLearnMoreSheet = true
                         }) {
-                            Image(systemName: AnnotationViewConstants.Images.infoIcon)
+                            Image(systemName: AnnotationViewBaseConstants.Images.infoIcon)
                                 .resizable()
                                 .frame(width: 20, height: 20)
                         }
@@ -413,7 +379,7 @@ struct AnnotationView: View {
                 Button(action: {
                     confirmAnnotation()
                 }) {
-                    Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
+                    Text(isCurrentIndexLast() ? AnnotationViewBaseConstants.Texts.finishText : AnnotationViewBaseConstants.Texts.nextText)
                         .padding()
                 }
             }
@@ -479,12 +445,12 @@ struct AnnotationView: View {
     private func handleOnAppear() async {
         do {
             guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-                throw AnnotationViewError.invalidCaptureDataRecord
+                throw AnnotationViewBaseError.invalidCaptureDataRecord
             }
             var captureMeshData: (any CaptureMeshDataProtocol)? = nil
-            if userStateViewModel.isEnhancedAnalysisEnabled {
+            if sharedBaseContext.isEnhancedAnalysisEnabled {
                 guard let captureMeshDataResults = currentCaptureDataRecord.meshData?.captureMeshDataResults else {
-                    throw AnnotationViewError.invalidCaptureDataRecord
+                    throw AnnotationViewBaseError.invalidCaptureDataRecord
                 }
                 captureMeshData = CaptureImageAndMeshData(
                     captureImageData: CaptureImageData(currentCaptureDataRecord.imageData),
@@ -502,7 +468,7 @@ struct AnnotationView: View {
                 selectedClasses: selectedClasses, segmentationAnnotationPipeline: segmentationAnnontationPipeline,
                 captureImageData: currentCaptureDataRecord.imageData,
                 captureMeshData: captureMeshData,
-                isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled
+                isEnhancedAnalysisEnabled: sharedBaseContext.isEnhancedAnalysisEnabled
             )
             let captureDataHistory = Array(await sharedAppData.captureDataQueue.snapshot())
             manager.setupAlignedSegmentationLabelImages(captureDataHistory: captureDataHistory)
@@ -515,7 +481,7 @@ struct AnnotationView: View {
     private func handleOnClassChange() {
         do {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
-                throw AnnotationViewError.invalidCaptureDataRecord
+                throw AnnotationViewBaseError.invalidCaptureDataRecord
             }
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             var lastEstimationError: Error? = nil
@@ -525,10 +491,6 @@ struct AnnotationView: View {
                     try attributeEstimationPipeline.processLocationRequest(
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
-                    )
-                    attributeEstimationPipeline.processIsExistingRequest(
-                        deviceLocation: captureLocation,
-                        mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
                     )
                     try attributeEstimationPipeline.processAttributeRequest(
                         accessibilityFeature: accessibilityFeature
@@ -541,11 +503,11 @@ struct AnnotationView: View {
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
             if let lastEstimationError {
-                throw AnnotationViewError.attributeEstimationFailed(lastEstimationError)
+                throw AnnotationViewBaseError.attributeEstimationFailed(lastEstimationError)
             }
-        } catch AnnotationViewError.attributeEstimationFailed(let error) {
+        } catch AnnotationViewBaseError.attributeEstimationFailed(let error) {
             managerStatusViewModel.update(
-                isFailed: true, error: AnnotationViewError.attributeEstimationFailed(error), shouldDismiss: false
+                isFailed: true, error: AnnotationViewBaseError.attributeEstimationFailed(error), shouldDismiss: false
             )
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
@@ -560,9 +522,9 @@ struct AnnotationView: View {
         }
         do {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
-                throw AnnotationViewError.invalidCaptureDataRecord
+                throw AnnotationViewBaseError.invalidCaptureDataRecord
             }
-            var accessibilityFeatures: [MappedEditableAccessibilityFeature]
+            var accessibilityFeatures: [EditableAccessibilityFeature]
             var featureSelectedStatus: [UUID: Bool] = [:]
             var updateFeatureResults: AnnotationImageFeatureUpdateResults? = nil
             if let currentFeature = featureSelectionViewModel.currentFeature {
@@ -613,45 +575,13 @@ struct AnnotationView: View {
     private func confirmAnnotation() {
         Task {
             do {
-                let apiChangesetUploadResults = try await uploadFeatures()
-                if let apiChangesetUploadResults, apiChangesetUploadResults.failedFeatureUploads > 0 {
-                    throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
-                }
                 try moveToNextClass()
-            } catch AnnotationViewError.classIndexOutofBounds {
-                managerStatusViewModel.update(isFailed: true, error: AnnotationViewError.classIndexOutofBounds)
-            } catch AnnotationViewError.apiChangesetUploadFailed(let results) {
-                apiChangesetUploadStatusViewModel.update(apiChangesetUploadResults: results)
+            } catch AnnotationViewBaseError.classIndexOutofBounds {
+                managerStatusViewModel.update(isFailed: true, error: AnnotationViewBaseError.classIndexOutofBounds)
             } catch {
-                apiChangesetUploadStatusViewModel.update(
-                    isFailed: true,
-                    errorMessage: AnnotationViewConstants.Texts.apiChangesetUploadStatusAlertGenericMessageKey
-                )
+                managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
             }
         }
-    }
-    
-    /// Fetches the latest map data for the current location and workspace, and updates the sharedAppData's currentMappingData.
-    /// This ensures that the most up-to-date map data is used for the next class's annotation, in case there were any changes from the previous upload.
-    /// May be used as a fail-safe if API changeset upload fails, to ensure that the user is working with the latest map data. If the upload is successful, the map data is already updated in the sharedAppData within the uploadFeatures function, so this would just be an extra fetch that may not be necessary.
-    private func refreshMap() async throws {
-        guard let workspaceId = workspaceViewModel.workspaceId else {
-            throw ARCameraViewError.workspaceConfigurationFailed
-        }
-        guard let accessToken = userStateViewModel.getAccessToken() else {
-            throw ARCameraViewError.authenticationError
-        }
-        let mapData = try await WorkspaceService.shared.fetchMapData(
-            workspaceId: workspaceId,
-            location: captureLocation,
-            radius: SharedAppConstants.WorkspaceConstants.fetchRadiusInMeters,
-            accessToken: accessToken,
-            environment: userStateViewModel.selectedEnvironment
-        )
-        sharedAppData.currentMappingData.replace(
-            osmMapDataResponse: mapData,
-            accessibilityFeatureClasses: selectedClasses
-        )
     }
     
     private func moveToNextClass() throws {
@@ -662,83 +592,10 @@ struct AnnotationView: View {
         /// Move to next class
         guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord,
               let currentClassIndex = featureClassSelectionViewModel.currentIndex else {
-            throw AnnotationViewError.invalidCaptureDataRecord
+            throw AnnotationViewBaseError.invalidCaptureDataRecord
         }
         let segmentedClasses = currentCaptureDataRecord.imageData.captureImageDataResults.segmentedClasses
         try featureClassSelectionViewModel.setCurrent(index: currentClassIndex + 1, classes: segmentedClasses)
-    }
-    
-    private func uploadFeatures() async throws -> APIChangesetUploadResults? {
-        guard let currentCaptureDataRecord = sharedAppData.currentCaptureDataRecord else {
-            throw AnnotationViewError.invalidCaptureDataRecord
-        }
-        guard let workspaceId = workspaceViewModel.workspaceId,
-              let changesetId = workspaceViewModel.changesetId else {
-            throw AnnotationViewError.workspaceConfigurationFailed
-        }
-        guard let accessToken = userStateViewModel.getAccessToken() else {
-            throw AnnotationViewError.authenticationError
-        }
-        guard let accessibilityFeatureClass = featureClassSelectionViewModel.currentClass else {
-            throw AnnotationViewError.classIndexOutofBounds
-        }
-        guard featureClassSelectionViewModel.selectedAnnotationOption != .classOption(.discard) else {
-            return nil
-        }
-        let featuresToUpload: [MappedEditableAccessibilityFeature] = featureSelectionViewModel.instances.filter { feature in
-            feature.selectedAnnotationOption != .individualOption(.discard) &&
-            feature.accessibilityFeatureClass == accessibilityFeatureClass
-        }
-        guard !featuresToUpload.isEmpty else {
-            return nil
-        }
-        let apiChangesetUploadInputs = APIChangesetUploadInputs(
-            workspaceId: workspaceId,
-            changesetId: changesetId,
-            accessibilityFeatureClass: accessibilityFeatureClass,
-            captureData: currentCaptureDataRecord,
-            captureLocation: captureLocation,
-            accessToken: accessToken,
-            environment: userStateViewModel.selectedEnvironment
-        )
-        let apiChangesetUploadResults = try await apiChangesetUploadController.uploadFeatures(
-            accessibilityFeatures: featuresToUpload,
-            currentMappedFeaturesData: sharedAppData.currentMappedFeaturesData,
-            inputs: apiChangesetUploadInputs
-        )
-        guard let mappedAccessibilityFeatures = apiChangesetUploadResults.accessibilityFeatures,
-              let mappedElements = apiChangesetUploadResults.oswElements else {
-            throw AnnotationViewError.apiChangesetUploadFailed(apiChangesetUploadResults)
-        }
-        sharedAppData.currentMappedFeaturesData.updateFeatures(mappedAccessibilityFeatures, for: accessibilityFeatureClass)
-        sharedAppData.currentMappingData.updateFeatures(mappedElements, for: accessibilityFeatureClass)
-        
-        addFeaturesToCurrentDataset(
-            captureImageData: currentCaptureDataRecord.imageData,
-            featuresToUpload: featuresToUpload, mappedAccessibilityFeatures: mappedAccessibilityFeatures
-        )
-        
-        sharedAppData.isUploadReady = true
-        return apiChangesetUploadResults
-    }
-    
-    private func addFeaturesToCurrentDataset(
-        captureImageData: any CaptureImageDataProtocol,
-        featuresToUpload: [any AccessibilityFeatureProtocol],
-        mappedAccessibilityFeatures: [any AccessibilityFeatureProtocol]
-    ) {
-        Task {
-            do {
-                try sharedAppData.currentDatasetEncoder?.addFeatures(
-                    features: featuresToUpload, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
-                )
-                try sharedAppData.currentDatasetEncoder?.addFeatures(
-                    features: mappedAccessibilityFeatures, frameNumber: captureImageData.id, timestamp: captureImageData.timestamp
-                )
-            } catch {
-                print("Error adding feature data to dataset encoder: \(error)")
-            }
-        }
     }
 }
 
@@ -753,9 +610,9 @@ struct SelectFeatureLearnMoreSheetView: View {
             //                .scaledToFit()
             //                .frame(width: 160)
             //                .foregroundStyle(.accentColor)
-            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetTitle)
+            Text(AnnotationViewBaseConstants.Texts.selectFeatureInfoLearnMoreSheetTitle)
                 .font(.headline)
-            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetMessage)
+            Text(AnnotationViewBaseConstants.Texts.selectFeatureInfoLearnMoreSheetMessage)
                 .foregroundStyle(.secondary)
             Button("Dismiss") {
                 dismiss()

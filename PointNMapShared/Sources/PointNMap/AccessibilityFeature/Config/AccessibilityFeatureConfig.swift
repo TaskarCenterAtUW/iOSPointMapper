@@ -11,7 +11,7 @@ import ARKit
 public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Comparable, CustomStringConvertible {
     public let id: String
     public let name: String
-    public let kind: AccessibilityFeatureKind?
+    public let kind: AccessibilityFeatureKind
     
     /**
      Segmentation-related constants
@@ -45,7 +45,7 @@ public struct AccessibilityFeatureClass: Identifiable, Hashable, Sendable, Compa
 //    public let oswPolicy: OSWPolicy
     
     public init(
-        id: String, name: String, kind: AccessibilityFeatureKind? = nil,
+        id: String, name: String, kind: AccessibilityFeatureKind = .default,
         grayscaleValue: Float, labelValue: UInt8, color: CIColor,
         bounds: CGRect? = nil, unionOfMasksPolicy: UnionOfMasksPolicy = .default,
         meshClassification: Set<ARMeshClassification> = [],

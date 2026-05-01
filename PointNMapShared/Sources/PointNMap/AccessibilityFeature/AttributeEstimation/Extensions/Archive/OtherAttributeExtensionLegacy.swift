@@ -15,7 +15,7 @@ import CoreLocation
  */
 public extension AttributeEstimationPipeline {
     func calculateWidthLegacy(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
@@ -52,7 +52,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateRunningSlopeLegacy(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)
@@ -91,7 +91,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateCrossSlopeLegacy(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let depthMapProcessor = self.depthMapProcessor else {
             throw AttributeEstimationPipelineError.configurationError(AttributeEstimationPipelineConstants.Texts.depthMapProcessorKey)

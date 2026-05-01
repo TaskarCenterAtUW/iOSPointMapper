@@ -44,7 +44,7 @@ class APIChangesetUploadController: ObservableObject {
     }
     
     func uploadFeatures(
-        accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        accessibilityFeatures: [MappedEditableAccessibilityFeature],
         currentMappedFeaturesData: CurrentMappedFeaturesData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
@@ -101,6 +101,8 @@ class APIChangesetUploadController: ObservableObject {
             enhancedAnalysisMode = false
         case .imageAndMeshData(_):
             enhancedAnalysisMode = true
+        default:
+            enhancedAnalysisMode = false
         }
         return [
             APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
@@ -114,7 +116,7 @@ class APIChangesetUploadController: ObservableObject {
  */
 extension APIChangesetUploadController {
     func uploadAllFeatures(
-        accessibilityFeatures: [any AccessibilityFeatureProtocol],
+        accessibilityFeatures: [MappedEditableAccessibilityFeature],
         currentMappedFeaturesData: CurrentMappedFeaturesData,
         inputs: APIChangesetUploadInputs
     ) async throws -> APIChangesetUploadResults {
@@ -124,7 +126,7 @@ extension APIChangesetUploadController {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk
-        if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk {
+        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk {
             accessibilityFeatures = [firstFeature]
             totalFeatures = 1
         }
@@ -136,13 +138,15 @@ extension APIChangesetUploadController {
         )
         for feature in accessibilityFeatures {
             var diffOperationSets: (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation])
-            switch feature.accessibilityFeatureClass.oswPolicy.oswElementClass.geometry {
+            switch feature.accessibilityFeatureClass.kind.oswPolicy.oswElementClass.geometry {
             case .point:
                 diffOperationSets = getDiffOperationsFromPointFeature(feature, additionalTags: additionalTags)
             case .linestring:
                 diffOperationSets = getDiffOperationsFromLinestringFeature(feature, additionalTags: additionalTags)
             case .polygon:
                 diffOperationSets = getDiffOperationsFromPolygons(feature, additionalTags: additionalTags)
+            default:
+                continue
             }
             diffOperationSets.mainOperations.forEach { diffOperation in
                 let oswElement = diffOperation.oswElement
@@ -160,7 +164,7 @@ extension APIChangesetUploadController {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
-        if inputs.accessibilityFeatureClass.oswPolicy.oswElementClass == .Sidewalk,
+        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk,
            let newDiffOperation = featureCache.mainEntryList.getOSWLineStringDiffOperations().first,
            case .create(let newOSWElement) = newDiffOperation,
            let existingMappedFeature = currentMappedFeaturesData.featuresMap[inputs.accessibilityFeatureClass]?.last,
@@ -328,10 +332,10 @@ extension APIChangesetUploadController {
  */
 extension APIChangesetUploadController {
     private func getDiffOperationsFromPointFeature(
-        _ feature: any AccessibilityFeatureProtocol,
+        _ feature: MappedEditableAccessibilityFeature,
         additionalTags: [String: String] = [:]
     ) -> (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation]) {
-        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        let oswElementClass = feature.accessibilityFeatureClass.kind.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .point else { return ([], []) }
         guard var featureLocation = feature.getLastLocationCoordinate() else { return ([], []) }
         var isExisting = false
@@ -339,17 +343,15 @@ extension APIChangesetUploadController {
         var version = "1"
         /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-        if let editableFeature = feature as? EditableAccessibilityFeature {
-            calculatedAttributeValues = editableFeature.calculatedAttributeValues
-        }
+        calculatedAttributeValues = feature.calculatedAttributeValues
         /// Add location as additional tags as well
         var additionalTags = additionalTags
         additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
         additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
         /// If feature is of type editable accessibility feature and is existing, then use the existing id and version for the point
         /// to update the existing point in OSM instead of creating a new one
-        if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
-            guard let existingPoint = editableFeature.oswElement as? OSWPoint else { return ([], []) }
+        if feature.isExisting {
+            guard let existingPoint = feature.oswElement as? OSWPoint else { return ([], []) }
             isExisting = true
             id = existingPoint.id
             version = existingPoint.version
@@ -362,7 +364,7 @@ extension APIChangesetUploadController {
         let oswPoint = OSWPoint(
             id: id,
             version: version,
-            oswElementClass: feature.accessibilityFeatureClass.oswPolicy.oswElementClass,
+            oswElementClass: feature.accessibilityFeatureClass.kind.oswPolicy.oswElementClass,
             latitude: featureLocation.latitude,
             longitude: featureLocation.longitude,
             attributeValues: feature.attributeValues,
@@ -375,10 +377,10 @@ extension APIChangesetUploadController {
     }
     
     private func getDiffOperationsFromLinestringFeature(
-        _ feature: any AccessibilityFeatureProtocol,
+        _ feature: MappedEditableAccessibilityFeature,
         additionalTags: [String: String] = [:]
     ) -> (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation]) {
-        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        let oswElementClass = feature.accessibilityFeatureClass.kind.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .linestring else { return ([], []) }
         guard let featureLocationElement: LocationElement = feature.locationDetails?.locations.first,
               featureLocationElement.isWay, !featureLocationElement.isClosed else {
@@ -389,14 +391,12 @@ extension APIChangesetUploadController {
         var version = "1"
         /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property to the linestring
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-        if let editableFeature = feature as? EditableAccessibilityFeature {
-            calculatedAttributeValues = editableFeature.calculatedAttributeValues
-        }
+        calculatedAttributeValues = feature.calculatedAttributeValues
         var additionalTags = additionalTags
         var pointDiffOperations: [ChangesetDiffOperation] = []
         var pointRefs: [String] = []
-        if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
-            guard let existingLineString = editableFeature.oswElement as? OSWLineString else {
+        if feature.isExisting {
+            guard let existingLineString = feature.oswElement as? OSWLineString else {
                 /// If the feature is deemed to exist, but we cannot get an existing linestring for it, then we should not attempt to upload it.
                 return ([], [])
             }
@@ -442,10 +442,10 @@ extension APIChangesetUploadController {
     }
     
     private func getDiffOperationsFromPolygons(
-        _ feature: any AccessibilityFeatureProtocol,
+        _ feature: MappedEditableAccessibilityFeature,
         additionalTags: [String: String] = [:]
     ) -> (mainOperations: [ChangesetDiffOperation], auxOperations: [ChangesetDiffOperation]) {
-        let oswElementClass = feature.accessibilityFeatureClass.oswPolicy.oswElementClass
+        let oswElementClass = feature.accessibilityFeatureClass.kind.oswPolicy.oswElementClass
         guard oswElementClass.geometry == .polygon else { return ([], []) }
         guard let featureLocationElement: LocationElement = feature.locationDetails?.locations.first,
               featureLocationElement.isWay, featureLocationElement.isClosed else {
@@ -456,14 +456,12 @@ extension APIChangesetUploadController {
         var version = "1"
         /// If feature is of type editable accessibility feature, then also add the calculated attribute values as a property to the polygon
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
-        if let editableFeature = feature as? EditableAccessibilityFeature {
-            calculatedAttributeValues = editableFeature.calculatedAttributeValues
-        }
+        calculatedAttributeValues = feature.calculatedAttributeValues
         var additionalTags = additionalTags
         var pointDiffOperations: [ChangesetDiffOperation] = []
         var pointRefs: [String] = []
-        if let editableFeature = feature as? EditableAccessibilityFeature, editableFeature.isExisting {
-            guard let existingPolygon = editableFeature.oswElement as? OSWPolygon else {
+        if feature.isExisting {
+            guard let existingPolygon = feature.oswElement as? OSWPolygon else {
                 /// If the feature is deemed to exist, but we cannot get an existing polygon for it, then we should not attempt to upload it.
                 return ([], [])
             }

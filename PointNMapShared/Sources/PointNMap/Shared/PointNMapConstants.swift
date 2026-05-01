@@ -8,7 +8,7 @@ import SwiftUI
 
 public struct PointNMapConstants {
     // Supported Classes
-    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
+    public static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
     
     public struct DepthConstants {
         /// Model-specific SharedAppConstants

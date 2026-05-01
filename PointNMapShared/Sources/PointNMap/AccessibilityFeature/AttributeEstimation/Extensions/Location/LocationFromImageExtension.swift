@@ -14,7 +14,7 @@ public extension AttributeEstimationPipeline {
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         let featureDepthValue = try depthMapProcessor.getFeatureDepthAtCentroidInRadius(
             detectedFeature: accessibilityFeature, radius: 3
@@ -45,7 +45,7 @@ public extension AttributeEstimationPipeline {
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature,
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol,
         plane: Plane, worldPoints: [WorldPoint]
     ) throws -> LocationRequestResult {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
@@ -98,7 +98,7 @@ public extension AttributeEstimationPipeline {
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         let polygonPoints = accessibilityFeature.contourDetails.normalizedPoints
         let leftMostPoint = polygonPoints.min { $0.x < $1.x }
@@ -147,7 +147,7 @@ public extension AttributeEstimationPipeline {
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> LocationRequestResult {
         guard let trapezoidBoundPoints = accessibilityFeature.contourDetails.trapezoidPoints,
               trapezoidBoundPoints.count == 4 else {

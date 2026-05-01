@@ -9,22 +9,22 @@ import SwiftUI
 import Combine
 
 @MainActor
-protocol AnnotationImageProcessingOutputConsumer: AnyObject {
+public protocol AnnotationImageProcessingOutputConsumer: AnyObject {
     func annotationOutputImage(
         _ delegate: AnnotationImageProcessingDelegate,
         image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?, overlay3Image: CIImage?
     )
 }
 
-protocol AnnotationImageProcessingDelegate: AnyObject {
+public protocol AnnotationImageProcessingDelegate: AnyObject {
     @MainActor
     var outputConsumer: AnnotationImageProcessingOutputConsumer? { get set }
     @MainActor
     func setOrientation(_ orientation: UIInterfaceOrientation)
 }
 
-class AnnotationImageViewController: UIViewController, AnnotationImageProcessingOutputConsumer {
-    var annotationImageManager: AnnotationImageManager
+public class AnnotationImageViewController<Feature: EditableAccessibilityFeature>: UIViewController, AnnotationImageProcessingOutputConsumer {
+    public var annotationImageManager: AnnotationImageManager<Feature>
     
     private let subView = UIView()
     
@@ -69,16 +69,16 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         return iv
     }()
     
-    init(annotationImageManager: AnnotationImageManager) {
+    public init(annotationImageManager: AnnotationImageManager<Feature>) {
         self.annotationImageManager = annotationImageManager
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
         view.addSubview(subView)
@@ -115,7 +115,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         ])
     }
     
-    func getOrientation() -> UIInterfaceOrientation {
+    public func getOrientation() -> UIInterfaceOrientation {
         // TODO: While we are requested to replace usage with effectiveGeometry.interfaceOrientation,
         //  it seems to cause issues with getting the correct orientation.
         //  Need to investigate further.
@@ -129,7 +129,7 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         return .landscapeLeft
     }
     
-    func annotationOutputImage(
+    public func annotationOutputImage(
         _ delegate: AnnotationImageProcessingDelegate,
         image: CIImage?, overlayImage: CIImage?, overlay2Image: CIImage?, overlay3Image: CIImage?
     ) {
@@ -153,12 +153,12 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
         }
     }
     
-    override func viewDidLayoutSubviews() {
+    public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         annotationImageManager.setOrientation(getOrientation())
     }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate(alongsideTransition: { _ in
             self.annotationImageManager.setOrientation(self.getOrientation())
@@ -167,17 +167,21 @@ class AnnotationImageViewController: UIViewController, AnnotationImageProcessing
     }
 }
 
-struct HostedAnnotationImageViewController: UIViewControllerRepresentable{
-    var annotationImageManager: AnnotationImageManager
+public struct HostedAnnotationImageViewController<Feature: EditableAccessibilityFeature>: UIViewControllerRepresentable{
+    public var annotationImageManager: AnnotationImageManager<Feature>
     
-    func makeUIViewController(context: Context) -> AnnotationImageViewController {
+    public init(annotationImageManager: AnnotationImageManager<Feature>) {
+        self.annotationImageManager = annotationImageManager
+    }
+    
+    public func makeUIViewController(context: Context) -> AnnotationImageViewController<Feature> {
         let vc = AnnotationImageViewController(annotationImageManager: annotationImageManager)
         return vc
     }
     
-    func updateUIViewController(_ uiViewController: AnnotationImageViewController, context: Context) {
+    public func updateUIViewController(_ uiViewController: AnnotationImageViewController<Feature>, context: Context) {
     }
     
-    static func dismantleUIViewController(_ uiViewController: AnnotationImageViewController, coordinator: ()) {
+    public static func dismantleUIViewController(_ uiViewController: AnnotationImageViewController<Feature>, coordinator: ()) {
     }
 }

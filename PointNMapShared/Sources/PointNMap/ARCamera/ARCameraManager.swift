@@ -9,7 +9,7 @@ import RealityKit
 import Combine
 import simd
 
-enum ARCameraManagerError: Error, LocalizedError {
+public enum ARCameraManagerError: Error, LocalizedError {
     case sessionConfigurationFailed
     case pixelBufferPoolCreationFailed
     case pixelBufferCreationFailed
@@ -28,7 +28,7 @@ enum ARCameraManagerError: Error, LocalizedError {
     case finalSessionNoSegmentationClass
     case finalSessionNoSegmentationMesh
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .sessionConfigurationFailed:
             return "AR session configuration failed."
@@ -68,42 +68,42 @@ enum ARCameraManagerError: Error, LocalizedError {
     }
 }
 
-enum ARCameraManagerConstants {
-    enum MeshResults {
-        static let meshAnchorEntityPlaceholderName = "ARCameraManager_MeshAnchorEntity"
+public enum ARCameraManagerConstants {
+    public enum MeshResults {
+        public static let meshAnchorEntityPlaceholderName = "ARCameraManager_MeshAnchorEntity"
     }
     
-    enum Payload {
-        static let isCameraStopped = "isStopped"
-        static let cameraTransform = "cameraTransform"
-        static let cameraIntrinsics = "cameraIntrinsics"
-        static let originalImageSize = "originalImageSize"
+    public enum Payload {
+        public static let isCameraStopped = "isStopped"
+        public static let cameraTransform = "cameraTransform"
+        public static let cameraIntrinsics = "cameraIntrinsics"
+        public static let originalImageSize = "originalImageSize"
     }
 }
 
-enum MeshUpdateType {
+public enum MeshUpdateType {
     case add
     case update
     case remove
 }
 
-struct ARCameraImageResults {
-    let cameraImage: CIImage
-    var depthImage: CIImage? = nil
-    var confidenceImage: CIImage? = nil
+public struct ARCameraImageResults {
+    public let cameraImage: CIImage
+    public var depthImage: CIImage? = nil
+    public var confidenceImage: CIImage? = nil
     
-    let segmentationLabelImage: CIImage
-    let segmentedClasses: [AccessibilityFeatureClass]
-    let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
-    let cameraTransform: simd_float4x4
-    let cameraIntrinsics: simd_float3x3
-    let interfaceOrientation: UIInterfaceOrientation
-    let originalImageSize: CGSize
+    public let segmentationLabelImage: CIImage
+    public let segmentedClasses: [AccessibilityFeatureClass]
+    public let detectedFeatureMap: [UUID: DetectedAccessibilityFeature]
+    public let cameraTransform: simd_float4x4
+    public let cameraIntrinsics: simd_float3x3
+    public let interfaceOrientation: UIInterfaceOrientation
+    public let originalImageSize: CGSize
     
-    var segmentationColorImage: CIImage? = nil
-    var segmentationBoundingFrameImage: CIImage? = nil
+    public var segmentationColorImage: CIImage? = nil
+    public var segmentationBoundingFrameImage: CIImage? = nil
     
-    init(
+    public init(
         cameraImage: CIImage, depthImage: CIImage? = nil, confidenceImage: CIImage? = nil,
         segmentationLabelImage: CIImage, segmentedClasses: [AccessibilityFeatureClass],
         detectedFeatureMap: [UUID: DetectedAccessibilityFeature],
@@ -131,17 +131,17 @@ struct ARCameraImageResults {
     }
 }
 
-struct ARCameraMeshResults {
-    let meshGPUSnapshot: MeshGPUSnapshot
+public struct ARCameraMeshResults {
+    public let meshGPUSnapshot: MeshGPUSnapshot
     
-    let meshAnchors: [ARMeshAnchor]
-    let segmentationLabelImage: CIImage
-    let cameraTransform: simd_float4x4
-    let cameraIntrinsics: simd_float3x3
+    public let meshAnchors: [ARMeshAnchor]
+    public let segmentationLabelImage: CIImage
+    public let cameraTransform: simd_float4x4
+    public let cameraIntrinsics: simd_float3x3
     
-    let lastUpdated: TimeInterval
+    public let lastUpdated: TimeInterval
     
-    init(
+    public init(
         meshGPUSnapshot: MeshGPUSnapshot,
         meshAnchors: [ARMeshAnchor],
         segmentationLabelImage: CIImage,
@@ -161,11 +161,11 @@ struct ARCameraMeshResults {
 /**
     A struct to cache camera properties for optimization.
  */
-struct ARCameraCache {
-    var cameraImageSize: CGSize?
-    var interfaceOrientation: UIInterfaceOrientation
+public struct ARCameraCache {
+    public var cameraImageSize: CGSize?
+    public var interfaceOrientation: UIInterfaceOrientation
     
-    init(cameraImageSize: CGSize? = nil, interfaceOrientation: UIInterfaceOrientation = .portrait) {
+    public init(cameraImageSize: CGSize? = nil, interfaceOrientation: UIInterfaceOrientation = .portrait) {
         self.cameraImageSize = cameraImageSize
         self.interfaceOrientation = interfaceOrientation
     }
@@ -178,61 +178,61 @@ struct ARCameraCache {
     - First, initialize with local properties (e.g. pixel buffer pools).
     - Accept configuration of the SegmentationARPipeline through a separate `configure()` method.
  */
-final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
-    var selectedClasses: [AccessibilityFeatureClass] = []
-    var segmentationPipeline: SegmentationARPipeline? = nil
+public final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessingDelegate {
+    public var selectedClasses: [AccessibilityFeatureClass] = []
+    public var segmentationPipeline: SegmentationARPipeline? = nil
     /// Whether to enable enhanced analysis (e.g., anchor-based analysis) or not.
-    var isEnhancedAnalysisEnabled: Bool = false
-    var metalContext: MetalContext? = nil
-    var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
+    public var isEnhancedAnalysisEnabled: Bool = false
+    public var metalContext: MetalContext? = nil
+    public var cameraOutputImageCallback: ((any CaptureImageDataProtocol) -> Void)? = nil
     /// Mesh update callbacks not in use for now, as creating snapshots in real-time is expensive.
 //    var cameraOutputMeshCallback: ((any CaptureMeshDataProtocol) -> Void)? = nil
     
     // Consumer that will receive processed overlays (weak to avoid retain cycles)
-    weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
-    var imageResolution: CGSize = .zero
-    @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
+    public weak var outputConsumer: ARSessionCameraProcessingOutputConsumer? = nil
+    public var imageResolution: CGSize = .zero
+    @Published public var interfaceOrientation: UIInterfaceOrientation = .portrait
     
-    var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
-    var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
+    public var meshGPUSnapshotGenerator: MeshGPUSnapshotGenerator? = nil
+    public var capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator? = nil
     
-    var frameRate: Int = 15
-    var lastFrameTime: TimeInterval = 0
-    var meshFrameRate: Int = 15
-    var lastMeshFrameTime: TimeInterval = 0
+    public var frameRate: Int = 15
+    public var lastFrameTime: TimeInterval = 0
+    public var meshFrameRate: Int = 15
+    public var lastMeshFrameTime: TimeInterval = 0
     
     // Contexts depending on type of color space processing required
-    let colorContext = CIContext(options: nil)
-    let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
+    public let colorContext = CIContext(options: nil)
+    public let rawContext = CIContext(options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull()])
     // Properties for processing camera and depth frames
     // Pixel buffer pools for rendering camera frames to fixed size as segmentation model input (pre-defined size)
-    var cameraCroppedPixelBufferPool: CVPixelBufferPool? = nil
-    var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
-    var cameraPixelFormatType: OSType = kCVPixelFormatType_32BGRA
-    var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
-    var depthPixelBufferPool: CVPixelBufferPool? = nil
-    var depthPixelFormatType: OSType = kCVPixelFormatType_DepthFloat32
-    var depthColorSpace: CGColorSpace? = nil
+    public var cameraCroppedPixelBufferPool: CVPixelBufferPool? = nil
+    public var cameraColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    public var cameraPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    public var segmentationBoundingFrameColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    public var depthPixelBufferPool: CVPixelBufferPool? = nil
+    public var depthPixelFormatType: OSType = kCVPixelFormatType_DepthFloat32
+    public var depthColorSpace: CGColorSpace? = nil
     // Pixel buffer pools for backing segmentation images to pixel buffer of camera frame size
-    var segmentationMaskPixelBufferPool: CVPixelBufferPool? = nil
-    var segmentationMaskPixelFormatType: OSType = kCVPixelFormatType_OneComponent8
+    public var segmentationMaskPixelBufferPool: CVPixelBufferPool? = nil
+    public var segmentationMaskPixelFormatType: OSType = kCVPixelFormatType_OneComponent8
     /// TODO: While the segmentation color space is hard-coded for now, add it as part of the AccessibilityFeatureConfig later.
-    var segmentationMaskColorSpace: CGColorSpace? = nil
-    var segmentationColorPixelFormatType: OSType = kCVPixelFormatType_32BGRA
-    var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
+    public var segmentationMaskColorSpace: CGColorSpace? = nil
+    public var segmentationColorPixelFormatType: OSType = kCVPixelFormatType_32BGRA
+    public var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     
-    @Published var isConfigured: Bool = false
+    @Published public var isConfigured: Bool = false
     
     // Latest processed results
-    var cameraImageResults: ARCameraImageResults?
-    var cameraMeshResults: ARCameraMeshResults?
-    var cameraCache: ARCameraCache = ARCameraCache()
+    public var cameraImageResults: ARCameraImageResults?
+    public var cameraMeshResults: ARCameraMeshResults?
+    public var cameraCache: ARCameraCache = ARCameraCache()
     
-    override init() {
+    public override init() {
         super.init()
     }
     
-    func configure(
+    public func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationPipeline: SegmentationARPipeline,
         metalContext: MetalContext?,
         isEnhancedAnalysisEnabled: Bool,
@@ -257,7 +257,7 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
     }
     
-    func setVideoFormatImageResolution(_ imageResolution: CGSize) {
+    public func setVideoFormatImageResolution(_ imageResolution: CGSize) {
         self.imageResolution = imageResolution
         do {
             try setupSegmentationPixelBufferPool(size: imageResolution)
@@ -266,13 +266,13 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         }
     }
     
-    func setOrientation(_ orientation: UIInterfaceOrientation) {
+    public func setOrientation(_ orientation: UIInterfaceOrientation) {
         Task { @MainActor in
             self.interfaceOrientation = orientation
         }
     }
     
-    func setFrameRate(_ frameRate: Int) {
+    public func setFrameRate(_ frameRate: Int) {
         self.frameRate = frameRate
     }
     
@@ -280,26 +280,26 @@ final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraProcessi
         self.meshFrameRate = meshFrameRate
     }
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    public func session(_ session: ARSession, didUpdate frame: ARFrame) {
         handleSessionFrameUpdate(frame: frame)
     }
     
     /// TODO: MESH PROCESSING: Use the mesh processing as well in future.
-    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+    public func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         handleSessionMeshUpdate(anchors, updateType: .add)
     }
     
-    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+    public func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         handleSessionMeshUpdate(anchors, updateType: .update)
     }
     
-    func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+    public func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
         handleSessionMeshUpdate(anchors, updateType: .remove)
     }
 }
 
 // Functions to handle the image processing pipeline
-extension ARCameraManager {
+public extension ARCameraManager {
     private func handleSessionFrameUpdate(frame: ARFrame) {
         guard isConfigured else {
             return
@@ -375,7 +375,8 @@ extension ARCameraManager {
         croppedSize: CGSize = PointNMapConstants.SelectedAccessibilityFeatureConfig.inputSize
     ) async throws -> ARCameraImageResults {
         guard let cameraCroppedPixelBufferPool = cameraCroppedPixelBufferPool,
-              let segmentationPixelBufferPool = segmentationMaskPixelBufferPool else {
+              let segmentationPixelBufferPool = segmentationMaskPixelBufferPool
+        else {
             throw ARCameraManagerError.pixelBufferPoolCreationFailed
         }
         guard let segmentationPipeline = segmentationPipeline else {
@@ -531,7 +532,7 @@ extension ARCameraManager {
 }
 
 // Functions to handle the mesh processing pipeline
-extension ARCameraManager {
+public extension ARCameraManager {
     private func handleSessionMeshUpdate(_ anchors: [ARAnchor], updateType: MeshUpdateType) {
         guard isEnhancedAnalysisEnabled else {
             return
@@ -613,7 +614,7 @@ extension ARCameraManager {
 }
 
 // Functions to orient and fix the camera and depth frames
-extension ARCameraManager {
+public extension ARCameraManager {
     private func setUpPreAllocatedPixelBufferPools(size: CGSize) throws {
         // Set up the pixel buffer pool for future flattening of camera images
         let cameraPixelBufferPoolAttributes: [String: Any] = [
@@ -730,14 +731,20 @@ extension ARCameraManager {
     }
 }
 
-struct CapturedMeshDependencies {
-    let capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator
-    let metalContext: MetalContext
-    let meshGPUSnapshot: MeshGPUSnapshot
+public struct CapturedMeshDependencies {
+    public let capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator
+    public let metalContext: MetalContext
+    public let meshGPUSnapshot: MeshGPUSnapshot
+    
+    public init(capturedMeshSnapshotGenerator: CapturedMeshSnapshotGenerator, metalContext: MetalContext, meshGPUSnapshot: MeshGPUSnapshot) {
+        self.capturedMeshSnapshotGenerator = capturedMeshSnapshotGenerator
+        self.metalContext = metalContext
+        self.meshGPUSnapshot = meshGPUSnapshot
+    }
 }
 
 // Functions to perform final session update
-extension ARCameraManager {
+public extension ARCameraManager {
     /**
      Combines the two methods below for convenience.
      */

@@ -11,7 +11,7 @@ import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateRunningSlope(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
@@ -26,7 +26,7 @@ public extension AttributeEstimationPipeline {
      Assumes that the plane being calculated has its first vector aligned with the direction of travel.
      */
     func calculateRunningSlopeFromImage(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
@@ -49,7 +49,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateRunningSlopeFromMesh(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         /// TODO: For optimization, replace the usage of meshPolygons with meshTriangles (GPU-based)
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(

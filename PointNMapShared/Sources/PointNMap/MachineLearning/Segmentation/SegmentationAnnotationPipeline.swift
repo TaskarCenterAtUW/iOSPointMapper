@@ -74,6 +74,8 @@ public final class SegmentationAnnotationPipeline: ObservableObject {
     /// TODO: Replace with the global Metal context
     private let context = CIContext()
     
+    public init() { }
+    
     public func configure() throws {
         self.contourRequestProcessor = try ContourRequestProcessor(
             contourEpsilon: self.contourEpsilon,
@@ -225,8 +227,7 @@ public final class SegmentationAnnotationPipeline: ObservableObject {
         /// TODO: Handle sidewalk feature differently if needed, and improve the relevant trapezoid-creation logic.
         let largestFeature = detectedFeatures.sorted(by: {$0.contourDetails.area > $1.contourDetails.area}).first
         guard let largestFeature = largestFeature,
-              let largestFeatureClassKind = accessibilityFeatureClass.kind,
-              largestFeatureClassKind == .sidewalk else {
+              accessibilityFeatureClass.kind == .sidewalk else {
             self.isProcessing = false
             return detectedFeatures
         }

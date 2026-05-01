@@ -11,7 +11,7 @@ import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateCrossSlope(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
@@ -21,7 +21,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateCrossSlopeFromImage(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
             accessibilityFeature: accessibilityFeature
@@ -44,7 +44,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateCrossSlopeFromMesh(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         /// TODO: For optimization, replace the usage of meshPolygons with meshTriangles (GPU-based)
         let meshPolygons: [MeshPolygon] = try self.prerequisiteCache.meshPolygons ?? self.getMeshContents(

@@ -1,11 +1,11 @@
 //
-//  FeatureGeometry.swift
+//  MappingGeometry.swift
 //  IOSAccessAssessment
 //
 //  Created by Himanshu on 4/30/26.
 //
 
-public enum FeatureGeometry: String, CaseIterable, Hashable, Codable {
+public enum MappingGeometry: String, CaseIterable, Hashable, Codable, Sendable {
     case point
     case linestring
     case polygon
@@ -23,6 +23,6 @@ public enum FeatureGeometry: String, CaseIterable, Hashable, Codable {
     }
 }
 
-public extension FeatureGeometry {
-    static let `default`: FeatureGeometry = .point
+public extension MappingGeometry {
+    static let `default`: MappingGeometry = .point
 }

@@ -8,7 +8,7 @@ import SwiftUI
 import Combine
 import simd
 
-enum AnnotationImageManagerError: Error, LocalizedError {
+public enum AnnotationImageManagerError: Error, LocalizedError {
     case notConfigured
     case segmentationNotConfigured
     case captureDataNotAvailable
@@ -21,7 +21,7 @@ enum AnnotationImageManagerError: Error, LocalizedError {
     case invalidMeshData
     case meshRasterizationFailed
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .notConfigured:
             return "AnnotationImageManager is not configured."
@@ -49,29 +49,37 @@ enum AnnotationImageManagerError: Error, LocalizedError {
     }
 }
 
-struct AnnotationImageResults {
-    let cameraImage: CIImage
-    let segmentationLabelImage: CIImage
+public struct AnnotationImageResults {
+    public let cameraImage: CIImage
+    public let segmentationLabelImage: CIImage
     
-    var alignedSegmentationLabelImages: [CIImage]?
-    var processedSegmentationLabelImage: CIImage? = nil
-    var featuresSourceCGImage: CGImage? = nil
+    public var alignedSegmentationLabelImages: [CIImage]?
+    public var processedSegmentationLabelImage: CIImage? = nil
+    public var featuresSourceCGImage: CGImage? = nil
     
-    var cameraOutputImage: CIImage? = nil
-    var segmentationOverlayOutputImage: CIImage? = nil
-    var featuresOverlayOutputImage: CIImage? = nil
+    public var cameraOutputImage: CIImage? = nil
+    public var segmentationOverlayOutputImage: CIImage? = nil
+    public var featuresOverlayOutputImage: CIImage? = nil
 }
 
-struct AnnotationImageFeatureUpdateResults: Sendable {
-    let plane: Plane
-    let projectedPlane: ProjectedPlane
-    let damageDetectionResults: [DamageDetectionResult]
+public struct AnnotationImageFeatureUpdateResults: Sendable {
+    public let plane: Plane
+    public let projectedPlane: ProjectedPlane
+    public let damageDetectionResults: [DamageDetectionResult]
+    
+    public init(plane: Plane, projectedPlane: ProjectedPlane, damageDetectionResults: [DamageDetectionResult]) {
+        self.plane = plane
+        self.projectedPlane = projectedPlane
+        self.damageDetectionResults = damageDetectionResults
+    }
 }
 
 /**
     A class to manage annotation image processing including segmentation mask post-processing and feature detection.
  */
-final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
+public final class AnnotationImageManager<
+    Feature: EditableAccessibilityFeature
+    >: NSObject, ObservableObject, AnnotationImageProcessingDelegate {
     private var selectedClasses: [AccessibilityFeatureClass] = []
     private var segmentationAnnotationPipeline: SegmentationAnnotationPipeline? = nil
     private var grayscaleToColorFilter: GrayscaleToColorFilter? = nil
@@ -81,18 +89,18 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     private var captureMeshData: (any CaptureMeshDataProtocol)? = nil
     var isEnhancedAnalysisEnabled: Bool = false
     
-    weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
-    @Published var interfaceOrientation: UIInterfaceOrientation = .portrait
+    public weak var outputConsumer: AnnotationImageProcessingOutputConsumer? = nil
+    @Published public var interfaceOrientation: UIInterfaceOrientation = .portrait
     
     private let context = CIContext(options: nil)
     
-    @Published var isConfigured: Bool = false
+    @Published public var isConfigured: Bool = false
     
     // Latest processed results
-    var annotationImageResults: AnnotationImageResults?
+    public var annotationImageResults: AnnotationImageResults?
     
     /// TODO: MESH PROCESSING: Integrate mesh data processing in the annotation image manager.
-    func configure(
+    public func configure(
         selectedClasses: [AccessibilityFeatureClass], segmentationAnnotationPipeline: SegmentationAnnotationPipeline,
         captureImageData: (any CaptureImageDataProtocol),
         captureMeshData: (any CaptureMeshDataProtocol)?,
@@ -128,7 +136,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         Sets up aligned segmentation label images from the capture data history.
         MARK: Does not throw errors, since this is not critical to the annotation image processing.
      */
-    func setupAlignedSegmentationLabelImages(
+    public func setupAlignedSegmentationLabelImages(
         captureDataHistory: [CaptureImageData]
     ) {
         guard let _ = self.captureImageData,
@@ -140,7 +148,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         self.annotationImageResults = annotationImageResults
     }
     
-    func setOrientation(_ orientation: UIInterfaceOrientation) {
+    public func setOrientation(_ orientation: UIInterfaceOrientation) {
         Task {
             await MainActor.run {
                 self.interfaceOrientation = orientation
@@ -151,9 +159,9 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
     /**
      Updates the camera image, and recreates the overlay image.
      */
-    func updateFeatureClass(
+    public func updateFeatureClass(
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [EditableAccessibilityFeature] {
+    ) throws -> [Feature] {
         guard isConfigured else {
             throw AnnotationImageManagerError.notConfigured
         }
@@ -227,9 +235,9 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
         return accessibilityFeatures
     }
     
-    func updateFeature(
+    public func updateFeature(
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        accessibilityFeatures: [EditableAccessibilityFeature],
+        accessibilityFeatures: [Feature],
         featureSelectedStatus: [UUID: Bool],
         updateFeatureResults: AnnotationImageFeatureUpdateResults?
     ) throws {
@@ -295,7 +303,7 @@ final class AnnotationImageManager: NSObject, ObservableObject, AnnotationImageP
 /**
     Extension to handle camera image processing: orientation and cropping.
  */
-extension AnnotationImageManager {
+public extension AnnotationImageManager {
     private func getCameraOutputImage() throws -> CIImage {
         guard let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.captureDataNotAvailable
@@ -321,7 +329,7 @@ extension AnnotationImageManager {
 /**
     Extension to handle segmentation mask post-processing.
  */
-extension AnnotationImageManager {
+public extension AnnotationImageManager {
     /**
         Aligns the segmentation label images from the capture data history to the current capture data.
         MARK: Does not throw errors, instead returns empty array on failure, since this is not critical to the annotation image processing.
@@ -419,11 +427,11 @@ extension AnnotationImageManager {
 /**
  Extension to handle feature detection.
  */
-extension AnnotationImageManager {
+public extension AnnotationImageManager {
     private func getAccessibilityFeatures(
         segmentationLabelImage: CIImage,
         accessibilityFeatureClass: AccessibilityFeatureClass
-    ) throws -> [EditableAccessibilityFeature] {
+    ) throws -> [Feature] {
         guard let segmentationAnnotationPipeline = self.segmentationAnnotationPipeline,
               let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.segmentationNotConfigured
@@ -437,14 +445,14 @@ extension AnnotationImageManager {
             orientation: imageOrientation
         )
         let accessibilityFeatures = detectedFeatures.map { detectedFeature in
-            return EditableAccessibilityFeature(
+            return Feature(
                 detectedAccessibilityFeature: detectedFeature
             )
         }
         return accessibilityFeatures
     }
     
-    private func getFeaturesOverlayOutputImageWithSource(accessibilityFeatures: [EditableAccessibilityFeature])
+    private func getFeaturesOverlayOutputImageWithSource(accessibilityFeatures: [Feature])
     throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
         guard let captureImageData = self.captureImageData else {
             throw AnnotationImageManagerError.captureDataNotAvailable
@@ -466,7 +474,7 @@ extension AnnotationImageManager {
     
     private func updateFeaturesOverlayOutputImageWithSource(
         sourceCGImage: CGImage,
-        accessibilityFeatures: [EditableAccessibilityFeature],
+        accessibilityFeatures: [Feature],
         featureSelectedStatus: [UUID: Bool]
     ) throws -> (sourceCGImage: CGImage, overlayImage: CIImage) {
         guard let captureImageData = self.captureImageData else {
@@ -534,7 +542,7 @@ extension AnnotationImageManager {
  
     TODO: MESH PROCESSING: Integrate mesh data processing in the annotation image manager.
  */
-extension AnnotationImageManager {
+public extension AnnotationImageManager {
     private func getMeshOverlayOutputImage(
         captureMeshData: (any CaptureMeshDataProtocol),
         polygonsNormalizedCoordinates: [(SIMD2<Float>, SIMD2<Float>, SIMD2<Float>)],
@@ -610,7 +618,7 @@ extension AnnotationImageManager {
 /**
  Additional images for debugging
  */
-extension AnnotationImageManager {
+public extension AnnotationImageManager {
     private func getPlaneImage(
         captureImageData: (any CaptureImageDataProtocol),
         size: CGSize,

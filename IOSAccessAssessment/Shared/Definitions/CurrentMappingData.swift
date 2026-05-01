@@ -74,7 +74,7 @@ class CurrentMappingData: CustomStringConvertible {
         }
         
         for featureClass in accessibilityFeatureClasses {
-            let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+            let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
             let geometry = oswElementClass.geometry
             let identifyingFieldTags: [String: String] = oswElementClass.identifyingFieldTags
             
@@ -130,6 +130,8 @@ class CurrentMappingData: CustomStringConvertible {
                 polygons.merge(matchingOSWPolygons) { (_, new) in new }
                 points.merge(matchingOSWChildPoints) { (_, new) in new }
                 featuresMap[featureClass] = Array(matchingOSWPolygons.keys)
+            default:
+                continue
             }
         }
         self.points = points
@@ -142,7 +144,7 @@ class CurrentMappingData: CustomStringConvertible {
      Updates the features map for a specific accessibility feature class by adding or replacing the features related that class with the provided elements. This function can be used to incrementally update the features map when new data is available for a specific feature class, without needing to rebuild the entire map from scratch.
      */
     func updateFeatures(_ elements: [any OSWElement], for featureClass: AccessibilityFeatureClass) {
-        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+        let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
         let geometry = oswElementClass.geometry
         
         var featureIds = featuresMap[featureClass] ?? []
@@ -180,7 +182,7 @@ class CurrentMappingData: CustomStringConvertible {
         guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
         var nearestDistance: CLLocationDistance = distanceThreshold
-        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+        let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
         let geometry = oswElementClass.geometry
         
         for featureId in featureIds {
@@ -208,7 +210,7 @@ class CurrentMappingData: CustomStringConvertible {
     ) -> (any OSWElement)? {
         guard let featureIds = featuresMap[featureClass] else { return nil }
         var nearestFeature: (any OSWElement)?
-        let oswElementClass = featureClass.kind?.oswPolicy.oswElementClass ?? OSWPolicy.default.oswElementClass
+        let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
         let geometry = oswElementClass.geometry
         let captureIdString = captureId.uuidString
         
@@ -246,7 +248,7 @@ class CurrentMappingData: CustomStringConvertible {
     }
     
     private func getFeature(
-        featureId: String, geometry: OSWGeometry
+        featureId: String, geometry: MappingGeometry
     ) -> (any OSWElement)? {
         switch geometry {
         case .point:
@@ -255,6 +257,8 @@ class CurrentMappingData: CustomStringConvertible {
             return lineStrings[featureId]
         case .polygon:
             return polygons[featureId]
+        default:
+            return nil
         }
     }
     
@@ -269,9 +273,9 @@ class CurrentMappingData: CustomStringConvertible {
         return nil
     }
     
-    /// Note: OSWGeometry is not required as a parameter here since the feature itself carries geometry information based on the type of OSWElement it is.
+    /// Note: MappingGeometry is not required as a parameter here since the feature itself carries geometry information based on the type of OSWElement it is.
     private func getFeatureOSMLocationDetails(
-        feature: any OSWElement, geometry: OSWGeometry
+        feature: any OSWElement, geometry: MappingGeometry
     ) -> LocationDetails? {
         switch geometry {
         case .point:
@@ -303,6 +307,8 @@ class CurrentMappingData: CustomStringConvertible {
                 coordinates: coordinates, isWay: true, isClosed: true
             )
             return LocationDetails(locations: [LocationElement])
+        default:
+            return nil
         }
     }
 }

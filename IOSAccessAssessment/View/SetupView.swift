@@ -7,6 +7,7 @@
 
 import SwiftUI
 import TipKit
+import PointNMapShared
 
 enum SetupViewConstants {
     enum Texts {

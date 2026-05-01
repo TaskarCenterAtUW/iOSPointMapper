@@ -15,7 +15,7 @@ public extension AttributeEstimationPipeline {
         localizationProcessor: LocalizationProcessor,
         captureImageData: CaptureImageData,
         deviceLocation: CLLocationCoordinate2D,
-        accessibilityFeature: EditableAccessibilityFeature,
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol,
         plane: Plane, meshContents: MeshContents
     ) throws -> LocationRequestResult {
         guard let worldPointsProcessor = self.worldPointsProcessor else {

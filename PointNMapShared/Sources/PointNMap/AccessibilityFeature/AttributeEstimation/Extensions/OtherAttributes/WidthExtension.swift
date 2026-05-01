@@ -11,7 +11,7 @@ import PointNMapShaderTypes
 
 public extension AttributeEstimationPipeline {
     func calculateWidth(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         let isMeshEnabled: Bool = self.captureMeshData != nil
         if isMeshEnabled {
@@ -21,7 +21,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateWidthFromImage(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
             throw AttributeEstimationPipelineError.configurationError(
@@ -61,7 +61,7 @@ public extension AttributeEstimationPipeline {
     }
     
     func calculateWidthFromMesh(
-        accessibilityFeature: EditableAccessibilityFeature
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
     ) throws -> AccessibilityFeatureAttribute.Value {
         guard let worldPointsProcessor = self.worldPointsProcessor else {
             throw AttributeEstimationPipelineError.configurationError(
