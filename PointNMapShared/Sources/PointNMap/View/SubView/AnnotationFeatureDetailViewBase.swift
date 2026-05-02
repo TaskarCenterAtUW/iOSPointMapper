@@ -168,6 +168,21 @@ public struct AnnotationFeatureDetailViewBase<
                     }
                 }
                 
+                if (accessibilityFeature.accessibilityFeatureClass.kind.attributes.contains(.surfaceDisruption)) {
+                    Section(header: Text(AccessibilityFeatureAttribute.surfaceDisruption.displayName)) {
+                        pickerView(attribute: .surfaceDisruption)
+                            .focused($focusedField, equals: .surfaceDisruption)
+                            .id(refreshTrigger) // Refresh the Picker view when refreshTrigger changes
+                    }
+                }
+                
+                if (accessibilityFeature.accessibilityFeatureClass.kind.attributes.contains(.heightFromGround)) {
+                    Section(header: Text(AccessibilityFeatureAttribute.heightFromGround.displayName)) {
+                        numberTextFieldView(attribute: .heightFromGround)
+                            .focused($focusedField, equals: .heightFromGround)
+                    }
+                }
+                
                 /// Experimental Attributes Section
                 if (accessibilityFeature.accessibilityFeatureClass.kind.experimentalAttributes.contains(.lidarDepth)) {
                     Section(header: Text(AccessibilityFeatureAttribute.lidarDepth.displayName)) {

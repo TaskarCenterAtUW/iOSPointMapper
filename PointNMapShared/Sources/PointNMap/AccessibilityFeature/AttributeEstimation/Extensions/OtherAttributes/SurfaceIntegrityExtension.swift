@@ -145,3 +145,56 @@ public extension AttributeEstimationPipeline {
         return worstStatus
     }
 }
+
+/**
+ Additional sub-attributes of surface-integrity
+ */
+/// Sub-attribute: Surface disruption
+public extension AttributeEstimationPipeline {
+    func calculateSurfaceDisruption(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateSurfaceDisruptionFromMesh(accessibilityFeature: accessibilityFeature)
+        }
+        return try calculateSurfaceDisruptionFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateSurfaceDisruptionFromImage(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return nil
+    }
+    
+    func calculateSurfaceDisruptionFromMesh(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return nil
+    }
+}
+
+/// Sub-attribute: Height from ground
+extension AttributeEstimationPipeline {
+    func calculateHeightFromGround(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateHeightFromGroundFromMesh(accessibilityFeature: accessibilityFeature)
+        }
+        return try calculateHeightFromGroundFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateHeightFromGroundFromImage(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return nil
+    }
+    
+    func calculateHeightFromGroundFromMesh(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        return nil
+    }
+}
