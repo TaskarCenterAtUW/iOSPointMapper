@@ -71,6 +71,10 @@ public class AttributeEstimationPipeline: ObservableObject {
         public var meshTriangles: [MeshTriangle]? = nil
         public var meshAlignedPlane: Plane? = nil
         public var meshProjectedPlane: ProjectedPlane? = nil
+        
+        /// Additional lazy properties for caching can be added here as needed.
+        public var surfaceNormalsGrid: SurfaceNormalsForPointsGrid? = nil
+        
     }
     
     public var captureImageData: (any CaptureImageDataProtocol)?

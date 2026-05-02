@@ -12,14 +12,14 @@ import simd
 import PointNMapShaderTypes
 
 public extension SurfaceIntegrityProcessor {
-    func getSurfaceNormalIntegrityResultFromMesh(
+    func getSurfaceNormalIntegrityValueFromMesh(
         meshTriangles: [MeshTriangle],
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
         angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
         deviantPointProportionThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
-    ) throws -> IntegrityStatusDetails {
+    ) throws -> (totalDeviantPoints: Double, totalValidPoints: Double) {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
         }
@@ -79,6 +79,20 @@ public extension SurfaceIntegrityProcessor {
         
         let totalValidPolygons = totalValidBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let totalDeviantPolygons = totalDeviantBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
+        return (Double(totalDeviantPolygons), Double(totalValidPolygons))
+    }
+    
+    func getSurfaceNormalIntegrityResultFromMesh(
+        meshTriangles: [MeshTriangle],
+        plane: Plane,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureMeshDataProtocol),
+        angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        deviantPointProportionThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
+    ) throws -> IntegrityStatusDetails {
+        let (totalDeviantPolygons, totalValidPolygons) = try getSurfaceNormalIntegrityValueFromMesh(
+            meshTriangles: meshTriangles, plane: plane, damageDetectionResults: damageDetectionResults, captureData: captureData, angularDeviationThreshold: angularDeviationThreshold, deviantPointProportionThreshold: deviantPointProportionThreshold)
+            
         let deviantPolygonProportion = totalValidPolygons > 0 ? Float(totalDeviantPolygons) / Float(totalValidPolygons) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
             status: deviantPolygonProportion > deviantPointProportionThreshold ? .slight : .intact,
