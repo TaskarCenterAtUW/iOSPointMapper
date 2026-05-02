@@ -170,7 +170,7 @@ public struct AnnotationFeatureDetailViewBase<
                 
                 if (accessibilityFeature.accessibilityFeatureClass.kind.attributes.contains(.surfaceDisruption)) {
                     Section(header: Text(AccessibilityFeatureAttribute.surfaceDisruption.displayName)) {
-                        pickerView(attribute: .surfaceDisruption)
+                        numberTextFieldView(attribute: .surfaceDisruption)
                             .focused($focusedField, equals: .surfaceDisruption)
                             .id(refreshTrigger) // Refresh the Picker view when refreshTrigger changes
                     }
