@@ -17,6 +17,8 @@ public enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, C
     case runningSlope
     case crossSlope
     case surfaceIntegrity
+    case surfaceDisruption
+    case heightFromGround
     /**
      - NOTE:
      Experimental attributes
@@ -38,6 +40,7 @@ public enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, C
     public enum ValueType: Sendable, Codable, Equatable {
         case length
         case angle
+        case number
         case flag
         case categorical(typeID: String)
     }
@@ -45,6 +48,7 @@ public enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, C
     public enum Value: Sendable, Codable, Equatable {
         case length(Measurement<UnitLength>)
         case angle(Measurement<UnitAngle>)
+        case number(Double)
         case flag(Bool)
         case categorical(AnyCategoricalValue)
         
@@ -54,6 +58,8 @@ public enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, C
                 return l1 == l2
             case (.angle(let a1), .angle(let a2)):
                 return a1 == a2
+            case (.number(let n1), .number(let n2)):
+                return n1 == n2
             case (.flag(let f1), .flag(let f2)):
                 return f1 == f2
             case (.categorical(let c1), .categorical(let c2)):
@@ -92,6 +98,16 @@ public enum AccessibilityFeatureAttribute: String, Identifiable, CaseIterable, C
             return Metadata(
                 id: 40, name: "Surface Integrity", unit: nil,
                 valueType: .categorical(typeID: SurfaceIntegrityStatus.typeID),
+            )
+        case .surfaceDisruption:
+            return Metadata(
+                id: 45, name: "Surface Disruption", unit: nil,
+                valueType: .number
+            )
+        case .heightFromGround:
+            return Metadata(
+                id: 48, name: "Height from Ground", unit: UnitLength.meters,
+                valueType: .length,
             )
         case .lidarDepth:
             return Metadata(
@@ -175,6 +191,7 @@ public extension AccessibilityFeatureAttribute.Value {
         switch self {
         case .length: return .length
         case .angle: return .angle
+        case .number: return .number
         case .flag: return .flag
         case .categorical(let categoricalValue): return .categorical(typeID: categoricalValue.typeID)
         }
@@ -192,6 +209,7 @@ public extension AccessibilityFeatureAttribute {
         switch (self.valueType, value) {
         case (.length, .length),
              (.angle, .angle),
+            (.number, .number),
              (.flag, .flag):
             return true
         case (.categorical(let expectedID), .categorical(let cat)):
@@ -212,6 +230,8 @@ public extension AccessibilityFeatureAttribute.Value {
             return measurement.converted(to: .meters).value
         case .angle(let measurement):
             return measurement.converted(to: .degrees).value
+        case .number(let value):
+            return value
         case .flag:
             return nil
         case .categorical:
@@ -234,6 +254,8 @@ public extension AccessibilityFeatureAttribute.Value {
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         case .angle(let measurement):
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
+        case .number(let value):
+            return String(format: "%.2f", value)
         case .flag(let value):
             return value ? "yes" : "no"
         case .categorical(let value):
@@ -249,6 +271,8 @@ public extension AccessibilityFeatureAttribute {
             return .length(Measurement(value: double, unit: .meters))
         case .angle:
             return .angle(Measurement(value: double, unit: .degrees))
+        case .number:
+            return .number(double)
         case .flag:
             return nil // Flags cannot be represented as doubles
         case .categorical:
@@ -327,6 +351,10 @@ public extension AccessibilityFeatureAttribute {
             return String(format: "%.2f", measurement.converted(to: .degrees).value)
         case (.surfaceIntegrity, .categorical(let categoricalValue)):
             return categoricalValue.rawValue
+        case (.surfaceDisruption, .number(let value)):
+            return String(format: "%.2f", value)
+        case (.heightFromGround, .length(let measurement)):
+            return String(format: "%.2f", measurement.converted(to: .meters).value)
         case (.lidarDepth, .length(let measurement)):
             return String(format: "%.2f", measurement.converted(to: .meters).value)
         case (.latitudeDelta, .length(let measurement)):

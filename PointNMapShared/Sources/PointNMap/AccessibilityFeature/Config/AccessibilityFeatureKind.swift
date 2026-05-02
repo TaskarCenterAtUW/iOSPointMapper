@@ -36,6 +36,7 @@ public enum AccessibilityFeatureKind: String, Identifiable, Codable, CaseIterabl
         switch self {
         case .sidewalk: return [
             .width, .runningSlope, .crossSlope, .surfaceIntegrity,
+            .surfaceDisruption, .heightFromGround,
             .widthLegacy, .runningSlopeLegacy, .crossSlopeLegacy,
             .widthFromImage, .runningSlopeFromImage, .crossSlopeFromImage
         ]
