@@ -15,7 +15,7 @@ public extension SurfaceIntegrityProcessor {
     /**
         This function assesses the integrity of the surface based on the angular deviation of surface normals from the plane normal using GPU acceleration. It calculates the proportion of points that deviate beyond a specified angular threshold and determines the integrity status based on whether this proportion exceeds a defined threshold.
      */
-    func getSurfaceNormalIntegrityResultFromImage(
+    func getSurfaceNormalIntegrityValueFromImage(
         worldPointsGrid: WorldPointsGrid,
         plane: Plane,
         surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
@@ -23,7 +23,7 @@ public extension SurfaceIntegrityProcessor {
         captureData: (any CaptureImageDataProtocol),
         angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
         deviantPointProportionThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
-    ) throws -> IntegrityStatusDetails {
+    ) throws -> (totalDeviantPoints: Double, totalValidPoints: Double) {
         guard let commandBuffer = self.commandQueue.makeCommandBuffer() else {
             throw SurfaceIntegrityProcessorError.metalPipelineCreationError
         }
@@ -90,10 +90,25 @@ public extension SurfaceIntegrityProcessor {
         
         let totalValidPoints = totalValidBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
         let totalDeviantPoints = totalDeviantBuffer.contents().bindMemory(to: UInt32.self, capacity: 1).pointee
-        let deviantPointProportion = totalValidPoints > 0 ? Float(totalDeviantPoints) / Float(totalValidPoints) : 0
+        return (Double(totalDeviantPoints), Double(totalValidPoints))
+    }
+    
+    func getSurfaceNormalIntegrityResultFromImage(
+        worldPointsGrid: WorldPointsGrid,
+        plane: Plane,
+        surfaceNormalsForPointsGrid: SurfaceNormalsForPointsGrid,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureImageDataProtocol),
+        angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.imagePlaneAngularDeviationThreshold,
+        deviantPointProportionThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.imageDeviantPointProportionThreshold
+    ) throws -> IntegrityStatusDetails {
+        let (deviantPoints, validPoints) = try getSurfaceNormalIntegrityValueFromImage(
+            worldPointsGrid: worldPointsGrid, plane: plane, surfaceNormalsForPointsGrid: surfaceNormalsForPointsGrid, damageDetectionResults: damageDetectionResults, captureData: captureData, angularDeviationThreshold: angularDeviationThreshold, deviantPointProportionThreshold: deviantPointProportionThreshold
+        )
+        let deviantPointProportion = validPoints > 0 ? Float(deviantPoints) / Float(validPoints) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
             status: deviantPointProportion > deviantPointProportionThreshold ? .slight : .intact,
-            details: "Deviant Point Proportion: \(deviantPointProportion * 100)%, Total Deviant Points: \(totalDeviantPoints), Total Points: \(totalValidPoints)"
+            details: "Deviant Point Proportion: \(deviantPointProportion * 100)%, Total Deviant Points: \(deviantPoints), Total Points: \(validPoints)"
         )
         return statusDetails
     }

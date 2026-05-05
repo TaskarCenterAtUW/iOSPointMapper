@@ -55,6 +55,10 @@ public enum AttributeEstimationPipelineConstants {
 
 /**
     An attribute estimation pipeline that processes editable accessibility features to estimate their attributes.
+ 
+    - MARK:
+    The individual attribute calculation functions have a lot of redundant code to get the relevant properties from the prerequisite cache.
+    Find a way to streamline this.
  */
 public class AttributeEstimationPipeline: ObservableObject {
     public struct PrerequisiteCache: Sendable {
@@ -67,6 +71,10 @@ public class AttributeEstimationPipeline: ObservableObject {
         public var meshTriangles: [MeshTriangle]? = nil
         public var meshAlignedPlane: Plane? = nil
         public var meshProjectedPlane: ProjectedPlane? = nil
+        
+        /// Additional lazy properties for caching can be added here as needed.
+        public var surfaceNormalsGrid: SurfaceNormalsForPointsGrid? = nil
+        
     }
     
     public var captureImageData: (any CaptureImageDataProtocol)?
@@ -260,6 +268,20 @@ public class AttributeEstimationPipeline: ObservableObject {
                     )
                     try accessibilityFeature.setAttributeValue(
                         surfaceIntegrityAttributeValue, for: .surfaceIntegrity, isCalculated: true
+                    )
+                case .surfaceDisruption:
+                    let surfaceDisruptionAttributeValue = try self.calculateSurfaceDisruption(
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try accessibilityFeature.setAttributeValue(
+                        surfaceDisruptionAttributeValue, for: .surfaceDisruption, isCalculated: true
+                    )
+                case .heightFromGround:
+                    let heightFromGroundAttributeValue = try self.calculateHeightFromGround(
+                        accessibilityFeature: accessibilityFeature
+                    )
+                    try accessibilityFeature.setAttributeValue(
+                        heightFromGroundAttributeValue, for: .heightFromGround, isCalculated: true
                     )
                 default:
                     continue
