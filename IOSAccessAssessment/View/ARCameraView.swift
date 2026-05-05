@@ -55,6 +55,7 @@ enum ARCameraViewConstants {
     
     enum Images {
         static let cameraIcon = "camera.circle.fill"
+        static let inProgressIcon = "hourglass"
         
         /// InfoTio
         static let infoIcon = "info.circle"
@@ -67,6 +68,8 @@ enum ARCameraViewConstants {
     
     enum Constraints {
         static let logoutIconSize: CGFloat = 20
+        static let cameraIconSize: CGFloat = 60
+        static let inProgressIconSize: CGFloat = 40
     }
 }
 
@@ -159,9 +162,14 @@ struct ARCameraView: View {
                             Button {
                                 cameraCapture()
                             } label: {
-                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                Image(
+                                    systemName: manager.isCaptureReady ? ARCameraViewConstants.Images.cameraIcon : ARCameraViewConstants.Images.inProgressIcon
+                                )
                                     .resizable()
-                                    .frame(width: 60, height: 60)
+                                    .frame(
+                                        width: manager.isCaptureReady ? ARCameraViewConstants.Constraints.cameraIconSize : ARCameraViewConstants.Constraints.inProgressIconSize,
+                                        height: ARCameraViewConstants.Constraints.cameraIconSize
+                                    )
                             }
                             .padding(.bottom, 20)
                             Spacer()
