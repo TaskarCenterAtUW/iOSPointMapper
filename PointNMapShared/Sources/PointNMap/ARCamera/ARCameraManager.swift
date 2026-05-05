@@ -552,15 +552,15 @@ public extension ARCameraManager {
                 let cameraMeshResults = try await self.processMeshAnchors(anchors, shouldRemove: shouldRemove)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
-                    self.outputConsumer?.cameraOutputMesh(
-                        self, metalContext: metalContext,
-                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
-                        for: cameraMeshResults.meshAnchors,
-                        cameraTransform: cameraMeshResults.cameraTransform,
-                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
-                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
-                        accessibilityFeatureClasses: self.selectedClasses
-                    )
+//                    self.outputConsumer?.cameraOutputMesh(
+//                        self, metalContext: metalContext,
+//                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
+//                        for: cameraMeshResults.meshAnchors,
+//                        cameraTransform: cameraMeshResults.cameraTransform,
+//                        cameraIntrinsics: cameraMeshResults.cameraIntrinsics,
+//                        segmentationLabelImage: cameraMeshResults.segmentationLabelImage,
+//                        accessibilityFeatureClasses: self.selectedClasses
+//                    )
                 }
             } catch {
                 print("Error processing anchors: \(error.localizedDescription)")
