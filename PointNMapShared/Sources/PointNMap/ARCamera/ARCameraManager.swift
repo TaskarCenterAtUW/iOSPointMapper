@@ -222,6 +222,7 @@ public final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraP
     public var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     
     @Published public var isConfigured: Bool = false
+    @Published public var isCaptureReady: Bool = false
     
     // Latest processed results
     public var cameraImageResults: ARCameraImageResults?
@@ -359,6 +360,10 @@ public extension ARCameraManager {
                          for: frame
                      )
                      self.cameraOutputImageCallback?(captureImageData)
+                     /// If enhanced analysis is not enabled, then the capture is only dependent on the camera image results.
+                     if !isEnhancedAnalysisEnabled {
+                         self.isCaptureReady = true
+                     }
                  }
              } catch {
                  print("Error processing camera image: \(error.localizedDescription)")
@@ -552,6 +557,7 @@ public extension ARCameraManager {
                 let cameraMeshResults = try await self.processMeshAnchors(anchors, shouldRemove: shouldRemove)
                 await MainActor.run {
                     self.cameraMeshResults = cameraMeshResults
+                    self.isCaptureReady = true
 //                    self.outputConsumer?.cameraOutputMesh(
 //                        self, metalContext: metalContext,
 //                        meshGPUSnapshot: cameraMeshResults.meshGPUSnapshot,
