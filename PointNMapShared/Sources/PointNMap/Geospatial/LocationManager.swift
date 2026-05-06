@@ -29,22 +29,72 @@ public enum LocationManagerError: Error, LocalizedError {
  */
 @MainActor
 public class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    public enum LocationAlert: Identifiable {
+        case enableLocation
+        case enablePreciseLocation
+
+        public var id: String {
+            switch self {
+            case .enableLocation:
+                return "enableLocation"
+            case .enablePreciseLocation:
+                return "enablePreciseLocation"
+            }
+        }
+
+        public var title: String {
+            switch self {
+            case .enableLocation:
+                return "Location Access is Off"
+            case .enablePreciseLocation:
+                return "Precise Location is Off"
+            }
+        }
+
+        public var message: String {
+            switch self {
+            case .enableLocation:
+                return "Open Settings and allow location access for this app. Keep Precise Location on. Cannot proceed without precise location access."
+            case .enablePreciseLocation:
+                return "Open Settings for this app, tap Location, then turn on Precise Location. Cannot proceed without precise location access."
+            }
+        }
+    }
+    
     private let locationManager: CLLocationManager = CLLocationManager()
     
+    @Published public var currentLocationAlert: LocationAlert? = nil
     @Published public var currentLocation: CLLocation?
     @Published public var currentHeading: CLHeading?
     
     public override init() {
         super.init()
+        locationManager.delegate = self
+        
+        configureLocationManager()
     }
     
     public func startLocationUpdates() {
-        setupLocationManager()
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            currentLocationAlert = nil
+            locationManager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            currentLocationAlert = .enableLocation
+        case .authorizedWhenInUse, .authorizedAlways:
+            guard isPreciseLocationEnabled() else {
+                currentLocationAlert = .enablePreciseLocation
+                return
+            }
+            currentLocationAlert = nil
+            startAuthorizedUpdates()
+        @unknown default:
+            currentLocationAlert = nil
+            break
+        }
     }
     
-    private func setupLocationManager() {
-        locationManager.delegate = self
-        
+    private func configureLocationManager() {
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
         
@@ -53,10 +103,19 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
         locationManager.headingFilter = kCLHeadingFilterNone
         
         locationManager.pausesLocationUpdatesAutomatically = false // Prevent auto-pausing
-        
-        locationManager.requestWhenInUseAuthorization()
+    }
+    
+    private func isPreciseLocationEnabled() -> Bool {
+        guard #available(iOS 14.0, *) else { return true }
+        return locationManager.accuracyAuthorization == .fullAccuracy
+    }
+    
+    private func startAuthorizedUpdates() {
         locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
+
+        if CLLocationManager.headingAvailable() {
+            locationManager.startUpdatingHeading()
+        }
     }
     
     /**
@@ -102,5 +161,6 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
     
     public func stopLocationUpdates() {
         locationManager.stopUpdatingLocation()
+        locationManager.stopUpdatingHeading()
     }
 }
