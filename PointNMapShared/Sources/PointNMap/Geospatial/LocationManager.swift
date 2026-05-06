@@ -29,43 +29,14 @@ public enum LocationManagerError: Error, LocalizedError {
  */
 @MainActor
 public class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    public enum LocationAlert: Identifiable {
-        case enableLocation
-        case enablePreciseLocation
-
-        public var id: String {
-            switch self {
-            case .enableLocation:
-                return "enableLocation"
-            case .enablePreciseLocation:
-                return "enablePreciseLocation"
-            }
-        }
-
-        public var title: String {
-            switch self {
-            case .enableLocation:
-                return "Location Access is Off"
-            case .enablePreciseLocation:
-                return "Precise Location is Off"
-            }
-        }
-
-        public var message: String {
-            switch self {
-            case .enableLocation:
-                return "Open Settings and allow location access for this app. Keep Precise Location on. Cannot proceed without precise location access."
-            case .enablePreciseLocation:
-                return "Open Settings for this app, tap Location, then turn on Precise Location. Cannot proceed without precise location access."
-            }
-        }
-    }
     
     private let locationManager: CLLocationManager = CLLocationManager()
     
-    @Published public var currentLocationAlert: LocationAlert? = nil
     @Published public var currentLocation: CLLocation?
     @Published public var currentHeading: CLHeading?
+    
+    @Published public var shouldShowLocationPermissionAlert: Bool = false
+    @Published public var shouldShowPreciseLocationAlert: Bool = false
     
     public override init() {
         super.init()
@@ -77,19 +48,22 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
     public func startLocationUpdates() {
         switch locationManager.authorizationStatus {
         case .notDetermined:
-            currentLocationAlert = nil
+            shouldShowLocationPermissionAlert = false
+            shouldShowPreciseLocationAlert = false
             locationManager.requestWhenInUseAuthorization()
         case .denied, .restricted:
-            currentLocationAlert = .enableLocation
+            shouldShowLocationPermissionAlert = true
         case .authorizedWhenInUse, .authorizedAlways:
             guard isPreciseLocationEnabled() else {
-                currentLocationAlert = .enablePreciseLocation
+                shouldShowPreciseLocationAlert = true
                 return
             }
-            currentLocationAlert = nil
+            shouldShowLocationPermissionAlert = false
+            shouldShowPreciseLocationAlert = false
             startAuthorizedUpdates()
         @unknown default:
-            currentLocationAlert = nil
+            shouldShowLocationPermissionAlert = false
+            shouldShowPreciseLocationAlert = false
             break
         }
     }

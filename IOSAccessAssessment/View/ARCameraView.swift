@@ -29,9 +29,27 @@ enum ARCameraViewConstants {
         static let cameraHintUnknownErrorText = "Unknown Error"
         static let cameraHintMappingDataNotReadyText = "Mapping Data Not Ready"
         
+        static let permissionOpenSettingsButtonKey = "Open Settings"
+        static let permissionNotNowButtonKey = "Not Now"
+        
         /// Location Manager Alerts
-        static let openSettingsButtonKey = "Open Settings"
-        static let notNowButtonKey = "Not Now"
+        static let locationPermissionAlertTitleKey = "Location Access is Off"
+        static let locationPermissionAlertMessageKey = """
+        Open Settings and allow location access for this app. Keep Precise Location on. 
+        Cannot proceed without precise location access.
+        """
+        static let preciseLocationPermissionAlertTitleKey = "Precise Location is Off"
+        static let preciseLocationPermissionAlertMessageKey = """
+        Open Settings for this app, tap Location, then turn on Precise Location. 
+        Cannot proceed without precise location access.
+        """
+        
+        /// Camera Permission Alert
+        static let cameraPermissionAlertTitleKey = "Camera Access is Off"
+        static let cameraPermissionAlertMessageKey = """
+        Open Settings and allow camera access for this app.
+        Cannot proceed without camera access.
+        """
         
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
@@ -224,19 +242,39 @@ struct ARCameraView: View {
                 }
             }
         }
-        .alert(item: $locationManager.currentLocationAlert) {
-            Alert(
-                title: Text($0.title),
-                message: Text($0.message),
-                primaryButton: .default(Text(ARCameraViewConstants.Texts.openSettingsButtonKey), action: {
-                    openAppSettings()
-                    dismiss()
-                }),
-                secondaryButton: .cancel(Text(ARCameraViewConstants.Texts.notNowButtonKey), action: {
-                    dismiss()
-                })
-            )
-        }
+        .alert(ARCameraViewConstants.Texts.locationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowLocationPermissionAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.locationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewConstants.Texts.preciseLocationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowPreciseLocationAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.preciseLocationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewConstants.Texts.cameraPermissionAlertTitleKey, isPresented: $manager.shouldShowCameraPermissionAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.cameraPermissionAlertMessageKey)
+        })
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 managerConfigureStatusViewModel.update(isFailed: false, errorMessage: "")

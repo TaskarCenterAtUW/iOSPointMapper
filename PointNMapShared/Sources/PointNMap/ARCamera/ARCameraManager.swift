@@ -221,6 +221,7 @@ public final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraP
     public var segmentationColorPixelFormatType: OSType = kCVPixelFormatType_32BGRA
     public var segmentationColorColorSpace: CGColorSpace? = CGColorSpaceCreateDeviceRGB()
     
+    @Published public var shouldShowCameraPermissionAlert: Bool = false
     @Published public var isConfigured: Bool = false
     @Published public var isCaptureReady: Bool = false
     
@@ -254,6 +255,7 @@ public final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraP
         self.isConfigured = true
         
         Task { @MainActor in
+            
             self.capturedMeshSnapshotGenerator = CapturedMeshSnapshotGenerator()
         }
     }
@@ -270,6 +272,12 @@ public final class ARCameraManager: NSObject, ObservableObject, ARSessionCameraP
     public func setOrientation(_ orientation: UIInterfaceOrientation) {
         Task { @MainActor in
             self.interfaceOrientation = orientation
+        }
+    }
+    
+    public func setCameraPermissionAlert(_ showAlert: Bool) {
+        Task { @MainActor in
+            self.shouldShowCameraPermissionAlert = showAlert
         }
     }
     
