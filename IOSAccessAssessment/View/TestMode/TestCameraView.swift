@@ -7,9 +7,10 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMapShared
 
 /**
- Additional constants unique to TestCameraView (not used in ARCameraView)
+ Additional SharedAppConstants unique to TestCameraView (not used in ARCameraView)
  */
 enum TestCameraViewConstants {
     enum Texts {
@@ -378,6 +379,7 @@ struct TestCameraView: View {
                     {
                         throw TestCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
+                default: break
                 }
                 let captureLocation = datadatasetCaptureData.location
                 let captureHeading = datadatasetCaptureData.heading
@@ -428,7 +430,7 @@ struct TestCameraView: View {
         var shouldUpdateMap = oldLocation == nil && newLocation != nil
         if let oldLocation, let newLocation {
             let distance = oldLocation.distance(from: newLocation)
-            shouldUpdateMap = distance > Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
+            shouldUpdateMap = distance > SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
         }
         if !shouldUpdateMap {
             return
@@ -446,7 +448,7 @@ struct TestCameraView: View {
                 let mapData = try await WorkspaceService.shared.fetchMapData(
                     workspaceId: workspaceId,
                     location: location,
-                    radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+                    radius: SharedAppConstants.WorkspaceConstants.fetchRadiusInMeters,
                     accessToken: accessToken,
                     environment: userStateViewModel.selectedEnvironment
                 )

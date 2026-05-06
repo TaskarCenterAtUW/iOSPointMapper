@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     var frames: [UUID] = []
@@ -20,14 +21,14 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
     
     var selectedAnnotationOption: String
     
-    var locationDetails: OSMLocationDetails?
+    var locationDetails: LocationDetails?
     var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?]
     var experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
     
     var oswElement: String?
     
-    init(from accessibilityFeature: EditableAccessibilityFeature) {
+    init(from accessibilityFeature: any EditableAccessibilityFeatureProtocol) {
         self.id = accessibilityFeature.id
         self.accessibilityFeatureClass = .init(from: accessibilityFeature.accessibilityFeatureClass)
         self.contourDetails = accessibilityFeature.contourDetails
@@ -38,7 +39,7 @@ struct AccessibilityFeatureSnapshot: Codable, Identifiable, Sendable {
         self.experimentalAttributeValues = accessibilityFeature.experimentalAttributeValues
     }
     
-    mutating func update(from accessibilityFeature: EditableAccessibilityFeature) {
+    mutating func update(from accessibilityFeature: any EditableAccessibilityFeatureProtocol) {
         self.selectedAnnotationOption = accessibilityFeature.selectedAnnotationOption.rawValue
         self.locationDetails = accessibilityFeature.locationDetails
         self.calculatedAttributeValues = accessibilityFeature.calculatedAttributeValues

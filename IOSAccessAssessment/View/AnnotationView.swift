@@ -9,6 +9,7 @@ import SwiftUI
 import TipKit
 import CoreLocation
 import simd
+import PointNMapShared
 
 enum AnnotationViewConstants {
     enum Texts {
@@ -140,14 +141,14 @@ class AnnotationFeatureClassSelectionViewModel: ObservableObject {
 }
 
 class AnnotationFeatureSelectionViewModel: ObservableObject {
-    @Published var instances: [EditableAccessibilityFeature] = []
+    @Published var instances: [MappedEditableAccessibilityFeature] = []
     @Published var currentIndex: Int? = nil
-    @Published var currentFeature: EditableAccessibilityFeature? = nil
+    @Published var currentFeature: MappedEditableAccessibilityFeature? = nil
     
-    func setInstances(_ instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setInstances(_ instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
         /// If the class is sidewalk, we always select the first instance, as there should be only one sidewalk instance.
-        if (currentClass.oswPolicy.oswElementClass == .Sidewalk) {
+        if (currentClass.kind.oswPolicy.oswElementClass == .Sidewalk) {
             try setIndex(index: 0)
         } else {
             try setIndex(index: nil)
@@ -167,7 +168,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
         self.currentFeature = instances[index]
     }
     
-    func setCurrent(index: Int?, instances: [EditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
+    func setCurrent(index: Int?, instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         try setInstances(instances, currentClass: currentClass)
         try setIndex(index: index)
     }
@@ -232,7 +233,7 @@ struct AnnotationView: View {
     @EnvironmentObject var sharedAppData: SharedAppData
     @Environment(\.dismiss) var dismiss
     
-    @StateObject var manager: AnnotationImageManager = AnnotationImageManager()
+    @StateObject var manager: AnnotationImageManager = AnnotationImageManager<MappedEditableAccessibilityFeature>()
     
     @StateObject var segmentationAnnontationPipeline: SegmentationAnnotationPipeline = SegmentationAnnotationPipeline()
     @StateObject var attributeEstimationPipeline: AttributeEstimationPipeline = AttributeEstimationPipeline()
@@ -353,7 +354,7 @@ struct AnnotationView: View {
     private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
         let isDisabledFeatureDetailButton = featureSelectionViewModel.currentFeature == nil
         orientationStack {
-            HostedAnnotationImageViewController(annotationImageManager: manager)
+            HostedAnnotationImageViewController<MappedEditableAccessibilityFeature>(annotationImageManager: manager)
             
             VStack {
                 HStack {
@@ -367,7 +368,7 @@ struct AnnotationView: View {
                     CustomPicker (
                         label: AnnotationViewConstants.Texts.selectObjectText,
                         selection: $featureSelectionViewModel.currentIndex,
-                        isContainsAll: currentClass.oswPolicy.oswElementClass != .Sidewalk
+                        isContainsAll: currentClass.kind.oswPolicy.oswElementClass != .Sidewalk
                     ) {
                         ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                             Text("\(currentClass.name.capitalized): \(featureIndex)")
@@ -561,7 +562,7 @@ struct AnnotationView: View {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
-            var accessibilityFeatures: [EditableAccessibilityFeature]
+            var accessibilityFeatures: [MappedEditableAccessibilityFeature]
             var featureSelectedStatus: [UUID: Bool] = [:]
             var updateFeatureResults: AnnotationImageFeatureUpdateResults? = nil
             if let currentFeature = featureSelectionViewModel.currentFeature {
@@ -574,7 +575,7 @@ struct AnnotationView: View {
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
                 }
                 /// MARK: Temporary code for visualization. Incurs significant performance overhead.
-                if currentClass.attributes.contains(where: {
+                if currentClass.kind.attributes.contains(where: {
                     $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
                 }) {
                     let plane = try attributeEstimationPipeline.calculateAlignedPlane(
@@ -643,7 +644,7 @@ struct AnnotationView: View {
         let mapData = try await WorkspaceService.shared.fetchMapData(
             workspaceId: workspaceId,
             location: captureLocation,
-            radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+            radius: SharedAppConstants.WorkspaceConstants.fetchRadiusInMeters,
             accessToken: accessToken,
             environment: userStateViewModel.selectedEnvironment
         )
@@ -684,7 +685,7 @@ struct AnnotationView: View {
         guard featureClassSelectionViewModel.selectedAnnotationOption != .classOption(.discard) else {
             return nil
         }
-        let featuresToUpload: [any AccessibilityFeatureProtocol] = featureSelectionViewModel.instances.filter { feature in
+        let featuresToUpload: [MappedEditableAccessibilityFeature] = featureSelectionViewModel.instances.filter { feature in
             feature.selectedAnnotationOption != .individualOption(.discard) &&
             feature.accessibilityFeatureClass == accessibilityFeatureClass
         }

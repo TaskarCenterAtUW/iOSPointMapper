@@ -1,0 +1,297 @@
+//
+//  SurfaceIntegrityExtension.swift
+//  IOSAccessAssessment
+//
+//  Created by Himanshu on 4/2/26.
+//
+
+import SwiftUI
+import CoreLocation
+import PointNMapShaderTypes
+import simd
+
+public extension AttributeEstimationPipeline {
+    func calculateSurfaceIntegrity(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateSurfaceIntegrityFromMesh(accessibilityFeature: accessibilityFeature)
+        }
+        return try calculateSurfaceIntegrityFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateSurfaceIntegrityFromImage(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let worldPointsGrid = try self.prerequisiteCache.worldPointsGrid ?? self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.pointProjectedPlane ?? self.calculateProjectedPlane(
+            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+        )
+        let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try self.prerequisiteCache.surfaceNormalsGrid ?? surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
+        )
+        self.prerequisiteCache.surfaceNormalsGrid = surfaceNormalsGrid
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromImage(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
+            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+        )
+        
+        let surfaceIntegrity = processSurfaceIntegrityResults(integrityResults: surfaceIntegrityResults)
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
+            from: surfaceIntegrity
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return surfaceIntegrityAttributeValue
+    }
+    
+    func calculateSurfaceIntegrityFromMesh(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureMeshData = self.captureMeshData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let meshTriangles: [MeshTriangle] = self.prerequisiteCache.meshTriangles ?? meshContents.triangles
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+//        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.meshProjectedPlane ?? self.calculateProjectedPlane(
+//            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+//        )
+        let surfaceIntegrityResults = try surfaceIntegrityProcessor.getIntegrityResultsFromMesh(
+            meshTriangles: meshTriangles, plane: alignedPlane,
+            damageDetectionResults: damageDetectionResults, captureData: captureMeshData
+        )
+        
+        let surfaceIntegrity = processSurfaceIntegrityResults(integrityResults: surfaceIntegrityResults)
+        guard let surfaceIntegrityAttributeValue = AccessibilityFeatureAttribute.surfaceIntegrity.value(
+            from: surfaceIntegrity
+        ) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return surfaceIntegrityAttributeValue
+    }
+    
+    func getDamageDetectionResults(accessibilityFeature: any EditableAccessibilityFeatureProtocol) throws -> [DamageDetectionResult] {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let damageDetectionPipeline = self.damageDetectionPipeline else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        /// Run damage detection
+        let cameraImage = captureImageData.cameraImage
+        let croppedSize = PointNMapConstants.DamageDetectionConstants.inputSize
+        let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
+            currentInterfaceOrientation: captureImageData.interfaceOrientation
+        )
+        
+        let orientedImage = cameraImage.oriented(imageOrientation)
+        let inputImage = CenterCropTransformUtils.centerCropAspectFit(orientedImage, to: croppedSize)
+        
+        let damageDetectionResults: [DamageDetectionResult] = try damageDetectionPipeline.processRequest(with: inputImage)
+        let alignedDamageDetectionResults = damageDetectionResults.map { result -> DamageDetectionResult in
+            let alignedBox = self.alignBoundingBox(result.boundingBox, orientation: imageOrientation, imageSize: croppedSize, originalSize: cameraImage.extent.size)
+            return DamageDetectionResult(
+                boundingBox: alignedBox,
+                confidence: result.confidence,
+                label: result.label
+            )
+        }
+        
+        return alignedDamageDetectionResults
+    }
+    
+    private func alignBoundingBox(_ boundingBox: CGRect, orientation: CGImagePropertyOrientation, imageSize: CGSize, originalSize: CGSize) -> CGRect {
+        let orientationTransform = orientation.getNormalizedToUpTransform().inverted()
+        let revertTransform = CenterCropTransformUtils.revertCenterCropAspectFitNormalizedTransform(
+            imageSize: imageSize, from: originalSize)
+        let alignTransform = orientationTransform.concatenating(revertTransform)
+        
+        let alignedBox = boundingBox.applying(alignTransform)
+        return alignedBox
+    }
+    
+    private func processSurfaceIntegrityResults(integrityResults: IntegrityResults) -> SurfaceIntegrityStatus {
+        /// We look for the most severe status across all integrity results to determine the overall surface integrity status.
+        let worstStatus: SurfaceIntegrityStatus = max(
+            integrityResults.boundingBoxAreaStatusDetails.status,
+            integrityResults.boundingBoxSurfaceNormalStatusDetails.status,
+            integrityResults.surfaceNormalStatusDetails.status
+        )
+        return worstStatus
+    }
+}
+
+/**
+ Additional sub-attributes of surface-integrity
+ */
+/// Sub-attribute: Surface disruption
+public extension AttributeEstimationPipeline {
+    func calculateSurfaceDisruption(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateSurfaceDisruptionFromMesh(accessibilityFeature: accessibilityFeature)
+        }
+        return try calculateSurfaceDisruptionFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateSurfaceDisruptionFromImage(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let surfaceNormalsProcessor = self.surfaceNormalsProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let worldPointsGrid = try self.prerequisiteCache.worldPointsGrid ?? self.getWorldPointsGrid(accessibilityFeature: accessibilityFeature)
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let projectedPlane: ProjectedPlane = try self.prerequisiteCache.pointProjectedPlane ?? self.calculateProjectedPlane(
+            accessibilityFeature: accessibilityFeature, plane: alignedPlane
+        )
+        let surfaceNormalsGrid: SurfaceNormalsForPointsGrid = try self.prerequisiteCache.surfaceNormalsGrid ?? surfaceNormalsProcessor.getSurfaceNormalsFromWorldPoints(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, projectedPlane: projectedPlane
+        )
+        self.prerequisiteCache.surfaceNormalsGrid = surfaceNormalsGrid
+        let (deviantPoints, validPoints) = try surfaceIntegrityProcessor.getSurfaceNormalIntegrityValueFromImage(
+            worldPointsGrid: worldPointsGrid, plane: alignedPlane, surfaceNormalsForPointsGrid: surfaceNormalsGrid,
+            damageDetectionResults: damageDetectionResults, captureData: captureImageData
+        )
+        let deviantPointProportion = validPoints > 0 ? deviantPoints / validPoints : 0
+        
+        guard let surfaceDisruptionAttributeValue = AccessibilityFeatureAttribute.surfaceDisruption.value(from: deviantPointProportion) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return surfaceDisruptionAttributeValue
+    }
+    
+    func calculateSurfaceDisruptionFromMesh(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureMeshData = self.captureMeshData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        guard let surfaceIntegrityProcessor = self.surfaceIntegrityProcessor else {
+            throw AttributeEstimationPipelineError.missingPreprocessors
+        }
+        let damageDetectionResults = try getDamageDetectionResults(accessibilityFeature: accessibilityFeature)
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let meshTriangles: [MeshTriangle] = self.prerequisiteCache.meshTriangles ?? meshContents.triangles
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+        let (totalDeviantPolygons, totalValidPolygons) = try surfaceIntegrityProcessor.getSurfaceNormalIntegrityValueFromMesh(
+            meshTriangles: meshTriangles, plane: alignedPlane,
+            damageDetectionResults: damageDetectionResults, captureData: captureMeshData
+        )
+        let deviantPolygonProportion = totalValidPolygons > 0 ? totalDeviantPolygons / totalValidPolygons : 0
+        
+        guard let surfaceDisruptionAttributeValue = AccessibilityFeatureAttribute.surfaceDisruption.value(from: deviantPolygonProportion) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return surfaceDisruptionAttributeValue
+    }
+}
+
+/// Sub-attribute: Height from ground
+extension AttributeEstimationPipeline {
+    func calculateHeightFromGround(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        let isMeshEnabled: Bool = self.captureMeshData != nil
+        if isMeshEnabled {
+            return try calculateHeightFromGroundFromMesh(accessibilityFeature: accessibilityFeature)
+        }
+        return try calculateHeightFromGroundFromImage(accessibilityFeature: accessibilityFeature)
+    }
+    
+    func calculateHeightFromGroundFromImage(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureImageData = self.captureImageData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let worldPoints: [WorldPoint] = try self.prerequisiteCache.worldPoints ?? self.getWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let alignedPlane: Plane = try self.prerequisiteCache.pointAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, worldPoints: worldPoints
+        )
+        let heightFromGround = getHeightFromGround(plane: alignedPlane, cameraTransform: captureImageData.cameraTransform)
+        
+        guard let heightFromGroundAttributeValue = AccessibilityFeatureAttribute.heightFromGround.value(from: heightFromGround) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return heightFromGroundAttributeValue
+    }
+    
+    func calculateHeightFromGroundFromMesh(
+        accessibilityFeature: any EditableAccessibilityFeatureProtocol
+    ) throws -> AccessibilityFeatureAttribute.Value {
+        guard let captureMeshData = self.captureMeshData else {
+            throw AttributeEstimationPipelineError.missingCaptureData
+        }
+        let meshContents: MeshContents = try self.prerequisiteCache.meshContents ?? self.getMeshContents(
+            accessibilityFeature: accessibilityFeature
+        )
+        let meshPolygons: [MeshPolygon] = self.prerequisiteCache.meshPolygons ?? meshContents.polygons
+        let alignedPlane: Plane = try self.prerequisiteCache.meshAlignedPlane ?? self.calculateAlignedPlane(
+            accessibilityFeature: accessibilityFeature, meshPolygons: meshPolygons
+        )
+        let heightFromGround = getHeightFromGround(plane: alignedPlane, cameraTransform: captureMeshData.cameraTransform)
+        
+        guard let heightFromGroundAttributeValue = AccessibilityFeatureAttribute.heightFromGround.value(from: heightFromGround) else {
+            throw AttributeEstimationPipelineError.attributeAssignmentError
+        }
+        return heightFromGroundAttributeValue
+    }
+    
+    private func getHeightFromGround(plane: Plane, cameraTransform: simd_float4x4) -> Double {
+        let planeNormal = plane.normalVector
+        let planeOrigin = plane.origin
+        let userPosition4 = cameraTransform.columns.3
+        let userPosition = SIMD3<Float>(userPosition4.x, userPosition4.y, userPosition4.z)
+        let vectorFromPlaneToUser = userPosition - planeOrigin
+        return Double(simd_dot(vectorFromPlaneToUser, planeNormal))
+    }
+}
