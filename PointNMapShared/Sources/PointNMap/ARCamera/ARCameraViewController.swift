@@ -49,6 +49,8 @@ public protocol ARSessionCameraProcessingDelegate: ARSessionDelegate {
     func setVideoFormatImageResolution(_ imageResolution: CGSize)
     @MainActor
     func setOrientation(_ orientation: UIInterfaceOrientation)
+    @MainActor
+    func setCameraPermissionAlert(_ showAlert: Bool)
 }
 
 /**
@@ -302,6 +304,24 @@ public final class ARCameraViewController: UIViewController, ARSessionCameraProc
 //    }
     
     public func runSessionIfNeeded() {
+        guard checkCameraPermission() else {
+            self.arSessionCameraProcessingDelegate.setCameraPermissionAlert(true)
+            return
+        }
+        self.arSessionCameraProcessingDelegate.setCameraPermissionAlert(false)
+        runSession()
+    }
+    
+    public func checkCameraPermission() -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+            case .authorized: return true
+            case .notDetermined: return true /// Expecting that a permission request will be triggered externally before session starts
+            case .denied, .restricted: return false
+            @unknown default: return false
+        }
+    }
+    
+    public func runSession() {
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravityAndHeading
         if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {

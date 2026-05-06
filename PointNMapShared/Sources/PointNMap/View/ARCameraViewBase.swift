@@ -29,6 +29,21 @@ enum ARCameraViewBaseConstants {
         static let cameraHintUnknownErrorText = "Unknown Error"
         static let cameraHintMappingDataNotReadyText = "Mapping Data Not Ready"
         
+        static let permissionOpenSettingsButtonKey = "Open Settings"
+        static let permissionNotNowButtonKey = "Not Now"
+        
+        /// Location Manager Alerts
+        static let locationPermissionAlertTitleKey = "Location Access is Off"
+        static let locationPermissionAlertMessageKey = """
+        Open Settings and allow location access for this app. Keep Precise Location on. 
+        Cannot proceed without precise location access.
+        """
+        static let preciseLocationPermissionAlertTitleKey = "Precise Location is Off"
+        static let preciseLocationPermissionAlertMessageKey = """
+        Open Settings for this app, tap Location, then turn on Precise Location. 
+        Cannot proceed without precise location access.
+        """
+        
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
@@ -199,6 +214,28 @@ public struct ARCameraView: View {
                 }
             }
         }
+        .alert(ARCameraViewBaseConstants.Texts.locationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowLocationPermissionAlert, actions: {
+            Button(ARCameraViewBaseConstants.Texts.locationPermissionAlertTitleKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewBaseConstants.Texts.locationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowPreciseLocationAlert, actions: {
+            Button(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertTitleKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertMessageKey)
+        })
         .alert(ARCameraViewBaseConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewBaseConstants.Texts.managerStatusAlertDismissButtonKey) {
                 managerConfigureStatusViewModel.update(isFailed: false, errorMessage: "")
@@ -334,6 +371,15 @@ public struct ARCameraView: View {
             try await Task.sleep(for: .seconds(2))
             cameraHintText = ARCameraViewBaseConstants.Texts.cameraHintPlaceholderText
         }
+    }
+    
+    func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else {
+            return
+        }
+
+        UIApplication.shared.open(url)
     }
 }
 
