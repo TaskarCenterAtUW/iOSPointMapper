@@ -29,6 +29,10 @@ enum ARCameraViewConstants {
         static let cameraHintUnknownErrorText = "Unknown Error"
         static let cameraHintMappingDataNotReadyText = "Mapping Data Not Ready"
         
+        /// Location Manager Alerts
+        static let openSettingsButtonKey = "Open Settings"
+        static let notNowButtonKey = "Not Now"
+        
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
@@ -219,6 +223,19 @@ struct ARCameraView: View {
                     print("Error pausing ARCameraManager: \(error)")
                 }
             }
+        }
+        .alert(item: $locationManager.currentLocationAlert) {
+            Alert(
+                title: Text($0.title),
+                message: Text($0.message),
+                primaryButton: .default(Text(ARCameraViewConstants.Texts.openSettingsButtonKey), action: {
+                    openAppSettings()
+                    dismiss()
+                }),
+                secondaryButton: .cancel(Text(ARCameraViewConstants.Texts.notNowButtonKey), action: {
+                    dismiss()
+                })
+            )
         }
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -411,6 +428,15 @@ struct ARCameraView: View {
             try await Task.sleep(for: .seconds(2))
             cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
         }
+    }
+    
+    func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else {
+            return
+        }
+
+        UIApplication.shared.open(url)
     }
 }
 
