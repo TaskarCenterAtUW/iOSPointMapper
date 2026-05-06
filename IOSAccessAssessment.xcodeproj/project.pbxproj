@@ -28,7 +28,6 @@
 		A312FD912FA3391C0044808E /* PointNMapShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A312FD7B2FA3391B0044808E /* PointNMapShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A312FE152FA3EBE80044808E /* PointNMapShaderTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; };
 		A312FE162FA3EBE80044808E /* PointNMapShaderTypes.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		A312FE202FA3EC710044808E /* PointNMapShaderTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; };
 		A312FF232FA430510044808E /* AccessibilityFeatureKindExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FF222FA4304D0044808E /* AccessibilityFeatureKindExtension.swift */; };
 		A312FF2B2FA436CB0044808E /* IsExistingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A312FF2A2FA436C60044808E /* IsExistingExtension.swift */; };
 		A31DB99E2FA54BEB00DDA385 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A31DB99D2FA54BEB00DDA385 /* DequeModule */; };
@@ -76,6 +75,8 @@
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
+		A3D78D862FAC02600010116D /* PointNMapShaderTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; };
+		A3D78D872FAC02600010116D /* PointNMapShaderTypes.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A312FE0D2FA3EBE80044808E /* PointNMapShaderTypes.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshCoder.swift */; };
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
@@ -168,6 +169,17 @@
 			files = (
 				A312FE162FA3EBE80044808E /* PointNMapShaderTypes.framework in Embed Frameworks */,
 				A312FD912FA3391C0044808E /* PointNMapShared.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3D78D882FAC02600010116D /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A3D78D872FAC02600010116D /* PointNMapShaderTypes.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -336,7 +348,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A312FE202FA3EC710044808E /* PointNMapShaderTypes.framework in Frameworks */,
+				A3D78D862FAC02600010116D /* PointNMapShaderTypes.framework in Frameworks */,
 				A31DB99E2FA54BEB00DDA385 /* DequeModule in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -944,6 +956,7 @@
 				A312FD772FA3391B0044808E /* Sources */,
 				A312FD782FA3391B0044808E /* Frameworks */,
 				A312FD792FA3391B0044808E /* Resources */,
+				A3D78D882FAC02600010116D /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1428,10 +1441,10 @@
 				INFOPLIST_FILE = IOSAccessAssessment/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iOSPointMapper;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to localize the segmented features";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to localize the segmented features";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We want to save the filtered photo.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings and detect features";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to localize the detected features";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to localize the detected features";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We want to save the images used for the mapping process";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1479,10 +1492,10 @@
 				INFOPLIST_FILE = IOSAccessAssessment/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iOSPointMapper;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to localize the segmented features";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to localize the segmented features";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We want to save the filtered photo.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Used to segment surroundings and detect features";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to localize the detected features";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to localize the detected features";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We want to save the images used for the mapping process";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1618,6 +1631,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_MODULE = YES;
@@ -1664,6 +1681,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INSTALL_MODULE = YES;
@@ -1746,6 +1767,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -1780,6 +1805,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
