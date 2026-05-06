@@ -192,6 +192,7 @@ public final class ARCameraViewController: UIViewController, ARSessionCameraProc
         updateFitConstraints()
         updateAlignConstraints()
         updateAspectRatio()
+        view.setNeedsLayout()
         arSessionCameraProcessingDelegate.setOrientation(getOrientation())
     }
     
@@ -220,7 +221,6 @@ public final class ARCameraViewController: UIViewController, ARSessionCameraProc
             multiplier: aspectRatio
         )
         aspectConstraint.isActive = true
-        view.setNeedsLayout()
     }
     
     private func updateFitConstraints() {
@@ -349,9 +349,11 @@ public final class ARCameraViewController: UIViewController, ARSessionCameraProc
         segmentationImage: CIImage?, segmentationBoundingFrameImage: CIImage?,
         for frame: ARFrame?
     ) {
-        if let segmentationImage = segmentationImage,
-           let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
-            self.segmentationImageView.image = UIImage(cgImage: segmentationCGImage)
+        if let segmentationImage = segmentationImage
+        /// - Warning: Converting CIImage to UIImage may cause issues if the CIImage is not backed by an underlying data buffer properly (e.g. MTLTexture).
+//           let segmentationCGImage = metalContext.ciContext.createCGImage(segmentationImage, from: segmentationImage.extent) {
+        {
+            self.segmentationImageView.image = UIImage(ciImage: segmentationImage)
         } else {
             self.segmentationImageView.image = nil
         }
