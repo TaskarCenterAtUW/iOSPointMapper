@@ -243,33 +243,33 @@ struct ARCameraView: View {
             }
         }
         .alert(ARCameraViewConstants.Texts.locationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowLocationPermissionAlert, actions: {
-            Button(ARCameraViewConstants.Texts.locationPermissionAlertTitleKey) {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
                 openAppSettings()
                 dismiss()
             }
-            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey) {
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
                 dismiss()
             }
         }, message: {
             Text(ARCameraViewConstants.Texts.locationPermissionAlertMessageKey)
         })
         .alert(ARCameraViewConstants.Texts.preciseLocationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowPreciseLocationAlert, actions: {
-            Button(ARCameraViewConstants.Texts.preciseLocationPermissionAlertTitleKey) {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
                 openAppSettings()
                 dismiss()
             }
-            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey) {
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
                 dismiss()
             }
         }, message: {
             Text(ARCameraViewConstants.Texts.preciseLocationPermissionAlertMessageKey)
         })
         .alert(ARCameraViewConstants.Texts.cameraPermissionAlertTitleKey, isPresented: $manager.shouldShowCameraPermissionAlert, actions: {
-            Button(ARCameraViewConstants.Texts.cameraPermissionAlertTitleKey) {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
                 openAppSettings()
                 dismiss()
             }
-            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey) {
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
                 dismiss()
             }
         }, message: {

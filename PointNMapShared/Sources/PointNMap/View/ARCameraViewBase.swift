@@ -44,6 +44,13 @@ enum ARCameraViewBaseConstants {
         Cannot proceed without precise location access.
         """
         
+        /// Camera Permission Alert
+        static let cameraPermissionAlertTitleKey = "Camera Access is Off"
+        static let cameraPermissionAlertMessageKey = """
+        Open Settings and allow camera access for this app.
+        Cannot proceed without camera access.
+        """
+        
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
         static let managerStatusAlertDismissButtonKey = "OK"
@@ -215,26 +222,37 @@ public struct ARCameraView: View {
             }
         }
         .alert(ARCameraViewBaseConstants.Texts.locationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowLocationPermissionAlert, actions: {
-            Button(ARCameraViewBaseConstants.Texts.locationPermissionAlertTitleKey) {
+            Button(ARCameraViewBaseConstants.Texts.permissionOpenSettingsButtonKey) {
                 openAppSettings()
                 dismiss()
             }
-            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey) {
+            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
                 dismiss()
             }
         }, message: {
             Text(ARCameraViewBaseConstants.Texts.locationPermissionAlertMessageKey)
         })
         .alert(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowPreciseLocationAlert, actions: {
-            Button(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertTitleKey) {
+            Button(ARCameraViewBaseConstants.Texts.permissionOpenSettingsButtonKey) {
                 openAppSettings()
                 dismiss()
             }
-            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey) {
+            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
                 dismiss()
             }
         }, message: {
             Text(ARCameraViewBaseConstants.Texts.preciseLocationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewBaseConstants.Texts.cameraPermissionAlertTitleKey, isPresented: $manager.shouldShowCameraPermissionAlert, actions: {
+            Button(ARCameraViewBaseConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewBaseConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewBaseConstants.Texts.cameraPermissionAlertMessageKey)
         })
         .alert(ARCameraViewBaseConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewBaseConstants.Texts.managerStatusAlertDismissButtonKey) {
