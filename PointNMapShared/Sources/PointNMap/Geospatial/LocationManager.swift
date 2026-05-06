@@ -30,21 +30,37 @@ public enum LocationManagerError: Error, LocalizedError {
 @MainActor
 public class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager: CLLocationManager = CLLocationManager()
+    @Published public var shouldShowLocationSettingsAlert: Bool = false
+    @Published public var shouldShowPreciseLocationAlert: Bool = false
     
     @Published public var currentLocation: CLLocation?
     @Published public var currentHeading: CLHeading?
     
     public override init() {
         super.init()
+        locationManager.delegate = self
+        
+        configureLocationManager()
     }
     
     public func startLocationUpdates() {
-        setupLocationManager()
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            shouldShowLocationSettingsAlert = true
+        case .authorizedWhenInUse, .authorizedAlways:
+            guard isPreciseLocationEnabled() else {
+                shouldShowLocationSettingsAlert = true
+                return
+            }
+            startAuthorizedUpdates()
+        @unknown default:
+            break
+        }
     }
     
-    private func setupLocationManager() {
-        locationManager.delegate = self
-        
+    private func configureLocationManager() {
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
         
@@ -53,10 +69,19 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
         locationManager.headingFilter = kCLHeadingFilterNone
         
         locationManager.pausesLocationUpdatesAutomatically = false // Prevent auto-pausing
-        
-        locationManager.requestWhenInUseAuthorization()
+    }
+    
+    private func isPreciseLocationEnabled() -> Bool {
+        guard #available(iOS 14.0, *) else { return true }
+        return locationManager.accuracyAuthorization == .fullAccuracy
+    }
+    
+    private func startAuthorizedUpdates() {
         locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
+
+        if CLLocationManager.headingAvailable() {
+            locationManager.startUpdatingHeading()
+        }
     }
     
     /**
@@ -102,5 +127,6 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
     
     public func stopLocationUpdates() {
         locationManager.stopUpdatingLocation()
+        locationManager.stopUpdatingHeading()
     }
 }
