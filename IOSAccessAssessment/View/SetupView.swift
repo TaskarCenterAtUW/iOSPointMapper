@@ -7,6 +7,7 @@
 
 import SwiftUI
 import TipKit
+import PointNMapShared
 
 enum SetupViewConstants {
     enum Texts {
@@ -316,7 +317,7 @@ struct SetupView: View {
                 }
                 
                 List {
-                    ForEach(Constants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
+                    ForEach(SharedAppConstants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
                         Button(action: {
                             if self.selectedClasses.contains(accessibilityFeatureClass) {
                                 self.selectedClasses.remove(accessibilityFeatureClass)

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PointNMapShared
 
 enum CurrentMappedFeaturesDataError: Error, LocalizedError {
     case accessibilityFeatureClassNotWay(AccessibilityFeatureClass)

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PointNMapShared
 
 enum AccessibilityFeatureEncoderError: Error, LocalizedError {
     case fileCreationFailed
@@ -26,7 +27,7 @@ final class AccessibilityFeatureFile {
 
     private var snapshot: AccessibilityFeatureSnapshot
     
-    init(url: URL, frameNumber: UUID, timestamp: TimeInterval, feature: EditableAccessibilityFeature) throws {
+    init(url: URL, frameNumber: UUID, timestamp: TimeInterval, feature: any EditableAccessibilityFeatureProtocol) throws {
         self.url = url
         
         if FileManager.default.fileExists(atPath: url.path) {
@@ -45,7 +46,7 @@ final class AccessibilityFeatureFile {
     
     func update(frameNumber: UUID, timestamp: TimeInterval, feature: any AccessibilityFeatureProtocol) throws {
         self.snapshot.update(frame: frameNumber, timestamp: timestamp)
-        if let editableFeature = feature as? EditableAccessibilityFeature {
+        if let editableFeature = feature as? any EditableAccessibilityFeatureProtocol {
             self.snapshot.update(from: editableFeature)
         } else if let mappedFeature = feature as? MappedAccessibilityFeature {
             self.snapshot.update(from: mappedFeature)
@@ -83,7 +84,7 @@ class AccessibilityFeatureEncoder {
         try FileManager.default.createDirectory(at: outDirectory.absoluteURL, withIntermediateDirectories: true, attributes: nil)
     }
     
-    func insert(features: [EditableAccessibilityFeature], frameNumber: UUID, timestamp: TimeInterval) throws {
+    func insert(features: [any EditableAccessibilityFeatureProtocol], frameNumber: UUID, timestamp: TimeInterval) throws {
         try features.forEach { feature in
             if let featureFile = self.fileStore[feature.id] {
                 /// Update existing file
@@ -109,7 +110,7 @@ class AccessibilityFeatureEncoder {
             if let featureFile = self.fileStore[feature.id] {
                 /// Update existing file
                 try featureFile.update(frameNumber: frameNumber, timestamp: timestamp, feature: feature)
-            } else if let editableFeature = feature as? EditableAccessibilityFeature {
+            } else if let editableFeature = feature as? any EditableAccessibilityFeatureProtocol {
                 /// Create new file for editable feature
                 let featureFileURL = self.baseDirectory
                     .appendingPathComponent(editableFeature.id.uuidString, isDirectory: false)

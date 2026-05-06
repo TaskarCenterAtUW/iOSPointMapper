@@ -6,13 +6,14 @@
 //
 import Foundation
 import CoreLocation
+import PointNMapShared
 
 struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, CustomStringConvertible {
     let id: UUID
     
     let accessibilityFeatureClass: AccessibilityFeatureClass
     
-    var locationDetails: OSMLocationDetails?
+    var locationDetails: LocationDetails?
     var oswElement: any OSWElement
     
     var attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
@@ -34,7 +35,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     init(
         id: UUID = UUID(),
         accessibilityFeatureClass: AccessibilityFeatureClass,
-        locationDetails: OSMLocationDetails?,
+        locationDetails: LocationDetails?,
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?] = [:],
         oswElement: any OSWElement
@@ -53,7 +54,7 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
         return lastCoordinate
     }
     
-    mutating func setLocationDetails(locationDetails: OSMLocationDetails) {
+    mutating func setLocationDetails(locationDetails: LocationDetails) {
         self.locationDetails = locationDetails
     }
     
@@ -84,6 +85,6 @@ struct MappedAccessibilityFeature: AccessibilityFeatureProtocol, Sendable, Custo
     }
     
     var description: String {
-        return "MappedAccessibilityFeature(id: \(id), class: \(accessibilityFeatureClass), location: \(String(describing: locationDetails)), attributes: \(attributeValues), oswElement: \(oswElement))"
+        return "MappedAccessibilityFeature(id: \(id), class: \(accessibilityFeatureClass), location: \(String(describing: locationDetails)), attributes: \(attributeValues))"
     }
 }

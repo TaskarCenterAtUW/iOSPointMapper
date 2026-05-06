@@ -52,6 +52,17 @@
                ReferencedContainer = "container:IOSAccessAssessment.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A312FD842FA3391C0044808E"
+               BuildableName = "PointNMapSharedTests.xctest"
+               BlueprintName = "PointNMapSharedTests"
+               ReferencedContainer = "container:IOSAccessAssessment.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

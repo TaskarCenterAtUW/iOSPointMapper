@@ -9,6 +9,7 @@ import ARKit
 import RealityKit
 import Combine
 import simd
+import PointNMapShared
 
 final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingDelegate {
     var selectedClasses: [AccessibilityFeatureClass] = []
@@ -77,7 +78,7 @@ final class TestCameraManager: NSObject, ObservableObject, TestCameraProcessingD
         self.metalContext = metalContext
         self.isEnhancedAnalysisEnabled = isEnhancedAnalysisEnabled
         self.meshGPUSnapshotGenerator = MeshGPUSnapshotGenerator(device: metalContext.device)
-//        try setUpPreAllocatedPixelBufferPools(size: Constants.SelectedAccessibilityFeatureConfig.inputSize)
+//        try setUpPreAllocatedPixelBufferPools(size: SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize)
         self.cameraOutputImageCallback = cameraOutputImageCallback
         self.isConfigured = true
         
@@ -206,7 +207,7 @@ extension TestCameraManager {
         guard let segmentationPipeline = segmentationPipeline else {
             throw ARCameraManagerError.segmentationNotConfigured
         }
-        let croppedSize = Constants.SelectedAccessibilityFeatureConfig.inputSize
+        let croppedSize = SharedAppConstants.SelectedAccessibilityFeatureConfig.inputSize
         let imageOrientation: CGImagePropertyOrientation = CameraOrientation.getCGImageOrientationForInterface(
             currentInterfaceOrientation: interfaceOrientation
         )

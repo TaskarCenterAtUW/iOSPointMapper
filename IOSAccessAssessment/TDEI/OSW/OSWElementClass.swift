@@ -4,7 +4,15 @@
 //
 //  Created by Himanshu on 12/8/25.
 //
+import PointNMapShared
 
+/**
+ - Warning: MappingGeometry is currently used in two places of the AccessibilityFeature that can end up being different from each other.
+ AccessibilityFeature -> AccessibilityFeatureClass -> AccessibilityFeatureKind -> MappingGeometry
+ AccessibilityFeature -> AccessibilityFeatureClass -> OSWPolicy -> OSWElementClass -> Metadata -> MappingGeometry
+ We need to ensure that the MappingGeometry used in both places is the same and consistent.
+ Or we need to remove this potential inconsistency probably by removing Metadata from OSWPolicy since OSWPolicy is part of an extension outside the framework and should not have MappingGeometry in it.
+ */
 enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
     case BareNode
     case Footway
@@ -45,14 +53,14 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
         let name: String
         let description: String
         let parent: OSWElementClass?
-        let geometry: OSWGeometry
+        let geometry: MappingGeometry
         let identifyingFields: [IdentifyingField]
         
         init(
             name: String,
             description: String,
             parent: OSWElementClass? = nil,
-            geometry: OSWGeometry,
+            geometry: MappingGeometry,
             identifyingFields: [IdentifyingField] = []
         ) {
             self.name = name
@@ -174,7 +182,7 @@ extension OSWElementClass {
         return metadata.parent
     }
     
-    var geometry: OSWGeometry {
+    var geometry: MappingGeometry {
         return metadata.geometry
     }
     

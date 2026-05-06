@@ -12,6 +12,7 @@ import Metal
 import CoreImage
 import MetalKit
 import CoreLocation
+import PointNMapShared
 
 enum ARCameraViewConstants {
     enum Texts {
@@ -27,6 +28,28 @@ enum ARCameraViewConstants {
         static let cameraHintLocationErrorText = "Location Error"
         static let cameraHintUnknownErrorText = "Unknown Error"
         static let cameraHintMappingDataNotReadyText = "Mapping Data Not Ready"
+        
+        static let permissionOpenSettingsButtonKey = "Open Settings"
+        static let permissionNotNowButtonKey = "Not Now"
+        
+        /// Location Manager Alerts
+        static let locationPermissionAlertTitleKey = "Location Access is Off"
+        static let locationPermissionAlertMessageKey = """
+        Open Settings and allow location access for this app. Keep Precise Location on. 
+        Cannot proceed without precise location access.
+        """
+        static let preciseLocationPermissionAlertTitleKey = "Precise Location is Off"
+        static let preciseLocationPermissionAlertMessageKey = """
+        Open Settings for this app, tap Location, then turn on Precise Location. 
+        Cannot proceed without precise location access.
+        """
+        
+        /// Camera Permission Alert
+        static let cameraPermissionAlertTitleKey = "Camera Access is Off"
+        static let cameraPermissionAlertMessageKey = """
+        Open Settings and allow camera access for this app.
+        Cannot proceed without camera access.
+        """
         
         /// Manager Status Alert
         static let managerStatusAlertTitleKey = "Error"
@@ -54,6 +77,7 @@ enum ARCameraViewConstants {
     
     enum Images {
         static let cameraIcon = "camera.circle.fill"
+        static let inProgressIcon = "hourglass"
         
         /// InfoTio
         static let infoIcon = "info.circle"
@@ -66,6 +90,8 @@ enum ARCameraViewConstants {
     
     enum Constraints {
         static let logoutIconSize: CGFloat = 20
+        static let cameraIconSize: CGFloat = 60
+        static let inProgressIconSize: CGFloat = 40
     }
 }
 
@@ -158,9 +184,14 @@ struct ARCameraView: View {
                             Button {
                                 cameraCapture()
                             } label: {
-                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                Image(
+                                    systemName: manager.isCaptureReady ? ARCameraViewConstants.Images.cameraIcon : ARCameraViewConstants.Images.inProgressIcon
+                                )
                                     .resizable()
-                                    .frame(width: 60, height: 60)
+                                    .frame(
+                                        width: manager.isCaptureReady ? ARCameraViewConstants.Constraints.cameraIconSize : ARCameraViewConstants.Constraints.inProgressIconSize,
+                                        height: ARCameraViewConstants.Constraints.cameraIconSize
+                                    )
                             }
                             .padding(.bottom, 20)
                             Spacer()
@@ -211,6 +242,39 @@ struct ARCameraView: View {
                 }
             }
         }
+        .alert(ARCameraViewConstants.Texts.locationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowLocationPermissionAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.locationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewConstants.Texts.preciseLocationPermissionAlertTitleKey, isPresented: $locationManager.shouldShowPreciseLocationAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.preciseLocationPermissionAlertMessageKey)
+        })
+        .alert(ARCameraViewConstants.Texts.cameraPermissionAlertTitleKey, isPresented: $manager.shouldShowCameraPermissionAlert, actions: {
+            Button(ARCameraViewConstants.Texts.permissionOpenSettingsButtonKey) {
+                openAppSettings()
+                dismiss()
+            }
+            Button(ARCameraViewConstants.Texts.permissionNotNowButtonKey, role: .cancel) {
+                dismiss()
+            }
+        }, message: {
+            Text(ARCameraViewConstants.Texts.cameraPermissionAlertMessageKey)
+        })
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
                 managerConfigureStatusViewModel.update(isFailed: false, errorMessage: "")
@@ -309,6 +373,7 @@ struct ARCameraView: View {
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
+                default: break
                 }
                 try manager.pause()
                 locationManager.stopLocationUpdates()
@@ -360,7 +425,7 @@ struct ARCameraView: View {
         var shouldUpdateMap = oldLocation == nil && newLocation != nil
         if let oldLocation, let newLocation {
             let distance = oldLocation.distance(from: newLocation)
-            shouldUpdateMap = distance > Constants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
+            shouldUpdateMap = distance > SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
         }
         if !shouldUpdateMap {
             return
@@ -378,7 +443,7 @@ struct ARCameraView: View {
                 let mapData = try await WorkspaceService.shared.fetchMapData(
                     workspaceId: workspaceId,
                     location: location,
-                    radius: Constants.WorkspaceConstants.fetchRadiusInMeters,
+                    radius: SharedAppConstants.WorkspaceConstants.fetchRadiusInMeters,
                     accessToken: accessToken,
                     environment: userStateViewModel.selectedEnvironment
                 )
@@ -401,6 +466,15 @@ struct ARCameraView: View {
             try await Task.sleep(for: .seconds(2))
             cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
         }
+    }
+    
+    func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else {
+            return
+        }
+
+        UIApplication.shared.open(url)
     }
 }
 

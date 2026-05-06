@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import PointNMapShared
 
 struct APIChangesetUploadCacheEntry: @unchecked Sendable {
     let osmOldId: String

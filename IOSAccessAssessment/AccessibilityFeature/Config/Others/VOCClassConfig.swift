@@ -6,6 +6,7 @@
 //
 import Foundation
 import CoreImage
+import PointNMapShared
 
 
 extension AccessibilityFeatureConfig {
@@ -60,7 +61,6 @@ extension AccessibilityFeatureConfig {
                 id: "person", name: "Person", grayscaleValue: 180.0 / 255.0, labelValue: 180,
                 color: CIColor(red: 0.750, green: 0.500, blue: 0.500),
                 bounds: CGRect(x: 0.0, y: 0.1, width: 1.0, height: 0.4),
-                oswPolicy: OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true), // Temporarily set for testing
             ),
             AccessibilityFeatureClass(
                 id: "pottedplant", name: "PottedPlant", grayscaleValue: 192.0 / 255.0, labelValue: 192,

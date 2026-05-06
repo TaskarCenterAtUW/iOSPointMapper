@@ -30,7 +30,7 @@ class UserStateViewModel: ObservableObject {
      */
     @Published var isEnhancedAnalysisEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(isEnhancedAnalysisEnabled, forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
+            UserDefaults.standard.set(isEnhancedAnalysisEnabled, forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
         }
     }
     
@@ -43,15 +43,15 @@ class UserStateViewModel: ObservableObject {
      */
     @Published var appMode: AppMode {
         didSet {
-            UserDefaults.standard.set(appMode.rawValue, forKey: Constants.UserDefaultsKeys.appModeKey)
+            UserDefaults.standard.set(appMode.rawValue, forKey: SharedAppConstants.UserDefaultsKeys.appModeKey)
         }
     }
     
     init() {
         self.selectedEnvironment = environmentService.environment
         self.isAuthenticated = authService.checkTokenValid()
-        self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: Constants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
-        if let savedAppModeRawValue = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.appModeKey),
+        self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
+        if let savedAppModeRawValue = UserDefaults.standard.string(forKey: SharedAppConstants.UserDefaultsKeys.appModeKey),
            let savedAppMode = AppMode(rawValue: savedAppModeRawValue) {
             self.appMode = savedAppMode
         } else {

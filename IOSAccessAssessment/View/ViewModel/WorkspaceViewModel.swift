@@ -24,8 +24,8 @@ class WorkspaceViewModel: ObservableObject {
     var changesetId: String? = nil
     
     init() {
-        if let savedWorkspaceId = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.selectedWorkspaceIdKey),
-           let savedWorkspaceTitle = UserDefaults.standard.string(forKey: Constants.UserDefaultsKeys.selectedWorkspaceTitleKey) {
+        if let savedWorkspaceId = UserDefaults.standard.string(forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceIdKey),
+           let savedWorkspaceTitle = UserDefaults.standard.string(forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceTitleKey) {
             self.workspaceId = savedWorkspaceId
             self.workspaceTitle = savedWorkspaceTitle
             self.isWorkspaceSelected = true
@@ -40,8 +40,8 @@ class WorkspaceViewModel: ObservableObject {
         self.workspaceId = id
         self.workspaceTitle = title
         self.isWorkspaceSelected = true
-        UserDefaults.standard.set(workspaceId, forKey: Constants.UserDefaultsKeys.selectedWorkspaceIdKey)
-        UserDefaults.standard.set(title, forKey: Constants.UserDefaultsKeys.selectedWorkspaceTitleKey)
+        UserDefaults.standard.set(workspaceId, forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceIdKey)
+        UserDefaults.standard.set(title, forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceTitleKey)
     }
     
     func updateChangeset(id: String) {
@@ -52,7 +52,7 @@ class WorkspaceViewModel: ObservableObject {
         self.workspaceId = nil
         self.changesetId = nil
         self.isWorkspaceSelected = false
-        UserDefaults.standard.removeObject(forKey: Constants.UserDefaultsKeys.selectedWorkspaceIdKey)
-        UserDefaults.standard.removeObject(forKey: Constants.UserDefaultsKeys.selectedWorkspaceTitleKey)
+        UserDefaults.standard.removeObject(forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceIdKey)
+        UserDefaults.standard.removeObject(forKey: SharedAppConstants.UserDefaultsKeys.selectedWorkspaceTitleKey)
     }
 }
