@@ -456,7 +456,6 @@
 			isa = PBXGroup;
 			children = (
 				A37E720A2ED571A800CFE4EF /* Definitions */,
-				A34509DB2FA1A7A7003157B0 /* Utils */,
 				A37E720D2ED5783300CFE4EF /* SharedAppContext.swift */,
 				A355471D2EC1A47200F43AFD /* SharedAppData.swift */,
 				DAA7F8B42CA38C11003666D8 /* SharedAppConstants.swift */,
@@ -593,13 +592,6 @@
 				DAA7F8C62CA76514003666D8 /* Image */,
 			);
 			path = ComputerVision;
-			sourceTree = "<group>";
-		};
-		A34509DB2FA1A7A7003157B0 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Utils;
 			sourceTree = "<group>";
 		};
 		A34B70CC2DDFE638007B191F /* ARCamera */ = {
@@ -1028,6 +1020,9 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
+				KnownAssetTags = (
+					New,
+				);
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1520;
 				TargetAttributes = {

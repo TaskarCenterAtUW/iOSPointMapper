@@ -334,14 +334,14 @@ public extension SurfaceIntegrityProcessor {
         return angularDeviationStd        
     }
     
-    func getSurfaceNormalIntegrityResultFromMeshCPU(
+    func getSurfaceNormalIntegrityValueFromMeshCPU(
         meshPolygons: [MeshPolygon],
         plane: Plane,
         damageDetectionResults: [DamageDetectionResult],
         captureData: (any CaptureMeshDataProtocol),
         angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
-        deviantPolygonProportion: Float = PointNMapConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
-    ) throws -> IntegrityStatusDetails {
+        deviantPointProportionThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
+    ) throws -> (totalDeviantPoints: Double, totalValidPoints: Double) {
         let planeNormal = plane.normalVector
         var totalDeviantPolygons = 0
         var totalPolygons = 0
@@ -353,6 +353,27 @@ public extension SurfaceIntegrityProcessor {
             }
             totalPolygons += 1
         }
+        let totalDeviantPoints = Double(totalDeviantPolygons)
+        let totalValidPoints = Double(totalPolygons)
+        return (totalDeviantPoints, totalValidPoints)
+    }
+    
+    func getSurfaceNormalIntegrityResultFromMeshCPU(
+        meshPolygons: [MeshPolygon],
+        plane: Plane,
+        damageDetectionResults: [DamageDetectionResult],
+        captureData: (any CaptureMeshDataProtocol),
+        angularDeviationThreshold: Float = PointNMapConstants.SurfaceIntegrityConstants.meshPlaneAngularDeviationThreshold,
+        deviantPolygonProportion: Float = PointNMapConstants.SurfaceIntegrityConstants.meshDeviantPolygonProportionThreshold
+    ) throws -> IntegrityStatusDetails {
+        let (totalDeviantPolygons, totalPolygons) = try getSurfaceNormalIntegrityValueFromMeshCPU(
+            meshPolygons: meshPolygons,
+            plane: plane,
+            damageDetectionResults: damageDetectionResults,
+            captureData: captureData,
+            angularDeviationThreshold: angularDeviationThreshold,
+            deviantPointProportionThreshold: deviantPolygonProportion
+        )
         let deviantPolygonProportion = totalPolygons > 0 ? Float(totalDeviantPolygons) / Float(totalPolygons) : 0
         let statusDetails: IntegrityStatusDetails = IntegrityStatusDetails(
             status: deviantPolygonProportion > deviantPolygonProportion ? .slight : .intact,
