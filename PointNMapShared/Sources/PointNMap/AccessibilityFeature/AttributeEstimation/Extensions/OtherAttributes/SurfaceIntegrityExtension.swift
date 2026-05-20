@@ -292,6 +292,6 @@ extension AttributeEstimationPipeline {
         let userPosition4 = cameraTransform.columns.3
         let userPosition = SIMD3<Float>(userPosition4.x, userPosition4.y, userPosition4.z)
         let vectorFromPlaneToUser = userPosition - planeOrigin
-        return Double(simd_dot(vectorFromPlaneToUser, planeNormal))
+        return Double(abs(simd_dot(vectorFromPlaneToUser, planeNormal)))
     }
 }
