@@ -13,7 +13,7 @@ import Foundation
 enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //    case development = "Development"
     case staging = "Staging"
-//    case production = "Production"
+    case production = "Production"
     
     static var `default`: APIEnvironment {
         return .staging
@@ -25,8 +25,8 @@ enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //            return "https://tdei-api-dev.azurewebsites.net/api/v1"
         case .staging:
             return "https://tdei-gateway-stage.azurewebsites.net/api/v1"
-//        case .production:
-//            return "https://tdei-gateway-prod.azurewebsites.net/api/v1"
+        case .production:
+            return "https://tdei-gateway-prod.azurewebsites.net/api/v1"
         }
     }
     
@@ -36,8 +36,8 @@ enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //            return "https://api.workspaces-dev.sidewalks.washington.edu/api/v1"
         case .staging:
             return "https://api.workspaces-stage.sidewalks.washington.edu/api/v1"
-//        case .production:
-//            return "https://api.workspaces.sidewalks.washington.edu/api/v1"
+        case .production:
+            return "https://api.workspaces.sidewalks.washington.edu/api/v1"
         }
     }
     
@@ -47,8 +47,8 @@ enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //               return "https://osm.workspaces-dev.sidewalks.washington.edu/api/0.6"
            case .staging:
                return "https://osm.workspaces-stage.sidewalks.washington.edu/api/0.6"
-//           case .production:
-//               return "https://osm.workspaces.sidewalks.washington.edu/api/0.6"
+           case .production:
+               return "https://osm.workspaces.sidewalks.washington.edu/api/0.6"
            }
        }
     
@@ -58,8 +58,8 @@ enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //            return "https://tdei-usermanagement-be-dev.azurewebsites.net/api/v1"
         case .staging:
             return "https://tdei-usermanagement-stage.azurewebsites.net/api/v1"
-//        case .production:
-//            return "https://tdei-usermanagement-prod.azurewebsites.net/api/v1"
+        case .production:
+            return "https://tdei-usermanagement-prod.azurewebsites.net/api/v1"
         }
     }
     
@@ -69,8 +69,8 @@ enum APIEnvironment: String, CaseIterable, Sendable, Hashable {
 //            return "Development"
         case .staging:
             return "Staging"
-//        case .production:
-//            return "Production"
+        case .production:
+            return "Production"
         }
     }
 }

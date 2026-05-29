@@ -23,19 +23,62 @@ enum TestListViewError: Error, LocalizedError {
     }
 }
 
+struct TestEnvironmentListView: View {
+    let selectedClasses: [AccessibilityFeatureClass]
+    
+    @Environment(\.dismiss) var dismiss
+    
+    let datasetLister: DatasetLister = DatasetLister()
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Please select an environment dataset:")
+                    .font(.subheadline)
+                    .padding(.bottom, 5)
+            }
+            
+            if datasetLister.environmentDirectories.count > 0 {
+                List {
+                    ForEach(datasetLister.environmentDirectories, id: \.self) { environmentDir in
+                        NavigationLink(
+                            destination: TestWorkspaceListView(
+                                selectedClasses: selectedClasses, environmentDir: environmentDir, datasetLister: datasetLister
+                            )
+                        ) {
+                            Text(environmentDir.lastPathComponent)
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+            } else {
+                Text("No environment datasets found.")
+                Spacer()
+            }
+        }
+        .navigationBarTitle("Test: Environment Selection", displayMode: .inline)
+        .onAppear {
+            do {
+                try datasetLister.configure()
+            } catch {
+                print("Error fetching environment datasets: \(error)")
+            }
+        }
+    }
+}
+
 /**
  TestWorkspaceListView displays the possible workspace datasets whose inputs can be used to simulate the mapping.
  */
 struct TestWorkspaceListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let environmentDir: URL
+    let datasetLister: DatasetLister
     
-    @EnvironmentObject var sharedAppData: SharedAppData
-    @EnvironmentObject var sharedAppContext: SharedAppContext
-    @EnvironmentObject var userStateViewModel: UserStateViewModel
-    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
-    let datasetLister: DatasetLister = DatasetLister()
+//    let datasetLister: DatasetLister = DatasetLister()
     
     var body: some View {
         VStack {
@@ -67,7 +110,8 @@ struct TestWorkspaceListView: View {
         .navigationBarTitle("Test: Workspace Selection", displayMode: .inline)
         .onAppear {
             do {
-                try datasetLister.configure()
+//                try datasetLister.configure()
+                
             } catch {
                 print("Error fetching workspace datasets: \(error)")
             }
@@ -83,10 +127,6 @@ struct TestChangesetListView: View {
     let workspaceDir: URL
     let datasetLister: DatasetLister
     
-    @EnvironmentObject var sharedAppData: SharedAppData
-    @EnvironmentObject var sharedAppContext: SharedAppContext
-    @EnvironmentObject var userStateViewModel: UserStateViewModel
-    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
     var body: some View {

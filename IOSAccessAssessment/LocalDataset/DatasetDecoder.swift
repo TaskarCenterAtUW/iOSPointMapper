@@ -54,8 +54,10 @@ struct DatasetCaptureData {
     Finally, it also adds a node to TDEI workspaces at the capture location.
  */
 class DatasetDecoder {
+    private var apiEnvironment: APIEnvironment
     private var workspaceId: String
     
+    private var environmentDirectory: URL
     private var workspaceDirectory: URL
     private var datasetDirectory: URL
     var totalFrames: Int = 0
@@ -79,11 +81,13 @@ class DatasetDecoder {
     private let otherDetailsDecoder: OtherDetailsDecoder
     private let meshDecoder: MeshDecoder
     
-    init(workspaceId: String, changesetId: String) throws {
+    init(apiEnvironment: APIEnvironment, workspaceId: String, changesetId: String) throws {
+        self.apiEnvironment = apiEnvironment
         self.workspaceId = workspaceId
         
+        self.environmentDirectory = try DatasetDecoder.findDirectory(id: apiEnvironment.rawValue)
         /// Get workspace directory
-        self.workspaceDirectory = try DatasetDecoder.findDirectory(id: workspaceId)
+        self.workspaceDirectory = try DatasetDecoder.findDirectory(id: workspaceId, relativeTo: self.environmentDirectory)
         /// Get dataset directory
         self.datasetDirectory = try DatasetDecoder.findDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         

@@ -103,6 +103,7 @@ class LocationManagerPlaceholder: NSObject, ObservableObject {
  */
 struct TestCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedEnvironment: APIEnvironment
     let workspaceId: String
     let changesetId: String
     
@@ -328,7 +329,10 @@ struct TestCameraView: View {
     }
     
     private func initializeDatasetDecoder() throws -> DatasetDecoder {
-        return try DatasetDecoder(workspaceId: workspaceId, changesetId: changesetId)
+        return try DatasetDecoder(
+            apiEnvironment: selectedEnvironment,
+            workspaceId: workspaceId, changesetId: changesetId
+        )
     }
     
     private func loadData(datasetDecoder: DatasetDecoder, enhancedAnalysisMode: Bool) throws -> DatasetCaptureData {

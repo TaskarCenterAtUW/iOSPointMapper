@@ -29,8 +29,10 @@ enum DatasetEncoderError: Error, LocalizedError {
     Finally, it also adds a node to TDEI workspaces at the capture location.
  */
 class DatasetEncoder {
+    private var apiEnvironment: APIEnvironment
     private var workspaceId: String
     
+    private var environmentDirectory: URL
     private var workspaceDirectory: URL
     private var datasetDirectory: URL
     private var savedFrames: Int = 0
@@ -62,11 +64,14 @@ class DatasetEncoder {
     
     public var capturedFrameIds: Set<UUID> = []
     
-    init(workspaceId: String, changesetId: String) throws {
+    init(apiEnvironment: APIEnvironment, workspaceId: String, changesetId: String) throws {
+        self.apiEnvironment = apiEnvironment
         self.workspaceId = workspaceId
         
         /// Create workspace Directory if it doesn't exist
-        self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId)
+        self.environmentDirectory = try DatasetEncoder.createDirectory(id: apiEnvironment.rawValue)
+        /// if environment directory exists, create workspace directory inside it
+        self.workspaceDirectory = try DatasetEncoder.createDirectory(id: workspaceId, relativeTo: self.environmentDirectory)
         /// if workspace directory exists, create dataset directory inside it
         self.datasetDirectory = try DatasetEncoder.createDirectory(id: changesetId, relativeTo: self.workspaceDirectory)
         
