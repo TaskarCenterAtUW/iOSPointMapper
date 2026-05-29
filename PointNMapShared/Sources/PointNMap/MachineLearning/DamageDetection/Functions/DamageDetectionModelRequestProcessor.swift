@@ -40,8 +40,10 @@ public struct DamageDetectionResult: Sendable, Hashable {
     /// To convert it to pixel coordinates, we need to adjust the y-coordinate and scale it according to the image size.
     public func getPixelCGRect(for imageSize: CGSize) -> CGRect {
         return CGRect(
-            x: CGFloat(boundingBox.origin.x) * imageSize.width,
-            y: CGFloat(1.0 - boundingBox.origin.y - boundingBox.size.height) * imageSize.height,
+//            x: CGFloat(boundingBox.origin.x) * imageSize.width,
+//            y: CGFloat(1.0 - boundingBox.origin.y - boundingBox.size.height) * imageSize.height,
+            x: CGFloat(boundingBox.minX) * imageSize.width,
+            y: CGFloat(1.0 - boundingBox.maxY) * imageSize.height,
             width: CGFloat(boundingBox.size.width) * imageSize.width,
             height: CGFloat(boundingBox.size.height) * imageSize.height
         )
