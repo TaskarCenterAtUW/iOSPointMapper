@@ -21,6 +21,8 @@ extension AccessibilityFeatureAttribute {
         case .runningSlope: return "incline"
         case .crossSlope: return "cross_slope"
         case .surfaceIntegrity: return "surface_integrity"
+        case .surfaceDisruption: return "surface_disruption"
+        case .heightFromGround: return "height_from_ground"
         case .lidarDepth: return APIConstants.TagKeys.lidarDepthKey
         case .latitudeDelta: return APIConstants.TagKeys.latitudeDeltaKey
         case .longitudeDelta: return APIConstants.TagKeys.longitudeDeltaKey

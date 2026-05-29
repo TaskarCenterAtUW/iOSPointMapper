@@ -207,19 +207,19 @@ public final class AnnotationImageManager<
         self.annotationImageResults = annotationImageResults
         
         /// TODO: Mesh-based overlay processing to be added here.
-//        if isEnhancedAnalysisEnabled,
-//           let captureMeshData = self.captureMeshData {
-//            let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
-//                captureImageData: captureImageData,
-//                captureMeshData: captureMeshData,
-//                accessibilityFeatureClass: accessibilityFeatureClass
-//            )
-//            let meshOverlayOutputImage = try getMeshOverlayOutputImage(
-//                captureMeshData: captureMeshData,
-//                polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
-//                accessibilityFeatureClass: accessibilityFeatureClass
-//            )
-//        }
+        if isEnhancedAnalysisEnabled,
+           let captureMeshData = self.captureMeshData {
+            let polygonsNormalizedCoordinates = try getPolygonsNormalizedCoordinates(
+                captureImageData: captureImageData,
+                captureMeshData: captureMeshData,
+                accessibilityFeatureClass: accessibilityFeatureClass
+            )
+            let meshOverlayOutputImage = try getMeshOverlayOutputImage(
+                captureMeshData: captureMeshData,
+                polygonsNormalizedCoordinates: polygonsNormalizedCoordinates, size: captureImageData.originalSize,
+                accessibilityFeatureClass: accessibilityFeatureClass
+            )
+        }
         
         Task {
             await MainActor.run {
