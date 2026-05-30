@@ -450,7 +450,7 @@ struct SetupView: View {
         if userStateViewModel.appMode == .standard {
             ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
         } else {
-            TestWorkspaceListView(selectedClasses: Array(self.selectedClasses).sorted())
+            TestEnvironmentListView(selectedClasses: Array(self.selectedClasses).sorted())
         }
     }
     

@@ -29,7 +29,7 @@ struct TestEnvironmentListView: View {
     @Environment(\.dismiss) var dismiss
     
     @StateObject private var datasetLister: DatasetLister = DatasetLister()
-    @State private var selectedEnvironmentDir: EnvironmentDirectory?
+    @State private var selectedEnvironment: APIEnvironment?
     
     var body: some View {
         VStack {
@@ -64,12 +64,15 @@ struct TestEnvironmentListView: View {
                 print("Error fetching environment datasets: \(error)")
             }
         }
+        .navigationDestination(item: $selectedEnvironment) { environmentDir in
+            TestWorkspaceListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+        }
     }
     
     func selectEnvironment(environmentDir: EnvironmentDirectory) {
         do {
-            self.selectedEnvironmentDir = environmentDir
             try datasetLister.selectEnvironment(environmentDirectory: environmentDir)
+            self.selectedEnvironment = environmentDir.apiEnvironment
         } catch {
             print("Error selecting environment: \(error)")
         }
@@ -85,6 +88,7 @@ struct TestWorkspaceListView: View {
     
     @Environment(\.dismiss) var dismiss
     
+    @State private var selectedWorkspace: WorkspaceDirectory?
 //    let datasetLister: DatasetLister = DatasetLister()
     
     var body: some View {
@@ -98,11 +102,9 @@ struct TestWorkspaceListView: View {
             if datasetLister.workspaceDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.workspaceDirectories, id: \.self) { workspaceDir in
-                        NavigationLink(
-                            destination: TestChangesetListView(
-                                selectedClasses: selectedClasses, datasetLister: datasetLister
-                            )
-                        ) {
+                        Button {
+                            selectWorkspace(workspaceDir: workspaceDir)
+                        } label: {
                             Text(workspaceDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
@@ -115,14 +117,17 @@ struct TestWorkspaceListView: View {
             }
         }
         .navigationBarTitle("Test: Workspace Selection", displayMode: .inline)
-        .onAppear {
-            do {
-//                try datasetLister.configure()
-                let environmentRawValue = environmentDir.lastPathComponent
-                try datasetLister.selectEnvironment(environmentRawValue: environmentRawValue)
-            } catch {
-                print("Error fetching workspace datasets: \(error)")
-            }
+        .navigationDestination(item: $selectedWorkspace) { workspaceDir in
+            TestChangesetListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+        }
+    }
+    
+    func selectWorkspace(workspaceDir: WorkspaceDirectory) {
+        do {
+            try datasetLister.selectWorkspace(workspaceDirectory: workspaceDir)
+            self.selectedWorkspace = workspaceDir
+        } catch {
+            print("Error selecting workspace: \(error)")
         }
     }
 }
@@ -136,6 +141,8 @@ struct TestChangesetListView: View {
     
     @Environment(\.dismiss) var dismiss
     
+    @State private var selectedChangeset: ChangesetDirectory?
+    
     var body: some View {
         VStack {
             HStack {
@@ -147,7 +154,9 @@ struct TestChangesetListView: View {
             if datasetLister.changesetDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.changesetDirectories, id: \.self) { changesetDir in
-                        NavigationLink(destination: changesetDestination(changesetDir: changesetDir)) {
+                        Button {
+                            selectChangeset(changesetDir: changesetDir)
+                        } label: {
                             Text(changesetDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
@@ -160,25 +169,26 @@ struct TestChangesetListView: View {
             }
         }
         .navigationBarTitle("Test: Changeset Selection", displayMode: .inline)
-        .onAppear {
-            do {
-                let workspaceId = workspaceDir.lastPathComponent
-                try datasetLister.selectWorkspace(workspaceId: workspaceId)
-            } catch {
-                print("Error selecting workspace: \(error)")
-            }
+        .navigationDestination(item: $selectedChangeset) { changesetDir in
+            changesetDestination(changesetDir: changesetDir)
         }
     }
     
+    func selectChangeset(changesetDir: ChangesetDirectory) {
+        self.selectedChangeset = changesetDir
+        datasetLister.selectChangeset(changesetDirectory: changesetDir)
+    }
+    
     @ViewBuilder
-    private func changesetDestination(workspaceDir: URL, changesetDir: URL) -> some View {
-//        let selectedEnvironment = APIEnvironment(rawValue: environmentDir.lastPathComponent)
-//        let workspaceId: String = workspaceDir.lastPathComponent
-//        let changesetId: String = changesetDir.lastPathComponent
-        let selectedEnvironment = datasetLister.apiEnvironment
-        TestCameraView(
-            selectedClasses: selectedClasses, selectedEnvironment: selectedEnvironment,
-            workspaceId: workspaceId, changesetId: changesetId
-        )
+    private func changesetDestination(changesetDir: ChangesetDirectory) -> some View {
+        if let selectedEnvironment = datasetLister.selectedEnvironment,
+           let selectedWorkspace = datasetLister.selectedWorkspace {
+            TestCameraView(
+                selectedClasses: selectedClasses, selectedEnvironment: selectedEnvironment.apiEnvironment,
+                workspaceId: selectedWorkspace.workspaceId, changesetId: changesetDir.changesetId
+            )
+        } else {
+            Text("Missing environment or workspace selection.")
+        }
     }
 }

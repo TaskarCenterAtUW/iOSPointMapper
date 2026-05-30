@@ -162,16 +162,19 @@ class DatasetLister: ObservableObject {
      Changesets are number-named directories within the workspace directory, each containing data for a specific changeset.
      Each changeset directory is expected to contain an rgb directory, within which there is at least one .png file.
      */
-    private func listChangesetDirectories(workspaceDirectory: WorkspaceDirectory) throws -> [URL] {
+    private func listChangesetDirectories(workspaceDirectory: WorkspaceDirectory) throws -> [ChangesetDirectory] {
         let contents = try FileManager.default.contentsOfDirectory(at: workspaceDirectory.url, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
         let changesetDirectories = contents.filter { content in
             var isDirectory: ObjCBool = false
             let exists = FileManager.default.fileExists(atPath: content.path, isDirectory: &isDirectory)
             return exists && isDirectory.boolValue && content.lastPathComponent.allSatisfy { $0.isNumber }
+        }.compactMap { content in
+            let changesetId = content.lastPathComponent
+            return ChangesetDirectory(url: content, changesetId: changesetId)
         }
-        var finalChangesetDirectories: [URL] = []
+        var finalChangesetDirectories: [ChangesetDirectory] = []
         for changesetDirectory in changesetDirectories {
-            let rgbDirectory = changesetDirectory.appending(path: "rgb", directoryHint: .isDirectory)
+            let rgbDirectory = changesetDirectory.url.appending(path: "rgb", directoryHint: .isDirectory)
             if FileManager.default.fileExists(atPath: rgbDirectory.path) {
                 let pngFiles = try FileManager.default.contentsOfDirectory(at: rgbDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]).filter { $0.pathExtension.lowercased() == "png" }
                 if !pngFiles.isEmpty {
@@ -179,7 +182,11 @@ class DatasetLister: ObservableObject {
                 }
             }
         }
-        finalChangesetDirectories = finalChangesetDirectories.sorted { $0.lastPathComponent < $1.lastPathComponent }
+        finalChangesetDirectories.sort()
         return finalChangesetDirectories
+    }
+    
+    func selectChangeset(changesetDirectory: ChangesetDirectory) {
+        self.selectedChangeset = changesetDirectory
     }
 }
