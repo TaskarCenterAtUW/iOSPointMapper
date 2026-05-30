@@ -28,7 +28,8 @@ struct TestEnvironmentListView: View {
     
     @Environment(\.dismiss) var dismiss
     
-    let datasetLister: DatasetLister = DatasetLister()
+    @StateObject private var datasetLister: DatasetLister = DatasetLister()
+    @State private var selectedEnvironmentDir: EnvironmentDirectory?
     
     var body: some View {
         VStack {
@@ -41,12 +42,10 @@ struct TestEnvironmentListView: View {
             if datasetLister.environmentDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.environmentDirectories, id: \.self) { environmentDir in
-                        NavigationLink(
-                            destination: TestWorkspaceListView(
-                                selectedClasses: selectedClasses, environmentDir: environmentDir, datasetLister: datasetLister
-                            )
-                        ) {
-                            Text(environmentDir.lastPathComponent)
+                        Button {
+                            selectEnvironment(environmentDir: environmentDir)
+                        } label: {
+                            Text(environmentDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
                         }
@@ -66,6 +65,15 @@ struct TestEnvironmentListView: View {
             }
         }
     }
+    
+    func selectEnvironment(environmentDir: EnvironmentDirectory) {
+        do {
+            self.selectedEnvironmentDir = environmentDir
+            try datasetLister.selectEnvironment(environmentDirectory: environmentDir)
+        } catch {
+            print("Error selecting environment: \(error)")
+        }
+    }
 }
 
 /**
@@ -73,8 +81,7 @@ struct TestEnvironmentListView: View {
  */
 struct TestWorkspaceListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
-    let environmentDir: URL
-    let datasetLister: DatasetLister
+    @ObservedObject var datasetLister: DatasetLister
     
     @Environment(\.dismiss) var dismiss
     
@@ -93,10 +100,10 @@ struct TestWorkspaceListView: View {
                     ForEach(datasetLister.workspaceDirectories, id: \.self) { workspaceDir in
                         NavigationLink(
                             destination: TestChangesetListView(
-                                selectedClasses: selectedClasses, workspaceDir: workspaceDir, datasetLister: datasetLister
+                                selectedClasses: selectedClasses, datasetLister: datasetLister
                             )
                         ) {
-                            Text(workspaceDir.lastPathComponent)
+                            Text(workspaceDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
                         }
@@ -111,7 +118,8 @@ struct TestWorkspaceListView: View {
         .onAppear {
             do {
 //                try datasetLister.configure()
-                
+                let environmentRawValue = environmentDir.lastPathComponent
+                try datasetLister.selectEnvironment(environmentRawValue: environmentRawValue)
             } catch {
                 print("Error fetching workspace datasets: \(error)")
             }
@@ -124,8 +132,7 @@ struct TestWorkspaceListView: View {
  */
 struct TestChangesetListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
-    let workspaceDir: URL
-    let datasetLister: DatasetLister
+    @ObservedObject var datasetLister: DatasetLister
     
     @Environment(\.dismiss) var dismiss
     
@@ -140,8 +147,8 @@ struct TestChangesetListView: View {
             if datasetLister.changesetDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.changesetDirectories, id: \.self) { changesetDir in
-                        NavigationLink(destination: changesetDestination(workspaceDir: workspaceDir, changesetDir: changesetDir)) {
-                            Text(changesetDir.lastPathComponent)
+                        NavigationLink(destination: changesetDestination(changesetDir: changesetDir)) {
+                            Text(changesetDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
                         }
@@ -165,10 +172,12 @@ struct TestChangesetListView: View {
     
     @ViewBuilder
     private func changesetDestination(workspaceDir: URL, changesetDir: URL) -> some View {
-        let workspaceId: String = workspaceDir.lastPathComponent
-        let changesetId: String = changesetDir.lastPathComponent
+//        let selectedEnvironment = APIEnvironment(rawValue: environmentDir.lastPathComponent)
+//        let workspaceId: String = workspaceDir.lastPathComponent
+//        let changesetId: String = changesetDir.lastPathComponent
+        let selectedEnvironment = datasetLister.apiEnvironment
         TestCameraView(
-            selectedClasses: selectedClasses,
+            selectedClasses: selectedClasses, selectedEnvironment: selectedEnvironment,
             workspaceId: workspaceId, changesetId: changesetId
         )
     }
