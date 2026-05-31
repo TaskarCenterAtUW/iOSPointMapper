@@ -450,13 +450,14 @@ struct SetupView: View {
         if userStateViewModel.appMode == .standard {
             ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
         } else {
-            TestWorkspaceListView(selectedClasses: Array(self.selectedClasses).sorted())
+            TestEnvironmentListView(selectedClasses: Array(self.selectedClasses).sorted())
         }
     }
     
     private func openChangeset() {
         Task {
             do {
+                let selectedEnvironment = userStateViewModel.selectedEnvironment
                 guard let workspaceId = workspaceViewModel.workspaceId else {
                     throw SetupViewError.noWorkspaceId
                 }
@@ -470,7 +471,10 @@ struct SetupView: View {
                 )
                 workspaceViewModel.updateChangeset(id: openedChangesetId)
                 changesetOpenViewModel.isChangesetOpened = true
-                try initializeCurrentDataset(workspaceId: workspaceId, changeSetId: openedChangesetId)
+                try initializeCurrentDataset(
+                    apiEnvironment: selectedEnvironment,
+                    workspaceId: workspaceId, changeSetId: openedChangesetId
+                )
             } catch SetupViewError.currentDatasetInitializationFailed {
                 setCurrentDatasetStatusErrorHint(SetupViewError.currentDatasetInitializationFailed.localizedDescription)
             } catch {
@@ -483,9 +487,10 @@ struct SetupView: View {
         }
     }
     
-    private func initializeCurrentDataset(workspaceId: String, changeSetId: String) throws {
+    private func initializeCurrentDataset(apiEnvironment: APIEnvironment, workspaceId: String, changeSetId: String) throws {
         do {
             sharedAppData.currentDatasetEncoder = try DatasetEncoder(
+                apiEnvironment: apiEnvironment,
                 workspaceId: workspaceId, changesetId: changeSetId
             )
         } catch {

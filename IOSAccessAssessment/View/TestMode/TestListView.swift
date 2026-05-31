@@ -23,19 +23,73 @@ enum TestListViewError: Error, LocalizedError {
     }
 }
 
+struct TestEnvironmentListView: View {
+    let selectedClasses: [AccessibilityFeatureClass]
+    
+    @Environment(\.dismiss) var dismiss
+    
+    @StateObject private var datasetLister: DatasetLister = DatasetLister()
+    @State private var selectedEnvironment: APIEnvironment?
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Text("Please select an environment dataset:")
+                    .font(.subheadline)
+                    .padding(.bottom, 5)
+            }
+            
+            if datasetLister.environmentDirectories.count > 0 {
+                List {
+                    ForEach(datasetLister.environmentDirectories, id: \.self) { environmentDir in
+                        Button {
+                            selectEnvironment(environmentDir: environmentDir)
+                        } label: {
+                            Text(environmentDir.url.lastPathComponent)
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+            } else {
+                Text("No environment datasets found.")
+                Spacer()
+            }
+        }
+        .navigationBarTitle("Test: Environment Selection", displayMode: .inline)
+        .onAppear {
+            do {
+                try datasetLister.configure()
+            } catch {
+                print("Error fetching environment datasets: \(error)")
+            }
+        }
+        .navigationDestination(item: $selectedEnvironment) { environmentDir in
+            TestWorkspaceListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+        }
+    }
+    
+    func selectEnvironment(environmentDir: EnvironmentDirectory) {
+        do {
+            try datasetLister.selectEnvironment(environmentDirectory: environmentDir)
+            self.selectedEnvironment = environmentDir.apiEnvironment
+        } catch {
+            print("Error selecting environment: \(error)")
+        }
+    }
+}
+
 /**
  TestWorkspaceListView displays the possible workspace datasets whose inputs can be used to simulate the mapping.
  */
 struct TestWorkspaceListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    @ObservedObject var datasetLister: DatasetLister
     
-    @EnvironmentObject var sharedAppData: SharedAppData
-    @EnvironmentObject var sharedAppContext: SharedAppContext
-    @EnvironmentObject var userStateViewModel: UserStateViewModel
-    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
     
-    let datasetLister: DatasetLister = DatasetLister()
+    @State private var selectedWorkspace: WorkspaceDirectory?
+//    let datasetLister: DatasetLister = DatasetLister()
     
     var body: some View {
         VStack {
@@ -48,12 +102,10 @@ struct TestWorkspaceListView: View {
             if datasetLister.workspaceDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.workspaceDirectories, id: \.self) { workspaceDir in
-                        NavigationLink(
-                            destination: TestChangesetListView(
-                                selectedClasses: selectedClasses, workspaceDir: workspaceDir, datasetLister: datasetLister
-                            )
-                        ) {
-                            Text(workspaceDir.lastPathComponent)
+                        Button {
+                            selectWorkspace(workspaceDir: workspaceDir)
+                        } label: {
+                            Text(workspaceDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
                         }
@@ -65,12 +117,17 @@ struct TestWorkspaceListView: View {
             }
         }
         .navigationBarTitle("Test: Workspace Selection", displayMode: .inline)
-        .onAppear {
-            do {
-                try datasetLister.configure()
-            } catch {
-                print("Error fetching workspace datasets: \(error)")
-            }
+        .navigationDestination(item: $selectedWorkspace) { workspaceDir in
+            TestChangesetListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+        }
+    }
+    
+    func selectWorkspace(workspaceDir: WorkspaceDirectory) {
+        do {
+            try datasetLister.selectWorkspace(workspaceDirectory: workspaceDir)
+            self.selectedWorkspace = workspaceDir
+        } catch {
+            print("Error selecting workspace: \(error)")
         }
     }
 }
@@ -80,14 +137,11 @@ struct TestWorkspaceListView: View {
  */
 struct TestChangesetListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
-    let workspaceDir: URL
-    let datasetLister: DatasetLister
+    @ObservedObject var datasetLister: DatasetLister
     
-    @EnvironmentObject var sharedAppData: SharedAppData
-    @EnvironmentObject var sharedAppContext: SharedAppContext
-    @EnvironmentObject var userStateViewModel: UserStateViewModel
-    @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @Environment(\.dismiss) var dismiss
+    
+    @State private var selectedChangeset: ChangesetDirectory?
     
     var body: some View {
         VStack {
@@ -100,8 +154,10 @@ struct TestChangesetListView: View {
             if datasetLister.changesetDirectories.count > 0 {
                 List {
                     ForEach(datasetLister.changesetDirectories, id: \.self) { changesetDir in
-                        NavigationLink(destination: changesetDestination(workspaceDir: workspaceDir, changesetDir: changesetDir)) {
-                            Text(changesetDir.lastPathComponent)
+                        Button {
+                            selectChangeset(changesetDir: changesetDir)
+                        } label: {
+                            Text(changesetDir.url.lastPathComponent)
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
                         }
@@ -113,23 +169,26 @@ struct TestChangesetListView: View {
             }
         }
         .navigationBarTitle("Test: Changeset Selection", displayMode: .inline)
-        .onAppear {
-            do {
-                let workspaceId = workspaceDir.lastPathComponent
-                try datasetLister.selectWorkspace(workspaceId: workspaceId)
-            } catch {
-                print("Error selecting workspace: \(error)")
-            }
+        .navigationDestination(item: $selectedChangeset) { changesetDir in
+            changesetDestination(changesetDir: changesetDir)
         }
     }
     
+    func selectChangeset(changesetDir: ChangesetDirectory) {
+        self.selectedChangeset = changesetDir
+        datasetLister.selectChangeset(changesetDirectory: changesetDir)
+    }
+    
     @ViewBuilder
-    private func changesetDestination(workspaceDir: URL, changesetDir: URL) -> some View {
-        let workspaceId: String = workspaceDir.lastPathComponent
-        let changesetId: String = changesetDir.lastPathComponent
-        TestCameraView(
-            selectedClasses: selectedClasses,
-            workspaceId: workspaceId, changesetId: changesetId
-        )
+    private func changesetDestination(changesetDir: ChangesetDirectory) -> some View {
+        if let selectedEnvironment = datasetLister.selectedEnvironment,
+           let selectedWorkspace = datasetLister.selectedWorkspace {
+            TestCameraView(
+                selectedClasses: selectedClasses, selectedEnvironment: selectedEnvironment.apiEnvironment,
+                workspaceId: selectedWorkspace.workspaceId, changesetId: changesetDir.changesetId
+            )
+        } else {
+            Text("Missing environment or workspace selection.")
+        }
     }
 }
