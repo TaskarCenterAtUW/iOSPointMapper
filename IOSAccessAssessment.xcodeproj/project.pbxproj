@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -273,12 +273,6 @@
 		DAA7F8B42CA38C11003666D8 /* SharedAppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedAppConstants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		A312FD7C2FA3391B0044808E /* PointNMapShared */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PointNMapShared; sourceTree = "<group>"; };
-		A312FD8B2FA3391C0044808E /* PointNMapSharedTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PointNMapSharedTests; sourceTree = "<group>"; };
-		A312FE0E2FA3EBE80044808E /* PointNMapShaderTypes */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PointNMapShaderTypes; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
 		3222F9132B622DFD0019A079 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -321,9 +315,6 @@
 				3222F9182B622DFD0019A079 /* IOSAccessAssessment */,
 				3222F9292B622E0A0019A079 /* IOSAccessAssessmentTests */,
 				3222F9332B622E0A0019A079 /* IOSAccessAssessmentUITests */,
-				A312FD7C2FA3391B0044808E /* PointNMapShared */,
-				A312FD8B2FA3391C0044808E /* PointNMapSharedTests */,
-				A312FE0E2FA3EBE80044808E /* PointNMapShaderTypes */,
 				A312FE1F2FA3EC710044808E /* Frameworks */,
 				3222F9172B622DFD0019A079 /* Products */,
 				A356A9102FD6774900205DFF /* PointNMap.xcodeproj */,
@@ -888,9 +879,6 @@
 			dependencies = (
 				A312FD8A2FA3391C0044808E /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				A312FD8B2FA3391C0044808E /* PointNMapSharedTests */,
-			);
 			name = PointNMapSharedTests;
 			packageProductDependencies = (
 			);
@@ -1386,7 +1374,6 @@
 		3222F93E2B622E0A0019A079 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1406,7 +1393,6 @@
 		3222F93F2B622E0A0019A079 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1426,7 +1412,6 @@
 		3222F9412B622E0A0019A079 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q8PMZJLMHG;
@@ -1444,7 +1429,6 @@
 		3222F9422B622E0A0019A079 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q8PMZJLMHG;
