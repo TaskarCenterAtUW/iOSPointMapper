@@ -71,8 +71,15 @@ enum SetupViewConstants {
         static let profileIcon = "person.crop.circle"
         static let logoutIcon = "rectangle.portrait.and.arrow.right"
         static let uploadIcon = "arrow.up"
+        
+        /// Class Selection
         static let classSelectionColorHintIcon = "circle.fill"
         static let classSelectionColorHintBorderIcon = "circle"
+        
+        /// Attribute Selection
+        static let attributeSelectedStatusIcon = "checkmark.circle.fill"
+        static let attributeUnselectedStatusIcon = "circle"
+        static let attributeSelectionDropdownIcon = "chevron.down.circle"
         
         /// InfoTip
         static let infoIcon = "info.circle"
@@ -319,37 +326,7 @@ struct SetupView: View {
                 
                 List {
                     ForEach(SharedAppConstants.SelectedAccessibilityFeatureConfig.classes, id: \.self) { accessibilityFeatureClass in
-                        Button(action: {
-                            if self.selectedClasses.contains(accessibilityFeatureClass) {
-                                self.selectedClasses.remove(accessibilityFeatureClass)
-                            } else {
-                                self.selectedClasses.insert(accessibilityFeatureClass)
-                            }
-                        }) {
-                            HStack {
-                                Text(accessibilityFeatureClass.name)
-                                    .foregroundStyle(
-                                        self.selectedClasses.contains(accessibilityFeatureClass)
-                                        ? SetupViewConstants.Colors.selectedClass
-                                        : SetupViewConstants.Colors.unselectedClass
-                                    )
-                                Spacer()
-                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
-                                    .overlay(
-                                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
-                                            .resizable()
-                                            .frame(width: 20, height: 20)
-                                            .foregroundStyle(
-                                                self.selectedClasses.contains(accessibilityFeatureClass)
-                                                ? SetupViewConstants.Colors.selectedClass
-                                                : SetupViewConstants.Colors.unselectedClass
-                                            )
-                                    )
-                            }
-                        }
+                        listElementView(for: accessibilityFeatureClass)
                     }
                 }
             }
@@ -447,6 +424,72 @@ struct SetupView: View {
     }
     
     @ViewBuilder
+    private func listElementView(for accessibilityFeatureClass: AccessibilityFeatureClass) -> some View {
+        HStack {
+            let isClassSelected = self.selectedClasses.contains(accessibilityFeatureClass)
+            let attributes = Array(accessibilityFeatureClass.kind.attributes)
+            
+            HStack {
+                Button(action: {
+                    toggleClass(accessibilityFeatureClass)
+                }) {
+                    HStack {
+                        Text(accessibilityFeatureClass.name)
+                            .foregroundStyle(
+                                isClassSelected
+                                ? SetupViewConstants.Colors.selectedClass
+                                : SetupViewConstants.Colors.unselectedClass
+                            )
+                        Spacer()
+                        
+                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
+                            .overlay(
+                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundStyle(
+                                        isClassSelected
+                                        ? SetupViewConstants.Colors.selectedClass
+                                        : SetupViewConstants.Colors.unselectedClass
+                                    )
+                            )
+                    }
+                }
+                .buttonStyle(.plain)
+                
+                if !attributes.isEmpty {
+                    Menu {
+                        ForEach(attributes) { attribute in
+                            Button(action: {
+                                toggleAttribute(attribute, for: accessibilityFeatureClass)
+                            }) {
+                                Label(
+                                    attribute.name,
+                                    systemImage: isAttributeSelected(attribute, for: accessibilityFeatureClass)
+                                        ? SetupViewConstants.Images.attributeSelectedStatusIcon
+                                        : SetupViewConstants.Images.attributeUnselectedStatusIcon
+                                )
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(attributeSelectionSummary(for: accessibilityFeatureClass))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            
+                            Image(systemName: SetupViewConstants.Images.attributeSelectionDropdownIcon)
+                        }
+                    }
+                    .disabled(!isClassSelected)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
     private var mappingDestination: some View {
         if userStateViewModel.appMode == .standard {
             ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
@@ -481,6 +524,13 @@ struct SetupView: View {
         }
         
         selectedAttributesByClass[accessibilityFeatureClass] = selectedAttributes
+    }
+    
+    private func isAttributeSelected(
+        _ attribute: AccessibilityFeatureAttribute,
+        for accessibilityFeatureClass: AccessibilityFeatureClass
+    ) -> Bool {
+        selectedAttributesByClass[accessibilityFeatureClass, default: []].contains(attribute)
     }
     
     private func attributeSelectionSummary(
