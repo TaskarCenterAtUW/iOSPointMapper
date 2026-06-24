@@ -79,7 +79,8 @@ enum SetupViewConstants {
         /// Attribute Selection
         static let attributeSelectedStatusIcon = "checkmark.circle.fill"
         static let attributeUnselectedStatusIcon = "circle"
-        static let attributeSelectionDropdownIcon = "chevron.down.circle"
+        static let attributeSectionExpandedIcon = "chevron.up.circle"
+        static let attributeSectionCollapsedIcon = "chevron.down.circle"
         
         /// InfoTip
         static let infoIcon = "info.circle"
@@ -229,6 +230,7 @@ struct SetupView: View {
     private var isSelectionEmpty: Bool {
         return (self.selectedClasses.count == 0)
     }
+    @State private var expandedAttributeSections: Set<AccessibilityFeatureClass> = []
     
     @EnvironmentObject var workspaceViewModel: WorkspaceViewModel
     @EnvironmentObject var userStateViewModel: UserStateViewModel
@@ -427,65 +429,82 @@ struct SetupView: View {
     private func listElementView(for accessibilityFeatureClass: AccessibilityFeatureClass) -> some View {
         HStack {
             let isClassSelected = self.selectedClasses.contains(accessibilityFeatureClass)
-            let attributes = Array(accessibilityFeatureClass.kind.attributes)
+            let attributes = Array(accessibilityFeatureClass.kind.attributes).sorted(by: { $0.name < $1.name })
+            let hasAttributes = !attributes.isEmpty
+            let isExpanded = isAttributeSectionExpanded(for: accessibilityFeatureClass)
             
-            HStack {
-                Button(action: {
-                    toggleClass(accessibilityFeatureClass)
-                }) {
-                    HStack {
-                        Text(accessibilityFeatureClass.name)
-                            .foregroundStyle(
-                                isClassSelected
-                                ? SetupViewConstants.Colors.selectedClass
-                                : SetupViewConstants.Colors.unselectedClass
-                            )
-                        Spacer()
-                        
-                        Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
-                            .overlay(
-                                Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(
-                                        isClassSelected
-                                        ? SetupViewConstants.Colors.selectedClass
-                                        : SetupViewConstants.Colors.unselectedClass
-                                    )
-                            )
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Button(action: {
+                        toggleClass(accessibilityFeatureClass)
+                    }) {
+                        HStack {
+                            Text(accessibilityFeatureClass.name)
+                                .foregroundStyle(
+                                    isClassSelected
+                                    ? SetupViewConstants.Colors.selectedClass
+                                    : SetupViewConstants.Colors.unselectedClass
+                                )
+                            Spacer()
+                            
+                            Image(systemName: SetupViewConstants.Images.classSelectionColorHintIcon)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                                .foregroundStyle(Color(UIColor(ciColor: accessibilityFeatureClass.color)))
+                                .overlay(
+                                    Image(systemName: SetupViewConstants.Images.classSelectionColorHintBorderIcon)
+                                        .resizable()
+                                        .frame(width: 20, height: 20)
+                                        .foregroundStyle(
+                                            isClassSelected
+                                            ? SetupViewConstants.Colors.selectedClass
+                                            : SetupViewConstants.Colors.unselectedClass
+                                        )
+                                )
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    
+                    if hasAttributes && isClassSelected {
+                        Button(action: {
+                            toggleAttributeSectionExpansion(for: accessibilityFeatureClass)
+                        }) {
+                            HStack(spacing: 4) {
+                                Text(attributeSelectionSummary(for: accessibilityFeatureClass))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                
+                                Image(systemName: isExpanded ? SetupViewConstants.Images.attributeSectionExpandedIcon : SetupViewConstants.Images.attributeSectionCollapsedIcon)
+                                    .imageScale(.medium)
+                            }
+                        }
                     }
                 }
-                .buttonStyle(.plain)
                 
-                if !attributes.isEmpty {
-                    Menu {
-                        ForEach(attributes) { attribute in
+                if hasAttributes && isExpanded && isClassSelected {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(attributes, id: \.self) { attribute in
                             Button(action: {
                                 toggleAttribute(attribute, for: accessibilityFeatureClass)
                             }) {
-                                Label(
-                                    attribute.name,
-                                    systemImage: isAttributeSelected(attribute, for: accessibilityFeatureClass)
-                                        ? SetupViewConstants.Images.attributeSelectedStatusIcon
-                                        : SetupViewConstants.Images.attributeUnselectedStatusIcon
-                                )
+                                HStack {
+                                    Text(attribute.name)
+                                        .font(.subheadline)
+                                    Spacer()
+                                    Image(systemName: isAttributeSelected(attribute, for: accessibilityFeatureClass) ? SetupViewConstants.Images.attributeSelectedStatusIcon : SetupViewConstants.Images.attributeUnselectedStatusIcon
+                                    )
+                                }
+                                .contentShape(Rectangle())
                             }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(attributeSelectionSummary(for: accessibilityFeatureClass))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            
-                            Image(systemName: SetupViewConstants.Images.attributeSelectionDropdownIcon)
+                            .buttonStyle(.plain)
                         }
                     }
-                    .disabled(!isClassSelected)
+                    .padding(.leading, 12)
+                    .padding(.top, 4)
+//                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+            .padding(.vertical, 4)
         }
     }
     
@@ -503,12 +522,15 @@ struct SetupView: View {
             self.selectedClasses.remove(accessibilityFeatureClass)
             
             /// Clear the selected attributes for the class when it is deselected
-            self.selectedAttributesByClass[accessibilityFeatureClass] = nil
+//            self.selectedAttributesByClass[accessibilityFeatureClass] = nil
+            self.expandedAttributeSections.remove(accessibilityFeatureClass)
         } else {
             self.selectedClasses.insert(accessibilityFeatureClass)
             
-            /// Add all the attributes for the class when it is selected
-            self.selectedAttributesByClass[accessibilityFeatureClass] = Set(accessibilityFeatureClass.kind.attributes)
+            if !self.selectedAttributesByClass.contains(where: { $0.key == accessibilityFeatureClass }) {
+                /// Add all the attributes for the class when it is selected
+                self.selectedAttributesByClass[accessibilityFeatureClass] = Set(accessibilityFeatureClass.kind.attributes)
+            }
         }
     }
     
@@ -531,6 +553,20 @@ struct SetupView: View {
         for accessibilityFeatureClass: AccessibilityFeatureClass
     ) -> Bool {
         selectedAttributesByClass[accessibilityFeatureClass, default: []].contains(attribute)
+    }
+    
+    private func toggleAttributeSectionExpansion(for accessibilityFeatureClass: AccessibilityFeatureClass) {
+//        withAnimation {
+        if expandedAttributeSections.contains(accessibilityFeatureClass) {
+            expandedAttributeSections.remove(accessibilityFeatureClass)
+        } else {
+            expandedAttributeSections.insert(accessibilityFeatureClass)
+        }
+//        }
+    }
+    
+    private func isAttributeSectionExpanded(for accessibilityFeatureClass: AccessibilityFeatureClass) -> Bool {
+        expandedAttributeSections.contains(accessibilityFeatureClass)
     }
     
     private func attributeSelectionSummary(
