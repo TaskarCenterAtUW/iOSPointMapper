@@ -218,6 +218,7 @@ class CurrentDatasetStatusViewModel: ObservableObject {
 
 struct SetupView: View {
     @State private var selectedClasses = Set<AccessibilityFeatureClass>()
+    @State private var selectedAttributesByClass = [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]()
     private var isSelectionEmpty: Bool {
         return (self.selectedClasses.count == 0)
     }
@@ -451,6 +452,52 @@ struct SetupView: View {
             ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
         } else {
             TestEnvironmentListView(selectedClasses: Array(self.selectedClasses).sorted())
+        }
+    }
+    
+    private func toggleClass(_ accessibilityFeatureClass: AccessibilityFeatureClass) {
+        if self.selectedClasses.contains(accessibilityFeatureClass) {
+            self.selectedClasses.remove(accessibilityFeatureClass)
+            
+            /// Clear the selected attributes for the class when it is deselected
+            self.selectedAttributesByClass[accessibilityFeatureClass] = nil
+        } else {
+            self.selectedClasses.insert(accessibilityFeatureClass)
+            
+            /// Add all the attributes for the class when it is selected
+            self.selectedAttributesByClass[accessibilityFeatureClass] = Set(accessibilityFeatureClass.kind.attributes)
+        }
+    }
+    
+    private func toggleAttribute(
+        _ attribute: AccessibilityFeatureAttribute, for accessibilityFeatureClass: AccessibilityFeatureClass
+    ) {
+        var selectedAttributes = selectedAttributesByClass[accessibilityFeatureClass, default: []]
+        
+        if selectedAttributes.contains(attribute) {
+            selectedAttributes.remove(attribute)
+        } else {
+            selectedAttributes.insert(attribute)
+        }
+        
+        selectedAttributesByClass[accessibilityFeatureClass] = selectedAttributes
+    }
+    
+    private func attributeSelectionSummary(
+        for accessibilityFeatureClass: AccessibilityFeatureClass
+    ) -> String {
+        let attributes = accessibilityFeatureClass.kind.attributes
+        guard !attributes.isEmpty else {
+            return ""
+        }
+        let selectedCount = selectedAttributesByClass[accessibilityFeatureClass, default: []].count
+
+        if selectedCount == attributes.count {
+            return "All"
+        } else if selectedCount == 0 {
+            return "None"
+        } else {
+            return "\(selectedCount)/\(attributes.count)"
         }
     }
     
