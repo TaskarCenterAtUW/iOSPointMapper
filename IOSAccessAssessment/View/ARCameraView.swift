@@ -142,6 +142,7 @@ class MappingDataStatusViewModel: ObservableObject {
 
 struct ARCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     
     @EnvironmentObject var sharedAppData: SharedAppData
     @EnvironmentObject var sharedAppContext: SharedAppContext
@@ -298,7 +299,8 @@ struct ARCameraView: View {
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation = locationManager.currentLocation?.coordinate {
                 AnnotationView(
-                    selectedClasses: selectedClasses, captureLocation: captureLocation,
+                    selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
+                    captureLocation: captureLocation,
                     apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {

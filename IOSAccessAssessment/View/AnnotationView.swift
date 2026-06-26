@@ -225,6 +225,7 @@ class APIChangesetUploadStatusViewModel: ObservableObject {
 
 struct AnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     let captureLocation: CLLocationCoordinate2D
     let apiChangesetUploadController: APIChangesetUploadController
     

@@ -103,6 +103,7 @@ class LocationManagerPlaceholder: NSObject, ObservableObject {
  */
 struct TestCameraView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     let selectedEnvironment: APIEnvironment
     let workspaceId: String
     let changesetId: String
@@ -268,7 +269,8 @@ struct TestCameraView: View {
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation = locationManager.currentLocation?.coordinate {
                 AnnotationView(
-                    selectedClasses: selectedClasses, captureLocation: captureLocation,
+                    selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
+                    captureLocation: captureLocation,
                     apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {

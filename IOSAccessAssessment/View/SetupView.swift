@@ -511,9 +511,15 @@ struct SetupView: View {
     @ViewBuilder
     private var mappingDestination: some View {
         if userStateViewModel.appMode == .standard {
-            ARCameraView(selectedClasses: Array(self.selectedClasses).sorted())
+            ARCameraView(
+                selectedClasses: Array(self.selectedClasses).sorted(),
+                selectedAttributesByClass: self.selectedAttributesByClass
+            )
         } else {
-            TestEnvironmentListView(selectedClasses: Array(self.selectedClasses).sorted())
+            TestEnvironmentListView(
+                selectedClasses: Array(self.selectedClasses).sorted(),
+                selectedAttributesByClass: self.selectedAttributesByClass
+            )
         }
     }
     
