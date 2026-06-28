@@ -522,7 +522,7 @@ struct AnnotationView: View {
             var lastEstimationError: Error? = nil
             accessibilityFeatures.forEach { accessibilityFeature in
                 do {
-                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
+//                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
                     try attributeEstimationPipeline.processLocationRequest(
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
@@ -532,7 +532,8 @@ struct AnnotationView: View {
                         mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
                     )
                     try attributeEstimationPipeline.processAttributeRequest(
-                        accessibilityFeature: accessibilityFeature
+                        accessibilityFeature: accessibilityFeature,
+                        attributes: selectedAttributesByClass[currentClass] ?? []
                     )
                     attributeEstimationPipeline.clearPrerequisites()
                 } catch {
@@ -576,11 +577,13 @@ struct AnnotationView: View {
                     featureSelectedStatus[oldFeature.id] = false /// Selected, but not highlighted
                 }
                 /// MARK: Temporary code for visualization. Incurs significant performance overhead.
+                /// TODO: Check what happens when we use the cache-based methods instead
                 if currentClass.kind.attributes.contains(where: {
                     $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
                 }) {
+                    let worldPoints = try attributeEstimationPipeline.getWorldPoints(accessibilityFeature: currentFeature)
                     let plane = try attributeEstimationPipeline.calculateAlignedPlane(
-                        accessibilityFeature: currentFeature, worldPoints: nil
+                        accessibilityFeature: currentFeature, worldPoints: worldPoints
                     )
                     let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
                         accessibilityFeature: currentFeature, plane: plane
