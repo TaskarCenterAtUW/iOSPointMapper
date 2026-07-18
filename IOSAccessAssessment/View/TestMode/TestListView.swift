@@ -25,6 +25,7 @@ enum TestListViewError: Error, LocalizedError {
 
 struct TestEnvironmentListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     
     @Environment(\.dismiss) var dismiss
     
@@ -65,7 +66,10 @@ struct TestEnvironmentListView: View {
             }
         }
         .navigationDestination(item: $selectedEnvironment) { environmentDir in
-            TestWorkspaceListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+            TestWorkspaceListView(
+                selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
+                datasetLister: datasetLister
+            )
         }
     }
     
@@ -84,6 +88,7 @@ struct TestEnvironmentListView: View {
  */
 struct TestWorkspaceListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     @ObservedObject var datasetLister: DatasetLister
     
     @Environment(\.dismiss) var dismiss
@@ -118,7 +123,10 @@ struct TestWorkspaceListView: View {
         }
         .navigationBarTitle("Test: Workspace Selection", displayMode: .inline)
         .navigationDestination(item: $selectedWorkspace) { workspaceDir in
-            TestChangesetListView(selectedClasses: selectedClasses, datasetLister: datasetLister)
+            TestChangesetListView(
+                selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
+                datasetLister: datasetLister
+            )
         }
     }
     
@@ -137,6 +145,7 @@ struct TestWorkspaceListView: View {
  */
 struct TestChangesetListView: View {
     let selectedClasses: [AccessibilityFeatureClass]
+    let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     @ObservedObject var datasetLister: DatasetLister
     
     @Environment(\.dismiss) var dismiss
@@ -184,7 +193,8 @@ struct TestChangesetListView: View {
         if let selectedEnvironment = datasetLister.selectedEnvironment,
            let selectedWorkspace = datasetLister.selectedWorkspace {
             TestCameraView(
-                selectedClasses: selectedClasses, selectedEnvironment: selectedEnvironment.apiEnvironment,
+                selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
+                selectedEnvironment: selectedEnvironment.apiEnvironment,
                 workspaceId: selectedWorkspace.workspaceId, changesetId: changesetDir.changesetId
             )
         } else {
