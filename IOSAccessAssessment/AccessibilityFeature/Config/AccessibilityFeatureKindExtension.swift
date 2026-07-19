@@ -19,6 +19,7 @@ extension AccessibilityFeatureKind {
         case .trafficLight: return OSWPolicy(oswElementClass: .TrafficLight, isExistingFirst: false)
         case .trafficSign: return OSWPolicy(oswElementClass: .TrafficSign, isExistingFirst: false)
         case .vegetation: return OSWPolicy(oswElementClass: .Vegetation, isExistingFirst: false)
+        case .curbRamp: return OSWPolicy(oswElementClass: .CurbRamp, isExistingFirst: false)
         default: return OSWPolicy.default
         }
     }

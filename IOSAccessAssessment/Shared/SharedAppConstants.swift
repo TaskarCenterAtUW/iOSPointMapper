@@ -13,7 +13,7 @@ import PointNMapShared
  */
 struct SharedAppConstants {
     // Supported Classes
-    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
+    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom12Config
     
     struct DepthConstants {
         /// Model-specific SharedAppConstants

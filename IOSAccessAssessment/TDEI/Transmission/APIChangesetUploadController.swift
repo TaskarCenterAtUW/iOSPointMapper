@@ -126,7 +126,8 @@ extension APIChangesetUploadController {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// For the sidewalk feature class, only upload one linestring representing the entire sidewalk
-        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk {
+//        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk {
+        if inputs.accessibilityFeatureClass.kind == .sidewalk {
             accessibilityFeatures = [firstFeature]
             totalFeatures = 1
         }
@@ -164,7 +165,8 @@ extension APIChangesetUploadController {
             return APIChangesetUploadResults(failedFeatureUploads: totalFeatures, totalFeatureUploads: totalFeatures)
         }
         /// For the sidewalk class, get the previously uploaded linestring, connect it to the new linestring, and add a modify operation
-        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk,
+//        if inputs.accessibilityFeatureClass.kind.oswPolicy.oswElementClass == .Sidewalk,
+        if inputs.accessibilityFeatureClass.kind == .sidewalk,
            let newDiffOperation = featureCache.mainEntryList.getOSWLineStringDiffOperations().first,
            case .create(let newOSWElement) = newDiffOperation,
            let existingMappedFeature = currentMappedFeaturesData.featuresMap[inputs.accessibilityFeatureClass]?.last,
