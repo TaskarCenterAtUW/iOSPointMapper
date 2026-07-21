@@ -32,6 +32,17 @@ extension AccessibilityFeatureAttribute {
         case .widthFromImage: return "width_from_image"
         case .runningSlopeFromImage: return "running_slope_from_image"
         case .crossSlopeFromImage: return "cross_slope_from_image"
+        case .rampWidth: return "ramp_width"
+        case .rampLength: return "ramp_length"
+        case .rampRunningSlope: return "ramp_incline"
+        case .rampCrossSlope: return "ramp_cross_slope"
+        case .leftFlareSlope: return "left_flare_slope"
+        case .rightFlareSlope: return "right_flare_slope"
+        case .counterSlope: return "counter_slope"
+        case .turningSpaceWidth: return "turning_space_width"
+        case .turningSpaceLength: return "turning_space_length"
+        case .turningSpaceRunningSlope: return "turning_space_incline"
+        case .turningSpaceCrossSlope: return "turning_space_cross_slope"
         default: return ""
         }
     }
