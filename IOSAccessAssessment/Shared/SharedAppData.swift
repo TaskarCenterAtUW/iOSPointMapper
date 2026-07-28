@@ -36,7 +36,10 @@ final class SharedAppData: ObservableObject {
         self.captureDataCapacity = captureDataCapacity
         self.captureDataQueue = SafeDeque<CaptureImageData>(capacity: captureDataCapacity)
         
-        deviceStateMonitor.start()
+        Task {
+            await currentTelemetryEncoder.beginMappingSession()
+            deviceStateMonitor.start()
+        }
     }
     
     func refreshQueue() async {
@@ -50,6 +53,9 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
         self.currentMappingData = CurrentMappingData()
         self.currentMappedFeaturesData = CurrentMappedFeaturesData()
+        Task {
+            await currentTelemetryEncoder.endMappingSession()
+        }
     }
     
     func saveCaptureData(_ data: CaptureData) {
