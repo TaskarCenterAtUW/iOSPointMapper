@@ -36,6 +36,14 @@ enum APIChangesetUploadError: Error, LocalizedError {
  
  */
 class APIChangesetUploadController: ObservableObject {
+    public var telemetryEncoder: TelemetryEncoder? = nil
+    
+    public func configure(
+        telemetryEncoder: TelemetryEncoder? = nil
+    ) {
+        self.telemetryEncoder = telemetryEncoder
+    }
+    
     public var idGenerator: IntIdGenerator = IntIdGenerator()
     public var capturedFrameIds: Set<UUID> = []
     

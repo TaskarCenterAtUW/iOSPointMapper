@@ -681,7 +681,7 @@ struct SetupView: View {
     
     private func initializeModels() {
         do {
-            try segmentationPipeline.configure()
+            try segmentationPipeline.configure(telemetryEncoder: sharedAppData.currentTelemetryEncoder)
             modelInitializationViewModel.update(areModelsInitialized: true, showRetryAlert: false, retryMessage: "")
         } catch {
             /// Sleep for a short duration to avoid rapid retry loops
