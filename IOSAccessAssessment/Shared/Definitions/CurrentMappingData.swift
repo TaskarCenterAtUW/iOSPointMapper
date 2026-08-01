@@ -282,14 +282,14 @@ class CurrentMappingData: CustomStringConvertible {
         captureId: UUID?,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
-//        if let captureId = captureId {
-//            let captureMatchedFeature = getCaptureMatchedFeature(
-//                to: LocationDetails, featureClass: featureClass, captureId: captureId
-//            )
-//            if let captureMatchedFeature = captureMatchedFeature {
-//                return captureMatchedFeature
-//            }
-//        }
+        if let captureId = captureId {
+            let captureMatchedFeature = getCaptureMatchedFeature(
+                to: LocationDetails, featureClass: featureClass, captureId: captureId
+            )
+            if let captureMatchedFeature = captureMatchedFeature {
+                return captureMatchedFeature
+            }
+        }
         return getNearestFeature(
             to: LocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
         )

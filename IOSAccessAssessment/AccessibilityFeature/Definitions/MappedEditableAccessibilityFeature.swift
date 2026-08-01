@@ -14,15 +14,25 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     var isExisting: Bool = false
     var oswElement: (any OSWElement)?
     
-    var nearestOSWElements: [(any OSWElement, CLLocationDistance)] = []
-    var isCorrectOSWElementSelected: Bool = false
+    var nearestOSWElements: [(any OSWElement, CLLocationDistance)]?
+    var selectedNearestOSWElement: (any OSWElement, CLLocationDistance)?
+    var selectedNearestOSWElementIndex: Int? {
+        guard let selectedNearestOSWElement else { return nil }
+        return nearestOSWElements?.firstIndex(where: { $0.0.id == selectedNearestOSWElement.0.id })
+    }
+    var isCorrectOSWElementSelected: Bool = true
     
     /// Corrected location-based adhoc details
     var correctedLocationDetails: LocationDetails?
-    var correctedIsExisting: Bool?
+    var correctedIsExisting: Bool = false
     var correctedOSWElement: (any OSWElement)?
     var correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?
-    var correctedIsCorrectOSWElementSelected: Bool?
+    var correctedSelectedNearestOSWElement: (any OSWElement, CLLocationDistance)?
+    var correctedSelectedNearestOSWElementIndex: Int? {
+        guard let correctedSelectedNearestOSWElement else { return nil }
+        return correctedNearestOSWElements?.firstIndex(where: { $0.0.id == correctedSelectedNearestOSWElement.0.id })
+    }
+    var correctedIsCorrectOSWElementSelected: Bool = true
     
     /// Ambiguity cases
     var ambiguityCases: [AmbiguityCase] = []
@@ -57,12 +67,15 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         locationDetails: LocationDetails?,
         isExisting: Bool = false,
         oswElement: (any OSWElement)? = nil,
-        isCorrectOSWElementSelected: Bool = false,
+        nearestOSWElements: [(any OSWElement, CLLocationDistance)]? = nil,
+        selectedNearestOSWElement: (any OSWElement, CLLocationDistance)? = nil,
+        isCorrectOSWElementSelected: Bool = true,
         correctedLocationDetails: LocationDetails? = nil,
-        correctedIsExisting: Bool? = nil,
+        correctedIsExisting: Bool = false,
         correctedOSWElement: (any OSWElement)? = nil,
         correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]? = nil,
-        correctedIsCorrectOSWElementSelected: Bool? = nil,
+        correctedSelectedNearestOSWElement: (any OSWElement, CLLocationDistance)? = nil,
+        correctedIsCorrectOSWElementSelected: Bool = true,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
@@ -92,6 +105,10 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         self.nearestOSWElements = nearestOSWElements
     }
     
+    func setSelectedNearestOSWElement(selectedNearestOSWElement: (any OSWElement, CLLocationDistance)?) {
+        self.selectedNearestOSWElement = selectedNearestOSWElement
+    }
+    
     func setIsCorrectOSWElementSelected(_ isCorrectOSWElementSelected: Bool) {
         self.isCorrectOSWElementSelected = isCorrectOSWElementSelected
     }
@@ -100,7 +117,7 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         self.correctedLocationDetails = correctedLocationDetails
     }
     
-    func setCorrectedIsExisting(_ correctedIsExisting: Bool?) {
+    func setCorrectedIsExisting(_ correctedIsExisting: Bool) {
         self.correctedIsExisting = correctedIsExisting
     }
     
@@ -112,7 +129,11 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         self.correctedNearestOSWElements = correctedNearestOSWElements
     }
     
-    func setCorrectedIsCorrectOSWElementSelected(_ correctedIsCorrectOSWElementSelected: Bool?) {
+    func setCorrectedSelectedNearestOSWElement(_ correctedSelectedNearestOSWElement: (any OSWElement, CLLocationDistance)?) {
+        self.correctedSelectedNearestOSWElement = correctedSelectedNearestOSWElement
+    }
+    
+    func setCorrectedIsCorrectOSWElementSelected(_ correctedIsCorrectOSWElementSelected: Bool) {
         self.correctedIsCorrectOSWElementSelected = correctedIsCorrectOSWElementSelected
     }
     
@@ -128,6 +149,12 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func removeAmbiguityCase(_ ambiguityCase: AmbiguityCase) {
         self.ambiguityCases.removeAll(where: { $0.rawValue == ambiguityCase.rawValue })
+    }
+    
+    public func getCorrectedLastLocationCoordinate() -> CLLocationCoordinate2D? {
+        guard let correctedLocationDetails else { return nil }
+        guard let lastCoordinate = correctedLocationDetails.locations.last?.coordinates.last else { return nil }
+        return lastCoordinate
     }
     
     static func == (

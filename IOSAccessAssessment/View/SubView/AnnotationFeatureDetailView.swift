@@ -36,57 +36,165 @@ func AnnotationFeatureDetailView(
         accessibilityFeature: accessibilityFeature, title: title
     ) { feature in
         let locationFormatter = AnnotationFeatureDetailLocationFormatter()
-        Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
-            if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text(
-                            locationFormatter.string(
-                                from: NSNumber(value: featureLocation.latitude)
-                            ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
-                        )
-                        .padding(.horizontal)
-                        Text(
-                            locationFormatter.string(
-                                from: NSNumber(value: featureLocation.longitude)
-                            ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
-                        )
-                        .padding(.horizontal)
-                        Spacer()
-                    }
-                    Divider()
-                    HStack {
-                        Spacer()
-                        Toggle(isOn: Binding(
-                            get: { accessibilityFeature.isExisting && accessibilityFeature.oswElement != nil },
-                            set: { newValue in
-                                accessibilityFeature.setIsExisting(newValue)
-                            }
-                        )) {
-                            Text(AnnotationMappedFeatureDetailViewConstants.Texts.isExistingTitle)
-                        }
-                        .disabled(accessibilityFeature.oswElement == nil)
-                        .foregroundStyle(accessibilityFeature.oswElement == nil ? .secondary : .primary)
-                        .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
-                        Spacer()
-                    }
-                    if let oswElement = accessibilityFeature.oswElement {
+        VStack {
+            Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
+                if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
+                    VStack {
                         HStack {
                             Spacer()
-                            Text("TDEI Element ID: \(oswElement.id)")
-                                .foregroundStyle(.secondary)
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: featureLocation.latitude)
+                                ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
+                            )
+                            .padding(.horizontal)
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: featureLocation.longitude)
+                                ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
+                            )
+                            .padding(.horizontal)
                             Spacer()
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 4)
-                        .padding(.bottom, 4)
+                        Divider()
+                        HStack {
+                            Spacer()
+                            Toggle(isOn: Binding(
+                                get: { accessibilityFeature.isExisting && accessibilityFeature.oswElement != nil },
+                                set: { newValue in
+                                    accessibilityFeature.setIsExisting(newValue)
+                                }
+                            )) {
+                                Text(AnnotationMappedFeatureDetailViewConstants.Texts.isExistingTitle)
+                            }
+                            .disabled(accessibilityFeature.oswElement == nil)
+                            .foregroundStyle(accessibilityFeature.oswElement == nil ? .secondary : .primary)
+                            .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
+                            Spacer()
+                        }
+                        if let oswElement = accessibilityFeature.oswElement {
+                            HStack {
+                                Spacer()
+                                Text("TDEI Element ID: \(oswElement.id)")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 4)
+                            .padding(.bottom, 4)
+                        }
+                        Divider()
+                        if let nearestOSWElements = accessibilityFeature.nearestOSWElements {
+                            /// Create a Picker of nearest OSW elements (already sorted by their distances) where user can select the correct one.
+                            Picker("Select the correct TDEI element", selection: Binding(
+                                get: { accessibilityFeature.selectedNearestOSWElement?.0.id ?? nil},
+                                set: { newValue in
+                                    if let newValue = newValue {
+                                        accessibilityFeature.selectedNearestOSWElement = nearestOSWElements.first(where: { $0.0.id == newValue })
+                                    } else {
+                                        accessibilityFeature.selectedNearestOSWElement = nil
+                                    }
+                                }
+                            )) {
+                                
+                            }
+                        }
+                        Divider()
+                        /// Create a toggle for isCorrectOSWElementSelected
+                        Toggle(isOn: Binding(
+                            get: { accessibilityFeature.isCorrectOSWElementSelected },
+                            set: { newValue in
+                                accessibilityFeature.isCorrectOSWElementSelected = newValue
+                            }
+                        )) {
+                            Text("Is the selected TDEI element correct?")
+                        }
                     }
+                } else {
+                    Text(AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey)
+                        .foregroundStyle(.secondary)
                 }
-            } else {
-                Text(AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey)
-                    .foregroundStyle(.secondary)
             }
+            
+            Section(header: Text("Corrected Location")) {
+                if let correctedFeatureLocation = accessibilityFeature.getCorrectedLastLocationCoordinate() {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: correctedFeatureLocation.latitude)
+                                ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
+                            )
+                            .padding(.horizontal)
+                            Text(
+                                locationFormatter.string(
+                                    from: NSNumber(value: correctedFeatureLocation.longitude)
+                                ) ?? AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey
+                            )
+                            .padding(.horizontal)
+                            Spacer()
+                        }
+                        Divider()
+                        HStack {
+                            Spacer()
+                            Toggle(isOn: Binding(
+                                get: { accessibilityFeature.correctedIsExisting && accessibilityFeature.correctedOSWElement != nil },
+                                set: { newValue in
+                                    accessibilityFeature.setCorrectedIsExisting(newValue)
+                                }
+                            )) {
+                                Text(AnnotationMappedFeatureDetailViewConstants.Texts.isExistingTitle)
+                            }
+                            .disabled(accessibilityFeature.correctedOSWElement == nil)
+                            .foregroundStyle(accessibilityFeature.correctedOSWElement == nil ? .secondary : .primary)
+                            .strikethrough(accessibilityFeature.correctedOSWElement == nil, pattern: .solid)
+                            Spacer()
+                        }
+                        if let correctedOSWElement = accessibilityFeature.correctedOSWElement {
+                            HStack {
+                                Spacer()
+                                Text("TDEI Element ID: \(correctedOSWElement.id)")
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 4)
+                            .padding(.bottom, 4)
+                        }
+                        Divider()
+                        if let correctedNearestOSWElements = accessibilityFeature.correctedNearestOSWElements {
+                            /// Create a Picker of nearest OSW elements (already sorted by their distances) where user can select the correct one.
+                            Picker("Select the correct TDEI element", selection: Binding(
+                                get: { accessibilityFeature.correctedSelectedNearestOSWElement?.0.id ?? nil},
+                                set: { newValue in
+                                    if let newValue = newValue {
+                                        accessibilityFeature.correctedSelectedNearestOSWElement = correctedNearestOSWElements.first(where: { $0.0.id == newValue })
+                                    } else {
+                                        accessibilityFeature.correctedSelectedNearestOSWElement = nil
+                                    }
+                                }
+                            )) {
+                                
+                            }
+                        }
+                        Divider()
+                        /// Create a toggle for isCorrectOSWElementSelected
+                        Toggle(isOn: Binding(
+                            get: { accessibilityFeature.correctedIsCorrectOSWElementSelected },
+                            set: { newValue in
+                                accessibilityFeature.correctedIsCorrectOSWElementSelected = newValue
+                            }
+                        )) {
+                            Text("Is the selected TDEI element correct?")
+                        }
+                    }
+                } else {
+                    Text(AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
         }
     }
 }
