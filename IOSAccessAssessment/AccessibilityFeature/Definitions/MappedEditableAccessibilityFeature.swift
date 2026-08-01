@@ -15,11 +15,13 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     var oswElement: (any OSWElement)?
     
     var nearestOSWElements: [(any OSWElement, CLLocationDistance)] = []
+    var isCorrectOSWElementSelected: Bool = false
     
     public var correctedLocationDetails: LocationDetails?
     var correctedIsExisting: Bool?
     var correctedOSWElement: (any OSWElement)?
     var correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?
+    var correctedIsCorrectOSWElementSelected: Bool?
     
     required init(
         id: UUID = UUID(),
@@ -51,9 +53,12 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         locationDetails: LocationDetails?,
         isExisting: Bool = false,
         oswElement: (any OSWElement)? = nil,
+        isCorrectOSWElementSelected: Bool = false,
         correctedLocationDetails: LocationDetails? = nil,
         correctedIsExisting: Bool? = nil,
         correctedOSWElement: (any OSWElement)? = nil,
+        correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]? = nil,
+        correctedIsCorrectOSWElementSelected: Bool? = nil,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
@@ -83,6 +88,10 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         self.nearestOSWElements = nearestOSWElements
     }
     
+    func setIsCorrectOSWElementSelected(_ isCorrectOSWElementSelected: Bool) {
+        self.isCorrectOSWElementSelected = isCorrectOSWElementSelected
+    }
+    
     func setCorrectedLocationDetails(_ correctedLocationDetails: LocationDetails?) {
         self.correctedLocationDetails = correctedLocationDetails
     }
@@ -97,6 +106,10 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setCorrectedNearestOSWElements(_ correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?) {
         self.correctedNearestOSWElements = correctedNearestOSWElements
+    }
+    
+    func setCorrectedIsCorrectOSWElementSelected(_ correctedIsCorrectOSWElementSelected: Bool?) {
+        self.correctedIsCorrectOSWElementSelected = correctedIsCorrectOSWElementSelected
     }
     
     static func == (

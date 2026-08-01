@@ -90,11 +90,12 @@ class APIChangesetUploadController: ObservableObject {
             additionalTags: additionalTags
         )
         let uploadOperation: ChangesetDiffOperation = .create(capturePoint)
-        _ = try await ChangesetService.shared.performUploadAsync(
-            workspaceId: inputs.workspaceId, changesetId: inputs.changesetId,
-            operations: [uploadOperation],
-            accessToken: inputs.accessToken
-        )
+        /// MARK: Not uploading for now as in these experiments we are only focused on updates
+//        _ = try await ChangesetService.shared.performUploadAsync(
+//            workspaceId: inputs.workspaceId, changesetId: inputs.changesetId,
+//            operations: [uploadOperation],
+//            accessToken: inputs.accessToken
+//        )
         capturedFrameIds.insert(inputs.captureData.id)
     }
     

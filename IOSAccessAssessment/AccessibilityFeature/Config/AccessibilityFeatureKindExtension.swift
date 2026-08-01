@@ -23,4 +23,22 @@ extension AccessibilityFeatureKind {
         default: return OSWPolicy.default
         }
     }
+    
+    var ambiguityCases: AmbiguityCasePolicy {
+        switch self {
+        case .sidewalk:
+            return AmbiguityCasePolicy(ambiguityCases: [.parallel_sidewalks, .partial_masks, .no_ambiguity])
+        case .building:
+            return AmbiguityCasePolicy(ambiguityCases: [.partial_masks, .no_ambiguity])
+        case .pole:
+            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+        case .trafficLight:
+            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+        case .trafficSign:
+            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+        case .curbRamp:
+            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+        default: return AmbiguityCasePolicy.default
+        }
+    }
 }

@@ -72,6 +72,7 @@
 		A3BCBC502EFBB92900D15E15 /* AccessibilityFeatureEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */; };
 		A3C22FD82CF2F0C300533BF7 /* DequeModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3C22FD72CF2F0C300533BF7 /* DequeModule */; };
 		A3CBCD53301E81B60019BB72 /* TestAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CBCD52301E81B60019BB72 /* TestAnnotationView.swift */; };
+		A3CBCD59301E9B2D0019BB72 /* AmbiguityCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CBCD58301E9B290019BB72 /* AmbiguityCase.swift */; };
 		A3D78D742E65108E003BFE78 /* WorkspaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */; };
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
 		A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshCoder.swift */; };
@@ -242,6 +243,7 @@
 		A3B61FCA2F7903660052AE2C /* OSMMapDataResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMMapDataResponse.swift; sourceTree = "<group>"; };
 		A3BCBC4F2EFBB92500D15E15 /* AccessibilityFeatureEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureEncoder.swift; sourceTree = "<group>"; };
 		A3CBCD52301E81B60019BB72 /* TestAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAnnotationView.swift; sourceTree = "<group>"; };
+		A3CBCD58301E9B290019BB72 /* AmbiguityCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityCase.swift; sourceTree = "<group>"; };
 		A3D78D732E65108A003BFE78 /* WorkspaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewModel.swift; sourceTree = "<group>"; };
 		A3D78D752E654F14003BFE78 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		A3DA4DB42EBAE101005BB812 /* IOSAccessAssessment-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOSAccessAssessment-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 		A30801662EC0AE6B00B1BA3A /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				A3CBCD58301E9B290019BB72 /* AmbiguityCase.swift */,
 				A329433B2EE7BEDD00C4C1BC /* OSWPolicy.swift */,
 			);
 			path = Components;
@@ -1062,6 +1065,7 @@
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */,
 				A312FF2B2FA436CB0044808E /* AppBasedExtension.swift in Sources */,
+				A3CBCD59301E9B2D0019BB72 /* AmbiguityCase.swift in Sources */,
 				A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttributeExtension.swift in Sources */,
 				A35E05162EDEA050003C26CF /* APIChangesetUploadController.swift in Sources */,
 				A36C6E022E134CE600A86004 /* bisenetv2_35_640_640.mlpackage in Sources */,
