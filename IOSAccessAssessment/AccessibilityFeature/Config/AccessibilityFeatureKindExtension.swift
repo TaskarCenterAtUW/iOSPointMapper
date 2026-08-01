@@ -24,7 +24,7 @@ extension AccessibilityFeatureKind {
         }
     }
     
-    var ambiguityCases: AmbiguityCasePolicy {
+    var ambiguityCasePolicy: AmbiguityCasePolicy {
         switch self {
         case .sidewalk:
             return AmbiguityCasePolicy(ambiguityCases: [.parallel_sidewalks, .partial_masks, .no_ambiguity])
