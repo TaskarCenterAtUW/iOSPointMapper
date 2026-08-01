@@ -45,6 +45,7 @@ class DatasetEncoder {
     public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
+    public let correctedLocationpath: URL
     public let headingPath: URL
     public let accessibilityFeaturePath: URL
     public let otherDetailsPath: URL
@@ -57,6 +58,7 @@ class DatasetEncoder {
     private let cameraIntrinsicsEncoder: CameraIntrinsicsEncoder
     private let cameraTransformEncoder: CameraTransformEncoder
     private let locationEncoder: LocationEncoder
+    private let correctedLocationEncoder: LocationEncoder
     private let headingEncoder: HeadingEncoder
     private let accessibilityFeatureEncoder: AccessibilityFeatureEncoder
     private let otherDetailsEncoder: OtherDetailsEncoder
@@ -83,6 +85,7 @@ class DatasetEncoder {
         self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
+        self.correctedLocationpath = datasetDirectory.appendingPathComponent("corrected_location.csv", isDirectory: false)
         self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.accessibilityFeaturePath = datasetDirectory.appendingPathComponent("features", isDirectory: true)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
@@ -95,6 +98,7 @@ class DatasetEncoder {
         self.cameraIntrinsicsEncoder = try CameraIntrinsicsEncoder(url: self.cameraIntrinsicsPath)
         self.cameraTransformEncoder = try CameraTransformEncoder(url: self.cameraTransformPath)
         self.locationEncoder = try LocationEncoder(url: self.locationPath)
+        self.correctedLocationEncoder = try LocationEncoder(url: self.correctedLocationpath)
         self.headingEncoder = try HeadingEncoder(url: self.headingPath)
         self.accessibilityFeatureEncoder = try AccessibilityFeatureEncoder(outDirectory: self.accessibilityFeaturePath)
         self.otherDetailsEncoder = try OtherDetailsEncoder(url: self.otherDetailsPath)
@@ -122,7 +126,8 @@ class DatasetEncoder {
         captureImageData: any CaptureImageDataProtocol,
         captureMeshData: (any CaptureMeshDataProtocol)? = nil,
         location: CLLocationCoordinate2D?,
-        heading: CLLocationDirection?
+        heading: CLLocationDirection?,
+        correctedLocation: CLLocationCoordinate2D? = nil
     ) throws {
         let otherDetailsData = OtherDetailsData(
             timestamp: captureImageData.timestamp,
@@ -139,6 +144,7 @@ class DatasetEncoder {
             cameraTransform: captureImageData.cameraTransform,
             cameraIntrinsics: captureImageData.cameraIntrinsics,
             location: location,
+            correctedLocation: correctedLocation,
             heading: heading,
             otherDetails: otherDetailsData,
             meshAnchors: meshAnchors,
@@ -153,6 +159,7 @@ class DatasetEncoder {
         segmentationLabelImage: CIImage,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
         location: CLLocationCoordinate2D?,
+        correctedLocation: CLLocationCoordinate2D? = nil,
         heading: CLLocationDirection?,
         otherDetails: OtherDetailsData?,
         meshAnchors: [ARMeshAnchor]? = nil,
@@ -181,6 +188,12 @@ class DatasetEncoder {
             let longitude = location.longitude
             let locationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
             try self.locationEncoder.add(locationData: locationData, frameNumber: frameNumber)
+        }
+        if let correctedLocation = correctedLocation {
+            let latitude = correctedLocation.latitude
+            let longitude = correctedLocation.longitude
+            let correctedLocationData = LocationData(timestamp: timestamp, latitude: latitude, longitude: longitude)
+            try self.correctedLocationEncoder.add(locationData: correctedLocationData, frameNumber: frameNumber)
         }
         if let heading = heading {
             let headingData = HeadingData(timestamp: timestamp, trueHeading: heading)

@@ -58,6 +58,7 @@ enum TestCameraViewError: Error, LocalizedError {
 class LocationManagerPlaceholder: NSObject, ObservableObject {
     @Published var currentLocation: CLLocation?
     @Published var currentHeading: CLHeading?
+    @Published var correctedLocation: CLLocation?
     
     override init() {
         super.init()
@@ -91,6 +92,12 @@ class LocationManagerPlaceholder: NSObject, ObservableObject {
         }
         Task { @MainActor in
             self.currentHeading = newHeading
+        }
+    }
+    
+    func locationManager(didUpdateCorrectedLocation correctedLocation: CLLocation) {
+        Task { @MainActor in
+            self.correctedLocation = correctedLocation
         }
     }
     
@@ -229,6 +236,10 @@ struct TestCameraView: View {
                     heading.setValue(captureHeading, forKey: "trueHeading")
                     self.locationManager.locationManager(didUpdateHeading: heading)
                 }
+                if let correctedLocation = datasetCaptureData.correctedLocation {
+                    let correctedCLLocation = CLLocation(latitude: correctedLocation.latitude, longitude: correctedLocation.longitude)
+                    self.locationManager.locationManager(didUpdateCorrectedLocation: correctedCLLocation)
+                }
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -268,9 +279,10 @@ struct TestCameraView: View {
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation = locationManager.currentLocation?.coordinate {
-                AnnotationView(
+                TestAnnotationView(
                     selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
                     captureLocation: captureLocation,
+                    correctedLocation: locationManager.correctedLocation?.coordinate,
                     apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {
@@ -313,6 +325,10 @@ struct TestCameraView: View {
                     let heading = CLHeading()
                     heading.setValue(captureHeading, forKey: "trueHeading")
                     self.locationManager.locationManager(didUpdateHeading: heading)
+                }
+                if let correctedLocation = datasetCaptureData.correctedLocation {
+                    let correctedCLLocation = CLLocation(latitude: correctedLocation.latitude, longitude: correctedLocation.longitude)
+                    self.locationManager.locationManager(didUpdateCorrectedLocation: correctedCLLocation)
                 }
                 
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
