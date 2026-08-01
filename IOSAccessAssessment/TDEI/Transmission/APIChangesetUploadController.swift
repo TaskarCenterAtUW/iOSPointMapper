@@ -118,6 +118,41 @@ class APIChangesetUploadController: ObservableObject {
             APIConstants.TagKeys.enhancedAnalysisModeKey: String(enhancedAnalysisMode)
         ]
     }
+    
+    private func getAdditionalFeatureTags(
+        feature: MappedEditableAccessibilityFeature
+    ) -> [String: String] {
+        var additionalTags: [String: String] = [:]
+        if let featureLocation = feature.getLastLocationCoordinate() {
+            additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
+            additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
+        }
+        /// isExisting
+        additionalTags["is_existing"] = String(feature.isExisting)
+        if let selectedNearestOSWElement = feature.selectedNearestOSWElement {
+            additionalTags["selected_nearest_osw_element_id"] = selectedNearestOSWElement.0.id
+        }
+        if let selectedNearestOSWElementIndex = feature.selectedNearestOSWElementIndex {
+            additionalTags["selected_nearest_osw_element_index"] = String(selectedNearestOSWElementIndex)
+        }
+        /// isCorrectOSWElementSelected
+        additionalTags["is_correct_osw_element_selected"] = String(feature.isCorrectOSWElementSelected)
+        
+        /// correctedIsExisting
+        additionalTags["corrected_is_existing"] = String(feature.correctedIsExisting)
+        if let correctedSelectedNearestOSWElement = feature.correctedSelectedNearestOSWElement {
+            additionalTags["corrected_selected_nearest_osw_element_id"] = correctedSelectedNearestOSWElement.0.id
+        }
+        if let correctedSelectedNearestOSWElementIndex = feature.correctedSelectedNearestOSWElementIndex {
+            additionalTags["corrected_selected_nearest_osw_element_index"] = String(correctedSelectedNearestOSWElementIndex)
+        }
+        /// correctedIsCorrectOSWElementSelected
+        additionalTags["corrected_is_correct_osw_element_selected"] = String(feature.correctedIsCorrectOSWElementSelected)
+        
+        /// Ambiguity cases
+        additionalTags["ambiguity_cases"] = feature.ambiguityCases.map { $0.rawValue }.joined(separator: ", ")
+        return additionalTags
+    }
 }
 
 /**
@@ -357,8 +392,14 @@ extension APIChangesetUploadController {
         calculatedAttributeValues = feature.calculatedAttributeValues
         /// Add location as additional tags as well
         var additionalTags = additionalTags
-        additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
-        additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
+//        additionalTags[APIConstants.TagKeys.calculatedLatitudeKey] = String(featureLocation.latitude)
+//        additionalTags[APIConstants.TagKeys.calculatedLongitudeKey] = String(featureLocation.longitude)
+        /// Add feature-based additional tags using the getAdditionalTags function
+        let featureAdditionalTags = getAdditionalFeatureTags(feature: feature)
+        /// Merge the tags
+        additionalTags = additionalTags.merging(featureAdditionalTags) { current, existing in
+            return existing
+        }
         /// If feature is of type editable accessibility feature and is existing, then use the existing id and version for the point
         /// to update the existing point in OSM instead of creating a new one
         if feature.isExisting {
@@ -404,6 +445,12 @@ extension APIChangesetUploadController {
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
         calculatedAttributeValues = feature.calculatedAttributeValues
         var additionalTags = additionalTags
+        /// Add feature-based additional tags using the getAdditionalTags function
+        let featureAdditionalTags = getAdditionalFeatureTags(feature: feature)
+        /// Merge the tags
+        additionalTags = additionalTags.merging(featureAdditionalTags) { current, existing in
+            return existing
+        }
         var pointDiffOperations: [ChangesetDiffOperation] = []
         var pointRefs: [String] = []
         if feature.isExisting {
@@ -469,6 +516,12 @@ extension APIChangesetUploadController {
         var calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
         calculatedAttributeValues = feature.calculatedAttributeValues
         var additionalTags = additionalTags
+        /// Add feature-based additional tags using the getAdditionalTags function
+        let featureAdditionalTags = getAdditionalFeatureTags(feature: feature)
+        /// Merge the tags
+        additionalTags = additionalTags.merging(featureAdditionalTags) { current, existing in
+            return existing
+        }
         var pointDiffOperations: [ChangesetDiffOperation] = []
         var pointRefs: [String] = []
         if feature.isExisting {

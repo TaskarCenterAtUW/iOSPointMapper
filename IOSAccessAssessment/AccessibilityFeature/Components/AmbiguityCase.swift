@@ -8,13 +8,13 @@
 import Foundation
 
 enum AmbiguityCase: String, CaseIterable, Sendable, Codable, Equatable, Hashable {
-    case parallel_sidewalks = "Parallel Sidewalks"
-    case wide_plazas = "Wide Plazas"
-    case closely_spaced_features = "Closely Spaced"
-    case divided_or_offset_crossings = "Divided or Offset Crossings"
-    case multiple_intersection_corners = "Multiple Intersection Corners"
-    case partial_masks = "Partial Masks"
-    case no_ambiguity = "No Ambiguity"
+    case parallel_sidewalks = "parallel_sidewalks"
+    case wide_plazas = "wide_plazas"
+    case closely_spaced_features = "closely_spaced_features"
+    case divided_or_offset_crossings = "divided_or_offset_crossings"
+    case multiple_intersection_corners = "multiple_intersection_corners"
+    case partial_masks = "partial_masks"
+    case no_ambiguity = "no_ambiguity"
 }
 
 struct AmbiguityCasePolicy: Sendable, Codable, Equatable, Hashable {
