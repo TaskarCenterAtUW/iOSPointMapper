@@ -13,13 +13,13 @@ import PointNMapShared
 extension AccessibilityFeatureKind {
     var oswPolicy: OSWPolicy {
         switch self {
-        case .sidewalk: return OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: false)
-        case .building: return OSWPolicy(oswElementClass: .Building, isExistingFirst: false)
-        case .pole: return OSWPolicy(oswElementClass: .Pole, isExistingFirst: false)
-        case .trafficLight: return OSWPolicy(oswElementClass: .TrafficLight, isExistingFirst: false)
-        case .trafficSign: return OSWPolicy(oswElementClass: .TrafficSign, isExistingFirst: false)
-        case .vegetation: return OSWPolicy(oswElementClass: .Vegetation, isExistingFirst: false)
-        case .curbRamp: return OSWPolicy(oswElementClass: .CurbRamp, isExistingFirst: false)
+        case .sidewalk: return OSWPolicy(oswElementClass: .Sidewalk, isExistingFirst: true)
+        case .building: return OSWPolicy(oswElementClass: .Building, isExistingFirst: true)
+        case .pole: return OSWPolicy(oswElementClass: .Pole, isExistingFirst: true)
+        case .trafficLight: return OSWPolicy(oswElementClass: .TrafficLight, isExistingFirst: true)
+        case .trafficSign: return OSWPolicy(oswElementClass: .TrafficSign, isExistingFirst: true)
+        case .vegetation: return OSWPolicy(oswElementClass: .Vegetation, isExistingFirst: true)
+        case .curbRamp: return OSWPolicy(oswElementClass: .CurbRamp, isExistingFirst: true)
         default: return OSWPolicy.default
         }
     }

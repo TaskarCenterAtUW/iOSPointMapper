@@ -103,6 +103,8 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setNearestOSWElements(nearestOSWElements: [(any OSWElement, CLLocationDistance)]) {
         self.nearestOSWElements = nearestOSWElements
+        /// Select the first element by default if no element is selected yet
+        self.selectedNearestOSWElement = self.selectedNearestOSWElement ?? nearestOSWElements.first
     }
     
     func setSelectedNearestOSWElement(selectedNearestOSWElement: (any OSWElement, CLLocationDistance)?) {
@@ -127,6 +129,8 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setCorrectedNearestOSWElements(_ correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?) {
         self.correctedNearestOSWElements = correctedNearestOSWElements
+        /// Select the first element by default if no element is selected yet
+        self.correctedSelectedNearestOSWElement = self.correctedSelectedNearestOSWElement ?? correctedNearestOSWElements?.first
     }
     
     func setCorrectedSelectedNearestOSWElement(_ correctedSelectedNearestOSWElement: (any OSWElement, CLLocationDistance)?) {

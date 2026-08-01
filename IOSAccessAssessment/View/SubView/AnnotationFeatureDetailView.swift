@@ -34,7 +34,7 @@ func AnnotationFeatureDetailView(
 ) -> some View {
     AnnotationFeatureDetailViewBase(
         accessibilityFeature: accessibilityFeature, title: title
-    ) { feature in
+    ) { feature, refreshTrigger in
         let locationFormatter = AnnotationFeatureDetailLocationFormatter()
         Section(header: Text(AnnotationViewConstants.Texts.featureDetailViewLocationKey)) {
             if let featureLocation = accessibilityFeature.getLastLocationCoordinate() {
@@ -85,18 +85,25 @@ func AnnotationFeatureDetailView(
                     Divider()
                     if let nearestOSWElements = accessibilityFeature.nearestOSWElements {
                         /// Create a Picker of nearest OSW elements (already sorted by their distances) where user can select the correct one.
-                        Picker("Select the correct TDEI element", selection: Binding(
-                            get: { accessibilityFeature.selectedNearestOSWElement?.0.id ?? nil},
+                        Picker("Select the correct TDEI element", selection: Binding<String?>(
+                            get: { accessibilityFeature.selectedNearestOSWElement?.0.id},
                             set: { newValue in
                                 if let newValue = newValue {
                                     accessibilityFeature.selectedNearestOSWElement = nearestOSWElements.first(where: { $0.0.id == newValue })
                                 } else {
                                     accessibilityFeature.selectedNearestOSWElement = nil
                                 }
+                                refreshTrigger.wrappedValue += 1
                             }
                         )) {
-                            
+                            Text("None selected")
+                                .tag(nil as String?)
+                            ForEach(nearestOSWElements, id: \.0.id) { (oswElement, distance) in
+                                Text("ID: \(oswElement.id), Distance: \(String(format: "%.2f", distance)) m")
+                                    .tag(Optional(oswElement.id))
+                            }
                         }
+                        .pickerStyle(.menu)
                     }
                     Divider()
                     /// Create a toggle for isCorrectOSWElementSelected
@@ -115,7 +122,7 @@ func AnnotationFeatureDetailView(
             }
         
         }
-    } correctedLocationSection: { feature in
+    } correctedLocationSection: { feature, refreshTrigger in
         let locationFormatter = AnnotationFeatureDetailLocationFormatter()
         Section(header: Text("Corrected Location")) {
             if let correctedFeatureLocation = accessibilityFeature.getCorrectedLastLocationCoordinate() {
@@ -166,18 +173,25 @@ func AnnotationFeatureDetailView(
                     Divider()
                     if let correctedNearestOSWElements = accessibilityFeature.correctedNearestOSWElements {
                         /// Create a Picker of nearest OSW elements (already sorted by their distances) where user can select the correct one.
-                        Picker("Select the correct TDEI element", selection: Binding(
-                            get: { accessibilityFeature.correctedSelectedNearestOSWElement?.0.id ?? nil},
+                        Picker("Select the correct TDEI element", selection: Binding<String?>(
+                            get: { accessibilityFeature.correctedSelectedNearestOSWElement?.0.id},
                             set: { newValue in
                                 if let newValue = newValue {
                                     accessibilityFeature.correctedSelectedNearestOSWElement = correctedNearestOSWElements.first(where: { $0.0.id == newValue })
                                 } else {
                                     accessibilityFeature.correctedSelectedNearestOSWElement = nil
                                 }
+                                refreshTrigger.wrappedValue += 1
                             }
                         )) {
-                            
+                            Text("None selected")
+                                .tag(nil as String?)
+                            ForEach(correctedNearestOSWElements, id: \.0.id) { (oswElement, distance) in
+                                Text("ID: \(oswElement.id), Distance: \(String(format: "%.2f", distance)) m")
+                                    .tag(Optional(oswElement.id))
+                            }
                         }
+                        .pickerStyle(.menu)
                     }
                     Divider()
                     /// Create a toggle for isCorrectOSWElementSelected
@@ -195,7 +209,7 @@ func AnnotationFeatureDetailView(
                     .foregroundStyle(.secondary)
             }
         }
-    } ambiguitySection: { feature in
+    } ambiguitySection: { feature, refreshTrigger in
         let ambiguityCasePolicy = accessibilityFeature.accessibilityFeatureClass.kind.ambiguityCasePolicy
         /// Create a multi-select list of ambiguity cases with checkboxes, where user can select multiple ambiguity cases.
         Section(header: Text("Ambiguity Cases")) {
