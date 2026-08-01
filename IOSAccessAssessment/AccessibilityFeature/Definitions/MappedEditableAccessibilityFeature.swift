@@ -16,6 +16,11 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     var nearestOSWElements: [(any OSWElement, CLLocationDistance)] = []
     
+    public var correctedLocationDetails: LocationDetails?
+    var correctedIsExisting: Bool?
+    var correctedOSWElement: (any OSWElement)?
+    var correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?
+    
     required init(
         id: UUID = UUID(),
         detectedAccessibilityFeature: DetectedAccessibilityFeature
@@ -46,6 +51,9 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         locationDetails: LocationDetails?,
         isExisting: Bool = false,
         oswElement: (any OSWElement)? = nil,
+        correctedLocationDetails: LocationDetails? = nil,
+        correctedIsExisting: Bool? = nil,
+        correctedOSWElement: (any OSWElement)? = nil,
         calculatedAttributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
         experimentalAttributeValues: [AccessibilityFeatureAttribute : AccessibilityFeatureAttribute.Value?]
@@ -73,6 +81,22 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setNearestOSWElements(nearestOSWElements: [(any OSWElement, CLLocationDistance)]) {
         self.nearestOSWElements = nearestOSWElements
+    }
+    
+    func setCorrectedLocationDetails(_ correctedLocationDetails: LocationDetails?) {
+        self.correctedLocationDetails = correctedLocationDetails
+    }
+    
+    func setCorrectedIsExisting(_ correctedIsExisting: Bool?) {
+        self.correctedIsExisting = correctedIsExisting
+    }
+    
+    func setCorrectedOSWElement(_ correctedOSWElement: (any OSWElement)?) {
+        self.correctedOSWElement = correctedOSWElement
+    }
+    
+    func setCorrectedNearestOSWElements(_ correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?) {
+        self.correctedNearestOSWElements = correctedNearestOSWElements
     }
     
     static func == (

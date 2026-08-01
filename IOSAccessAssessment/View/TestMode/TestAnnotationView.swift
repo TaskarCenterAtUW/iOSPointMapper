@@ -314,7 +314,7 @@ struct TestAnnotationView: View {
                 // Run for both capture location and corrected location
                 do {
 //                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
-                    try attributeEstimationPipeline.processLocationRequest(
+                    try attributeEstimationPipeline.processLocationRequestTypeBased(
                         deviceLocation: captureLocation,
                         accessibilityFeature: accessibilityFeature
                     )
@@ -337,18 +337,21 @@ struct TestAnnotationView: View {
                 }
                 if let correctedLocation {
                     do {
-                        try attributeEstimationPipeline.processLocationRequest(
+                        try attributeEstimationPipeline.processLocationRequestTypeBased(
                             deviceLocation: correctedLocation,
-                            accessibilityFeature: accessibilityFeature
+                            accessibilityFeature: accessibilityFeature,
+                            locationType: .correctedLocation
                         )
                         attributeEstimationPipeline.processIsExistingRequest(
                             deviceLocation: correctedLocation,
-                            mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
+                            mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature,
+                            locationType: .correctedLocation
                         )
                         attributeEstimationPipeline.processNearestFeaturesRequest(
                             deviceLocation: correctedLocation,
                             mappingData: sharedAppData.currentMappingData,
-                            accessibilityFeature: accessibilityFeature
+                            accessibilityFeature: accessibilityFeature,
+                            locationType: .correctedLocation
                         )
                         attributeEstimationPipeline.clearPrerequisites()
                     } catch {
