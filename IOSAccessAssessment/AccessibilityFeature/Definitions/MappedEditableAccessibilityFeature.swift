@@ -14,6 +14,8 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     var isExisting: Bool = false
     var oswElement: (any OSWElement)?
     
+    var nearestOSWElements: [(any OSWElement, CLLocationDistance)] = []
+    
     required init(
         id: UUID = UUID(),
         detectedAccessibilityFeature: DetectedAccessibilityFeature
@@ -67,6 +69,10 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setOSWElement(oswElement: any OSWElement) {
         self.oswElement = oswElement
+    }
+    
+    func setNearestOSWElements(nearestOSWElements: [(any OSWElement, CLLocationDistance)]) {
+        self.nearestOSWElements = nearestOSWElements
     }
     
     static func == (

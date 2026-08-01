@@ -11,223 +11,11 @@ import CoreLocation
 import simd
 import PointNMapShared
 
-enum AnnotationViewConstants {
-    enum Texts {
-        static let annotationViewTitle = "Annotation"
-        
-        static let currentClassPrefixText = "Selected class"
-        static let finishText = "Finish"
-        static let nextText = "Next"
-        
-        static let selectObjectText = "Select an object"
-        
-        static let loadingPageText = "Loading. Please wait..."
-        
-        /// Feature Detail View Text
-        static let featureDetailViewTitle = "Feature Details"
-        static let featureDetailViewIdKey = "ID"
-        static let featureDetailViewLocationKey = "Location"
-        static let featureDetailNotAvailableText = "Not Available"
-        
-        /// Alert texts
-        static let managerStatusAlertTitleKey = "Error"
-        static let managerStatusAlertDismissButtonKey = "OK"
-        static let managerStatusAlertMessageDismissScreenSuffixKey = "Press OK to close this screen."
-        static let managerStatusAlertMessageDismissAlertSuffixKey = "Press OK to dismiss this alert."
-        static let apiChangesetUploadStatusAlertTitleKey = "Upload Error"
-        static let apiChangesetUploadStatusAlertDismissButtonKey = "OK"
-        static let apiChangesetUploadStatusAlertGenericMessageKey = "Failed to upload features. Press OK to dismiss this alert."
-        static let apiChangesetUploadStatusAlertMessageSuffixKey = " feature(s) failed to upload. Press OK to dismiss this alert."
-        
-        /// SelectObjectInfoTip
-        static let selectFeatureInfoTipTitle = "Select a Feature"
-        static let selectFeatureInfoTipMessage = "Please select the individual feature that you want to annotate"
-        static let selectFeatureInfoTipLearnMoreButtonTitle = "Learn More"
-        
-        /// SelectObjectInfoLearnMoreSheetView
-        static let selectFeatureInfoLearnMoreSheetTitle = "Annotating an Individual Feature"
-        static let selectFeatureInfoLearnMoreSheetMessage = """
-        For each type of accessibility feature, the app can identify multiple feature instances within the same image. 
-        
-        **Select All**: Default option. You can annotate all features of a particular type together.
-        
-        **Individual**: You can select a particular feature from the dropdown menu if you wish to provide specific annotations for an individual feature.
-        
-        **Ellipsis [...]**: For each feature, you can also view its details by tapping the ellipsis button next to the dropdown menu.
-        """
-    }
-    
-    enum Images {
-        static let checkIcon = "checkmark"
-        static let ellipsisIcon = "ellipsis"
-        static let infoIcon = "info.circle"
-        static let closeIcon = "xmark"
-        static let errorIcon = "exclamationmark.triangle"
-    }
-}
-
-enum AnnotationViewError: Error, LocalizedError {
-    case classIndexOutofBounds
-    case instanceIndexOutofBounds
-    case invalidCaptureDataRecord
-    case managerConfigurationFailed
-    case authenticationError
-    case workspaceConfigurationFailed
-    case attributeEstimationFailed(Error)
-    case uploadFailed
-    case apiChangesetUploadFailed(APIChangesetUploadResults)
-    
-    var errorDescription: String? {
-        switch self {
-        case .classIndexOutofBounds:
-            return "The Current Class is not in the list."
-        case .instanceIndexOutofBounds:
-            return "Exceeded the number of instances for the current class."
-        case .invalidCaptureDataRecord:
-            return "The Current Capture is invalid."
-        case .managerConfigurationFailed:
-            return "Annotation Configuration failed"
-        case .authenticationError:
-            return "Authentication error. Please log in again."
-        case .workspaceConfigurationFailed:
-            return "Workspace configuration failed. Please check your workspace settings."
-        case .attributeEstimationFailed(let error):
-            return "Some Attribute Estimation calculations failed. They may be ignored. \nError: \(error.localizedDescription)"
-        case .uploadFailed:
-            return "Failed to upload annotations."
-        case .apiChangesetUploadFailed(let results):
-            return "API Transmission failed with \(results.failedFeatureUploads) failed uploads."
-        }
-    }
-}
-
-struct SelectFeatureInfoTip: Tip {
-    
-    var title: Text {
-        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipTitle)
-    }
-    var message: Text? {
-        Text(AnnotationViewConstants.Texts.selectFeatureInfoTipMessage)
-    }
-    var image: Image? {
-        Image(systemName: AnnotationViewConstants.Images.infoIcon)
-            .resizable()
-    }
-    var actions: [Action] {
-        // Define a learn more button.
-        Action(
-            id: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle,
-            title: AnnotationViewConstants.Texts.selectFeatureInfoTipLearnMoreButtonTitle
-        )
-    }
-}
-
-class AnnotationFeatureClassSelectionViewModel: ObservableObject {
-    @Published var currentIndex: Int? = nil
-    @Published var currentClass: AccessibilityFeatureClass? = nil
-    @Published var selectedAnnotationOption: AnnotationOption = .classOption(.default)
-    
-    func setCurrent(index: Int, classes: [AccessibilityFeatureClass]) throws {
-        guard index < classes.count else {
-            throw AnnotationViewError.classIndexOutofBounds
-        }
-        self.currentIndex = index
-        self.currentClass = classes[index]
-    }
-    
-    func setOption(option: AnnotationOption) {
-        self.selectedAnnotationOption = option
-    }
-}
-
-class AnnotationFeatureSelectionViewModel: ObservableObject {
-    @Published var instances: [MappedEditableAccessibilityFeature] = []
-    @Published var currentIndex: Int? = nil
-    @Published var currentFeature: MappedEditableAccessibilityFeature? = nil
-    
-    func setInstances(_ instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
-        self.instances = instances
-        /// If the class is supposed to have a unique instance per image, we always select the first instance, as there should be only one unique instance.
-//        if (currentClass.kind.oswPolicy.oswElementClass == .Sidewalk) {
-        if (currentClass.kind.isUniquePerCapture) {
-            try setIndex(index: 0)
-        } else {
-            try setIndex(index: nil)
-        }
-    }
-    
-    func setIndex(index: Int?) throws {
-        guard let index = index else {
-            self.currentIndex = nil
-            self.currentFeature = nil
-            return
-        }
-        guard index < instances.count else {
-            throw AnnotationViewError.instanceIndexOutofBounds
-        }
-        self.currentIndex = index
-        self.currentFeature = instances[index]
-    }
-    
-    func setCurrent(index: Int?, instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
-        try setInstances(instances, currentClass: currentClass)
-        try setIndex(index: index)
-    }
-    
-    func setOptionOnFeature(option: AnnotationOption) {
-        if let currentFeature = self.currentFeature {
-            objectWillChange.send()
-            currentFeature.setAnnotationOption(option)
-        }
-    }
-}
-
-class AnnotationViewStatusViewModel: ObservableObject {
-    @Published var isFailed: Bool = false
-    @Published var errorMessage: String = ""
-    @Published var shouldDismiss: Bool = true
-    
-    func update(isFailed: Bool, errorMessage: String, shouldDismiss: Bool = true) {
-        self.isFailed = isFailed
-        self.errorMessage = errorMessage
-        self.shouldDismiss = shouldDismiss
-    }
-    
-    func update(isFailed: Bool, error: Error, shouldDismiss: Bool = true) {
-        self.isFailed = isFailed
-        let dismissKey = shouldDismiss ?
-        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissScreenSuffixKey :
-        AnnotationViewConstants.Texts.managerStatusAlertMessageDismissAlertSuffixKey
-        self.errorMessage = "\(error.localizedDescription) \(dismissKey)"
-        self.shouldDismiss = shouldDismiss
-    }
-}
-
-class APIChangesetUploadStatusViewModel: ObservableObject {
-    @Published var isFailed: Bool = false
-    @Published var errorMessage: String = ""
-    
-    func update(isFailed: Bool, errorMessage: String) {
-        self.isFailed = isFailed
-        self.errorMessage = errorMessage
-    }
-    
-    func update(apiChangesetUploadResults: APIChangesetUploadResults) {
-        let failedFeatureUploads = apiChangesetUploadResults.failedFeatureUploads
-        if failedFeatureUploads == 0 {
-            self.isFailed = true
-            self.errorMessage = "Unknown Error Occurred."
-        } else {
-            self.isFailed = true
-            self.errorMessage = "\(failedFeatureUploads) \(AnnotationViewConstants.Texts.apiChangesetUploadStatusAlertMessageSuffixKey)"
-        }
-    }
-}
-
-struct AnnotationView: View {
+struct TestAnnotationView: View {
     let selectedClasses: [AccessibilityFeatureClass]
     let selectedAttributesByClass: [AccessibilityFeatureClass: Set<AccessibilityFeatureAttribute>]
     let captureLocation: CLLocationCoordinate2D
+    let correctedLocation: CLLocationCoordinate2D?
     let apiChangesetUploadController: APIChangesetUploadController
     
     @EnvironmentObject var userStateViewModel: UserStateViewModel
@@ -523,6 +311,7 @@ struct AnnotationView: View {
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             var lastEstimationError: Error? = nil
             accessibilityFeatures.forEach { accessibilityFeature in
+                // Run for both capture location and corrected location
                 do {
 //                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
                     try attributeEstimationPipeline.processLocationRequest(
@@ -545,6 +334,26 @@ struct AnnotationView: View {
                     attributeEstimationPipeline.clearPrerequisites()
                 } catch {
                     lastEstimationError = error
+                }
+                if let correctedLocation {
+                    do {
+                        try attributeEstimationPipeline.processLocationRequest(
+                            deviceLocation: correctedLocation,
+                            accessibilityFeature: accessibilityFeature
+                        )
+                        attributeEstimationPipeline.processIsExistingRequest(
+                            deviceLocation: correctedLocation,
+                            mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
+                        )
+                        attributeEstimationPipeline.processNearestFeaturesRequest(
+                            deviceLocation: correctedLocation,
+                            mappingData: sharedAppData.currentMappingData,
+                            accessibilityFeature: accessibilityFeature
+                        )
+                        attributeEstimationPipeline.clearPrerequisites()
+                    } catch {
+                        lastEstimationError = error
+                    }
                 }
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
@@ -753,25 +562,3 @@ struct AnnotationView: View {
     }
 }
 
-struct SelectFeatureLearnMoreSheetView: View {
-    @Environment(\.dismiss)
-    var dismiss
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            //            Image(systemName: "number")
-            //                .resizable()
-            //                .scaledToFit()
-            //                .frame(width: 160)
-            //                .foregroundStyle(.accentColor)
-            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetTitle)
-                .font(.headline)
-            Text(AnnotationViewConstants.Texts.selectFeatureInfoLearnMoreSheetMessage)
-                .foregroundStyle(.secondary)
-            Button("Dismiss") {
-                dismiss()
-            }
-        }
-        .padding(.horizontal, 40)
-    }
-}

@@ -201,6 +201,32 @@ class CurrentMappingData: CustomStringConvertible {
         return nearestFeature
     }
     
+    func getNearestFeatures(
+        to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
+        distanceThreshold: CLLocationDistance = 50.0
+    ) -> [(any OSWElement, CLLocationDistance)] {
+        guard let featureIds = featuresMap[featureClass] else { return [] }
+        var nearestFeatures: [(any OSWElement, CLLocationDistance)] = []
+        let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
+        let geometry = oswElementClass.geometry
+        
+        for featureId in featureIds {
+            guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
+            guard let featureOSMLocationDetails = self.getFeatureOSMLocationDetails(
+                feature: feature, geometry: geometry
+            ) else { continue }
+            guard let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                srcLocationDetails: featureOSMLocationDetails, dstLocationDetails: LocationDetails
+            ) else { continue }
+            if distance < distanceThreshold {
+                nearestFeatures.append((feature, distance))
+            }
+        }
+        // Sort the nearest features by distance in ascending order
+        nearestFeatures.sort { $0.1 < $1.1 }
+        return nearestFeatures
+    }
+    
     /**
      This function takes in OSM location details, an accessibility feature class, and a capture ID, and returns the feature of that class whose capture ID matches the given capture ID.
      */
