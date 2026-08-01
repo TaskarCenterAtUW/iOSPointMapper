@@ -17,11 +17,15 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     var nearestOSWElements: [(any OSWElement, CLLocationDistance)] = []
     var isCorrectOSWElementSelected: Bool = false
     
-    public var correctedLocationDetails: LocationDetails?
+    /// Corrected location-based adhoc details
+    var correctedLocationDetails: LocationDetails?
     var correctedIsExisting: Bool?
     var correctedOSWElement: (any OSWElement)?
     var correctedNearestOSWElements: [(any OSWElement, CLLocationDistance)]?
     var correctedIsCorrectOSWElementSelected: Bool?
+    
+    /// Ambiguity cases
+    var ambiguityCases: [AmbiguityCase] = []
     
     required init(
         id: UUID = UUID(),
@@ -110,6 +114,20 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setCorrectedIsCorrectOSWElementSelected(_ correctedIsCorrectOSWElementSelected: Bool?) {
         self.correctedIsCorrectOSWElementSelected = correctedIsCorrectOSWElementSelected
+    }
+    
+    func setAmbiguityCases(_ ambiguityCases: [AmbiguityCase]) {
+        self.ambiguityCases = ambiguityCases
+    }
+    
+    func addAmbiguityCase(_ ambiguityCase: AmbiguityCase) {
+        if !ambiguityCases.contains(where: { $0.rawValue == ambiguityCase.rawValue }) {
+            self.ambiguityCases.append(ambiguityCase)
+        }
+    }
+    
+    func removeAmbiguityCase(_ ambiguityCase: AmbiguityCase) {
+        self.ambiguityCases.removeAll(where: { $0.rawValue == ambiguityCase.rawValue })
     }
     
     static func == (

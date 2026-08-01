@@ -203,7 +203,8 @@ class CurrentMappingData: CustomStringConvertible {
     
     func getNearestFeatures(
         to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
-        distanceThreshold: CLLocationDistance = 50.0
+        captureId: UUID?,
+        distanceThreshold: CLLocationDistance = 50.0,
     ) -> [(any OSWElement, CLLocationDistance)] {
         guard let featureIds = featuresMap[featureClass] else { return [] }
         var nearestFeatures: [(any OSWElement, CLLocationDistance)] = []
@@ -222,8 +223,29 @@ class CurrentMappingData: CustomStringConvertible {
                 nearestFeatures.append((feature, distance))
             }
         }
+        
         // Sort the nearest features by distance in ascending order
         nearestFeatures.sort { $0.1 < $1.1 }
+        
+        if let captureId = captureId {
+            guard let captureMatchedFeature = getCaptureMatchedFeature(
+                to: LocationDetails, featureClass: featureClass, captureId: captureId
+            ) else { return nearestFeatures }
+            // Check if the capture matched feature is already in the nearest features list
+            if nearestFeatures.contains(where: { $0.0.id == captureMatchedFeature.id }) {
+                return nearestFeatures
+            }
+            guard let captureMatchedFeatureOSMLocationDetails = self.getFeatureOSMLocationDetails(
+                feature: captureMatchedFeature, geometry: geometry
+            ) else { return nearestFeatures }
+            guard let captureMatchedFeatureDistance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                srcLocationDetails: captureMatchedFeatureOSMLocationDetails, dstLocationDetails: LocationDetails
+            ) else { return nearestFeatures }
+            nearestFeatures.append((captureMatchedFeature, captureMatchedFeatureDistance))
+        }
+        // Sort the nearest features by distance in ascending order
+        nearestFeatures.sort { $0.1 < $1.1 }
+        
         return nearestFeatures
     }
     
@@ -260,14 +282,14 @@ class CurrentMappingData: CustomStringConvertible {
         captureId: UUID?,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
-        if let captureId = captureId {
-            let captureMatchedFeature = getCaptureMatchedFeature(
-                to: LocationDetails, featureClass: featureClass, captureId: captureId
-            )
-            if let captureMatchedFeature = captureMatchedFeature {
-                return captureMatchedFeature
-            }
-        }
+//        if let captureId = captureId {
+//            let captureMatchedFeature = getCaptureMatchedFeature(
+//                to: LocationDetails, featureClass: featureClass, captureId: captureId
+//            )
+//            if let captureMatchedFeature = captureMatchedFeature {
+//                return captureMatchedFeature
+//            }
+//        }
         return getNearestFeature(
             to: LocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
         )

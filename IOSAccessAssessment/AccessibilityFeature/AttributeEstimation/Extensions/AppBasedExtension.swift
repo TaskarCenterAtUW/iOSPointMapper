@@ -57,6 +57,7 @@ extension AttributeEstimationPipeline {
         }
         let nearestOSWElements: [(any OSWElement, CLLocationDistance)] = mappingData.getNearestFeatures(
             to: LocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
+            captureId: self.captureImageData?.id,
             distanceThreshold: distanceThreshold
         )
 //        accessibilityFeature.setNearestOSWElements(nearestOSWElements: nearestOSWElements)
