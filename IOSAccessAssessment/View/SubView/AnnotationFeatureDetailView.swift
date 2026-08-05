@@ -71,6 +71,16 @@ func AnnotationFeatureDetailView(
                         .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
                         Spacer()
                     }
+                    Divider()
+                    HStack {
+                        Spacer()
+                        Text("Is Capture Matched: ")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(accessibilityFeature.isCaptureMatched ? "Yes" : "No")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
                     if let oswElement = accessibilityFeature.oswElement {
                         HStack {
                             Spacer()
@@ -89,9 +99,11 @@ func AnnotationFeatureDetailView(
                             get: { accessibilityFeature.selectedNearestOSWElement?.0.id},
                             set: { newValue in
                                 if let newValue = newValue {
-                                    accessibilityFeature.selectedNearestOSWElement = nearestOSWElements.first(where: { $0.0.id == newValue })
+//                                    accessibilityFeature.selectedNearestOSWElement = nearestOSWElements.first(where: { $0.0.id == newValue })
+                                    accessibilityFeature.setSelectedNearestOSWElement(selectedNearestOSWElement: nearestOSWElements.first(where: { $0.0.id == newValue }))
                                 } else {
-                                    accessibilityFeature.selectedNearestOSWElement = nil
+//                                    accessibilityFeature.selectedNearestOSWElement = nil
+                                    accessibilityFeature.setSelectedNearestOSWElement(selectedNearestOSWElement: nil)
                                 }
                                 refreshTrigger.wrappedValue += 1
                             }
@@ -110,7 +122,8 @@ func AnnotationFeatureDetailView(
                     Toggle(isOn: Binding(
                         get: { accessibilityFeature.isCorrectOSWElementSelected },
                         set: { newValue in
-                            accessibilityFeature.isCorrectOSWElementSelected = newValue
+//                            accessibilityFeature.isCorrectOSWElementSelected = newValue
+                            accessibilityFeature.setIsCorrectOSWElementSelected(newValue)
                         }
                     )) {
                         Text("Is the selected TDEI element correct?")
@@ -159,6 +172,16 @@ func AnnotationFeatureDetailView(
                         .strikethrough(accessibilityFeature.correctedOSWElement == nil, pattern: .solid)
                         Spacer()
                     }
+                    Divider()
+                    HStack {
+                        Spacer()
+                        Text("Is Capture Matched: ")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(accessibilityFeature.isCaptureMatched ? "Yes" : "No")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
                     if let correctedOSWElement = accessibilityFeature.correctedOSWElement {
                         HStack {
                             Spacer()
@@ -177,9 +200,11 @@ func AnnotationFeatureDetailView(
                             get: { accessibilityFeature.correctedSelectedNearestOSWElement?.0.id},
                             set: { newValue in
                                 if let newValue = newValue {
-                                    accessibilityFeature.correctedSelectedNearestOSWElement = correctedNearestOSWElements.first(where: { $0.0.id == newValue })
+//                                    accessibilityFeature.correctedSelectedNearestOSWElement = correctedNearestOSWElements.first(where: { $0.0.id == newValue })
+                                    accessibilityFeature.setCorrectedSelectedNearestOSWElement(correctedNearestOSWElements.first(where: { $0.0.id == newValue }))
                                 } else {
-                                    accessibilityFeature.correctedSelectedNearestOSWElement = nil
+//                                    accessibilityFeature.correctedSelectedNearestOSWElement = nil
+                                    accessibilityFeature.setCorrectedSelectedNearestOSWElement(nil)
                                 }
                                 refreshTrigger.wrappedValue += 1
                             }
@@ -198,7 +223,8 @@ func AnnotationFeatureDetailView(
                     Toggle(isOn: Binding(
                         get: { accessibilityFeature.correctedIsCorrectOSWElementSelected },
                         set: { newValue in
-                            accessibilityFeature.correctedIsCorrectOSWElementSelected = newValue
+//                            accessibilityFeature.correctedIsCorrectOSWElementSelected = newValue
+                            accessibilityFeature.setCorrectedIsCorrectOSWElementSelected(newValue)
                         }
                     )) {
                         Text("Is the selected TDEI element correct?")
@@ -219,9 +245,11 @@ func AnnotationFeatureDetailView(
                         get: { accessibilityFeature.ambiguityCases.contains(ambiguityCase) },
                         set: { newValue in
                             if newValue {
-                                accessibilityFeature.ambiguityCases.append(ambiguityCase)
+//                                accessibilityFeature.ambiguityCases.append(ambiguityCase)
+                                accessibilityFeature.addAmbiguityCase(ambiguityCase)
                             } else {
                                 accessibilityFeature.ambiguityCases.removeAll(where: { $0 == ambiguityCase })
+                                accessibilityFeature.removeAmbiguityCase(ambiguityCase)
                             }
                         }
                     )) {

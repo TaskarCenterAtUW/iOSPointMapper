@@ -310,23 +310,32 @@ struct TestAnnotationView: View {
             }
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             var lastEstimationError: Error? = nil
-            accessibilityFeatures.forEach { accessibilityFeature in
-                // Run for both capture location and corrected location
+//            let deviceLocationLocal = correctedLocation ?? captureLocation
+            try attributeEstimationPipeline.processAllFeaturesForAssignments(
+//                deviceLocation: deviceLocationLocal,
+                captureLocation: captureLocation,
+                correctedLocation: correctedLocation,
+                mappingData: sharedAppData.currentMappingData,
+                accessibilityFeatures: accessibilityFeatures,
+            )
+            accessibilityFeatures.enumerated().forEach { (featureIndex, accessibilityFeature) in
                 do {
 //                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
-                    try attributeEstimationPipeline.processLocationRequestTypeBased(
-                        deviceLocation: captureLocation,
-                        accessibilityFeature: accessibilityFeature
-                    )
-                    attributeEstimationPipeline.processIsExistingRequest(
-                        deviceLocation: captureLocation,
-                        mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
-                    )
-                    attributeEstimationPipeline.processNearestFeaturesRequest(
-                        deviceLocation: captureLocation,
-                        mappingData: sharedAppData.currentMappingData,
-                        accessibilityFeature: accessibilityFeature
-                    )
+//                    try attributeEstimationPipeline.processLocationRequestTypeBased(
+//                        deviceLocation: captureLocation,
+//                        accessibilityFeature: accessibilityFeature
+//                    )
+//                    attributeEstimationPipeline.processIsExistingRequest(
+//                        deviceLocation: captureLocation,
+//                        mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature,
+//                        featureIndex: featureIndex
+//                    )
+//                    attributeEstimationPipeline.processNearestFeaturesRequest(
+//                        deviceLocation: captureLocation,
+//                        mappingData: sharedAppData.currentMappingData,
+//                        accessibilityFeature: accessibilityFeature,
+//                        featureIndex: featureIndex
+//                    )
                     try attributeEstimationPipeline.processAttributeRequest(
                         accessibilityFeature: accessibilityFeature,
                         attributes: selectedAttributesByClass[currentClass] ?? []
@@ -335,29 +344,31 @@ struct TestAnnotationView: View {
                 } catch {
                     lastEstimationError = error
                 }
-                if let correctedLocation {
-                    do {
-                        try attributeEstimationPipeline.processLocationRequestTypeBased(
-                            deviceLocation: correctedLocation,
-                            accessibilityFeature: accessibilityFeature,
-                            locationType: .correctedLocation
-                        )
-                        attributeEstimationPipeline.processIsExistingRequest(
-                            deviceLocation: correctedLocation,
-                            mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature,
-                            locationType: .correctedLocation
-                        )
-                        attributeEstimationPipeline.processNearestFeaturesRequest(
-                            deviceLocation: correctedLocation,
-                            mappingData: sharedAppData.currentMappingData,
-                            accessibilityFeature: accessibilityFeature,
-                            locationType: .correctedLocation
-                        )
-                        attributeEstimationPipeline.clearPrerequisites()
-                    } catch {
-                        lastEstimationError = error
-                    }
-                }
+//                if let correctedLocation {
+//                    do {
+//                        try attributeEstimationPipeline.processLocationRequestTypeBased(
+//                            deviceLocation: correctedLocation,
+//                            accessibilityFeature: accessibilityFeature,
+//                            locationType: .correctedLocation
+//                        )
+//                        attributeEstimationPipeline.processIsExistingRequest(
+//                            deviceLocation: correctedLocation,
+//                            mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature,
+//                            locationType: .correctedLocation,
+//                            featureIndex: featureIndex
+//                        )
+//                        attributeEstimationPipeline.processNearestFeaturesRequest(
+//                            deviceLocation: correctedLocation,
+//                            mappingData: sharedAppData.currentMappingData,
+//                            accessibilityFeature: accessibilityFeature,
+//                            locationType: .correctedLocation,
+//                            featureIndex: featureIndex
+//                        )
+//                        attributeEstimationPipeline.clearPrerequisites()
+//                    } catch {
+//                        lastEstimationError = error
+//                    }
+//                }
             }
             featureClassSelectionViewModel.setOption(option: .classOption(.default))
             try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)

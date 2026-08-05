@@ -12,6 +12,7 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     /// If isExisting is false, even if an osw element is associated, it means the feature is new.
     /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
     var isExisting: Bool = false
+    var isCaptureMatched: Bool = false
     var oswElement: (any OSWElement)?
     
     var nearestOSWElements: [(any OSWElement, CLLocationDistance)]?
@@ -97,7 +98,7 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
         self.isExisting = isExisting
     }
     
-    func setOSWElement(oswElement: any OSWElement) {
+    func setOSWElement(oswElement: (any OSWElement)?) {
         self.oswElement = oswElement
     }
     
@@ -109,6 +110,10 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     
     func setSelectedNearestOSWElement(selectedNearestOSWElement: (any OSWElement, CLLocationDistance)?) {
         self.selectedNearestOSWElement = selectedNearestOSWElement
+        /// Update the oswElement to match the selected nearest OSW element
+//        if let selectedNearestOSWElement = selectedNearestOSWElement?.0 {
+//            self.oswElement = selectedNearestOSWElement
+//        }
     }
     
     func setIsCorrectOSWElementSelected(_ isCorrectOSWElementSelected: Bool) {

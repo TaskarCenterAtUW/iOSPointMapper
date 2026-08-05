@@ -22,5 +22,5 @@ struct AmbiguityCasePolicy: Sendable, Codable, Equatable, Hashable {
 }
 
 extension AmbiguityCasePolicy {
-    static let `default` = AmbiguityCasePolicy(ambiguityCases: [.no_ambiguity])
+    static let `default` = AmbiguityCasePolicy(ambiguityCases: AmbiguityCase.allCases)
 }

@@ -228,20 +228,21 @@ class CurrentMappingData: CustomStringConvertible {
         nearestFeatures.sort { $0.1 < $1.1 }
         
         if let captureId = captureId {
-            guard let captureMatchedFeature = getCaptureMatchedFeature(
+            let captureMatchedFeatures = getCaptureMatchedFeatures(
                 to: LocationDetails, featureClass: featureClass, captureId: captureId
-            ) else { return nearestFeatures }
-            // Check if the capture matched feature is already in the nearest features list
-            if nearestFeatures.contains(where: { $0.0.id == captureMatchedFeature.id }) {
-                return nearestFeatures
+            )
+            for captureMatchedFeature in captureMatchedFeatures {
+                if nearestFeatures.contains(where: { $0.0.id == captureMatchedFeature.id }) {
+                    continue
+                }
+                guard let captureMatchedFeatureOSMLocationDetails = self.getFeatureOSMLocationDetails(
+                    feature: captureMatchedFeature, geometry: geometry
+                ) else { continue }
+                guard let captureMatchedFeatureDistance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                    srcLocationDetails: captureMatchedFeatureOSMLocationDetails, dstLocationDetails: LocationDetails
+                ) else { continue }
+                nearestFeatures.append((captureMatchedFeature, captureMatchedFeatureDistance))
             }
-            guard let captureMatchedFeatureOSMLocationDetails = self.getFeatureOSMLocationDetails(
-                feature: captureMatchedFeature, geometry: geometry
-            ) else { return nearestFeatures }
-            guard let captureMatchedFeatureDistance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
-                srcLocationDetails: captureMatchedFeatureOSMLocationDetails, dstLocationDetails: LocationDetails
-            ) else { return nearestFeatures }
-            nearestFeatures.append((captureMatchedFeature, captureMatchedFeatureDistance))
         }
         // Sort the nearest features by distance in ascending order
         nearestFeatures.sort { $0.1 < $1.1 }
@@ -252,25 +253,28 @@ class CurrentMappingData: CustomStringConvertible {
     /**
      This function takes in OSM location details, an accessibility feature class, and a capture ID, and returns the feature of that class whose capture ID matches the given capture ID.
      */
-    func getCaptureMatchedFeature(
+    func getCaptureMatchedFeatures(
         to LocationDetails: LocationDetails, featureClass: AccessibilityFeatureClass,
         captureId: UUID
-    ) -> (any OSWElement)? {
-        guard let featureIds = featuresMap[featureClass] else { return nil }
-        var nearestFeature: (any OSWElement)?
+    ) -> [any OSWElement] {
+        guard let featureIds = featuresMap[featureClass] else { return [] }
+//        var nearestFeature: (any OSWElement)?
         let oswElementClass = featureClass.kind.oswPolicy.oswElementClass
         let geometry = oswElementClass.geometry
         let captureIdString = captureId.uuidString
+        
+        var matchedFeatures: [any OSWElement] = []
         
         for featureId in featureIds {
             guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
             guard let featureCaptureId = feature.getCaptureId() else { continue }
             if featureCaptureId == captureIdString {
-                nearestFeature = feature
-                break
+//                nearestFeature = feature
+//                break
+                matchedFeatures.append(feature)
             }
         }
-        return nearestFeature
+        return matchedFeatures
     }
     
     /**
@@ -283,12 +287,13 @@ class CurrentMappingData: CustomStringConvertible {
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
         if let captureId = captureId {
-            let captureMatchedFeature = getCaptureMatchedFeature(
+            let captureMatchedFeatures = getCaptureMatchedFeatures(
                 to: LocationDetails, featureClass: featureClass, captureId: captureId
             )
-            if let captureMatchedFeature = captureMatchedFeature {
-                return captureMatchedFeature
-            }
+//            if let captureMatchedFeature = captureMatchedFeature {
+//                return captureMatchedFeature
+//            }
+            return captureMatchedFeatures.first
         }
         return getNearestFeature(
             to: LocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold

@@ -27,17 +27,17 @@ extension AccessibilityFeatureKind {
     var ambiguityCasePolicy: AmbiguityCasePolicy {
         switch self {
         case .sidewalk:
-            return AmbiguityCasePolicy(ambiguityCases: [.parallel_sidewalks, .partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         case .building:
-            return AmbiguityCasePolicy(ambiguityCases: [.partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         case .pole:
-            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         case .trafficLight:
-            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         case .trafficSign:
-            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         case .curbRamp:
-            return AmbiguityCasePolicy(ambiguityCases: [.closely_spaced_features, .partial_masks, .no_ambiguity])
+            return AmbiguityCasePolicy.default
         default: return AmbiguityCasePolicy.default
         }
     }
