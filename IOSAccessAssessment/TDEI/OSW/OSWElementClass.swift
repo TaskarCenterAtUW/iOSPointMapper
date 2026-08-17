@@ -15,6 +15,7 @@ import PointNMapShared
  */
 enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
     case BareNode
+    case GenericCurb
     case Footway
     case Sidewalk
     case Building
@@ -33,6 +34,7 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
         This is a temporary definition for Traffic Sign. It is not directly supported by OSW schema.
      */
     case TrafficSign
+    case CurbRamp
     /**
      - WARNING:
         This is a temporary definition for Vegetation. It is not directly supported by OSW schema.
@@ -79,6 +81,16 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 description: "A special case of an abstract Node.",
                 parent: nil,
                 geometry: .point
+            )
+        case .GenericCurb:
+            return Metadata(
+                name: "Generic Curb",
+                description: "A curb for which a type has not been determined yet or a type could not be determined despite some effort.",
+                parent: nil,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .barrier, value: "kerb")
+                ]
             )
         case .Footway:
             return Metadata(
@@ -143,6 +155,17 @@ enum OSWElementClass: String, CaseIterable, Hashable, Sendable, Codable {
                 geometry: .point,
                 identifyingFields: [
                     IdentifyingField(field: .traffic_sign, value: "yes")
+                ]
+            )
+        case .CurbRamp:
+            return Metadata(
+                name: "Curb Ramp",
+                description: "A curb ramp (curb cut) mapped as a curb interface. Mapped at the location where the two Edges that it connects meet one another.",
+                parent: .GenericCurb,
+                geometry: .point,
+                identifyingFields: [
+                    IdentifyingField(field: .barrier, value: "kerb"),
+                    IdentifyingField(field: .kerb, value: "lowered")
                 ]
             )
         case .Vegetation:

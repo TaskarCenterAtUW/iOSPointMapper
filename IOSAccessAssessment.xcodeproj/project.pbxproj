@@ -75,6 +75,7 @@
 		A3D78D762E654F18003BFE78 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D78D752E654F14003BFE78 /* ProfileView.swift */; };
 		A3E162782F3AFC66002D4D08 /* MeshCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3E162772F3AFC63002D4D08 /* MeshCoder.swift */; };
 		A3E6D2332F464A2D00DAF88E /* PngDecoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = A3E6D2322F464A2700DAF88E /* PngDecoder.mm */; };
+		A3ECB560300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = A3ECB55D300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage */; };
 		A3EE6E432F57A98A00F515E6 /* DatasetDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */; };
 		A3EE6E462F57FE6400F515E6 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E452F57FE6200F515E6 /* AppMode.swift */; };
 		A3EE6E482F580D0D00F515E6 /* TestListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3EE6E472F580D0A00F515E6 /* TestListView.swift */; };
@@ -245,6 +246,7 @@
 		A3E162772F3AFC63002D4D08 /* MeshCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshCoder.swift; sourceTree = "<group>"; };
 		A3E6D2312F4649AD00DAF88E /* PngDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PngDecoder.h; sourceTree = "<group>"; };
 		A3E6D2322F464A2700DAF88E /* PngDecoder.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PngDecoder.mm; sourceTree = "<group>"; };
+		A3ECB55D300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage; sourceTree = "<group>"; };
 		A3EE6E422F57A98A00F515E6 /* DatasetDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetDecoder.swift; sourceTree = "<group>"; };
 		A3EE6E452F57FE6200F515E6 /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
 		A3EE6E472F580D0A00F515E6 /* TestListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestListView.swift; sourceTree = "<group>"; };
@@ -514,6 +516,7 @@
 		A33EB5AD2F761BFC008ABFB7 /* ModelZoo */ = {
 			isa = PBXGroup;
 			children = (
+				A3ECB557300C3F600054FC64 /* DamageDetection */,
 				A3A413A82ECF947C0039298C /* DepthEstimation */,
 				A3A413A72ECF94690039298C /* SemanticSegmentation */,
 			);
@@ -719,6 +722,7 @@
 		A3A413A72ECF94690039298C /* SemanticSegmentation */ = {
 			isa = PBXGroup;
 			children = (
+				A3ECB55D300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage */,
 				A36C6E012E134CE600A86004 /* bisenetv2_35_640_640.mlpackage */,
 				A3FFAA822DE5253E002B99BD /* bisenetv2_53_640_640.mlpackage */,
 				A3471B9F2DAF7ABF00FEB845 /* bisenetv2.mlpackage */,
@@ -763,6 +767,13 @@
 				A3E162772F3AFC63002D4D08 /* MeshCoder.swift */,
 			);
 			path = Mesh;
+			sourceTree = "<group>";
+		};
+		A3ECB557300C3F600054FC64 /* DamageDetection */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = DamageDetection;
 			sourceTree = "<group>";
 		};
 		A3EE6E442F57FE4400F515E6 /* TestMode */ = {
@@ -1043,6 +1054,7 @@
 				A3EE6E4A2F580D6200F515E6 /* TestCameraView.swift in Sources */,
 				A329433C2EE7BEE100C4C1BC /* OSWPolicy.swift in Sources */,
 				A32943592EE8204400C4C1BC /* OSWPolygon.swift in Sources */,
+				A3ECB560300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage in Sources */,
 				A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */,

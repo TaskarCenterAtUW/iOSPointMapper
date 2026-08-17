@@ -147,8 +147,9 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
     
     func setInstances(_ instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
         self.instances = instances
-        /// If the class is sidewalk, we always select the first instance, as there should be only one sidewalk instance.
-        if (currentClass.kind.oswPolicy.oswElementClass == .Sidewalk) {
+        /// If the class is supposed to have a unique instance per image, we always select the first instance, as there should be only one unique instance.
+//        if (currentClass.kind.oswPolicy.oswElementClass == .Sidewalk) {
+        if (currentClass.kind.isUniquePerCapture) {
             try setIndex(index: 0)
         } else {
             try setIndex(index: nil)
@@ -369,7 +370,8 @@ struct AnnotationView: View {
                     CustomPicker (
                         label: AnnotationViewConstants.Texts.selectObjectText,
                         selection: $featureSelectionViewModel.currentIndex,
-                        isContainsAll: currentClass.kind.oswPolicy.oswElementClass != .Sidewalk
+//                        isContainsAll: currentClass.kind.oswPolicy.oswElementClass != .Sidewalk
+                        isContainsAll: currentClass.kind.isUniquePerCapture == false
                     ) {
                         ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                             Text("\(currentClass.name.capitalized): \(featureIndex)")

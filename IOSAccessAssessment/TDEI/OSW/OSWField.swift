@@ -22,6 +22,7 @@ enum OSWField: Sendable, Codable, Hashable {
     case building
     case source
     case natural
+    case kerb
     /**
         A custom field with a user-defined name.
      */
@@ -149,6 +150,12 @@ enum OSWField: Sendable, Codable, Hashable {
                 description: "Used to describe a wide variety of physical geography, geological and landcover features",
                 osmTagKey: "natural",
                 valueType: .enumeration(options: ["tree", "water", "cliff"])
+            )
+        case .kerb:
+            return Metadata(
+                description: "Used to describe the kerb type",
+                osmTagKey: "kerb",
+                valueType: .enumeration(options: ["flush", "lowered", "raised", "rolled"])
             )
         case .custom(let fieldName, let osmTagKey):
             return Metadata(

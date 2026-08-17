@@ -13,7 +13,7 @@ import PointNMapShared
  */
 struct SharedAppConstants {
     // Supported Classes
-    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom11Config
+    static let SelectedAccessibilityFeatureConfig: AccessibilityFeatureClassConfig = AccessibilityFeatureConfig.mapillaryCustom12Config
     
     struct DepthConstants {
         /// Model-specific SharedAppConstants
@@ -26,7 +26,7 @@ struct SharedAppConstants {
     
     struct DamageDetectionConstants {
         /// Model-specific SharedAppConstants
-        static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "v8n_175_16_960", withExtension: "mlmodelc")
+        static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "yolov8x_batch_16_A_full_soft", withExtension: "mlmodelc")
         static let inputSize: CGSize = CGSize(width: 640, height: 640)
     }
     
@@ -45,7 +45,7 @@ struct SharedAppConstants {
     }
     
     struct WorkspaceConstants {
-        static let primaryWorkspaceIds: [String] = ["1940"]
+        static let primaryWorkspaceIds: [String] = ["2158"] //"1940", "2151", "2158"
 //        ["1463"]
 //        ["288", "349", "1411"]
 //      "252", "322", "368", "374", "378", "381", "384", "323", "369", "156", "375", "379"]
