@@ -222,12 +222,14 @@ struct ARCameraView: View {
             locationManager.startLocationUpdates()
             showAnnotationView = false
             segmentationPipeline.setSelectedClasses(selectedClasses)
+            apiChangesetUploadController.configure(telemetryEncoder: sharedAppData.currentTelemetryEncoder)
             do {
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
                     isEnhancedAnalysisEnabled: userStateViewModel.isEnhancedAnalysisEnabled,
-                    cameraOutputImageCallback: cameraOutputImageCallback
+                    cameraOutputImageCallback: cameraOutputImageCallback,
+                    telemetryEncoder: sharedAppData.currentTelemetryEncoder
                 )
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)

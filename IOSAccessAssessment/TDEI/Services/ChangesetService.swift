@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import PointNMapShared
 
 enum ChangesetDiffOperation {
     case create(any OSWElement)
@@ -95,6 +96,7 @@ class ChangesetService {
         operations: [ChangesetDiffOperation],
         accessToken: String,
         environment: APIEnvironment? = nil,
+        telemetryEncoder: TelemetryEncoder? = nil,
         completion: @escaping (Result<OSMChangesetUploadResponseElements, Error>) -> Void
     ) {
         let selectedEnvironment = environment ?? EnvironmentService.shared.environment
@@ -132,7 +134,20 @@ class ChangesetService {
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue(workspaceId, forHTTPHeaderField: "X-Workspace")
         request.setValue("application/xml", forHTTPHeaderField: "Content-Type")
-        request.httpBody = osmChangeXML.data(using: .utf8)
+        let payloadData = osmChangeXML.data(using: .utf8)
+        request.httpBody = payloadData
+        
+        if let telemetryEncoder = telemetryEncoder, let payloadData = payloadData {
+            Task {
+                await PayloadSizeTracker.record(
+                    data: payloadData,
+                    telemetryEncoder: telemetryEncoder,
+                    metadata: [
+                        "payload_type": "feature_upload"
+                    ]
+                )
+            }
+        }
 
         URLSession.shared.dataTask(with: request) { data, _, error in
             if let error = error {
@@ -230,12 +245,14 @@ extension ChangesetService {
         changesetId: String,
         operations: [ChangesetDiffOperation],
         accessToken: String,
-        environment: APIEnvironment? = nil
+        environment: APIEnvironment? = nil,
+        telemetryEncoder: TelemetryEncoder? = nil
     ) async throws -> OSMChangesetUploadResponseElements {
         return try await withCheckedThrowingContinuation { continuation in
             performUpload(
                 workspaceId: workspaceId, changesetId: changesetId, operations: operations,
-                accessToken: accessToken, environment: environment
+                accessToken: accessToken, environment: environment,
+                telemetryEncoder: telemetryEncoder
             ) { result in
                 switch result {
                 case .success(let uploadedElements):

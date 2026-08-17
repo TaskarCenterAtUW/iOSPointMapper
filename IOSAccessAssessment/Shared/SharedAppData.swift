@@ -17,6 +17,13 @@ final class SharedAppData: ObservableObject {
     var currentDatasetEncoder: DatasetEncoder?
     var currentDatasetDecoder: DatasetDecoder?
     
+    /// For telemetry
+    var currentTelemetryEncoder: TelemetryEncoder = TelemetryEncoder()
+    lazy var deviceStateMonitor = DeviceStateMonitor(
+        telemetryEncoder: currentTelemetryEncoder,
+        sampleIntervalSeconds: 60
+    )
+    
     var currentCaptureDataRecord: CaptureData?
     /// A queue to hold recent capture image data.
     var captureDataQueue: SafeDeque<CaptureImageData>
@@ -28,6 +35,11 @@ final class SharedAppData: ObservableObject {
     init(captureDataCapacity: Int = 5) {
         self.captureDataCapacity = captureDataCapacity
         self.captureDataQueue = SafeDeque<CaptureImageData>(capacity: captureDataCapacity)
+        
+        Task {
+            await currentTelemetryEncoder.beginMappingSession()
+            deviceStateMonitor.start()
+        }
     }
     
     func refreshQueue() async {
@@ -41,6 +53,9 @@ final class SharedAppData: ObservableObject {
         self.currentCaptureDataRecord = nil
         self.currentMappingData = CurrentMappingData()
         self.currentMappedFeaturesData = CurrentMappedFeaturesData()
+        Task {
+            await currentTelemetryEncoder.endMappingSession()
+        }
     }
     
     func saveCaptureData(_ data: CaptureData) {

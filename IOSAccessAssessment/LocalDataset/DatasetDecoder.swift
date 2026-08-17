@@ -45,6 +45,7 @@ struct DatasetCaptureData {
     let captureMeshData: MeshContents?
     let location: CLLocationCoordinate2D?
     let heading: CLLocationDirection?
+    let correctedLocation: CLLocationCoordinate2D?
 }
 
 /**
@@ -68,6 +69,7 @@ class DatasetDecoder {
 //    public let cameraMatrixPath: URL
     public let cameraTransformPath: URL
     public let locationPath: URL
+    public let correctedLocationPath: URL
     public let headingPath: URL
     public let otherDetailsPath: URL
     public let meshPath: URL
@@ -77,6 +79,7 @@ class DatasetDecoder {
     private let cameraIntrinsicsDecoder: CameraIntrinsicsDecoder
     private let cameraTransformDecoder: CameraTransformDecoder
     private let locationDecoder: LocationDecoder
+    private let correctedLocationDecoder: LocationDecoder?
     private let headingDecoder: HeadingDecoder?
     private let otherDetailsDecoder: OtherDetailsDecoder
     private let meshDecoder: MeshDecoder
@@ -97,6 +100,7 @@ class DatasetDecoder {
 //        self.cameraMatrixPath = datasetDirectory.appendingPathComponent("camera_matrix.csv", isDirectory: false)
         self.cameraTransformPath = datasetDirectory.appendingPathComponent("camera_transform.csv", isDirectory: false)
         self.locationPath = datasetDirectory.appendingPathComponent("location.csv", isDirectory: false)
+        self.correctedLocationPath = datasetDirectory.appendingPathComponent("corrected_location.csv", isDirectory: false)
         self.headingPath = datasetDirectory.appendingPathComponent("heading.csv", isDirectory: false)
         self.otherDetailsPath = datasetDirectory.appendingPathComponent("other_details.csv", isDirectory: false)
         self.meshPath = datasetDirectory.appendingPathComponent("mesh", isDirectory: true)
@@ -106,6 +110,12 @@ class DatasetDecoder {
         self.cameraIntrinsicsDecoder = try CameraIntrinsicsDecoder(path: self.cameraIntrinsicsPath)
         self.cameraTransformDecoder = try CameraTransformDecoder(path: self.cameraTransformPath)
         self.locationDecoder = try LocationDecoder(path: self.locationPath)
+        do {
+            self.correctedLocationDecoder = try LocationDecoder(path: self.correctedLocationPath)
+        } catch {
+            print("Corrected location data not found, proceeding without it.")
+            self.correctedLocationDecoder = nil
+        }
         do {
             self.headingDecoder = try HeadingDecoder(url: self.headingPath)
         } catch {
@@ -153,6 +163,7 @@ class DatasetDecoder {
         guard let locationData = locationDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
         }
+        let correctedLocationData = correctedLocationDecoder?.load(index: index, frameNumber: frameNumber)
         let headingData = headingDecoder?.load(index: index, frameNumber: frameNumber)
         guard let otherDetailsData = otherDetailsDecoder.load(index: index, frameNumber: frameNumber) else {
             throw DatasetDecoderError.indexDataNotFound(index)
@@ -171,11 +182,13 @@ class DatasetDecoder {
         )
         let location = CLLocationCoordinate2D(latitude: locationData.latitude, longitude: locationData.longitude)
         let heading = headingData?.trueHeading
+        let correctedLocation = correctedLocationData != nil ? CLLocationCoordinate2D(latitude: correctedLocationData!.latitude, longitude: correctedLocationData!.longitude) : nil
         let datasetCaptureData = DatasetCaptureData(
             captureImageData: datasetCaptureBaseData,
             captureMeshData: meshContents,
             location: location,
-            heading: heading
+            heading: heading,
+            correctedLocation: correctedLocation
         )
         return datasetCaptureData
     }

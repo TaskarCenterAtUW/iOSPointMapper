@@ -14,7 +14,7 @@ import PointNMapShared
  */
 enum TestCameraViewConstants {
     enum Texts {
-        static let contentViewTitle = "Test: Capture"
+        static let contentViewTitle = "Capture"
         
         /// Change index buttons
         static let previousButtonText = "Previous"
@@ -58,6 +58,7 @@ enum TestCameraViewError: Error, LocalizedError {
 class LocationManagerPlaceholder: NSObject, ObservableObject {
     @Published var currentLocation: CLLocation?
     @Published var currentHeading: CLHeading?
+    @Published var correctedLocation: CLLocation?
     
     override init() {
         super.init()
@@ -91,6 +92,12 @@ class LocationManagerPlaceholder: NSObject, ObservableObject {
         }
         Task { @MainActor in
             self.currentHeading = newHeading
+        }
+    }
+    
+    func locationManager(didUpdateCorrectedLocation correctedLocation: CLLocation) {
+        Task { @MainActor in
+            self.correctedLocation = correctedLocation
         }
     }
     
@@ -153,9 +160,11 @@ struct TestCameraView: View {
                             Button {
                                 self.currentIndex = max(self.currentIndex - 1, 0)
                             } label: {
+                                /// White color image
                                 Image(systemName: TestCameraViewConstants.Images.previousIcon)
                                     .resizable()
                                     .frame(width: 30, height: 30)
+                                    .foregroundColor(.white)
                             }
                             .padding(.leading, 20)
                             .padding(.bottom, 20)
@@ -164,13 +173,13 @@ struct TestCameraView: View {
                             Button {
                                 cameraCapture()
                             } label: {
-//                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
-//                                    .resizable()
-//                                    .frame(width: 60, height: 60)
-                                Text("\(self.currentIndex)")
+                                Image(systemName: ARCameraViewConstants.Images.cameraIcon)
+                                    .resizable()
                                     .frame(width: 60, height: 60)
-    //                                .foregroundColor(.white)
-                                    .border(Color.black, width: 2)
+//                                Text("\(self.currentIndex)")
+//                                    .frame(width: 60, height: 60)
+//    //                                .foregroundColor(.white)
+//                                    .border(Color.black, width: 2)
                             }
                             .padding(.bottom, 20)
                             Spacer()
@@ -181,6 +190,7 @@ struct TestCameraView: View {
                                 Image(systemName: TestCameraViewConstants.Images.nextIcon)
                                     .resizable()
                                     .frame(width: 30, height: 30)
+                                    .foregroundColor(.white)
                             }
                             .padding(.trailing, 20)
                             .padding(.bottom, 20)
@@ -229,6 +239,10 @@ struct TestCameraView: View {
                     heading.setValue(captureHeading, forKey: "trueHeading")
                     self.locationManager.locationManager(didUpdateHeading: heading)
                 }
+                if let correctedLocation = datasetCaptureData.correctedLocation {
+                    let correctedCLLocation = CLLocation(latitude: correctedLocation.latitude, longitude: correctedLocation.longitude)
+                    self.locationManager.locationManager(didUpdateCorrectedLocation: correctedCLLocation)
+                }
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -239,7 +253,7 @@ struct TestCameraView: View {
                 
                 /// For easier testing
                 cameraHintDefaultText = datasetCaptureData.captureImageData.id.uuidString
-                setHintText(datasetCaptureData.captureImageData.id.uuidString)
+//                setHintText(datasetCaptureData.captureImageData.id.uuidString)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -268,9 +282,10 @@ struct TestCameraView: View {
         })
         .fullScreenCover(isPresented: $showAnnotationView) {
             if let captureLocation = locationManager.currentLocation?.coordinate {
-                AnnotationView(
+                TestAnnotationView(
                     selectedClasses: selectedClasses, selectedAttributesByClass: selectedAttributesByClass,
                     captureLocation: captureLocation,
+                    correctedLocation: locationManager.correctedLocation?.coordinate,
                     apiChangesetUploadController: apiChangesetUploadController
                 )
             } else {
@@ -314,12 +329,16 @@ struct TestCameraView: View {
                     heading.setValue(captureHeading, forKey: "trueHeading")
                     self.locationManager.locationManager(didUpdateHeading: heading)
                 }
+                if let correctedLocation = datasetCaptureData.correctedLocation {
+                    let correctedCLLocation = CLLocation(latitude: correctedLocation.latitude, longitude: correctedLocation.longitude)
+                    self.locationManager.locationManager(didUpdateCorrectedLocation: correctedCLLocation)
+                }
                 
                 manager.handleSessionUpdate(datasetCaptureData: datasetCaptureData)
                 
                 /// For easier testing
                 cameraHintDefaultText = datasetCaptureData.captureImageData.id.uuidString
-                setHintText(datasetCaptureData.captureImageData.id.uuidString)
+//                setHintText(datasetCaptureData.captureImageData.id.uuidString)
             } catch {
                 managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
             }
@@ -433,14 +452,16 @@ struct TestCameraView: View {
     }
     
     private func handleLocationUpdate(oldLocation: CLLocation?, newLocation: CLLocation?) {
-        var shouldUpdateMap = oldLocation == nil && newLocation != nil
-        if let oldLocation, let newLocation {
-            let distance = oldLocation.distance(from: newLocation)
-            shouldUpdateMap = distance > SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
-        }
-        if !shouldUpdateMap {
-            return
-        }
+//        var shouldUpdateMap = oldLocation == nil && newLocation != nil
+//        if let oldLocation, let newLocation {
+//            let distance = oldLocation.distance(from: newLocation)
+//            shouldUpdateMap = distance > SharedAppConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters
+//        }
+        // Always trigger map update in test view
+        var shouldUpdateMap = true
+//        if !shouldUpdateMap {
+//            return
+//        }
         Task {
             do {
                 mappingDataStatusViewModel.update(isInProgress: true)
