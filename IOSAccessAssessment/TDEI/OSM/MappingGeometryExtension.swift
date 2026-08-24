@@ -15,8 +15,8 @@ extension MappingGeometry {
             return .way
         case .polygon:
             return .way
-        default:
-            return .node
+//        default:
+//            return .node
         }
     }
 }

@@ -130,8 +130,8 @@ class CurrentMappingData: CustomStringConvertible {
                 polygons.merge(matchingOSWPolygons) { (_, new) in new }
                 points.merge(matchingOSWChildPoints) { (_, new) in new }
                 featuresMap[featureClass] = Array(matchingOSWPolygons.keys)
-            default:
-                continue
+//            default:
+//                continue
             }
         }
         self.points = points
@@ -257,8 +257,8 @@ class CurrentMappingData: CustomStringConvertible {
             return lineStrings[featureId]
         case .polygon:
             return polygons[featureId]
-        default:
-            return nil
+//        default:
+//            return nil
         }
     }
     
@@ -307,8 +307,8 @@ class CurrentMappingData: CustomStringConvertible {
                 coordinates: coordinates, isWay: true, isClosed: true
             )
             return LocationDetails(locations: [LocationElement])
-        default:
-            return nil
+//        default:
+//            return nil
         }
     }
 }

@@ -562,4 +562,9 @@ extension TestCameraManager {
         self.cameraMeshResults = nil
         self.cameraCache = ARCameraCache()
     }
+    
+    @MainActor
+    func resume() throws {
+        self.outputConsumer?.resumeSession()
+    }
 }

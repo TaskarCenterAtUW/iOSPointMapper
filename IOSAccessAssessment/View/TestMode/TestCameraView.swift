@@ -210,8 +210,8 @@ struct TestCameraView: View {
         .navigationBarTitle(TestCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             showAnnotationView = false
-            segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
+                try segmentationPipeline.setSelectedClasses(selectedClasses)
                 let datasetDecoder = try initializeDatasetDecoder()
                 self.totalCaptures = datasetDecoder.totalFrames
                 let datasetCaptureData = try loadData(
@@ -245,6 +245,14 @@ struct TestCameraView: View {
             }
         }
         .onDisappear {
+            Task {
+                do {
+                    try manager.pause()
+                    locationManager.stopLocationUpdates()
+                } catch {
+                    print("Error pausing ARCameraManager: \(error)")
+                }
+            }
         }
         .alert(ARCameraViewConstants.Texts.managerStatusAlertTitleKey, isPresented: $managerConfigureStatusViewModel.isFailed, actions: {
             Button(ARCameraViewConstants.Texts.managerStatusAlertDismissButtonKey) {
@@ -284,8 +292,13 @@ struct TestCameraView: View {
             // If the AnnotationView is dismissed, clear capture history and move to the next capture data
             Task {
                 if (oldValue == true && newValue == false) {
-                    await sharedAppData.refreshQueue()
-                    self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
+                    do {
+                        await sharedAppData.refreshQueue()
+                        try manager.resume()
+                        self.currentIndex = max(min(self.currentIndex + 1, self.totalCaptures - 1), 0)
+                    } catch {
+                        managerConfigureStatusViewModel.update(isFailed: true, errorMessage: error.localizedDescription)
+                    }
                 }
             }
         }
@@ -385,7 +398,7 @@ struct TestCameraView: View {
                     {
                         throw TestCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
-                default: break
+//                default: break
                 }
                 let captureLocation = datadatasetCaptureData.location
                 let captureHeading = datadatasetCaptureData.heading

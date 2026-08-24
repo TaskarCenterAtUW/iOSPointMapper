@@ -43,7 +43,7 @@ extension AccessibilityFeatureAttribute {
         case .turningSpaceLength: return "turning_space_length"
         case .turningSpaceRunningSlope: return "turning_space_incline"
         case .turningSpaceCrossSlope: return "turning_space_cross_slope"
-        default: return ""
+//        default: return ""
         }
     }
 }
