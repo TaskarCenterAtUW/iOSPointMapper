@@ -221,8 +221,8 @@ struct ARCameraView: View {
         .onAppear {
             locationManager.startLocationUpdates()
             showAnnotationView = false
-            segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
+                try segmentationPipeline.setSelectedClasses(selectedClasses)
                 try manager.configure(
                     selectedClasses: selectedClasses, segmentationPipeline: segmentationPipeline,
                     metalContext: sharedAppContext.metalContext,
@@ -375,7 +375,7 @@ struct ARCameraView: View {
                     {
                         throw ARCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
-                default: break
+//                default: break
                 }
                 try manager.pause()
                 locationManager.stopLocationUpdates()

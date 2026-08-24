@@ -210,8 +210,8 @@ struct TestCameraView: View {
         .navigationBarTitle(TestCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
         .onAppear {
             showAnnotationView = false
-            segmentationPipeline.setSelectedClasses(selectedClasses)
             do {
+                try segmentationPipeline.setSelectedClasses(selectedClasses)
                 let datasetDecoder = try initializeDatasetDecoder()
                 self.totalCaptures = datasetDecoder.totalFrames
                 let datasetCaptureData = try loadData(
@@ -398,7 +398,7 @@ struct TestCameraView: View {
                     {
                         throw TestCameraViewError.captureNoSegmentationAccessibilityFeatures
                     }
-                default: break
+//                default: break
                 }
                 let captureLocation = datadatasetCaptureData.location
                 let captureHeading = datadatasetCaptureData.heading

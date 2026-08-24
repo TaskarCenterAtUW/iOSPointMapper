@@ -101,8 +101,8 @@ class APIChangesetUploadController: ObservableObject {
             enhancedAnalysisMode = false
         case .imageAndMeshData(_):
             enhancedAnalysisMode = true
-        default:
-            enhancedAnalysisMode = false
+//        default:
+//            enhancedAnalysisMode = false
         }
         return [
             APIConstants.TagKeys.captureIdKey: captureData.id.uuidString,
@@ -146,8 +146,8 @@ extension APIChangesetUploadController {
                 diffOperationSets = getDiffOperationsFromLinestringFeature(feature, additionalTags: additionalTags)
             case .polygon:
                 diffOperationSets = getDiffOperationsFromPolygons(feature, additionalTags: additionalTags)
-            default:
-                continue
+//            default:
+//                continue
             }
             diffOperationSets.mainOperations.forEach { diffOperation in
                 let oswElement = diffOperation.oswElement
