@@ -236,7 +236,7 @@ struct ARCameraView: View {
         .onDisappear {
             Task {
                 do {
-                    try manager.pause()
+                    try await manager.pause()
                     locationManager.stopLocationUpdates()
                 } catch {
                     print("Error pausing ARCameraManager: \(error)")
@@ -377,7 +377,7 @@ struct ARCameraView: View {
                     }
 //                default: break
                 }
-                try manager.pause()
+                try await manager.pause()
                 locationManager.stopLocationUpdates()
                 /// Get location. Done after pausing the manager to avoid delays, despite being less accurate.
                 sharedAppData.saveCaptureData(captureData)
