@@ -157,7 +157,7 @@ extension TestCameraManager {
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,
-            detectedFeatureMap: cameraImageResults.detectedFeatureMap
+            detectedFeatureMap: cameraImageResults.detectedFeatureMap ?? [:]
         )
         let captureImageData = CaptureImageData(
             id: frameId,
@@ -202,6 +202,7 @@ extension TestCameraManager {
         depthImage: CIImage? = nil,
         interfaceOrientation: UIInterfaceOrientation,
         cameraTransform: simd_float4x4, cameraIntrinsics: simd_float3x3,
+        processContours: Bool = true,
         originalSize: CGSize
     ) async throws -> ARCameraImageResults {
         guard let segmentationPipeline = segmentationPipeline else {
@@ -231,7 +232,7 @@ extension TestCameraManager {
         }
         let segmentationResults: SegmentationARPipelineResults = try await segmentationPipeline.processRequest(
             with: inputImage, depthImage: inputDepthImage,
-            highPriority: true
+            highPriority: true, processContours: processContours
         )
         
         var segmentationImage = segmentationResults.segmentationImage
@@ -255,11 +256,12 @@ extension TestCameraManager {
             segmentationColorCIImage, context: colorContext, pixelFormatType: segmentationColorPixelFormatType,
             colorSpace: segmentationColorColorSpace
         )
-        
-        let detectedFeatureMap = alignDetectedFeatures(
-            segmentationResults.detectedFeatureMap,
-            orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
-        )
+        var detectedFeatureMap: [UUID: DetectedAccessibilityFeature]? = nil
+        if let featureMap = segmentationResults.detectedFeatureMap {
+            detectedFeatureMap = alignDetectedFeatures(
+                featureMap, orientation: imageOrientation, imageSize: croppedSize, originalSize: originalSize
+            )
+        }
         
         // Create segmentation frame
         var segmentationBoundingFrameImage: CIImage? = nil
@@ -477,10 +479,13 @@ extension TestCameraManager {
         cameraImageResults.depthImage = depthImage
         cameraImageResults.confidenceImage = self.cameraImageResults?.confidenceImage
         
+        guard let featureMap = cameraImageResults.detectedFeatureMap else {
+            throw ARCameraManagerError.finalSessionNoDetectedFeatures
+        }
         let captureImageDataResults = CaptureImageDataResults(
             segmentationLabelImage: cameraImageResults.segmentationLabelImage,
             segmentedClasses: cameraImageResults.segmentedClasses,
-            detectedFeatureMap: cameraImageResults.detectedFeatureMap
+            detectedFeatureMap: featureMap
         )
         
         let captureImageData = CaptureImageData(
