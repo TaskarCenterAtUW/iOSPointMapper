@@ -23,6 +23,8 @@ extension AccessibilityFeatureAttribute {
         case .surfaceIntegrity: return "surface_integrity"
         case .surfaceDisruption: return "surface_disruption"
         case .heightFromGround: return "height_from_ground"
+        case .surfaceDisruptionArea: return "surface_disruption_area"
+        case .surfaceDisruptionLength: return "surface_disruption_length"
         case .lidarDepth: return APIConstants.TagKeys.lidarDepthKey
         case .latitudeDelta: return APIConstants.TagKeys.latitudeDeltaKey
         case .longitudeDelta: return APIConstants.TagKeys.longitudeDeltaKey
