@@ -74,7 +74,11 @@ class AuthService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = refreshToken.data(using: .utf8)
+//        request.httpBody = refreshToken.data(using: .utf8)
+        let body = [
+            "refreshToken": refreshToken
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         return request
     }
