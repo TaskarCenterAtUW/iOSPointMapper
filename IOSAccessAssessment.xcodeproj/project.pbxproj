@@ -120,13 +120,6 @@
 			remoteGlobalIDString = 3222F9152B622DFD0019A079;
 			remoteInfo = IOSAccessAssessment;
 		};
-		A312FD892FA3391C0044808E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 3222F90E2B622DFD0019A079 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 3222F9152B622DFD0019A079;
-			remoteInfo = IOSAccessAssessment;
-		};
 		A356AA3C2FD6774A00205DFF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A356A9102FD6774900205DFF /* PointNMap.xcodeproj */;
@@ -193,7 +186,6 @@
 		A30801592EC09BB700B1BA3A /* CocoCustom53ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom53ClassConfig.swift; sourceTree = "<group>"; };
 		A308015A2EC09BB700B1BA3A /* CocoCustom35ClassConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoCustom35ClassConfig.swift; sourceTree = "<group>"; };
 		A308016B2EC15CBA00B1BA3A /* AccessibilityFeatureAttributeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureAttributeExtension.swift; sourceTree = "<group>"; };
-		A312FD852FA3391C0044808E /* PointNMapSharedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PointNMapSharedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A312FF222FA4304D0044808E /* AccessibilityFeatureKindExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityFeatureKindExtension.swift; sourceTree = "<group>"; };
 		A312FF2A2FA436C60044808E /* IsExistingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsExistingExtension.swift; sourceTree = "<group>"; };
 		A322B8082FA5287300F4D488 /* MappedAccessibilityFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappedAccessibilityFeature.swift; sourceTree = "<group>"; };
@@ -301,13 +293,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A312FD822FA3391C0044808E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -329,7 +314,6 @@
 				3222F9162B622DFD0019A079 /* IOSAccessAssessment.app */,
 				3222F9262B622E0A0019A079 /* IOSAccessAssessmentTests.xctest */,
 				3222F9302B622E0A0019A079 /* IOSAccessAssessmentUITests.xctest */,
-				A312FD852FA3391C0044808E /* PointNMapSharedTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -877,26 +861,6 @@
 			productReference = 3222F9302B622E0A0019A079 /* IOSAccessAssessmentUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		A312FD842FA3391C0044808E /* PointNMapSharedTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A312FD952FA3391C0044808E /* Build configuration list for PBXNativeTarget "PointNMapSharedTests" */;
-			buildPhases = (
-				A312FD812FA3391C0044808E /* Sources */,
-				A312FD822FA3391C0044808E /* Frameworks */,
-				A312FD832FA3391C0044808E /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A312FD8A2FA3391C0044808E /* PBXTargetDependency */,
-			);
-			name = PointNMapSharedTests;
-			packageProductDependencies = (
-			);
-			productName = PointNMapSharedTests;
-			productReference = A312FD852FA3391C0044808E /* PointNMapSharedTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -920,10 +884,6 @@
 					};
 					3222F92F2B622E0A0019A079 = {
 						CreatedOnToolsVersion = 15.2;
-						TestTargetID = 3222F9152B622DFD0019A079;
-					};
-					A312FD842FA3391C0044808E = {
-						CreatedOnToolsVersion = 26.0.1;
 						TestTargetID = 3222F9152B622DFD0019A079;
 					};
 				};
@@ -953,7 +913,6 @@
 				3222F9152B622DFD0019A079 /* IOSAccessAssessment */,
 				3222F9252B622E0A0019A079 /* IOSAccessAssessmentTests */,
 				3222F92F2B622E0A0019A079 /* IOSAccessAssessmentUITests */,
-				A312FD842FA3391C0044808E /* PointNMapSharedTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1008,13 +967,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3222F92E2B622E0A0019A079 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A312FD832FA3391C0044808E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1132,13 +1084,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A312FD812FA3391C0044808E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1151,11 +1096,6 @@
 			isa = PBXTargetDependency;
 			target = 3222F9152B622DFD0019A079 /* IOSAccessAssessment */;
 			targetProxy = 3222F9312B622E0A0019A079 /* PBXContainerItemProxy */;
-		};
-		A312FD8A2FA3391C0044808E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 3222F9152B622DFD0019A079 /* IOSAccessAssessment */;
-			targetProxy = A312FD892FA3391C0044808E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1297,7 +1237,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				INFOPLIST_FILE = IOSAccessAssessment/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iOSPointMapper;
@@ -1317,7 +1257,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.3;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1349,7 +1289,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				INFOPLIST_FILE = IOSAccessAssessment/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iOSPointMapper;
@@ -1369,7 +1309,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.3;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				OTHER_CFLAGS = "-DACCELERATE_NEW_LAPACK";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1395,11 +1335,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1419,11 +1359,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1442,11 +1382,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1465,59 +1405,17 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/IOSAccessAssessment",
-					"$(SRCROOT)/PointNMapShaderTypes",
+					"$(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
-				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/PointNMapShaderTypes";
+				MTL_HEADER_SEARCH_PATHS = "$(SRCROOT)/IOSAccessAssessment $(SRCROOT)/Frameworks/PointNMap/PointNMapShaderTypes";
 				PRODUCT_BUNDLE_IDENTIFIER = edu.uw.pointmapperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = IOSAccessAssessment;
-			};
-			name = Release;
-		};
-		A312FD962FA3391C0044808E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UB6LB27Z2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = himanshunaidu.PointNMapSharedTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IOSAccessAssessment.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IOSAccessAssessment";
-			};
-			name = Debug;
-		};
-		A312FD972FA3391C0044808E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = UB6LB27Z2X;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = himanshunaidu.PointNMapSharedTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IOSAccessAssessment.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IOSAccessAssessment";
 			};
 			name = Release;
 		};
@@ -1556,15 +1454,6 @@
 			buildConfigurations = (
 				3222F9412B622E0A0019A079 /* Debug */,
 				3222F9422B622E0A0019A079 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A312FD952FA3391C0044808E /* Build configuration list for PBXNativeTarget "PointNMapSharedTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A312FD962FA3391C0044808E /* Debug */,
-				A312FD972FA3391C0044808E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
