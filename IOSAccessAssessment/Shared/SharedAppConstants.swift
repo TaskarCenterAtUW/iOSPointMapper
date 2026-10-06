@@ -26,7 +26,7 @@ struct SharedAppConstants {
     
     struct DamageDetectionConstants {
         /// Model-specific SharedAppConstants
-        static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "yolov8x_batch_16_A_full_soft", withExtension: "mlmodelc")
+        static let damageDetectionModelURL: URL? = Bundle.main.url(forResource: "v8n_175_16_960", withExtension: "mlmodelc")
         static let inputSize: CGSize = CGSize(width: 640, height: 640)
     }
     
