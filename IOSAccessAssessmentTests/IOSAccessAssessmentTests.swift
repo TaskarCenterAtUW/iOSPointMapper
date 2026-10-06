@@ -297,12 +297,12 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(features[.averagePolygonArea], 2)
         XCTAssertEqual(features[.polygonDensity], 0.5)
         XCTAssertEqual(features[.heightFromGround], 1.25)
-        XCTAssertEqual(features[.normalDeviationMean], 5)
-        XCTAssertEqual(features[.normalDeviationMedian], 10.0 / 3.0, accuracy: 0.000_001)
-        XCTAssertEqual(features[.normalDeviationProportionAbove5], 0.75)
-        XCTAssertEqual(features[.heightResidualsStandardDeviation], 2)
-        XCTAssertEqual(features[.heightResidualsAbsoluteMean], 2)
-        XCTAssertEqual(features[.signedTiltMagnitudeMean], 8.5)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("normal_deviation_mean")], 5)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("normal_deviation_median")], 10.0 / 3.0, accuracy: 0.000_001)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("normal_deviation_proportion_above_5")], 0.75)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("height_residuals_std")], 2)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("height_residuals_absolute_mean")], 2)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("signed_tilt_magnitude_mean")], 8.5)
     }
 
     func testEmptyWindowFeaturesUsePlaceholders() throws {
@@ -313,11 +313,64 @@ final class IOSAccessAssessmentTests: XCTestCase {
             heightFromGround: nil
         )
 
-        XCTAssertEqual(features.values.count, SurfaceIntegrityWindowFeature.allCases.count)
-        for feature in SurfaceIntegrityWindowFeature.allCases where feature != .heightFromGround {
+        XCTAssertEqual(features.values.count, SurfaceIntegrityFeatureConfiguration.pythonModelDefault.allColumns.count)
+        for feature in SurfaceIntegrityFeatureConfiguration.pythonModelDefault.allColumns
+            where feature != .heightFromGround {
             XCTAssertEqual(features[feature], 0)
         }
         XCTAssertTrue(features[.heightFromGround].isNaN)
+    }
+
+    func testWindowFeatureConfigurationGeneratesAndCalculatesSelectedColumns() throws {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .normalDeviation,
+            label: "python_sync_test",
+            centralTendencyFeatures: [.mean],
+            percentileFeatures: [50],
+            tailFeatures: [7.5],
+            distributionShapeFeatures: [.entropy]
+        )
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [group])
+        let details = [
+            MeshSurfaceDetail(
+                centroid: .zero,
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 1,
+                angularDeviationDegrees: 5
+            ),
+            MeshSurfaceDetail(
+                centroid: .zero,
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 3,
+                angularDeviationDegrees: 10
+            )
+        ]
+
+        let features = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: details,
+            heightResiduals: [0, 0],
+            signedTiltData: [
+                SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 90),
+                SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 90)
+            ],
+            heightFromGround: 1,
+            configuration: configuration
+        )
+
+        XCTAssertEqual(
+            group.columns.map(\.rawValue),
+            [
+                "python_sync_test_mean",
+                "python_sync_test_p50",
+                "python_sync_test_proportion_above_7_5",
+                "python_sync_test_entropy"
+            ]
+        )
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("python_sync_test_mean")], 7.5)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("python_sync_test_p50")], 20.0 / 3.0, accuracy: 0.000_001)
+        XCTAssertEqual(features[SurfaceIntegrityWindowFeature("python_sync_test_proportion_above_7_5")], 0.75)
+        XCTAssertNil(features.values[SurfaceIntegrityWindowFeature("python_sync_test_std")])
+        XCTAssertEqual(features.orderedColumns, configuration.allColumns)
     }
 
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
