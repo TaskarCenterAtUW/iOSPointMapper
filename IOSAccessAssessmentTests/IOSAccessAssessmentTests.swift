@@ -8,6 +8,7 @@
 import XCTest
 @testable import IOSAccessAssessment
 import PointNMapShared
+import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
     func testCustomOSWFieldPreservesMetadata() {
@@ -373,11 +374,55 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(features.orderedColumns, configuration.allColumns)
     }
 
+    func testMeshWindowAnalysisKeepsFilteredPolygonIndicesAligned() throws {
+        let meshContents = MeshContents(
+            positions: [
+                packed_float3(x: -1, y: -1, z: 0),
+                packed_float3(x: -1, y: -1, z: 0),
+                packed_float3(x: -1, y: -1, z: 0),
+                packed_float3(x: 0.02, y: 0.02, z: 0),
+                packed_float3(x: 0.05, y: 0.02, z: 0),
+                packed_float3(x: 0.02, y: 0.05, z: 0),
+                packed_float3(x: 0.11, y: 0.02, z: 0),
+                packed_float3(x: 0.14, y: 0.02, z: 0),
+                packed_float3(x: 0.11, y: 0.05, z: 0)
+            ],
+            indices: Array(0...8).map(UInt32.init),
+            colorR8: 255,
+            colorG8: 255,
+            colorB8: 255
+        )
+
+        let result = try SurfaceIntegrityProcessor.analyzeMeshWindows(
+            meshPolygons: meshContents.polygons,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            planeNormal: SIMD3<Float>(0, 0, 1),
+            damagePolygonsOnPlane: [
+                rectangle(minX: 0, minY: 0, maxX: 0.27, maxY: 0.27)
+            ],
+            damageConfidenceScores: [0.8],
+            heightFromGround: 1.5
+        )
+
+        XCTAssertEqual(result.windows.count, 2)
+        XCTAssertEqual(result.windows[0].gridIndex, SIMD2<Int32>(0, 0))
+        XCTAssertEqual(result.windows[0].surfaceDetailIndices, [0, 1])
+        XCTAssertEqual(result.windows[1].surfaceDetailIndices, [1])
+        XCTAssertEqual(result.windows[0].features[.numberOfPolygons], 2)
+        XCTAssertEqual(result.windows[1].features[.numberOfPolygons], 1)
+        XCTAssertEqual(result.windows[0].features[.heightFromGround], 1.5)
+        XCTAssertEqual(result.windows[0].damageOverlapRatio, 1, accuracy: 0.000_001)
+        XCTAssertEqual(result.windows[0].maximumDamageConfidence, 0.8, accuracy: 0.000_001)
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
             SIMD2<Float>(maxX, maxY), SIMD2<Float>(minX, maxY)
         ]
     }
+
 
 }
