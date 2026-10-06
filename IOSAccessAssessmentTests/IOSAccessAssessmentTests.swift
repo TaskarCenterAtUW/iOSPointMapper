@@ -239,6 +239,87 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(tilt[0].tiltMagnitudeDegrees, 45, accuracy: 0.000_01)
     }
 
+    func testWeightedPercentileMatchesNumPyInterpolation() {
+        let percentile = SurfaceIntegrityProcessor.weightedPercentile(
+            values: [0, 10],
+            weights: [1, 3],
+            percentile: 50
+        )
+
+        XCTAssertEqual(percentile, 10.0 / 3.0, accuracy: 0.000_001)
+        XCTAssertEqual(
+            SurfaceIntegrityProcessor.weightedPercentile(
+                values: [0, 10],
+                weights: [1, 3],
+                percentile: 0
+            ),
+            0
+        )
+        XCTAssertEqual(
+            SurfaceIntegrityProcessor.weightedPercentile(
+                values: [0, 10],
+                weights: [1, 3],
+                percentile: 100
+            ),
+            10
+        )
+    }
+
+    func testWindowFeaturesMatchConfiguredStatistics() throws {
+        let details = [
+            MeshSurfaceDetail(
+                centroid: .zero,
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 1,
+                angularDeviationDegrees: 0
+            ),
+            MeshSurfaceDetail(
+                centroid: .zero,
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 3,
+                angularDeviationDegrees: 10
+            )
+        ]
+        let tilts = [
+            SignedTiltData(tiltUDegrees: 3, tiltVDegrees: 4, tiltMagnitudeDegrees: 0),
+            SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 12)
+        ]
+
+        let features = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: details,
+            heightResiduals: [-1, 3],
+            signedTiltData: tilts,
+            heightFromGround: 1.25
+        )
+
+        XCTAssertEqual(features[.numberOfPolygons], 2)
+        XCTAssertEqual(features[.totalSidewalkArea], 4)
+        XCTAssertEqual(features[.averagePolygonArea], 2)
+        XCTAssertEqual(features[.polygonDensity], 0.5)
+        XCTAssertEqual(features[.heightFromGround], 1.25)
+        XCTAssertEqual(features[.normalDeviationMean], 5)
+        XCTAssertEqual(features[.normalDeviationMedian], 10.0 / 3.0, accuracy: 0.000_001)
+        XCTAssertEqual(features[.normalDeviationProportionAbove5], 0.75)
+        XCTAssertEqual(features[.heightResidualsStandardDeviation], 2)
+        XCTAssertEqual(features[.heightResidualsAbsoluteMean], 2)
+        XCTAssertEqual(features[.signedTiltMagnitudeMean], 8.5)
+    }
+
+    func testEmptyWindowFeaturesUsePlaceholders() throws {
+        let features = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: [],
+            heightResiduals: [],
+            signedTiltData: [],
+            heightFromGround: nil
+        )
+
+        XCTAssertEqual(features.values.count, SurfaceIntegrityWindowFeature.allCases.count)
+        for feature in SurfaceIntegrityWindowFeature.allCases where feature != .heightFromGround {
+            XCTAssertEqual(features[feature], 0)
+        }
+        XCTAssertTrue(features[.heightFromGround].isNaN)
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
