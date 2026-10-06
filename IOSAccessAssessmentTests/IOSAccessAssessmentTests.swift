@@ -176,6 +176,69 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(result.maximumSeverity, 0.4, accuracy: 0.000_001)
     }
 
+    func testMeshSurfaceDetailsNormalizeNormalsAndDiscardInvalidRows() throws {
+        let details = try SurfaceIntegrityProcessor.getSurfaceDetailsFromMesh(
+            centroids: [SIMD3<Float>(1, 2, 3), SIMD3<Float>(4, 5, 6)],
+            normals: [SIMD3<Float>(1, 0, 1), SIMD3<Float>(.nan, 0, 0)],
+            areas: [0.2, 0.4],
+            planeNormal: SIMD3<Float>(0, 0, 1)
+        )
+
+        XCTAssertEqual(details.count, 1)
+        XCTAssertEqual(details[0].centroid, SIMD3<Float>(1, 2, 3))
+        XCTAssertEqual(details[0].normal.x, sqrt(0.5), accuracy: 0.000_001)
+        XCTAssertEqual(details[0].normal.z, sqrt(0.5), accuracy: 0.000_001)
+        XCTAssertEqual(details[0].area, 0.2, accuracy: 0.000_001)
+        XCTAssertEqual(details[0].angularDeviationDegrees, 45, accuracy: 0.000_01)
+    }
+
+    func testHeightResidualsPreserveSideOfPlane() {
+        let details = [
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(0, 0, 3),
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 1,
+                angularDeviationDegrees: 0
+            ),
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(0, 0, -1),
+                normal: SIMD3<Float>(0, 0, 1),
+                area: 1,
+                angularDeviationDegrees: 0
+            )
+        ]
+
+        let residuals = SurfaceIntegrityProcessor.calculateHeightResiduals(
+            surfaceDetails: details,
+            planeOrigin: SIMD3<Float>(0, 0, 1),
+            planeNormal: SIMD3<Float>(0, 0, 1)
+        )
+
+        XCTAssertEqual(residuals, [2, -2])
+    }
+
+    func testSignedTiltMatchesPythonFeatureDefinition() throws {
+        let details = [
+            MeshSurfaceDetail(
+                centroid: .zero,
+                normal: SIMD3<Float>(1, 0, 1),
+                area: 1,
+                angularDeviationDegrees: 45
+            )
+        ]
+
+        let tilt = try SurfaceIntegrityProcessor.calculateSignedTiltData(
+            surfaceDetails: details,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            planeNormal: SIMD3<Float>(0, 0, 1)
+        )
+
+        XCTAssertEqual(tilt[0].tiltUDegrees, 45, accuracy: 0.000_01)
+        XCTAssertEqual(tilt[0].tiltVDegrees, 0, accuracy: 0.000_01)
+        XCTAssertEqual(tilt[0].tiltMagnitudeDegrees, 45, accuracy: 0.000_01)
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
