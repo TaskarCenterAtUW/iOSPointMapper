@@ -417,6 +417,88 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(result.windows[0].maximumDamageConfidence, 0.8, accuracy: 0.000_001)
     }
 
+    func testLogisticRegressionAppliesStandardizationAndReturnsProbability() throws {
+        let model = SurfaceIntegrityLogisticRegression(
+            identifier: "test",
+            schemaVersion: 1,
+            terms: [
+                .init(
+                    feature: .damageOverlapRatio,
+                    coefficient: 2,
+                    mean: 0.2,
+                    scale: 0.1,
+                    missingValue: 0
+                ),
+                .init(
+                    feature: .maximumDamageConfidence,
+                    coefficient: -1,
+                    mean: 0.5,
+                    scale: 0.25,
+                    missingValue: 0
+                )
+            ],
+            intercept: 0.3,
+            classificationThreshold: 0.5
+        )
+
+        let prediction = try model.predict(features: [
+            .damageOverlapRatio: 0.4,
+            .maximumDamageConfidence: 0.75
+        ])
+
+        XCTAssertEqual(prediction.logit, 3.3, accuracy: 0.000_001)
+        XCTAssertEqual(prediction.probability, 1 / (1 + exp(-3.3)), accuracy: 0.000_001)
+        XCTAssertTrue(prediction.isDisrupted)
+    }
+
+    func testLogisticRegressionUsesConfiguredMissingValue() throws {
+        let meshFeature = SurfaceIntegrityModelFeature.windowFeature(
+            SurfaceIntegrityWindowFeature("normal_deviation_mean")
+        )
+        let model = SurfaceIntegrityLogisticRegression(
+            identifier: "missing-value-test",
+            schemaVersion: 1,
+            terms: [
+                .init(
+                    feature: meshFeature,
+                    coefficient: 2,
+                    mean: 1,
+                    scale: 2,
+                    missingValue: 3
+                )
+            ],
+            intercept: 0,
+            classificationThreshold: 0.5
+        )
+
+        let prediction = try model.predict(features: [:])
+
+        XCTAssertEqual(prediction.logit, 2, accuracy: 0.000_001)
+    }
+
+    func testPlaceholderSurfaceIntegrityModelDeclaresCompleteSchema() throws {
+        let model = SurfaceIntegrityAnalysisModelZoo.placeholderLogisticRegression
+        let expectedFeatureCount =
+            SurfaceIntegrityFeatureConfiguration.pythonModelDefault.allColumns.count + 2
+        let declaredWindowFeatures = model.terms.compactMap { term -> SurfaceIntegrityWindowFeature? in
+            guard case .windowFeature(let feature) = term.feature else {
+                return nil
+            }
+            return feature
+        }
+
+        try model.validate()
+        XCTAssertEqual(model.terms.count, expectedFeatureCount)
+        XCTAssertEqual(model.classificationThreshold, 0.5)
+        XCTAssertEqual(model.terms.first?.feature, .damageOverlapRatio)
+        XCTAssertEqual(model.terms.dropFirst().first?.feature, .maximumDamageConfidence)
+        XCTAssertEqual(
+            declaredWindowFeatures,
+            SurfaceIntegrityFeatureConfiguration.pythonModelDefault.allColumns
+        )
+        XCTAssertTrue(model.terms.allSatisfy { $0.scale > 0 && $0.missingValue != nil })
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
