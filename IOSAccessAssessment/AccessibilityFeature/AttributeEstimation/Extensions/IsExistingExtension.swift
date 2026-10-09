@@ -20,12 +20,13 @@ extension AttributeEstimationPipeline {
             accessibilityFeature.setIsExisting(false)
             return
         }
-        let matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
+        let relevantElements = mappingData.getRelevantFeatures(
             to: LocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
             captureId: self.captureImageData?.id,
             distanceThreshold: distanceThreshold
         )
-        guard let matchedElement = matchedElement else {
+        accessibilityFeature.setRelevantOSWElements(relevantElements)
+        guard let matchedElement = relevantElements.first else {
             accessibilityFeature.setIsExisting(false)
             return
         }

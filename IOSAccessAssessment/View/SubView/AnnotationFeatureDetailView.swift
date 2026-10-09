@@ -10,8 +10,8 @@ import PointNMapShared
 
 enum AnnotationMappedFeatureDetailViewConstants {
     enum Texts {
-        /// Is Existing
-        static let isExistingTitle: String = "Is this an existing feature?"
+        static let updateElementTitle: String = "Element to update"
+        static let addNewElementTitle: String = "Add a new element"
         
         /// Invalid
         static let invalidTextKey: String = "Invalid"
@@ -56,32 +56,35 @@ func AnnotationFeatureDetailView(
                         Spacer()
                     }
                     Divider()
-                    HStack {
-                        Spacer()
-                        Toggle(isOn: Binding(
-                            get: { accessibilityFeature.isExisting && accessibilityFeature.oswElement != nil },
-                            set: { newValue in
-                                accessibilityFeature.setIsExisting(newValue)
+                    Picker(
+                        AnnotationMappedFeatureDetailViewConstants.Texts.updateElementTitle,
+                        selection: Binding<String?>(
+                            get: {
+                                accessibilityFeature.isExisting ? accessibilityFeature.oswElement?.id : nil
+                            },
+                            set: { selectedId in
+                                guard let selectedId else {
+                                    accessibilityFeature.setIsExisting(false)
+                                    return
+                                }
+                                guard let selectedElement = accessibilityFeature.relevantOSWElements.first(where: {
+                                    $0.id == selectedId
+                                }) else {
+                                    return
+                                }
+                                accessibilityFeature.setOSWElement(oswElement: selectedElement)
+                                accessibilityFeature.setIsExisting(true)
                             }
-                        )) {
-                            Text(AnnotationMappedFeatureDetailViewConstants.Texts.isExistingTitle)
-                        }
-                        .disabled(accessibilityFeature.oswElement == nil)
-                        .foregroundStyle(accessibilityFeature.oswElement == nil ? .secondary : .primary)
-                        .strikethrough(accessibilityFeature.oswElement == nil, pattern: .solid)
-                        Spacer()
-                    }
-                    if let oswElement = accessibilityFeature.oswElement {
-                        HStack {
-                            Spacer()
+                        )
+                    ) {
+                        Text(AnnotationMappedFeatureDetailViewConstants.Texts.addNewElementTitle)
+                            .tag(nil as String?)
+                        ForEach(accessibilityFeature.relevantOSWElements, id: \.id) { oswElement in
                             Text("TDEI Element ID: \(oswElement.id)")
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                                .tag(oswElement.id as String?)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 4)
-                        .padding(.bottom, 4)
                     }
+                    .pickerStyle(.inline)
                 }
             } else {
                 Text(AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey)

@@ -200,6 +200,52 @@ class CurrentMappingData: CustomStringConvertible {
         }
         return nearestFeature
     }
+
+    /**
+     Returns all features of the requested class within the distance threshold, ordered nearest first.
+     A feature with the matching capture ID is always placed first, even when it is outside the threshold.
+     */
+    func getRelevantFeatures(
+        to locationDetails: LocationDetails,
+        featureClass: AccessibilityFeatureClass,
+        captureId: UUID?,
+        distanceThreshold: CLLocationDistance = 50.0
+    ) -> [any OSWElement] {
+        guard let featureIds = featuresMap[featureClass] else { return [] }
+        let geometry = featureClass.kind.oswPolicy.oswElementClass.geometry
+        var nearbyFeatures: [(element: any OSWElement, distance: CLLocationDistance)] = []
+        var captureMatchedFeature: (any OSWElement)?
+        let captureIdString = captureId?.uuidString
+
+        for featureId in featureIds {
+            guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
+
+            if feature.getCaptureId() == captureIdString, captureIdString != nil {
+                captureMatchedFeature = feature
+            }
+
+            guard let featureLocationDetails = getFeatureOSMLocationDetails(
+                feature: feature,
+                geometry: geometry
+            ), let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
+                srcLocationDetails: featureLocationDetails,
+                dstLocationDetails: locationDetails
+            ), distance < distanceThreshold else {
+                continue
+            }
+            nearbyFeatures.append((feature, distance))
+        }
+
+        var relevantFeatures = nearbyFeatures
+            .sorted { $0.distance < $1.distance }
+            .map(\.element)
+
+        if let captureMatchedFeature {
+            relevantFeatures.removeAll { $0.id == captureMatchedFeature.id }
+            relevantFeatures.insert(captureMatchedFeature, at: 0)
+        }
+        return relevantFeatures
+    }
     
     /**
      This function takes in OSM location details, an accessibility feature class, and a capture ID, and returns the feature of that class whose capture ID matches the given capture ID.
@@ -234,17 +280,12 @@ class CurrentMappingData: CustomStringConvertible {
         captureId: UUID?,
         distanceThreshold: CLLocationDistance = 50.0
     ) -> (any OSWElement)? {
-        if let captureId = captureId {
-            let captureMatchedFeature = getCaptureMatchedFeature(
-                to: LocationDetails, featureClass: featureClass, captureId: captureId
-            )
-            if let captureMatchedFeature = captureMatchedFeature {
-                return captureMatchedFeature
-            }
-        }
-        return getNearestFeature(
-            to: LocationDetails, featureClass: featureClass, distanceThreshold: distanceThreshold
-        )
+        getRelevantFeatures(
+            to: LocationDetails,
+            featureClass: featureClass,
+            captureId: captureId,
+            distanceThreshold: distanceThreshold
+        ).first
     }
     
     private func getFeature(

@@ -13,6 +13,7 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     /// If isExisting is true, it means the feature corresponds to an existing real-world feature, and the oswElement (if present) represents that existing feature in OSW.
     var isExisting: Bool = false
     var oswElement: (any OSWElement)?
+    var relevantOSWElements: [any OSWElement] = []
     
     required init(
         id: UUID = UUID(),
@@ -68,7 +69,11 @@ class MappedEditableAccessibilityFeature: EditableAccessibilityFeature {
     func setOSWElement(oswElement: any OSWElement) {
         self.oswElement = oswElement
     }
-    
+
+    func setRelevantOSWElements(_ oswElements: [any OSWElement]) {
+        relevantOSWElements = oswElements
+    }
+
     static func == (
         lhs: MappedEditableAccessibilityFeature, rhs: MappedEditableAccessibilityFeature
     ) -> Bool {
