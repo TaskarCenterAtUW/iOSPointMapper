@@ -27,6 +27,22 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(coordinate.longitude, 0.0015, accuracy: 0.00001)
     }
 
+    func testPolygonSelectionCoordinateUsesPolygonCentroid() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.003),
+            CLLocationCoordinate2D(latitude: 0.003, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        ]
+
+        let coordinate = try XCTUnwrap(
+            OSWElementMapSelectionGeometry.polygonSelectionCoordinate(for: coordinates)
+        )
+
+        XCTAssertEqual(coordinate.latitude, 0.001, accuracy: 0.00001)
+        XCTAssertEqual(coordinate.longitude, 0.001, accuracy: 0.00001)
+    }
+
     func testVisibleMapRectUsesMinimumSpanForSingleCoordinate() {
         let location = pointLocation(CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
         let rect = OSWElementMapViewport.makeVisibleMapRect(candidates: [], capturedFeatureLocation: location)

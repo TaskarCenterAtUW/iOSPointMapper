@@ -33,6 +33,45 @@ enum OSWElementMapSelectionGeometry {
 
         return points.last?.coordinate
     }
+
+    static func polygonSelectionCoordinate(
+        for coordinates: [CLLocationCoordinate2D]
+    ) -> CLLocationCoordinate2D? {
+        guard coordinates.count >= 3 else { return selectionCoordinate(for: coordinates) }
+        var points = coordinates.map(MKMapPoint.init)
+        if let first = points.first, let last = points.last,
+           first.x == last.x, first.y == last.y {
+            points.removeLast()
+        }
+        guard points.count >= 3 else { return selectionCoordinate(for: coordinates) }
+
+        var signedArea = 0.0
+        var centroidX = 0.0
+        var centroidY = 0.0
+        for index in points.indices {
+            let current = points[index]
+            let next = points[(index + 1) % points.count]
+            let crossProduct = current.x * next.y - next.x * current.y
+            signedArea += crossProduct
+            centroidX += (current.x + next.x) * crossProduct
+            centroidY += (current.y + next.y) * crossProduct
+        }
+
+        guard abs(signedArea) > .ulpOfOne else {
+            return selectionCoordinate(for: coordinates)
+        }
+        let centroid = MKMapPoint(
+            x: centroidX / (3 * signedArea),
+            y: centroidY / (3 * signedArea)
+        )
+        if LocationHelpers.MKDistanceHelpers.checkPointInsidePolygon(
+            srcPoint: centroid,
+            polygonPoints: points
+        ) {
+            return centroid.coordinate
+        }
+        return selectionCoordinate(for: coordinates)
+    }
 }
 
 enum OSWElementMapViewport {
@@ -219,6 +258,26 @@ struct OSWElementMapSelectionView: View {
                     .foregroundStyle(candidate.id == draftElementId ? Color.green.opacity(0.45) : Color.blue.opacity(0.25))
                     .stroke(candidate.id == draftElementId ? .green : .blue, lineWidth: candidate.id == draftElementId ? 6 : 3)
                     .tag(candidate.id)
+                if let selectionCoordinate = OSWElementMapSelectionGeometry.polygonSelectionCoordinate(
+                    for: location.coordinates
+                ) {
+                    Annotation("Select polygon \(candidate.id)", coordinate: selectionCoordinate) {
+                        Button {
+                            draftElementId = candidate.id
+                        } label: {
+                            Image(systemName: "pentagon.fill")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    candidate.id == draftElementId ? Color.green : Color.blue,
+                                    in: Circle()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Select TDEI polygon element \(candidate.id)")
+                    }
+                }
             } else {
                 MapPolyline(coordinates: location.coordinates)
                     .stroke(candidate.id == draftElementId ? .green : .blue, lineWidth: candidate.id == draftElementId ? 10 : 7)
