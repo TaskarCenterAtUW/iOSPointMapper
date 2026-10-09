@@ -606,9 +606,14 @@ struct AnnotationView: View {
                     let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
                         accessibilityFeature: currentFeature
                     )
+                    let surfaceIntegrityWindowAnalysis = try? attributeEstimationPipeline
+                        .getCachedSurfaceIntegrityWindowAnalysis(
+                            accessibilityFeature: currentFeature
+                        )
                     updateFeatureResults = AnnotationImageFeatureUpdateResults(
                         plane: plane, projectedPlane: projectedPlane,
-                        damageDetectionResults: damageDetectionResults
+                        damageDetectionResults: damageDetectionResults,
+                        surfaceIntegrityWindowAnalysis: surfaceIntegrityWindowAnalysis
                     )
                 }
             } else {

@@ -116,6 +116,28 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(grid.windowToMeshIndices, [[0, 1]])
     }
 
+    func testSlidingWindowGridBuildsCenteredPredictionCell() throws {
+        let grid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: [SIMD3<Float>(10, 20, 30)],
+            planeOrigin: SIMD3<Float>(10, 20, 30),
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 0, 1),
+            cellSize: 0.27,
+            stride: 0.09,
+            predictionCellSize: 0.09
+        )
+
+        XCTAssertEqual(grid.predictionCellSize, 0.09, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds[0].minU, 0.09, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds[0].maxU, 0.18, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds[0].minV, 0.09, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds[0].maxV, 0.18, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds3D[0][0].x, 10.09, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds3D[0][0].z, 30.09, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds3D[0][2].x, 10.18, accuracy: 0.000_001)
+        XCTAssertEqual(grid.predictionCellBounds3D[0][2].z, 30.18, accuracy: 0.000_001)
+    }
+
     func testPolygonProjectionToPlaneUsesPlaneBasis() {
         let result = SurfaceIntegrityProcessor.projectPolygonToPlane(
             [SIMD3<Float>(11, 20, 32), SIMD3<Float>(12, 20, 34)],
@@ -556,6 +578,17 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
 
         XCTAssertEqual(area, 0.0243, accuracy: 0.000_001)
+    }
+
+    func testNormalizedDepthPointUsesNativeDepthDimensions() throws {
+        let depthPoint = try DepthMapProcessor.depthPoint(
+            fromNormalizedPoint: CGPoint(x: 0.5, y: 0.25),
+            depthWidth: 256,
+            depthHeight: 192
+        )
+
+        XCTAssertEqual(depthPoint.x, 128, accuracy: 0.000_001)
+        XCTAssertEqual(depthPoint.y, 48, accuracy: 0.000_001)
     }
 
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
