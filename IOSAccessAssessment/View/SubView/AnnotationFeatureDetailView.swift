@@ -12,6 +12,7 @@ enum AnnotationMappedFeatureDetailViewConstants {
     enum Texts {
         static let updateElementTitle: String = "Element to update"
         static let addNewElementTitle: String = "Add a new element"
+        static let selectOnMapTitle: String = "Select on Map"
         
         /// Invalid
         static let invalidTextKey: String = "Invalid"
@@ -43,6 +44,7 @@ private struct AnnotationFeatureLocationSection: View {
     let accessibilityFeature: MappedEditableAccessibilityFeature
 
     @State private var refreshTrigger = 0
+    @State private var isMapSelectionPresented = false
 
     private let locationFormatter = AnnotationFeatureDetailLocationFormatter()
 
@@ -66,19 +68,44 @@ private struct AnnotationFeatureLocationSection: View {
                     Spacer()
                 }
 
+                if !accessibilityFeature.relevantOSWElements.isEmpty,
+                   accessibilityFeature.locationDetails != nil {
+                    Button {
+                        isMapSelectionPresented = true
+                    } label: {
+                        Label(
+                            AnnotationMappedFeatureDetailViewConstants.Texts.selectOnMapTitle,
+                            systemImage: "map"
+                        )
+                    }
+                    .accessibilityLabel("Select an existing element on the map")
+                }
+
                 selectionButton(
                     title: AnnotationMappedFeatureDetailViewConstants.Texts.addNewElementTitle,
                     elementId: nil
                 )
                 .id("new-element")
 
-                ForEach(accessibilityFeature.relevantOSWElements, id: \.id) { oswElement in
-                    selectionButton(title: "TDEI Element ID: \(oswElement.id)", elementId: oswElement.id)
-                        .id("osw-element-\(oswElement.id)")
+                ForEach(accessibilityFeature.relevantOSWElements) { candidate in
+                    selectionButton(title: "TDEI Element ID: \(candidate.id)", elementId: candidate.id)
+                        .id("osw-element-\(candidate.id)")
                 }
             } else {
                 Text(AnnotationMappedFeatureDetailViewConstants.Texts.invalidTextKey)
                     .foregroundStyle(.secondary)
+            }
+        }
+        .fullScreenCover(isPresented: $isMapSelectionPresented) {
+            if let capturedFeatureLocation = accessibilityFeature.locationDetails {
+                OSWElementMapSelectionView(
+                    candidates: accessibilityFeature.relevantOSWElements,
+                    capturedFeatureLocation: capturedFeatureLocation,
+                    initialSelection: currentSelection
+                ) { selection in
+                    try accessibilityFeature.applyOSWElementSelection(selection)
+                    refreshTrigger += 1
+                }
             }
         }
     }
@@ -108,19 +135,16 @@ private struct AnnotationFeatureLocationSection: View {
         return elementId == nil
     }
 
+    private var currentSelection: OSWElementSelection {
+        if accessibilityFeature.isExisting, let id = accessibilityFeature.oswElement?.id {
+            return .existingElement(id: id)
+        }
+        return .newElement
+    }
+
     private func selectElement(id: String?) {
-        guard let id else {
-            accessibilityFeature.setIsExisting(false)
-            refreshTrigger += 1
-            return
-        }
-        guard let selectedElement = accessibilityFeature.relevantOSWElements.first(where: {
-            $0.id == id
-        }) else {
-            return
-        }
-        accessibilityFeature.setOSWElement(oswElement: selectedElement)
-        accessibilityFeature.setIsExisting(true)
+        let selection = id.map(OSWElementSelection.existingElement(id:)) ?? .newElement
+        guard (try? accessibilityFeature.applyOSWElementSelection(selection)) != nil else { return }
         refreshTrigger += 1
     }
 }

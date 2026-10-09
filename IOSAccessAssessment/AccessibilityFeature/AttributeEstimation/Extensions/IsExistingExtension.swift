@@ -32,6 +32,6 @@ extension AttributeEstimationPipeline {
         }
         let isExisting = accessibilityFeature.accessibilityFeatureClass.kind.oswPolicy.isExistingFirst
         accessibilityFeature.setIsExisting(isExisting)
-        accessibilityFeature.setOSWElement(oswElement: matchedElement)
+        accessibilityFeature.setOSWElement(oswElement: matchedElement.element)
     }
 }

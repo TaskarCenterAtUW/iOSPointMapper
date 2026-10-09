@@ -210,35 +210,40 @@ class CurrentMappingData: CustomStringConvertible {
         featureClass: AccessibilityFeatureClass,
         captureId: UUID?,
         distanceThreshold: CLLocationDistance = 50.0
-    ) -> [any OSWElement] {
+    ) -> [OSWElementCandidate] {
         guard let featureIds = featuresMap[featureClass] else { return [] }
         let geometry = featureClass.kind.oswPolicy.oswElementClass.geometry
-        var nearbyFeatures: [(element: any OSWElement, distance: CLLocationDistance)] = []
-        var captureMatchedFeature: (any OSWElement)?
+        var nearbyFeatures: [OSWElementCandidate] = []
+        var captureMatchedFeature: OSWElementCandidate?
+        var seenIds: Set<String> = []
         let captureIdString = captureId?.uuidString
 
         for featureId in featureIds {
+            guard seenIds.insert(featureId).inserted else { continue }
             guard let feature = getFeature(featureId: featureId, geometry: geometry) else { continue }
-
-            if feature.getCaptureId() == captureIdString, captureIdString != nil {
-                captureMatchedFeature = feature
-            }
-
             guard let featureLocationDetails = getFeatureOSMLocationDetails(
                 feature: feature,
                 geometry: geometry
             ), let distance = LocationHelpers.distanceBetweenSimilarOSMLocationDetails(
                 srcLocationDetails: featureLocationDetails,
                 dstLocationDetails: locationDetails
-            ), distance < distanceThreshold else {
-                continue
+            ) else { continue }
+            let isCaptureMatched = captureIdString != nil && feature.getCaptureId() == captureIdString
+            let candidate = OSWElementCandidate(
+                element: feature,
+                locationDetails: featureLocationDetails,
+                distance: distance,
+                isCaptureMatched: isCaptureMatched
+            )
+            if isCaptureMatched {
+                captureMatchedFeature = candidate
+            } else if distance < distanceThreshold {
+                nearbyFeatures.append(candidate)
             }
-            nearbyFeatures.append((feature, distance))
         }
 
         var relevantFeatures = nearbyFeatures
             .sorted { $0.distance < $1.distance }
-            .map(\.element)
 
         if let captureMatchedFeature {
             relevantFeatures.removeAll { $0.id == captureMatchedFeature.id }
@@ -285,7 +290,7 @@ class CurrentMappingData: CustomStringConvertible {
             featureClass: featureClass,
             captureId: captureId,
             distanceThreshold: distanceThreshold
-        ).first
+        ).first?.element
     }
     
     private func getFeature(
@@ -330,20 +335,19 @@ class CurrentMappingData: CustomStringConvertible {
             return LocationDetails(locations: [LocationElement])
         case .linestring:
             guard let lineString = feature as? OSWLineString else { return nil }
-            let coordinates: [CLLocationCoordinate2D] = lineString.pointRefs.compactMap { pointRef in
-                guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
-                return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
-            }
+            guard lineString.pointRefs.count >= 2 else { return nil }
+            let coordinates = lineString.pointRefs.compactMap { pointCoordinate(for: $0) }
+            guard coordinates.count == lineString.pointRefs.count else { return nil }
             let LocationElement: LocationElement = LocationElement(
                 coordinates: coordinates, isWay: true, isClosed: false
             )
             return LocationDetails(locations: [LocationElement])
         case .polygon:
             guard let polygon = feature as? OSWPolygon else { return nil }
-            let coordinates: [CLLocationCoordinate2D] = polygon.pointRefs.compactMap { pointRef in
-                guard let point = self.getFeature(featureId: pointRef, geometry: .point) as? OSWPoint else { return nil }
-                return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
-            }
+            let coordinates = polygon.pointRefs.compactMap { pointCoordinate(for: $0) }
+            guard coordinates.count == polygon.pointRefs.count else { return nil }
+            let distinctCoordinates = Set(coordinates.map { "\($0.latitude),\($0.longitude)" })
+            guard distinctCoordinates.count >= 3 else { return nil }
             let LocationElement: LocationElement = LocationElement(
                 coordinates: coordinates, isWay: true, isClosed: true
             )
@@ -351,5 +355,10 @@ class CurrentMappingData: CustomStringConvertible {
 //        default:
 //            return nil
         }
+    }
+
+    private func pointCoordinate(for pointRef: String) -> CLLocationCoordinate2D? {
+        guard let point = points[pointRef] else { return nil }
+        return CLLocationCoordinate2D(latitude: point.latitude, longitude: point.longitude)
     }
 }

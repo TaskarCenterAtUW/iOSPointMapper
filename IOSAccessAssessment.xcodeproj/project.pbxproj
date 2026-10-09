@@ -14,6 +14,8 @@
 		3222F9352B622E0A0019A079 /* IOSAccessAssessmentUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9342B622E0A0019A079 /* IOSAccessAssessmentUITests.swift */; };
 		3222F9372B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */; };
 		55659C102BB7863F0094DF01 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55659C0F2BB7863F0094DF01 /* SetupView.swift */; };
+		A301C68B3078D0C000E80383 /* OSWElementCandidate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A301C68A3078D0C000E80383 /* OSWElementCandidate.swift */; };
+		A301C6913078D12F00E80383 /* OSWElementMapSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A301C6903078D12F00E80383 /* OSWElementMapSelectionView.swift */; };
 		A305B05C2E18882800ECCF9B /* DatasetEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */; };
 		A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A305B06B2E18A85D00ECCF9B /* DepthCoder.swift */; };
 		A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30646292D614D9400B97D1B /* ImageSaver.swift */; };
@@ -177,6 +179,8 @@
 		3222F9362B622E0A0019A079 /* IOSAccessAssessmentUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSAccessAssessmentUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3222F94B2B62FF2E0019A079 /* espnetv2_pascal_256.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = espnetv2_pascal_256.mlmodel; sourceTree = "<group>"; };
 		55659C0F2BB7863F0094DF01 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		A301C68A3078D0C000E80383 /* OSWElementCandidate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElementCandidate.swift; sourceTree = "<group>"; };
+		A301C6903078D12F00E80383 /* OSWElementMapSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSWElementMapSelectionView.swift; sourceTree = "<group>"; };
 		A305B05B2E18882500ECCF9B /* DatasetEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetEncoder.swift; sourceTree = "<group>"; };
 		A305B06B2E18A85D00ECCF9B /* DepthCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthCoder.swift; sourceTree = "<group>"; };
 		A30646292D614D9400B97D1B /* ImageSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSaver.swift; sourceTree = "<group>"; };
@@ -668,6 +672,7 @@
 				A3EE6E452F57FE6200F515E6 /* AppMode.swift */,
 				A35547C72EC1B0D900F43AFD /* CurrentMappedFeaturesData.swift */,
 				A374B4AB2F8EF654003E030D /* CurrentMappingData.swift */,
+				A301C68A3078D0C000E80383 /* OSWElementCandidate.swift */,
 			);
 			path = Definitions;
 			sourceTree = "<group>";
@@ -676,6 +681,7 @@
 			isa = PBXGroup;
 			children = (
 				A38338C12EDA9E6500F1A402 /* AnnotationFeatureDetailView.swift */,
+				A301C6903078D12F00E80383 /* OSWElementMapSelectionView.swift */,
 			);
 			path = SubView;
 			sourceTree = "<group>";
@@ -990,6 +996,7 @@
 				A306462A2D614D9600B97D1B /* ImageSaver.swift in Sources */,
 				A33EB5AB2F76080E008ABFB7 /* APIEndpoint.swift in Sources */,
 				A32943502EE80EC400C4C1BC /* OSMRelation.swift in Sources */,
+				A301C6913078D12F00E80383 /* OSWElementMapSelectionView.swift in Sources */,
 				A308015C2EC09BB700B1BA3A /* CityscapesClassConfig.swift in Sources */,
 				A308015D2EC09BB700B1BA3A /* CityscapesSubsetClassConfig.swift in Sources */,
 				A35547C82EC1B0DB00F43AFD /* CurrentMappedFeaturesData.swift in Sources */,
@@ -1009,6 +1016,7 @@
 				A3ECB560300C3FEE0054FC64 /* bisenetv2_11_640_640_model_final_coco_combined_ios_point_mapper_finetuned.mlpackage in Sources */,
 				A3B61FCB2F79036A0052AE2C /* OSMMapDataResponse.swift in Sources */,
 				CAF812BC2CF78F8100D44B84 /* NetworkError.swift in Sources */,
+				A301C68B3078D0C000E80383 /* OSWElementCandidate.swift in Sources */,
 				A305B06C2E18A85F00ECCF9B /* DepthCoder.swift in Sources */,
 				A312FF2B2FA436CB0044808E /* IsExistingExtension.swift in Sources */,
 				A308016C2EC15CC400B1BA3A /* AccessibilityFeatureAttributeExtension.swift in Sources */,
