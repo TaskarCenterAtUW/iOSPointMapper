@@ -2,6 +2,39 @@ import SwiftUI
 import MapKit
 import PointNMapShared
 
+enum OSWElementMapSelectionGeometry {
+    static func selectionCoordinate(
+        for coordinates: [CLLocationCoordinate2D]
+    ) -> CLLocationCoordinate2D? {
+        guard let firstCoordinate = coordinates.first else { return nil }
+        guard coordinates.count > 1 else { return firstCoordinate }
+
+        let points = coordinates.map(MKMapPoint.init)
+        let segmentLengths = zip(points, points.dropFirst()).map { start, end in
+            start.distance(to: end)
+        }
+        let targetDistance = segmentLengths.reduce(0, +) / 2
+        var traversedDistance = 0.0
+
+        for index in segmentLengths.indices {
+            let segmentLength = segmentLengths[index]
+            if traversedDistance + segmentLength >= targetDistance {
+                guard segmentLength > 0 else { return points[index].coordinate }
+                let progress = (targetDistance - traversedDistance) / segmentLength
+                let start = points[index]
+                let end = points[index + 1]
+                return MKMapPoint(
+                    x: start.x + (end.x - start.x) * progress,
+                    y: start.y + (end.y - start.y) * progress
+                ).coordinate
+            }
+            traversedDistance += segmentLength
+        }
+
+        return points.last?.coordinate
+    }
+}
+
 enum OSWElementMapViewport {
     static func makeVisibleMapRect(
         candidates: [OSWElementCandidate],
@@ -190,6 +223,26 @@ struct OSWElementMapSelectionView: View {
                 MapPolyline(coordinates: location.coordinates)
                     .stroke(candidate.id == draftElementId ? .green : .blue, lineWidth: candidate.id == draftElementId ? 10 : 7)
                     .tag(candidate.id)
+                if let selectionCoordinate = OSWElementMapSelectionGeometry.selectionCoordinate(
+                    for: location.coordinates
+                ) {
+                    Annotation("Select line \(candidate.id)", coordinate: selectionCoordinate) {
+                        Button {
+                            draftElementId = candidate.id
+                        } label: {
+                            Image(systemName: "point.3.connected.trianglepath.dotted")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    candidate.id == draftElementId ? Color.green : Color.blue,
+                                    in: Circle()
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Select TDEI line element \(candidate.id)")
+                    }
+                }
             }
         }
     }

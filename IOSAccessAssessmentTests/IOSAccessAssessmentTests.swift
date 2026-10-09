@@ -12,6 +12,21 @@ import PointNMapShared
 @testable import IOSAccessAssessment
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testLineSelectionCoordinateFallsAlongMiddleSegment() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.001),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.003)
+        ]
+
+        let coordinate = try XCTUnwrap(
+            OSWElementMapSelectionGeometry.selectionCoordinate(for: coordinates)
+        )
+
+        XCTAssertEqual(coordinate.latitude, 0, accuracy: 0.000001)
+        XCTAssertEqual(coordinate.longitude, 0.0015, accuracy: 0.00001)
+    }
+
     func testVisibleMapRectUsesMinimumSpanForSingleCoordinate() {
         let location = pointLocation(CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3))
         let rect = OSWElementMapViewport.makeVisibleMapRect(candidates: [], capturedFeatureLocation: location)
