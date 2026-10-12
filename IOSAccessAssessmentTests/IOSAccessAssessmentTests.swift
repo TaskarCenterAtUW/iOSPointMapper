@@ -5,6 +5,7 @@
 //  Created by Sai on 1/24/24.
 //
 
+import Foundation
 import XCTest
 @testable import IOSAccessAssessment
 import PointNMapShared
@@ -100,6 +101,107 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
         XCTAssertEqual(firstMembership, [0])
         XCTAssertEqual(lastMembership, [1])
+    }
+
+    func testSlidingWindowGridCSRDescribesEachWindowMembershipRange() throws {
+        let grid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: [SIMD3<Float>(0, 0, 0), SIMD3<Float>(0.27, 0, 0)],
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            cellSize: 0.27,
+            stride: 0.09
+        )
+
+        XCTAssertEqual(grid.membershipCSR.windowOffsets, [0, 1, 2, 3, 4])
+        XCTAssertEqual(grid.membershipCSR.meshIndices, [0, 1, 1, 1])
+        XCTAssertEqual(grid.membershipCSR.windowCount, 4)
+        XCTAssertEqual(grid.membershipCSR.membershipCount, 4)
+    }
+
+    func testInverseSlidingWindowMembershipMatchesReferenceWithFilteringAndBoundaries() throws {
+        let centroids = [
+            SIMD3<Float>(-0.09, -0.09, 0),
+            SIMD3<Float>(-0.000_001, 0, 0),
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.089_999, 0.09, 0),
+            SIMD3<Float>(0.09, 0.18, 0),
+            SIMD3<Float>(0.269_999, 0.27, 0),
+            SIMD3<Float>(0.27, 0.36, 0)
+        ]
+        let arguments = (
+            planeOrigin: SIMD3<Float>.zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0)
+        )
+
+        let inverse = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: arguments.planeOrigin,
+            firstPlaneVector: arguments.firstPlaneVector,
+            secondPlaneVector: arguments.secondPlaneVector,
+            includeEmptyWindows: false,
+            minMeshPoints: 2
+        )
+        let reference = try SurfaceIntegrityProcessor.computeSlidingWindowGridReference(
+            meshCentroids: centroids,
+            planeOrigin: arguments.planeOrigin,
+            firstPlaneVector: arguments.firstPlaneVector,
+            secondPlaneVector: arguments.secondPlaneVector,
+            includeEmptyWindows: false,
+            minMeshPoints: 2
+        )
+
+        XCTAssertEqual(inverse.gridIndices, reference.gridIndices)
+        XCTAssertEqual(inverse.gridBounds, reference.gridBounds)
+        XCTAssertEqual(inverse.windowToMeshIndices, reference.windowToMeshIndices)
+        XCTAssertEqual(inverse.membershipCSR, reference.membershipCSR)
+    }
+
+    func testInverseSlidingWindowMembershipBenchmarkAgainstReference() throws {
+        var state: UInt64 = 0x5EED
+        let centroids = (0..<18_323).map { _ in
+            state = state &* 6_364_136_223_846_793_005 &+ 1
+            let u = Float(state & 0xFFFF) / Float(UInt16.max) * 3.51
+            state = state &* 6_364_136_223_846_793_005 &+ 1
+            let v = Float(state & 0xFFFF) / Float(UInt16.max) * 2.52
+            return SIMD3<Float>(u, v, 0)
+        }
+        let planeOrigin = SIMD3<Float>.zero
+        let firstPlaneVector = SIMD3<Float>(1, 0, 0)
+        let secondPlaneVector = SIMD3<Float>(0, 1, 0)
+
+        let inverseStart = ProcessInfo.processInfo.systemUptime
+        let inverse = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: planeOrigin,
+            firstPlaneVector: firstPlaneVector,
+            secondPlaneVector: secondPlaneVector
+        )
+        let inverseDuration = ProcessInfo.processInfo.systemUptime - inverseStart
+
+        let referenceStart = ProcessInfo.processInfo.systemUptime
+        let reference = try SurfaceIntegrityProcessor.computeSlidingWindowGridReference(
+            meshCentroids: centroids,
+            planeOrigin: planeOrigin,
+            firstPlaneVector: firstPlaneVector,
+            secondPlaneVector: secondPlaneVector
+        )
+        let referenceDuration = ProcessInfo.processInfo.systemUptime - referenceStart
+
+        XCTAssertEqual(inverse.gridIndices, reference.gridIndices)
+        XCTAssertEqual(inverse.windowToMeshIndices, reference.windowToMeshIndices)
+        XCTAssertEqual(inverse.membershipCSR, reference.membershipCSR)
+
+        let inverseMilliseconds = inverseDuration * 1_000
+        let referenceMilliseconds = referenceDuration * 1_000
+        let speedup = referenceDuration / max(inverseDuration, .leastNonzeroMagnitude)
+        print(
+            "[GRID BENCHMARK] inverse_ms=\(inverseMilliseconds) "
+                + "reference_ms=\(referenceMilliseconds) speedup=\(speedup) "
+                + "polygons=\(centroids.count) windows=\(inverse.gridIndices.count) "
+                + "memberships=\(inverse.membershipCSR.membershipCount)"
+        )
     }
 
     func testSlidingWindowGridFiltersWindowsBelowMinimumMeshPointCount() throws {
