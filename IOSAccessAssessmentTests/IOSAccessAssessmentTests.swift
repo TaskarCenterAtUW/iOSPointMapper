@@ -11,6 +11,82 @@ import PointNMapShared
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testSurfaceAnalysisDetailStagesAreClearlyNamespaced() {
+        let stages: [AttributeEstimationPerformanceStage] = [
+            .surfaceDamageProjection,
+            .surfaceMeshFeatureExtraction,
+            .surfaceGridConstruction,
+            .surfaceGridProjection,
+            .surfaceDamageOverlap,
+            .surfaceWindowFeatures
+        ]
+
+        XCTAssertTrue(stages.allSatisfy { $0.rawValue.hasPrefix("surface.detail.") })
+        XCTAssertTrue(stages.allSatisfy { $0.isFineGrained })
+    }
+
+    func testPerformanceProfilerRecordsMeasuredOperation() throws {
+        var recordedEvent: AttributeEstimationPerformanceEvent?
+        let profiler = AttributeEstimationPerformanceProfiler(
+            isEnabled: true,
+            persistEvents: false,
+            eventObserver: { recordedEvent = $0 }
+        )
+        let sessionID = UUID()
+
+        let value = try profiler.withSession(sessionID) {
+            try profiler.measure(
+                .attributeEstimation,
+                metadata: ["attribute": "surface_disruption_area"]
+            ) {
+                42
+            }
+        }
+
+        XCTAssertEqual(value, 42)
+        XCTAssertEqual(recordedEvent?.sessionID, sessionID)
+        XCTAssertEqual(recordedEvent?.stage, .attributeEstimation)
+        XCTAssertEqual(recordedEvent?.metadata["attribute"], "surface_disruption_area")
+        XCTAssertEqual(recordedEvent?.success, true)
+        XCTAssertGreaterThanOrEqual(recordedEvent?.durationMilliseconds ?? -1, 0)
+    }
+
+    func testPerformanceEventEncodesAsSingleJSONLine() throws {
+        let event = AttributeEstimationPerformanceEvent(
+            timestamp: Date(timeIntervalSince1970: 0),
+            sessionID: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            stage: .surfaceWindowAnalysis,
+            durationMilliseconds: 12.5,
+            success: true,
+            isMainThread: true,
+            metadata: ["window_count": "7"],
+            errorDescription: nil
+        )
+
+        let line = try event.jsonLine()
+
+        XCTAssertTrue(line.hasSuffix("\n"))
+        let decoded = try JSONDecoder().decode(
+            AttributeEstimationPerformanceEvent.self,
+            from: Data(line.dropLast().utf8)
+        )
+        XCTAssertEqual(decoded, event)
+    }
+
+    func testDisabledPerformanceProfilerDoesNotRecordEvents() throws {
+        var eventCount = 0
+        let profiler = AttributeEstimationPerformanceProfiler(
+            isEnabled: false,
+            persistEvents: false,
+            eventObserver: { _ in eventCount += 1 }
+        )
+
+        let value = try profiler.measure(.attributeEstimation) { 7 }
+
+        XCTAssertEqual(value, 7)
+        XCTAssertEqual(eventCount, 0)
+    }
+
     func testCustomOSWFieldPreservesMetadata() {
         let field = OSWField.custom("Temporary walkway", "highway")
         print("Osm Tag Key: ", field.osmTagKey)

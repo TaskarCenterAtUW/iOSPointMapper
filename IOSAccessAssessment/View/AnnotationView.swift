@@ -529,36 +529,13 @@ struct AnnotationView: View {
     }
     
     private func handleOnClassChange() {
+        let profiler = AttributeEstimationPerformanceProfiler.shared
+        let sessionID = UUID()
         do {
-            guard let currentClass = featureClassSelectionViewModel.currentClass else {
-                throw AnnotationViewError.invalidCaptureDataRecord
-            }
-            let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
-            var lastEstimationError: Error? = nil
-            accessibilityFeatures.forEach { accessibilityFeature in
-                do {
-//                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
-                    try attributeEstimationPipeline.processLocationRequest(
-                        deviceLocation: captureLocation,
-                        accessibilityFeature: accessibilityFeature
-                    )
-                    attributeEstimationPipeline.processIsExistingRequest(
-                        deviceLocation: captureLocation,
-                        mappingData: sharedAppData.currentMappingData, accessibilityFeature: accessibilityFeature
-                    )
-                    try attributeEstimationPipeline.processAttributeRequest(
-                        accessibilityFeature: accessibilityFeature,
-                        attributes: selectedAttributesByClass[currentClass] ?? []
-                    )
-                    attributeEstimationPipeline.clearPrerequisites()
-                } catch {
-                    lastEstimationError = error
+            try profiler.withSession(sessionID) {
+                try profiler.measure(.annotationClassChange) {
+                    try performClassChange(profiler: profiler)
                 }
-            }
-            featureClassSelectionViewModel.setOption(option: .classOption(.default))
-            try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
-            if let lastEstimationError {
-                throw AnnotationViewError.attributeEstimationFailed(lastEstimationError)
             }
         } catch AnnotationViewError.attributeEstimationFailed(let error) {
             managerStatusViewModel.update(
@@ -566,6 +543,71 @@ struct AnnotationView: View {
             )
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
+        }
+    }
+
+    private func performClassChange(
+        profiler: AttributeEstimationPerformanceProfiler
+    ) throws {
+        guard let currentClass = featureClassSelectionViewModel.currentClass else {
+            throw AnnotationViewError.invalidCaptureDataRecord
+        }
+        let selectedAttributes = selectedAttributesByClass[currentClass] ?? []
+        let classMetadata = [
+            "feature_class": currentClass.name,
+            "selected_attribute_count": String(selectedAttributes.count),
+            "mesh_enabled": String(attributeEstimationPipeline.captureMeshData != nil)
+        ]
+        let accessibilityFeatures = try profiler.measure(
+            .annotationFeatureUpdate,
+            metadata: classMetadata
+        ) {
+            try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
+        }
+        var lastEstimationError: Error?
+        for (featureIndex, accessibilityFeature) in accessibilityFeatures.enumerated() {
+            do {
+                defer {
+                    attributeEstimationPipeline.clearPrerequisites()
+                }
+                try profiler.measure(
+                    .featureEstimation,
+                    metadata: classMetadata.merging([
+                        "feature_index": String(featureIndex),
+                        "feature_count": String(accessibilityFeatures.count)
+                    ]) { _, new in new }
+                ) {
+//                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
+                    try profiler.measure(.locationEstimation, metadata: classMetadata) {
+                        try attributeEstimationPipeline.processLocationRequest(
+                            deviceLocation: captureLocation,
+                            accessibilityFeature: accessibilityFeature
+                        )
+                    }
+                    profiler.measure(.existingFeatureLookup, metadata: classMetadata) {
+                        attributeEstimationPipeline.processIsExistingRequest(
+                            deviceLocation: captureLocation,
+                            mappingData: sharedAppData.currentMappingData,
+                            accessibilityFeature: accessibilityFeature
+                        )
+                    }
+                    try profiler.measure(.attributeRequest, metadata: classMetadata) {
+                        try attributeEstimationPipeline.processAttributeRequest(
+                            accessibilityFeature: accessibilityFeature,
+                            attributes: selectedAttributes
+                        )
+                    }
+                }
+            } catch {
+                lastEstimationError = error
+            }
+        }
+        featureClassSelectionViewModel.setOption(option: .classOption(.default))
+        try profiler.measure(.annotationFeatureUpdate, metadata: ["operation": "set_instances"]) {
+            try featureSelectionViewModel.setInstances(accessibilityFeatures, currentClass: currentClass)
+        }
+        if let lastEstimationError {
+            throw AnnotationViewError.attributeEstimationFailed(lastEstimationError)
         }
     }
     
