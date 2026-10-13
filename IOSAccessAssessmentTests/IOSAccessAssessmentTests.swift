@@ -933,6 +933,170 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(depthPoint.y, 48, accuracy: 0.000_001)
     }
 
+    func testWindowFeatureParityUsesAbsoluteAndRelativeTolerance() {
+        let columns = [SurfaceIntegrityWindowFeature("a"), SurfaceIntegrityWindowFeature("b")]
+        let cpu = [SurfaceIntegrityWindowFeatures(values: [columns[0]: 1, columns[1]: 1_000], orderedColumns: columns)]
+        let staged = [SurfaceIntegrityWindowFeatures(values: [columns[0]: 1.000_05, columns[1]: 1_000.5], orderedColumns: columns)]
+        let summary = SurfaceIntegrityProcessor.compareWindowFeatures(
+            cpu: cpu, staged: staged, retainedWindowIndices: [7],
+            gpuSupportedColumns: Set(columns), absoluteTolerance: 1e-4, relativeTolerance: 1e-3
+        )
+        XCTAssertTrue(summary.hasParity)
+        XCTAssertEqual(summary.totalMismatchCount, 0)
+        XCTAssertEqual(summary.comparedValueCount, 2)
+    }
+
+    func testWindowFeatureParityTreatsMatchingNaNAndInfinityCorrectly() {
+        let columns = [SurfaceIntegrityWindowFeature("nan"), SurfaceIntegrityWindowFeature("inf")]
+        let features = SurfaceIntegrityWindowFeatures(
+            values: [columns[0]: .nan, columns[1]: .infinity], orderedColumns: columns
+        )
+        let summary = SurfaceIntegrityProcessor.compareWindowFeatures(
+            cpu: [features], staged: [features], retainedWindowIndices: [0],
+            gpuSupportedColumns: Set(columns)
+        )
+        XCTAssertTrue(summary.hasParity)
+    }
+
+    func testWindowFeatureParitySeparatesCategoriesAndLimitsDetails() {
+        let gpuColumns = (0..<6).map { SurfaceIntegrityWindowFeature("gpu_\($0)") }
+        let cpuOnly = SurfaceIntegrityWindowFeature("cpu")
+        let columns = gpuColumns + [cpuOnly]
+        let referenceValues = Dictionary(uniqueKeysWithValues: columns.map { ($0, Float(1)) })
+        let stagedValues = Dictionary(uniqueKeysWithValues: columns.map { ($0, Float(2)) })
+        let reference = [SurfaceIntegrityWindowFeatures(values: referenceValues, orderedColumns: columns)]
+        let staged = [SurfaceIntegrityWindowFeatures(values: stagedValues, orderedColumns: columns)]
+        let summary = SurfaceIntegrityProcessor.compareWindowFeatures(
+            cpu: reference, staged: staged, retainedWindowIndices: [0],
+            gpuSupportedColumns: Set(gpuColumns), detailLimit: 5
+        )
+        XCTAssertEqual(summary.gpuSupportedMismatchCount, 6)
+        XCTAssertEqual(summary.cpuOnlyMismatchCount, 1)
+        XCTAssertEqual(summary.details.count, 5)
+        XCTAssertTrue(summary.details.contains { !$0.isGPUSupported })
+    }
+
+    func testGPUWindowFeaturesMatchCPUAboveThreadgroupWidth() throws {
+        let count = 300
+        let details = (0..<count).map { index in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index) * 0.000_01, 0, 0),
+                normal: SIMD3<Float>(0, 1, 0),
+                area: 0.001 + Float(index % 5) * 0.000_1,
+                angularDeviationDegrees: Float(index % 31)
+            )
+        }
+        let residuals = (0..<count).map { Float($0 % 17) * 0.001 - 0.008 }
+        let tilts = (0..<count).map {
+            SignedTiltData(
+                tiltUDegrees: Float($0 % 13),
+                tiltVDegrees: -Float($0 % 11),
+                tiltMagnitudeDegrees: Float($0 % 7)
+            )
+        }
+        let processor = try SurfaceIntegrityProcessor()
+        let gpuMembership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: count),
+            gridOriginU: 0,
+            gridOriginV: 0,
+            gridShape: SIMD2<Int32>(1, 1)
+        )
+        let cpuMembership = try processor.materializeSlidingWindowMembershipForCPU(gpuMembership)
+            .membershipCSR
+        let intermediate = try processor.computeGPUWindowFeatureIntermediate(
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            membership: gpuMembership
+        )
+        XCTAssertEqual(intermediate.reductions[0].count, UInt32(count))
+        XCTAssertEqual(intermediate.reductions[0].minimum, 0, accuracy: 0.000_001)
+        XCTAssertEqual(intermediate.reductions[0].maximum, 30, accuracy: 0.000_001)
+        let staged = try processor.processStagedWindowFeatures(
+            intermediate: intermediate,
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            membershipCSR: cpuMembership,
+            retainedWindowIndices: [0],
+            heightFromGround: 1.2
+        )
+        let cpu = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            heightFromGround: 1.2
+        )
+        let summary = SurfaceIntegrityProcessor.compareWindowFeatures(
+            cpu: [cpu], staged: staged.features, retainedWindowIndices: [0],
+            gpuSupportedColumns: staged.supportedColumns
+        )
+        let mismatchDescription = summary.details.map {
+            "\($0.feature.rawValue): cpu=\($0.cpuValue) gpu=\($0.stagedValue) "
+                + "abs=\($0.absoluteError) rel=\($0.relativeError)"
+        }
+        XCTAssertTrue(summary.hasParity, "Mismatches: \(mismatchDescription)")
+    }
+
+    func testGPUWindowCenteredMomentsMatchCPUForNonzeroLowVarianceValues() throws {
+        let count = 96
+        let details = (0..<count).map { index in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index) * 0.000_01, 0, 0),
+                normal: SIMD3<Float>(0, 1, 0),
+                area: 0.001,
+                angularDeviationDegrees: 45 + Float(index % 5) * 0.01
+            )
+        }
+        let residuals = (0..<count).map { 1.25 + Float($0 % 7) * 0.000_1 }
+        let tilts = (0..<count).map {
+            SignedTiltData(
+                tiltUDegrees: 75 + Float($0 % 5) * 0.01,
+                tiltVDegrees: -60 + Float($0 % 3) * 0.01,
+                tiltMagnitudeDegrees: 15 + Float($0 % 7) * 0.01
+            )
+        }
+        let processor = try SurfaceIntegrityProcessor()
+        let gpuMembership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: count),
+            gridOriginU: 0,
+            gridOriginV: 0,
+            gridShape: SIMD2<Int32>(1, 1)
+        )
+        let cpuMembership = try processor.materializeSlidingWindowMembershipForCPU(gpuMembership)
+            .membershipCSR
+        let intermediate = try processor.computeGPUWindowFeatureIntermediate(
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            membership: gpuMembership
+        )
+        let staged = try processor.processStagedWindowFeatures(
+            intermediate: intermediate,
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            membershipCSR: cpuMembership,
+            retainedWindowIndices: [0],
+            heightFromGround: 1.2
+        )
+        let cpu = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: details,
+            heightResiduals: residuals,
+            signedTiltData: tilts,
+            heightFromGround: 1.2
+        )
+        let summary = SurfaceIntegrityProcessor.compareWindowFeatures(
+            cpu: [cpu], staged: staged.features, retainedWindowIndices: [0],
+            gpuSupportedColumns: staged.supportedColumns
+        )
+        let mismatchDescription = summary.details.map {
+            "\($0.feature.rawValue): cpu=\($0.cpuValue) gpu=\($0.stagedValue) "
+                + "abs=\($0.absoluteError) rel=\($0.relativeError)"
+        }
+        XCTAssertTrue(summary.hasParity, "Mismatches: \(mismatchDescription)")
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
