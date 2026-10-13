@@ -222,6 +222,45 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
     }
 
+    func testMetalSlidingWindowGridMatchesCPUGridAfterDenseConversion() throws {
+        let centroids = [
+            SIMD3<Float>(-0.09, -0.09, 0),
+            SIMD3<Float>(-0.000_001, 0, 0),
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.089_999, 0.09, 0),
+            SIMD3<Float>(0.09, 0.18, 0),
+            SIMD3<Float>(0.269_999, 0.27, 0),
+            SIMD3<Float>(0.27, 0.36, 0)
+        ]
+        let processor = try SurfaceIntegrityProcessor()
+        let cpuGrid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            includeEmptyWindows: false,
+            minMeshPoints: 2
+        )
+
+        let gpuGrid = try processor.computeSlidingWindowGridUsingMetalMembership(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            includeEmptyWindows: false,
+            minMeshPoints: 2
+        )
+
+        XCTAssertEqual(gpuGrid.gridIndices, cpuGrid.gridIndices)
+        XCTAssertEqual(gpuGrid.gridBounds, cpuGrid.gridBounds)
+        XCTAssertEqual(gpuGrid.predictionCellBounds, cpuGrid.predictionCellBounds)
+        XCTAssertEqual(
+            gpuGrid.windowToMeshIndices.map { $0.sorted() },
+            cpuGrid.windowToMeshIndices.map { $0.sorted() }
+        )
+        XCTAssertEqual(gpuGrid.membershipCSR.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
+    }
+
     func testInverseSlidingWindowMembershipMatchesReferenceWithFilteringAndBoundaries() throws {
         let centroids = [
             SIMD3<Float>(-0.09, -0.09, 0),
@@ -602,6 +641,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
     }
 
     func testMeshWindowAnalysisKeepsFilteredPolygonIndicesAligned() throws {
+        let processor = try SurfaceIntegrityProcessor()
         let meshContents = MeshContents(
             positions: [
                 packed_float3(x: -1, y: -1, z: 0),
@@ -620,7 +660,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
             colorB8: 255
         )
 
-        let result = try SurfaceIntegrityProcessor.analyzeMeshWindows(
+        let result = try processor.analyzeMeshWindows(
             meshPolygons: meshContents.polygons,
             planeOrigin: .zero,
             firstPlaneVector: SIMD3<Float>(1, 0, 0),
@@ -646,6 +686,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
     }
 
     func testMeshWindowAnalysisRequiresDamageOverlapAboveQuarter() throws {
+        let processor = try SurfaceIntegrityProcessor()
         let meshContents = MeshContents(
             positions: [
                 packed_float3(x: 0.02, y: 0.02, z: 0),
@@ -664,7 +705,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
             planeNormal: SIMD3<Float>(0, 0, 1)
         )
 
-        let atThreshold = try SurfaceIntegrityProcessor.analyzeMeshWindows(
+        let atThreshold = try processor.analyzeMeshWindows(
             meshPolygons: meshContents.polygons,
             planeOrigin: commonArguments.planeOrigin,
             firstPlaneVector: commonArguments.firstPlaneVector,
@@ -676,7 +717,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
             damageConfidenceScores: [1],
             heightFromGround: 1
         )
-        let aboveThreshold = try SurfaceIntegrityProcessor.analyzeMeshWindows(
+        let aboveThreshold = try processor.analyzeMeshWindows(
             meshPolygons: meshContents.polygons,
             planeOrigin: commonArguments.planeOrigin,
             firstPlaneVector: commonArguments.firstPlaneVector,
