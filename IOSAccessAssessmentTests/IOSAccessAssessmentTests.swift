@@ -197,7 +197,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
         let processor = try SurfaceIntegrityProcessor()
 
-        let gpuCSR = try processor.computeSlidingWindowMembershipCSR(
+        let gpuMembership = try processor.computeSlidingWindowMembershipGPU(
             uvCoordinates: indexResult.uvCoordinates,
             gridOriginU: indexResult.gridOriginU,
             gridOriginV: indexResult.gridOriginV,
@@ -205,6 +205,8 @@ final class IOSAccessAssessmentTests: XCTestCase {
             cellSize: 0.27,
             stride: 0.09
         )
+        let gpuCSR = try processor.materializeSlidingWindowMembershipForCPU(gpuMembership)
+            .membershipCSR
 
         XCTAssertEqual(gpuCSR.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
         XCTAssertEqual(gpuCSR.windowCount, cpuGrid.membershipCSR.windowCount)
@@ -259,6 +261,100 @@ final class IOSAccessAssessmentTests: XCTestCase {
             cpuGrid.windowToMeshIndices.map { $0.sorted() }
         )
         XCTAssertEqual(gpuGrid.membershipCSR.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
+    }
+
+    func testMetalSlidingWindowMembershipBuffersMaterializeCPUCSR() throws {
+        let centroids = [
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.09, 0.09, 0),
+            SIMD3<Float>(0.18, 0.18, 0)
+        ]
+        let indexResult = try SurfaceIntegrityProcessor.computeGridIndices(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            stride: 0.09
+        )
+        let processor = try SurfaceIntegrityProcessor()
+
+        let gpuMembership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: indexResult.uvCoordinates,
+            gridOriginU: indexResult.gridOriginU,
+            gridOriginV: indexResult.gridOriginV,
+            gridShape: indexResult.gridShape
+        )
+        let cpuCompatibility = try processor.materializeSlidingWindowMembershipForCPU(
+            gpuMembership
+        )
+        let materialized = cpuCompatibility.membershipCSR
+        let cpuGrid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0)
+        )
+
+        XCTAssertEqual(gpuMembership.windowCount, cpuGrid.membershipCSR.windowCount)
+        XCTAssertEqual(gpuMembership.membershipCount, cpuGrid.membershipCSR.membershipCount)
+        XCTAssertEqual(
+            gpuMembership.windowOffsetsBuffer.length,
+            MemoryLayout<UInt32>.stride * (gpuMembership.windowCount + 1)
+        )
+        XCTAssertEqual(
+            gpuMembership.meshIndicesBuffer.length,
+            MemoryLayout<UInt32>.stride * gpuMembership.membershipCount
+        )
+        XCTAssertEqual(materialized.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
+        XCTAssertEqual(
+            cpuCompatibility.windowToMeshIndices.map { $0.sorted() },
+            cpuGrid.windowToMeshIndices.map { $0.sorted() }
+        )
+        for windowIndex in 0..<materialized.windowCount {
+            let materializedRange = Int(materialized.windowOffsets[windowIndex])..<Int(
+                materialized.windowOffsets[windowIndex + 1]
+            )
+            let cpuRange = Int(cpuGrid.membershipCSR.windowOffsets[windowIndex])..<Int(
+                cpuGrid.membershipCSR.windowOffsets[windowIndex + 1]
+            )
+            XCTAssertEqual(
+                materialized.meshIndices[materializedRange].sorted(),
+                cpuGrid.membershipCSR.meshIndices[cpuRange].sorted()
+            )
+        }
+    }
+
+    func testMetalSlidingWindowGridRetainsOriginalWindowMapping() throws {
+        let centroids = [
+            SIMD3<Float>(-0.09, -0.09, 0),
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.01, 0.01, 0),
+            SIMD3<Float>(0.27, 0.36, 0)
+        ]
+        let processor = try SurfaceIntegrityProcessor()
+        let unfiltered = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0)
+        )
+
+        let filtered = try processor.computeSlidingWindowGridUsingMetalMembership(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            includeEmptyWindows: false,
+            minMeshPoints: 2
+        )
+
+        XCTAssertNotNil(filtered.gpuMembership)
+        XCTAssertEqual(filtered.retainedWindowIndices.count, filtered.gridIndices.count)
+        XCTAssertEqual(
+            filtered.retainedWindowIndices.map { unfiltered.gridIndices[$0] },
+            filtered.gridIndices
+        )
+        XCTAssertEqual(filtered.gpuMembership?.windowCount, unfiltered.gridIndices.count)
     }
 
     func testInverseSlidingWindowMembershipMatchesReferenceWithFilteringAndBoundaries() throws {
