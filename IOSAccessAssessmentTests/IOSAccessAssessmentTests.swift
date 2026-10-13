@@ -119,6 +119,49 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(grid.membershipCSR.membershipCount, 4)
     }
 
+    func testMetalSlidingWindowMembershipCountsAndCPUOffsetsMatchCPUGrid() throws {
+        let centroids = [
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.089_999, 0.09, 0),
+            SIMD3<Float>(0.09, 0.18, 0),
+            SIMD3<Float>(0.269_999, 0.27, 0),
+            SIMD3<Float>(0.27, 0.36, 0)
+        ]
+        let indexResult = try SurfaceIntegrityProcessor.computeGridIndices(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            stride: 0.09
+        )
+        let cpuGrid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            cellSize: 0.27,
+            stride: 0.09
+        )
+        let processor = try SurfaceIntegrityProcessor()
+
+        let result = try processor.computeSlidingWindowMembershipCounts(
+            uvCoordinates: indexResult.uvCoordinates,
+            gridOriginU: indexResult.gridOriginU,
+            gridOriginV: indexResult.gridOriginV,
+            gridShape: indexResult.gridShape,
+            cellSize: 0.27,
+            stride: 0.09
+        )
+        let expectedCounts = zip(
+            cpuGrid.membershipCSR.windowOffsets,
+            cpuGrid.membershipCSR.windowOffsets.dropFirst()
+        ).map { $1 - $0 }
+
+        XCTAssertEqual(result.windowCounts, expectedCounts)
+        XCTAssertEqual(result.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
+        XCTAssertEqual(result.membershipCount, cpuGrid.membershipCSR.membershipCount)
+    }
+
     func testInverseSlidingWindowMembershipMatchesReferenceWithFilteringAndBoundaries() throws {
         let centroids = [
             SIMD3<Float>(-0.09, -0.09, 0),
