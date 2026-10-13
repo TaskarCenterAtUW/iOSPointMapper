@@ -162,6 +162,66 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(result.membershipCount, cpuGrid.membershipCSR.membershipCount)
     }
 
+    func testMetalSlidingWindowScatterMatchesSortedCPUMemberships() throws {
+        var state: UInt64 = 0x51CA_77E2
+        var centroids = (0..<1_000).map { _ in
+            state = state &* 6_364_136_223_846_793_005 &+ 1
+            let u = Float(state & 0xFFFF) / Float(UInt16.max) * 1.8 - 0.45
+            state = state &* 6_364_136_223_846_793_005 &+ 1
+            let v = Float(state & 0xFFFF) / Float(UInt16.max) * 1.35 - 0.27
+            return SIMD3<Float>(u, v, 0)
+        }
+        centroids.append(contentsOf: [
+            SIMD3<Float>(-0.45, -0.27, 0),
+            SIMD3<Float>(-0.000_001, 0, 0),
+            SIMD3<Float>(0, 0, 0),
+            SIMD3<Float>(0.089_999, 0.09, 0),
+            SIMD3<Float>(0.09, 0.18, 0),
+            SIMD3<Float>(0.269_999, 0.27, 0),
+            SIMD3<Float>(0.27, 0.36, 0)
+        ])
+        let indexResult = try SurfaceIntegrityProcessor.computeGridIndices(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            stride: 0.09
+        )
+        let cpuGrid = try SurfaceIntegrityProcessor.computeSlidingWindowGrid(
+            meshCentroids: centroids,
+            planeOrigin: .zero,
+            firstPlaneVector: SIMD3<Float>(1, 0, 0),
+            secondPlaneVector: SIMD3<Float>(0, 1, 0),
+            cellSize: 0.27,
+            stride: 0.09
+        )
+        let processor = try SurfaceIntegrityProcessor()
+
+        let gpuCSR = try processor.computeSlidingWindowMembershipCSR(
+            uvCoordinates: indexResult.uvCoordinates,
+            gridOriginU: indexResult.gridOriginU,
+            gridOriginV: indexResult.gridOriginV,
+            gridShape: indexResult.gridShape,
+            cellSize: 0.27,
+            stride: 0.09
+        )
+
+        XCTAssertEqual(gpuCSR.windowOffsets, cpuGrid.membershipCSR.windowOffsets)
+        XCTAssertEqual(gpuCSR.windowCount, cpuGrid.membershipCSR.windowCount)
+        XCTAssertEqual(gpuCSR.membershipCount, cpuGrid.membershipCSR.membershipCount)
+        for windowIndex in 0..<gpuCSR.windowCount {
+            let cpuStart = Int(cpuGrid.membershipCSR.windowOffsets[windowIndex])
+            let cpuEnd = Int(cpuGrid.membershipCSR.windowOffsets[windowIndex + 1])
+            let gpuStart = Int(gpuCSR.windowOffsets[windowIndex])
+            let gpuEnd = Int(gpuCSR.windowOffsets[windowIndex + 1])
+            XCTAssertEqual(
+                cpuGrid.membershipCSR.meshIndices[cpuStart..<cpuEnd].sorted(),
+                gpuCSR.meshIndices[gpuStart..<gpuEnd].sorted(),
+                "Membership mismatch for window \(windowIndex)"
+            )
+        }
+    }
+
     func testInverseSlidingWindowMembershipMatchesReferenceWithFilteringAndBoundaries() throws {
         let centroids = [
             SIMD3<Float>(-0.09, -0.09, 0),
