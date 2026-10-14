@@ -1431,6 +1431,64 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
     }
 
+    func testGPUFeatureMatrixPreservesEmptyWindowPlaceholders() throws {
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [
+            .init(
+                source: .normalDeviation,
+                centralTendencyFeatures: [.median, .medianAbsoluteDeviation],
+                percentileFeatures: [75],
+                tailFeatures: [],
+                distributionShapeFeatures: []
+            )
+        ])
+        let details = [MeshSurfaceDetail(
+            centroid: .zero,
+            normal: SIMD3<Float>(0, 1, 0),
+            area: 0.01,
+            angularDeviationDegrees: 4
+        )]
+        let tilts = [SignedTiltData(
+            tiltUDegrees: 0,
+            tiltVDegrees: 0,
+            tiltMagnitudeDegrees: 0
+        )]
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: [.zero],
+            gridOriginU: 0,
+            gridOriginV: 0,
+            gridShape: SIMD2<Int32>(2, 1)
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: configuration
+        )
+        let selection = try processor.computeGPUWeightedSelections(
+            surfaceDetails: details,
+            heightResiduals: [0],
+            signedTiltData: tilts,
+            membership: membership,
+            plan: plan
+        )
+        XCTAssertTrue(selection.primaryValues[plan.primaryDescriptors.count].isNaN)
+        XCTAssertTrue(selection.madValues[plan.madDescriptors.count].isNaN)
+
+        let result = try processor.computeCompleteGPUWindowFeatures(
+            surfaceDetails: details,
+            heightResiduals: [0],
+            signedTiltData: tilts,
+            membership: membership,
+            retainedWindowIndices: [0, 1],
+            heightFromGround: 1.2,
+            configuration: configuration
+        )
+        let emptyRow = Array(result.values[result.featureStride..<(result.featureStride * 2)])
+        let heightIndex = configuration.allColumns.firstIndex(of: .heightFromGround)
+        for index in emptyRow.indices where index != heightIndex {
+            XCTAssertEqual(emptyRow[index], 0)
+        }
+        XCTAssertEqual(emptyRow[heightIndex!], 1.2, accuracy: 0.000_001)
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
