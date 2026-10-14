@@ -921,6 +921,30 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(prediction.logit, 2, accuracy: 0.000_001)
     }
 
+    func testPlaceholderLogisticRegression2MatchesExportedSchema() throws {
+        let model = SurfaceIntegrityAnalysisModelZoo.placeholderLogisticRegression2
+
+        try model.validate()
+        XCTAssertEqual(model.identifier, "surface-integrity-placeholder-v2")
+        XCTAssertEqual(model.schemaVersion, 2)
+        XCTAssertEqual(model.intercept, -2.0442088686876745, accuracy: 1e-15)
+        XCTAssertEqual(model.classificationThreshold, 0.5)
+        XCTAssertEqual(model.terms.count, 37)
+        XCTAssertEqual(model.terms.first?.feature, .windowFeature(
+            SurfaceIntegrityWindowFeature("normal_deviation_mean")
+        ))
+        XCTAssertEqual(model.terms.suffix(2).map(\.feature), [
+            .damageOverlapRatio,
+            .maximumDamageConfidence
+        ])
+        let selectedFeatures = Set(model.featureSchema)
+        XCTAssertFalse(selectedFeatures.contains(.windowFeature(.numberOfPolygons)))
+        XCTAssertFalse(selectedFeatures.contains(.windowFeature(.totalSidewalkArea)))
+        XCTAssertFalse(selectedFeatures.contains(.windowFeature(.averagePolygonArea)))
+        XCTAssertFalse(selectedFeatures.contains(.windowFeature(.polygonDensity)))
+        XCTAssertFalse(selectedFeatures.contains(.windowFeature(.heightFromGround)))
+    }
+
     func testPlaceholderSurfaceIntegrityModelDeclaresCompleteSchema() throws {
         let model = SurfaceIntegrityAnalysisModelZoo.placeholderLogisticRegression
         let expectedFeatureCount =
