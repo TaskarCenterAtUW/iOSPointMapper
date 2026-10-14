@@ -16,21 +16,25 @@ extension AttributeEstimationPipeline {
     ) {
         /// Threshold needs to be in Map Units
         let distanceThreshold = PointNMapConstants.WorkspaceConstants.fetchUpdateRadiusThresholdInMeters * MKMapPointsPerMeterAtLatitude(deviceLocation.latitude)
-        guard let LocationDetails = accessibilityFeature.locationDetails else {
-            accessibilityFeature.setIsExisting(false)
+        guard let locationDetails = accessibilityFeature.locationDetails else {
+            accessibilityFeature.setRelevantOSWElements([])
+            try? accessibilityFeature.applyOSWElementSelection(.newElement)
             return
         }
-        let matchedElement: (any OSWElement)? = mappingData.getMatchedFeature(
-            to: LocationDetails, featureClass: accessibilityFeature.accessibilityFeatureClass,
+        let candidates = mappingData.getRelevantFeatures(
+            to: locationDetails,
+            featureClass: accessibilityFeature.accessibilityFeatureClass,
             captureId: self.captureImageData?.id,
             distanceThreshold: distanceThreshold
         )
-        guard let matchedElement = matchedElement else {
-            accessibilityFeature.setIsExisting(false)
+        accessibilityFeature.setRelevantOSWElements(candidates)
+        guard let firstCandidate = candidates.first,
+              accessibilityFeature.accessibilityFeatureClass.kind.oswPolicy.isExistingFirst else {
+            try? accessibilityFeature.applyOSWElementSelection(.newElement)
             return
         }
-        let isExisting = accessibilityFeature.accessibilityFeatureClass.kind.oswPolicy.isExistingFirst
-        accessibilityFeature.setIsExisting(isExisting)
-        accessibilityFeature.setOSWElement(oswElement: matchedElement)
+        try? accessibilityFeature.applyOSWElementSelection(
+            .existingElement(id: firstCandidate.id)
+        )
     }
 }
