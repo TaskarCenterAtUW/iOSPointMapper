@@ -617,6 +617,9 @@ struct AnnotationView: View {
                        let temporaryVisualizationResults {
                         updateFeatureResults = temporaryVisualizationResults
                     } else {
+                        // The prerequisite cache is feature-scoped. Invalidate values left by a
+                        // previous instance before calculating this fallback visualization.
+                        attributeEstimationPipeline.clearPrerequisites()
                         updateFeatureResults = try makeVisualizationResults(for: currentFeature)
                     }
                 }
@@ -641,18 +644,18 @@ struct AnnotationView: View {
     private func makeVisualizationResults(
         for accessibilityFeature: MappedEditableAccessibilityFeature
     ) throws -> AnnotationImageFeatureUpdateResults {
-        let worldPoints = try attributeEstimationPipeline.getWorldPoints(
+        let worldPoints = try attributeEstimationPipeline.getCachedWorldPoints(
             accessibilityFeature: accessibilityFeature
         )
-        let plane = try attributeEstimationPipeline.calculateAlignedPlane(
+        let plane = try attributeEstimationPipeline.getCachedAlignedPlane(
             accessibilityFeature: accessibilityFeature,
             worldPoints: worldPoints
         )
-        let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
+        let projectedPlane = try attributeEstimationPipeline.getCachedProjectedPlane(
             accessibilityFeature: accessibilityFeature,
             plane: plane
         )
-        let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
+        let damageDetectionResults = try attributeEstimationPipeline.getCachedDamageDetectionResults(
             accessibilityFeature: accessibilityFeature
         )
         let surfaceIntegrityWindowAnalysis = try? attributeEstimationPipeline
