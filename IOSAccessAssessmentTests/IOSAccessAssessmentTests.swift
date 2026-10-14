@@ -8,7 +8,7 @@
 import Foundation
 import XCTest
 @testable import IOSAccessAssessment
-import PointNMapShared
+@testable import PointNMapShared
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
@@ -783,6 +783,19 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testMeshWindowAnalysisRequiresDamageOverlapAboveQuarter() throws {
         let processor = try SurfaceIntegrityProcessor()
+        let predictionModel = SurfaceIntegrityLogisticRegression(
+            identifier: "quarter-overlap-test",
+            schemaVersion: 1,
+            terms: [.init(
+                feature: .damageOverlapRatio,
+                coefficient: 1,
+                mean: 0.25,
+                scale: 1,
+                missingValue: 0
+            )],
+            intercept: 0,
+            classificationThreshold: 0.500_000_1
+        )
         let meshContents = MeshContents(
             positions: [
                 packed_float3(x: 0.02, y: 0.02, z: 0),
@@ -811,7 +824,8 @@ final class IOSAccessAssessmentTests: XCTestCase {
                 rectangle(minX: 0, minY: 0, maxX: 0.0675, maxY: 0.27)
             ],
             damageConfidenceScores: [1],
-            heightFromGround: 1
+            heightFromGround: 1,
+            predictionModel: predictionModel
         )
         let aboveThreshold = try processor.analyzeMeshWindows(
             meshPolygons: meshContents.polygons,
@@ -823,12 +837,29 @@ final class IOSAccessAssessmentTests: XCTestCase {
                 rectangle(minX: 0, minY: 0, maxX: 0.0676, maxY: 0.27)
             ],
             damageConfidenceScores: [1],
-            heightFromGround: 1
+            heightFromGround: 1,
+            predictionModel: predictionModel
         )
 
         XCTAssertEqual(atThreshold.windows[0].damageOverlapRatio, 0.25, accuracy: 0.000_001)
+        XCTAssertEqual(atThreshold.windows[0].surfaceDisruptionLogit, 0, accuracy: 0.000_001)
+        XCTAssertEqual(atThreshold.windows[0].surfaceDisruptionProbability, 0.5, accuracy: 0.000_001)
         XCTAssertFalse(atThreshold.windows[0].hasSurfaceDisruption)
         XCTAssertTrue(aboveThreshold.windows[0].hasSurfaceDisruption)
+    }
+
+    func testUnavailableGPUFeatureResultFailsClosedWithoutPrediction() {
+        let features = SurfaceIntegrityProcessor.makeUnavailableWindowFeatures(
+            heightFromGround: 1.4,
+            configuration: .pythonModelDefault
+        )
+        let prediction = SurfaceIntegrityProcessor.unavailableSurfaceIntegrityPrediction
+
+        XCTAssertTrue(features.orderedValues.dropLast().allSatisfy { $0 == 0 })
+        XCTAssertEqual(features[.heightFromGround], 1.4, accuracy: 0.000_001)
+        XCTAssertEqual(prediction.probability, 0)
+        XCTAssertFalse(prediction.isDisrupted)
+        XCTAssertTrue(prediction.logit.isNaN)
     }
 
     func testLogisticRegressionAppliesStandardizationAndReturnsProbability() throws {
