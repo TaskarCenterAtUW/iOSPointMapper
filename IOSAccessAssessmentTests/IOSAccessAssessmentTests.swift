@@ -12,6 +12,29 @@ import XCTest
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testPrerequisiteCacheReusesDamageDetectionResults() throws {
+        var cache = AttributeEstimationPipeline.PrerequisiteCache()
+        var computationCount = 0
+        let expected = [DamageDetectionResult(
+            boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.3, height: 0.4),
+            confidence: 0.8,
+            label: "damage"
+        )]
+
+        let first = cache.getOrCompute(\.damageDetectionResults) {
+            computationCount += 1
+            return expected
+        }
+        let second = cache.getOrCompute(\.damageDetectionResults) {
+            computationCount += 1
+            return []
+        }
+
+        XCTAssertEqual(first, expected)
+        XCTAssertEqual(second, expected)
+        XCTAssertEqual(computationCount, 1)
+    }
+
     func testCustomOSWFieldPreservesMetadata() {
         let field = OSWField.custom("Temporary walkway", "highway")
         print("Osm Tag Key: ", field.osmTagKey)

@@ -247,6 +247,8 @@ struct AnnotationView: View {
     @StateObject var featureClassSelectionViewModel = AnnotationFeatureClassSelectionViewModel()
     @StateObject var featureSelectionViewModel = AnnotationFeatureSelectionViewModel()
     @State private var isShowingAnnotationFeatureDetailView: Bool = false
+    @State private var temporaryVisualizationFeatureID: UUID?
+    @State private var temporaryVisualizationResults: AnnotationImageFeatureUpdateResults?
     
 //    var selectFeatureInfoTip = SelectFeatureInfoTip()
     @State private var showSelectFeatureLearnMoreSheet = false
@@ -533,9 +535,11 @@ struct AnnotationView: View {
             guard let currentClass = featureClassSelectionViewModel.currentClass else {
                 throw AnnotationViewError.invalidCaptureDataRecord
             }
+            temporaryVisualizationFeatureID = nil
+            temporaryVisualizationResults = nil
             let accessibilityFeatures = try manager.updateFeatureClass(accessibilityFeatureClass: currentClass)
             var lastEstimationError: Error? = nil
-            accessibilityFeatures.forEach { accessibilityFeature in
+            for (index, accessibilityFeature) in accessibilityFeatures.enumerated() {
                 do {
 //                    try attributeEstimationPipeline.setPrerequisites(accessibilityFeature: accessibilityFeature)
                     try attributeEstimationPipeline.processLocationRequest(
@@ -550,6 +554,19 @@ struct AnnotationView: View {
                         accessibilityFeature: accessibilityFeature,
                         attributes: selectedAttributesByClass[currentClass] ?? []
                     )
+                    // TEMPORARY: Sidewalk captures normally contain one instance. Capture the
+                    // final instance's visualization inputs before clearing prerequisite caches
+                    // to avoid rerunning expensive attribute estimation on initial selection.
+                    if index == accessibilityFeatures.index(before: accessibilityFeatures.endIndex),
+                       currentClass.kind.attributes.contains(where: {
+                           $0 == .width || $0 == .runningSlope || $0 == .crossSlope
+                               || $0 == .surfaceIntegrity
+                       }) {
+                        temporaryVisualizationFeatureID = accessibilityFeature.id
+                        temporaryVisualizationResults = try makeVisualizationResults(
+                            for: accessibilityFeature
+                        )
+                    }
                     attributeEstimationPipeline.clearPrerequisites()
                 } catch {
                     lastEstimationError = error
@@ -596,25 +613,15 @@ struct AnnotationView: View {
                 if currentClass.kind.attributes.contains(where: {
                     $0 == .width || $0 == .runningSlope || $0 == .crossSlope || $0 == .surfaceIntegrity
                 }) {
-                    let worldPoints = try attributeEstimationPipeline.getWorldPoints(accessibilityFeature: currentFeature)
-                    let plane = try attributeEstimationPipeline.calculateAlignedPlane(
-                        accessibilityFeature: currentFeature, worldPoints: worldPoints
-                    )
-                    let projectedPlane = try attributeEstimationPipeline.calculateProjectedPlane(
-                        accessibilityFeature: currentFeature, plane: plane
-                    )
-                    let damageDetectionResults = try attributeEstimationPipeline.getDamageDetectionResults(
-                        accessibilityFeature: currentFeature
-                    )
-                    let surfaceIntegrityWindowAnalysis = try? attributeEstimationPipeline
-                        .getCachedSurfaceIntegrityWindowAnalysis(
-                            accessibilityFeature: currentFeature
-                        )
-                    updateFeatureResults = AnnotationImageFeatureUpdateResults(
-                        plane: plane, projectedPlane: projectedPlane,
-                        damageDetectionResults: damageDetectionResults,
-                        surfaceIntegrityWindowAnalysis: surfaceIntegrityWindowAnalysis
-                    )
+                    if temporaryVisualizationFeatureID == currentFeature.id,
+                       let temporaryVisualizationResults {
+                        updateFeatureResults = temporaryVisualizationResults
+                    } else {
+                        // The prerequisite cache is feature-scoped. Invalidate values left by a
+                        // previous instance before calculating this fallback visualization.
+                        attributeEstimationPipeline.clearPrerequisites()
+                        updateFeatureResults = try makeVisualizationResults(for: currentFeature)
+                    }
                 }
             } else {
                 accessibilityFeatures = featureSelectionViewModel.instances
@@ -632,6 +639,35 @@ struct AnnotationView: View {
         } catch {
             managerStatusViewModel.update(isFailed: true, error: error, shouldDismiss: false)
         }
+    }
+
+    private func makeVisualizationResults(
+        for accessibilityFeature: MappedEditableAccessibilityFeature
+    ) throws -> AnnotationImageFeatureUpdateResults {
+        let worldPoints = try attributeEstimationPipeline.getCachedWorldPoints(
+            accessibilityFeature: accessibilityFeature
+        )
+        let plane = try attributeEstimationPipeline.getCachedAlignedPlane(
+            accessibilityFeature: accessibilityFeature,
+            worldPoints: worldPoints
+        )
+        let projectedPlane = try attributeEstimationPipeline.getCachedProjectedPlane(
+            accessibilityFeature: accessibilityFeature,
+            plane: plane
+        )
+        let damageDetectionResults = try attributeEstimationPipeline.getCachedDamageDetectionResults(
+            accessibilityFeature: accessibilityFeature
+        )
+        let surfaceIntegrityWindowAnalysis = try? attributeEstimationPipeline
+            .getCachedSurfaceIntegrityWindowAnalysis(
+                accessibilityFeature: accessibilityFeature
+            )
+        return AnnotationImageFeatureUpdateResults(
+            plane: plane,
+            projectedPlane: projectedPlane,
+            damageDetectionResults: damageDetectionResults,
+            surfaceIntegrityWindowAnalysis: surfaceIntegrityWindowAnalysis
+        )
     }
     
     private func confirmAnnotation() {
