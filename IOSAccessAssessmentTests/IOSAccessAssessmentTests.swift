@@ -7,11 +7,480 @@
 
 import Foundation
 import XCTest
+import CoreLocation
+import MapKit
 @testable import IOSAccessAssessment
 @testable import PointNMapShared
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testLineSelectionCoordinateUsesPathLengthMidpoint() throws {
+        let coordinate = try XCTUnwrap(OSWElementMapSelectionGeometry.lineSelectionCoordinate(for: [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.001),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.003)
+        ]))
+
+        XCTAssertEqual(coordinate.latitude, 0, accuracy: 0.000_001)
+        XCTAssertEqual(coordinate.longitude, 0.0015, accuracy: 0.000_01)
+    }
+
+    func testPolygonSelectionCoordinateStaysInsideConcavePolygon() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.004),
+            CLLocationCoordinate2D(latitude: 0.001, longitude: 0.001),
+            CLLocationCoordinate2D(latitude: 0.004, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        ]
+
+        let coordinate = try XCTUnwrap(
+            OSWElementMapSelectionGeometry.polygonSelectionCoordinate(for: coordinates)
+        )
+
+        XCTAssertTrue(LocationHelpers.MKDistanceHelpers.checkPointInsidePolygon(
+            srcPoint: MKMapPoint(coordinate),
+            polygonPoints: coordinates.dropLast().map(MKMapPoint.init)
+        ))
+    }
+
+    func testVisibleMapRectUsesMinimumSpanForSingleCoordinate() throws {
+        let location = pointLocation(latitude: 47.6, longitude: -122.3)
+
+        let rect = try XCTUnwrap(OSWElementMapViewport.makeVisibleMapRect(
+            candidates: [],
+            capturedFeatureLocation: location
+        ))
+
+        XCTAssertGreaterThan(rect.width, 0)
+        XCTAssertGreaterThan(rect.height, 0)
+    }
+
+    func testVisibleMapRectReturnsNilWithoutCoordinates() {
+        XCTAssertNil(OSWElementMapViewport.makeVisibleMapRect(
+            candidates: [],
+            capturedFeatureLocation: LocationDetails(locations: [])
+        ))
+    }
+
+    func testVisibleMapRectWrapsAcrossAntimeridian() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let west = CLLocationCoordinate2D(latitude: 0, longitude: -179.999)
+        let candidate = OSWElementCandidate(
+            element: makePoint(id: "west", coordinate: west, featureClass: featureClass),
+            locationDetails: pointLocation(latitude: west.latitude, longitude: west.longitude),
+            mapPointDistance: 0,
+            isCaptureMatched: false
+        )
+
+        let rect = try XCTUnwrap(OSWElementMapViewport.makeVisibleMapRect(
+            candidates: [candidate],
+            capturedFeatureLocation: pointLocation(latitude: 0, longitude: 179.999)
+        ))
+
+        XCTAssertLessThan(rect.width, MKMapSize.world.width / 100)
+    }
+
+    func testRelevantFeaturesFilterByDistanceAndSortDeterministically() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let mappingData = CurrentMappingData()
+        let sameDistanceB = makePoint(
+            id: "b",
+            coordinate: offset(origin, northMeters: 5),
+            featureClass: featureClass
+        )
+        let sameDistanceA = makePoint(
+            id: "a",
+            coordinate: offset(origin, northMeters: 5),
+            featureClass: featureClass
+        )
+        let outside = makePoint(
+            id: "outside",
+            coordinate: offset(origin, northMeters: 75),
+            featureClass: featureClass
+        )
+        mappingData.updateFeatures([sameDistanceB, outside, sameDistanceA], for: featureClass)
+
+        let candidates = mappingData.getRelevantFeatures(
+            to: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            featureClass: featureClass,
+            captureId: nil,
+            distanceThreshold: 50 * MKMapPointsPerMeterAtLatitude(origin.latitude)
+        )
+
+        XCTAssertEqual(candidates.map(\.id), ["a", "b"])
+    }
+
+    func testCaptureMatchedFeatureIsFirstAndDuplicateIdsAreRemoved() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let captureId = UUID()
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let mappingData = CurrentMappingData()
+        let nearby = makePoint(
+            id: "nearby",
+            coordinate: offset(origin, northMeters: 5),
+            featureClass: featureClass
+        )
+        let captureMatched = makePoint(
+            id: "capture",
+            coordinate: offset(origin, northMeters: 75),
+            featureClass: featureClass,
+            captureId: captureId
+        )
+        mappingData.updateFeatures([nearby, captureMatched], for: featureClass)
+        mappingData.featuresMap[featureClass]?.append(captureMatched.id)
+
+        let candidates = mappingData.getRelevantFeatures(
+            to: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            featureClass: featureClass,
+            captureId: captureId,
+            distanceThreshold: 50 * MKMapPointsPerMeterAtLatitude(origin.latitude)
+        )
+
+        XCTAssertEqual(candidates.map(\.id), ["capture", "nearby"])
+        XCTAssertTrue(candidates[0].isCaptureMatched)
+    }
+
+    func testRelevantLineCandidatePreservesCompleteReferenceOrder() throws {
+        let featureClass = try featureClass(geometry: .linestring)
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let secondCoordinate = offset(origin, northMeters: 5)
+        let mappingData = CurrentMappingData()
+        let first = makePoint(id: "first", coordinate: origin, featureClass: featureClass)
+        let second = makePoint(id: "second", coordinate: secondCoordinate, featureClass: featureClass)
+        mappingData.points = [first.id: first, second.id: second]
+        mappingData.updateFeatures([
+            makeLine(id: "line", pointRefs: [first.id, second.id], featureClass: featureClass)
+        ], for: featureClass)
+
+        let candidate = try XCTUnwrap(mappingData.getRelevantFeatures(
+            to: wayLocation([origin, secondCoordinate], isClosed: false),
+            featureClass: featureClass,
+            captureId: nil,
+            distanceThreshold: 50 * MKMapPointsPerMeterAtLatitude(origin.latitude)
+        ).first)
+
+        XCTAssertEqual(candidate.locationDetails.locations.first?.coordinates.map(\.latitude), [
+            first.latitude,
+            second.latitude
+        ])
+    }
+
+    func testRelevantWayCandidateIsExcludedWhenAnyNodeIsMissing() throws {
+        let featureClass = try featureClass(geometry: .linestring)
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let mappingData = CurrentMappingData()
+        let first = makePoint(id: "first", coordinate: origin, featureClass: featureClass)
+        mappingData.points[first.id] = first
+        mappingData.updateFeatures([
+            makeLine(id: "line", pointRefs: [first.id, "missing"], featureClass: featureClass)
+        ], for: featureClass)
+
+        let candidates = mappingData.getRelevantFeatures(
+            to: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            featureClass: featureClass,
+            captureId: nil
+        )
+
+        XCTAssertTrue(candidates.isEmpty)
+    }
+
+    func testPolygonSelectionCoordinateUsesInteriorPointForConvexPolygon() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.004),
+            CLLocationCoordinate2D(latitude: 0.004, longitude: 0.004),
+            CLLocationCoordinate2D(latitude: 0.004, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        ]
+
+        let coordinate = try XCTUnwrap(
+            OSWElementMapSelectionGeometry.polygonSelectionCoordinate(for: coordinates)
+        )
+
+        XCTAssertTrue(LocationHelpers.MKDistanceHelpers.checkPointInsidePolygon(
+            srcPoint: MKMapPoint(coordinate),
+            polygonPoints: coordinates.dropLast().map(MKMapPoint.init)
+        ))
+    }
+
+    func testDegeneratePolygonSelectionFallsBackToLineMidpoint() throws {
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.002),
+            CLLocationCoordinate2D(latitude: 0, longitude: 0.004)
+        ]
+
+        let coordinate = try XCTUnwrap(
+            OSWElementMapSelectionGeometry.polygonSelectionCoordinate(for: coordinates)
+        )
+
+        XCTAssertEqual(coordinate.latitude, 0, accuracy: 0.000_001)
+        XCTAssertEqual(coordinate.longitude, 0.002, accuracy: 0.000_01)
+    }
+
+    func testRelevantPolygonCandidatePreservesCompleteReferenceOrder() throws {
+        let featureClass = try featureClass(geometry: .polygon)
+        let coordinates = [
+            CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321),
+            CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3320),
+            CLLocationCoordinate2D(latitude: 47.6063, longitude: -122.3320)
+        ]
+        let points = coordinates.enumerated().map {
+            makePoint(id: "polygon-point-\($0.offset)", coordinate: $0.element, featureClass: featureClass)
+        }
+        let mappingData = CurrentMappingData()
+        mappingData.points = Dictionary(uniqueKeysWithValues: points.map { ($0.id, $0) })
+        let polygon = makePolygon(
+            id: "polygon",
+            pointRefs: points.map(\.id),
+            featureClass: featureClass
+        )
+        mappingData.updateFeatures([polygon], for: featureClass)
+
+        let candidate = try XCTUnwrap(mappingData.getRelevantFeatures(
+            to: wayLocation(coordinates + [coordinates[0]], isClosed: true),
+            featureClass: featureClass,
+            captureId: nil
+        ).first)
+
+        XCTAssertEqual(
+            candidate.locationDetails.locations.first?.coordinates.map(\.longitude),
+            [coordinates[0].longitude, coordinates[1].longitude, coordinates[2].longitude, coordinates[0].longitude]
+        )
+    }
+
+    func testRelevantPolygonCandidateIsExcludedWhenNodeIsMissing() throws {
+        let featureClass = try featureClass(geometry: .polygon)
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let mappingData = CurrentMappingData()
+        let first = makePoint(id: "first", coordinate: origin, featureClass: featureClass)
+        let second = makePoint(
+            id: "second",
+            coordinate: offset(origin, northMeters: 2),
+            featureClass: featureClass
+        )
+        mappingData.points = [first.id: first, second.id: second]
+        mappingData.updateFeatures([
+            makePolygon(
+                id: "polygon",
+                pointRefs: [first.id, second.id, "missing"],
+                featureClass: featureClass
+            )
+        ], for: featureClass)
+
+        XCTAssertTrue(mappingData.getRelevantFeatures(
+            to: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            featureClass: featureClass,
+            captureId: nil
+        ).isEmpty)
+    }
+
+    func testRelevantPolygonCandidateRequiresThreeDistinctCoordinates() throws {
+        let featureClass = try featureClass(geometry: .polygon)
+        let origin = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
+        let mappingData = CurrentMappingData()
+        let positiveZero = makePoint(
+            id: "positive-zero",
+            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            featureClass: featureClass
+        )
+        let negativeZero = makePoint(
+            id: "negative-zero",
+            coordinate: CLLocationCoordinate2D(latitude: -0.0, longitude: -0.0),
+            featureClass: featureClass
+        )
+        let second = makePoint(id: "second", coordinate: origin, featureClass: featureClass)
+        mappingData.points = [
+            positiveZero.id: positiveZero,
+            negativeZero.id: negativeZero,
+            second.id: second
+        ]
+        mappingData.updateFeatures([
+            makePolygon(
+                id: "polygon",
+                pointRefs: [positiveZero.id, negativeZero.id, second.id],
+                featureClass: featureClass
+            )
+        ], for: featureClass)
+
+        XCTAssertTrue(mappingData.getRelevantFeatures(
+            to: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            featureClass: featureClass,
+            captureId: nil
+        ).isEmpty)
+    }
+
+    func testIsExistingRequestClearsStaleSelectionWhenLocationIsMissing() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let oldPoint = makePoint(
+            id: "old",
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            featureClass: featureClass
+        )
+        let feature = makeMappedFeature(
+            featureClass: featureClass,
+            isExisting: true,
+            oswElement: oldPoint
+        )
+
+        AttributeEstimationPipeline().processIsExistingRequest(
+            deviceLocation: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            mappingData: CurrentMappingData(),
+            accessibilityFeature: feature
+        )
+
+        XCTAssertFalse(feature.isExisting)
+        XCTAssertNil(feature.oswElement)
+        XCTAssertTrue(feature.relevantOSWElements.isEmpty)
+    }
+
+    func testIsExistingRequestClearsStaleSelectionWhenNoCandidatesExist() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let origin = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        let oldPoint = makePoint(id: "old", coordinate: origin, featureClass: featureClass)
+        let feature = makeMappedFeature(
+            featureClass: featureClass,
+            locationDetails: pointLocation(latitude: origin.latitude, longitude: origin.longitude),
+            isExisting: true,
+            oswElement: oldPoint
+        )
+
+        AttributeEstimationPipeline().processIsExistingRequest(
+            deviceLocation: origin,
+            mappingData: CurrentMappingData(),
+            accessibilityFeature: feature
+        )
+
+        XCTAssertFalse(feature.isExisting)
+        XCTAssertNil(feature.oswElement)
+        XCTAssertTrue(feature.relevantOSWElements.isEmpty)
+    }
+
+    func testIsExistingRequestUsesFirstCandidateWhenPolicyPrefersExisting() throws {
+        guard let featureClass = AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first(where: {
+            $0.kind.oswPolicy.oswElementClass.geometry == .point
+                && $0.kind.oswPolicy.isExistingFirst
+        }) else {
+            throw XCTSkip("No point feature class prefers an existing OSW element.")
+        }
+        let origin = CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3)
+        let candidate = makePoint(id: "candidate", coordinate: origin, featureClass: featureClass)
+        let mappingData = CurrentMappingData()
+        mappingData.updateFeatures([candidate], for: featureClass)
+        let feature = makeMappedFeature(
+            featureClass: featureClass,
+            locationDetails: pointLocation(latitude: origin.latitude, longitude: origin.longitude)
+        )
+
+        AttributeEstimationPipeline().processIsExistingRequest(
+            deviceLocation: origin,
+            mappingData: mappingData,
+            accessibilityFeature: feature
+        )
+
+        XCTAssertEqual(feature.relevantOSWElements.map(\.id), [candidate.id])
+        XCTAssertTrue(feature.isExisting)
+        XCTAssertEqual(feature.oswElement?.id, candidate.id)
+    }
+
+    func testExistingOSWElementSelectionUpdatesFeatureAtomically() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let feature = makeMappedFeature(featureClass: featureClass)
+        let point = makePoint(
+            id: "selected-point",
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            featureClass: featureClass
+        )
+        feature.setRelevantOSWElements([
+            OSWElementCandidate(
+                element: point,
+                locationDetails: pointLocation(latitude: point.latitude, longitude: point.longitude),
+                mapPointDistance: 10,
+                isCaptureMatched: false
+            )
+        ])
+
+        try feature.applyOSWElementSelection(.existingElement(id: point.id))
+
+        XCTAssertTrue(feature.isExisting)
+        XCTAssertEqual(feature.oswElement?.id, point.id)
+    }
+
+    func testNewOSWElementSelectionClearsPreviouslySelectedElement() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let point = makePoint(
+            id: "old-point",
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            featureClass: featureClass
+        )
+        let feature = makeMappedFeature(featureClass: featureClass, isExisting: true, oswElement: point)
+
+        try feature.applyOSWElementSelection(.newElement)
+
+        XCTAssertFalse(feature.isExisting)
+        XCTAssertNil(feature.oswElement)
+    }
+
+    func testUnknownOSWElementSelectionPreservesFeatureState() throws {
+        let featureClass = try featureClass(geometry: .point)
+        let point = makePoint(
+            id: "old-point",
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            featureClass: featureClass
+        )
+        let feature = makeMappedFeature(featureClass: featureClass, isExisting: true, oswElement: point)
+
+        XCTAssertThrowsError(try feature.applyOSWElementSelection(.existingElement(id: "missing")))
+        XCTAssertTrue(feature.isExisting)
+        XCTAssertEqual(feature.oswElement?.id, point.id)
+    }
+
+    func testGeometryMismatchedOSWElementSelectionPreservesFeatureState() throws {
+        let pointFeatureClass = try featureClass(geometry: .point)
+        let lineFeatureClass = try featureClass(geometry: .linestring)
+        let oldPoint = makePoint(
+            id: "old-point",
+            coordinate: CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+            featureClass: pointFeatureClass
+        )
+        let line = OSWLineString(
+            id: "line",
+            version: "1",
+            oswElementClass: lineFeatureClass.kind.oswPolicy.oswElementClass,
+            attributeValues: [:],
+            experimentalAttributeValues: [:],
+            pointRefs: ["a", "b"]
+        )
+        let feature = makeMappedFeature(
+            featureClass: pointFeatureClass,
+            isExisting: true,
+            oswElement: oldPoint
+        )
+        feature.setRelevantOSWElements([
+            OSWElementCandidate(
+                element: line,
+                locationDetails: LocationDetails(locations: [
+                    LocationElement(
+                        coordinates: [
+                            CLLocationCoordinate2D(latitude: 47.6, longitude: -122.3),
+                            CLLocationCoordinate2D(latitude: 47.6001, longitude: -122.3)
+                        ],
+                        isWay: true,
+                        isClosed: false
+                    )
+                ]),
+                mapPointDistance: 10,
+                isCaptureMatched: false
+            )
+        ])
+
+        XCTAssertThrowsError(try feature.applyOSWElementSelection(.existingElement(id: line.id)))
+        XCTAssertTrue(feature.isExisting)
+        XCTAssertEqual(feature.oswElement?.id, oldPoint.id)
+    }
+
     func testPrerequisiteCacheReusesDamageDetectionResults() throws {
         var cache = AttributeEstimationPipeline.PrerequisiteCache()
         var computationCount = 0
@@ -1565,6 +2034,119 @@ final class IOSAccessAssessmentTests: XCTestCase {
             XCTAssertEqual(emptyRow[index], 0)
         }
         XCTAssertEqual(emptyRow[heightIndex!], 1.2, accuracy: 0.000_001)
+    }
+
+    private func featureClass(geometry: MappingGeometry) throws -> AccessibilityFeatureClass {
+        guard let featureClass = AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first(where: {
+            $0.kind.oswPolicy.oswElementClass.geometry == geometry
+        }) else {
+            throw XCTSkip("No configured accessibility feature class uses \(geometry) geometry.")
+        }
+        return featureClass
+    }
+
+    private func makeMappedFeature(
+        featureClass: AccessibilityFeatureClass,
+        locationDetails: LocationDetails? = nil,
+        isExisting: Bool = false,
+        oswElement: (any OSWElement)? = nil
+    ) -> MappedEditableAccessibilityFeature {
+        MappedEditableAccessibilityFeature(
+            accessibilityFeatureClass: featureClass,
+            contourDetails: ContourDetails(
+                centroid: .zero,
+                boundingBox: .zero,
+                normalizedPoints: [],
+                area: 0,
+                perimeter: 0
+            ),
+            locationDetails: locationDetails,
+            isExisting: isExisting,
+            oswElement: oswElement,
+            calculatedAttributeValues: [:],
+            attributeValues: [:],
+            experimentalAttributeValues: [:]
+        )
+    }
+
+    private func makePoint(
+        id: String,
+        coordinate: CLLocationCoordinate2D,
+        featureClass: AccessibilityFeatureClass,
+        captureId: UUID? = nil
+    ) -> OSWPoint {
+        var additionalTags: [String: String] = [:]
+        additionalTags[APIConstants.TagKeys.captureIdKey] = captureId?.uuidString
+        return OSWPoint(
+            id: id,
+            version: "1",
+            oswElementClass: featureClass.kind.oswPolicy.oswElementClass,
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+            attributeValues: [:],
+            experimentalAttributeValues: [:],
+            additionalTags: additionalTags
+        )
+    }
+
+    private func makeLine(
+        id: String,
+        pointRefs: [String],
+        featureClass: AccessibilityFeatureClass
+    ) -> OSWLineString {
+        OSWLineString(
+            id: id,
+            version: "1",
+            oswElementClass: featureClass.kind.oswPolicy.oswElementClass,
+            attributeValues: [:],
+            experimentalAttributeValues: [:],
+            pointRefs: pointRefs
+        )
+    }
+
+    private func makePolygon(
+        id: String,
+        pointRefs: [String],
+        featureClass: AccessibilityFeatureClass
+    ) -> OSWPolygon {
+        OSWPolygon(
+            id: id,
+            version: "1",
+            oswElementClass: featureClass.kind.oswPolicy.oswElementClass,
+            attributeValues: [:],
+            experimentalAttributeValues: [:],
+            pointRefs: pointRefs
+        )
+    }
+
+    private func pointLocation(latitude: CLLocationDegrees, longitude: CLLocationDegrees) -> LocationDetails {
+        LocationDetails(locations: [
+            LocationElement(
+                coordinates: [CLLocationCoordinate2D(latitude: latitude, longitude: longitude)],
+                isWay: false,
+                isClosed: false
+            )
+        ])
+    }
+
+    private func wayLocation(
+        _ coordinates: [CLLocationCoordinate2D],
+        isClosed: Bool
+    ) -> LocationDetails {
+        LocationDetails(locations: [
+            LocationElement(coordinates: coordinates, isWay: true, isClosed: isClosed)
+        ])
+    }
+
+    private func offset(
+        _ coordinate: CLLocationCoordinate2D,
+        northMeters: CLLocationDistance
+    ) -> CLLocationCoordinate2D {
+        let mapPoint = MKMapPoint(coordinate)
+        return MKMapPoint(
+            x: mapPoint.x,
+            y: mapPoint.y - northMeters * MKMapPointsPerMeterAtLatitude(coordinate.latitude)
+        ).coordinate
     }
 
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
