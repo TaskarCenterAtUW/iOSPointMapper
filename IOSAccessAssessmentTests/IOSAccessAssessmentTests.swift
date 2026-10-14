@@ -1097,11 +1097,378 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertTrue(summary.hasParity, "Mismatches: \(mismatchDescription)")
     }
 
+    func testGPUOrderStatisticPlanUsesConfigurationColumnSlots() throws {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .signedTiltV,
+            label: "custom",
+            centralTendencyFeatures: [.mean, .median],
+            percentileFeatures: [75],
+            tailFeatures: [],
+            distributionShapeFeatures: []
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [group])
+        )
+
+        XCTAssertEqual(plan.featureStride, 8)
+        XCTAssertEqual(plan.primaryDescriptors.count, 2)
+        XCTAssertEqual(plan.primaryDescriptors[0].destinationFeatureSlot, 1)
+        XCTAssertEqual(plan.primaryDescriptors[1].destinationFeatureSlot, 2)
+        XCTAssertEqual(plan.primaryDescriptors.map(\.percentile), [50, 75])
+    }
+
+    func testGPUOrderStatisticPlanCompilesMedianAsPercentile50() throws {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .normalDeviation,
+            centralTendencyFeatures: [.median], percentileFeatures: [],
+            tailFeatures: [], distributionShapeFeatures: []
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [group])
+        )
+
+        XCTAssertEqual(plan.primaryDescriptors.count, 1)
+        XCTAssertEqual(plan.primaryDescriptors[0].operation, SurfaceIntegrityOrderStatisticOperation.percentile.rawValue)
+        XCTAssertEqual(plan.primaryDescriptors[0].percentile, 50)
+    }
+
+    func testGPUOrderStatisticPlanReusesConfiguredMedianForMAD() throws {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .normalDeviation,
+            centralTendencyFeatures: [.median, .medianAbsoluteDeviation],
+            percentileFeatures: [], tailFeatures: [], distributionShapeFeatures: []
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [group])
+        )
+
+        XCTAssertEqual(plan.primaryDescriptors.count, 1)
+        XCTAssertEqual(plan.madDescriptors.count, 1)
+        XCTAssertEqual(plan.madDescriptors[0].dependencySlot, 0)
+        XCTAssertEqual(plan.madDescriptors[0].destinationFeatureSlot, 1)
+    }
+
+    func testGPUOrderStatisticPlanCreatesInternalMedianForMADWhenNeeded() throws {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .heightResidual,
+            centralTendencyFeatures: [.medianAbsoluteDeviation],
+            percentileFeatures: [], tailFeatures: [], distributionShapeFeatures: []
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [group])
+        )
+
+        XCTAssertEqual(plan.primaryDescriptors.count, 1)
+        XCTAssertEqual(plan.primaryDescriptors[0].destinationFeatureSlot, UInt32.max)
+        XCTAssertEqual(plan.madDescriptors[0].dependencySlot, 0)
+        XCTAssertEqual(plan.madDescriptors[0].destinationFeatureSlot, 0)
+    }
+
+    func testGPUOrderStatisticSharedTypesHaveExpectedLayout() {
+        XCTAssertEqual(MemoryLayout<SurfaceIntegrityOrderStatisticDescriptorGPU>.stride, 20)
+        XCTAssertEqual(MemoryLayout<SurfaceIntegrityOrderStatisticDescriptorGPU>.alignment, 4)
+    }
+
+    func testGPUOrderStatisticPlanRejectsInvalidPercentilesAndSlots() {
+        let group = SurfaceIntegrityFeatureGroupConfiguration(
+            source: .signedTiltU,
+            centralTendencyFeatures: [], percentileFeatures: [-1, 101],
+            tailFeatures: [], distributionShapeFeatures: []
+        )
+
+        XCTAssertThrowsError(try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [group])
+        ))
+    }
+
+    func testWeightedPercentileBreaksEqualValueTiesByPolygonIndex() {
+        let result = SurfaceIntegrityProcessor.weightedPercentile(
+            values: [0, 10, 10],
+            weights: [1, 100, 1],
+            polygonIndices: [0, 2, 1],
+            percentile: 2
+        )
+
+        XCTAssertEqual(result, 10, accuracy: 0.000_001)
+    }
+
+    func testGPUWeightedSelectionMatchesPercentilesZero50_75_90And100() throws {
+        let values: [Float] = [-10, 0, 10, 20]
+        let details = values.enumerated().map { index, value in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index), 0, 0), normal: SIMD3<Float>(0, 1, 0),
+                area: 1, angularDeviationDegrees: value
+            )
+        }
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [
+            .init(
+                source: .normalDeviation,
+                centralTendencyFeatures: [.median],
+                percentileFeatures: [0, 75, 90, 100],
+                tailFeatures: [], distributionShapeFeatures: []
+            )
+        ])
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: values.count),
+            gridOriginU: 0, gridOriginV: 0, gridShape: SIMD2<Int32>(1, 1)
+        )
+        let plan = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: configuration
+        )
+
+        let result = try processor.computeGPUWeightedSelections(
+            surfaceDetails: details,
+            heightResiduals: Array(repeating: 0, count: values.count),
+            signedTiltData: Array(
+                repeating: SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 0),
+                count: values.count
+            ),
+            membership: membership,
+            plan: plan
+        )
+
+        XCTAssertEqual(result.primaryValues.count, 5)
+        XCTAssertEqual(result.primaryValues[0], 0, accuracy: 0.000_001)
+        XCTAssertEqual(result.primaryValues[1], -10, accuracy: 0.000_001)
+        XCTAssertEqual(result.primaryValues[2], 10, accuracy: 0.000_001)
+        XCTAssertEqual(result.primaryValues[3], 16, accuracy: 0.000_001)
+        XCTAssertEqual(result.primaryValues[4], 20, accuracy: 0.000_001)
+    }
+
+    func testGPUWeightedSelectionMatchesDuplicateValuesWithUnequalWeights() throws {
+        let result = try gpuNormalDeviationSelections(
+            values: [0, 10, 10], weights: [1, 100, 1], percentiles: [2]
+        )
+        let expected = SurfaceIntegrityProcessor.weightedPercentile(
+            values: [0, 10, 10], weights: [1, 100, 1],
+            polygonIndices: [0, 1, 2], percentile: 2
+        )
+        XCTAssertEqual(result[0], expected, accuracy: 0.000_1)
+    }
+
+    func testGPUWeightedSelectionMatchesZeroAndVerySmallPositiveWeights() throws {
+        let result = try gpuNormalDeviationSelections(
+            values: [-5, 1, 9], weights: [0, 0.000_001, 1], percentiles: [0, 50, 100]
+        )
+        XCTAssertEqual(result[0], -5, accuracy: 0.000_001)
+        XCTAssertEqual(result[1], 5, accuracy: 0.000_1)
+        XCTAssertEqual(result[2], 9, accuracy: 0.000_001)
+    }
+
+    func testGPUWeightedSelectionHandlesMoreThan256Memberships() throws {
+        let values = (0..<300).map { Float($0 - 150) }
+        let result = try gpuNormalDeviationSelections(
+            values: values, weights: Array(repeating: 1, count: values.count),
+            percentiles: [50, 90]
+        )
+        XCTAssertEqual(result[0], -1, accuracy: 0.000_1)
+        XCTAssertEqual(result[1], 119, accuracy: 0.000_1)
+    }
+
+    func testGPUWeightedSelectionHandlesEmptySingleAndConstantWindows() throws {
+        let empty = try gpuNormalDeviationSelections(
+            values: [7], weights: [1], percentiles: [50],
+            uvCoordinates: [SIMD2<Float>(10, 10)]
+        )
+        XCTAssertTrue(empty[0].isNaN)
+        let single = try gpuNormalDeviationSelections(values: [7], weights: [2], percentiles: [50])
+        XCTAssertEqual(single[0], 7, accuracy: 0.000_001)
+        let constant = try gpuNormalDeviationSelections(
+            values: [4, 4, 4], weights: [1, 2, 3], percentiles: [25, 90]
+        )
+        XCTAssertEqual(constant, [4, 4])
+    }
+
+    func testGPUWeightedSelectionRejectsNegativeWeights() throws {
+        XCTAssertThrowsError(try gpuNormalDeviationSelections(
+            values: [0, 1], weights: [1, -1], percentiles: [50]
+        ))
+    }
+
+    func testGPUWeightedSelectionRejectsNonFiniteValuesAndWeights() throws {
+        XCTAssertThrowsError(try gpuNormalDeviationSelections(
+            values: [0, .infinity], weights: [1, 1], percentiles: [50]
+        ))
+        XCTAssertThrowsError(try gpuNormalDeviationSelections(
+            values: [0, 1], weights: [1, .nan], percentiles: [50]
+        ))
+    }
+
+    func testGPUMADMatchesCPUWithConfiguredMedianReuse() throws {
+        let details = [Float(1), 2, 100].enumerated().map { index, value in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index), 0, 0), normal: SIMD3<Float>(0, 1, 0),
+                area: 1, angularDeviationDegrees: value
+            )
+        }
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [
+            .init(
+                source: .normalDeviation,
+                centralTendencyFeatures: [.median, .medianAbsoluteDeviation],
+                percentileFeatures: [], tailFeatures: [], distributionShapeFeatures: []
+            )
+        ])
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: 3),
+            gridOriginU: 0, gridOriginV: 0, gridShape: SIMD2<Int32>(1, 1)
+        )
+        let result = try processor.computeGPUWeightedSelections(
+            surfaceDetails: details, heightResiduals: [0, 0, 0],
+            signedTiltData: Array(
+                repeating: SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 0),
+                count: 3
+            ),
+            membership: membership,
+            plan: SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(configuration: configuration)
+        )
+
+        XCTAssertEqual(result.primaryValues, [1.5])
+        XCTAssertEqual(result.madValues[0], 0.5, accuracy: 0.000_1)
+    }
+
+    func testGPUMADMatchesCPUWithInternalMedianDependency() throws {
+        let values = (0..<300).map { Float($0 % 11) }
+        let details = values.enumerated().map { index, value in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index), 0, 0), normal: SIMD3<Float>(0, 1, 0),
+                area: Float(index % 3 + 1), angularDeviationDegrees: value
+            )
+        }
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [
+            .init(
+                source: .normalDeviation,
+                centralTendencyFeatures: [.medianAbsoluteDeviation],
+                percentileFeatures: [], tailFeatures: [], distributionShapeFeatures: []
+            )
+        ])
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: values.count),
+            gridOriginU: 0, gridOriginV: 0, gridShape: SIMD2<Int32>(1, 1)
+        )
+        let result = try processor.computeGPUWeightedSelections(
+            surfaceDetails: details, heightResiduals: Array(repeating: 0, count: values.count),
+            signedTiltData: Array(
+                repeating: SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 0),
+                count: values.count
+            ), membership: membership,
+            plan: SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(configuration: configuration)
+        )
+        let expected = SurfaceIntegrityProcessor.weightedMedianAbsoluteDeviation(
+            values: values, weights: details.map(\.area), polygonIndices: Array(values.indices)
+        )
+        XCTAssertEqual(result.madValues[0], expected, accuracy: 0.000_1)
+    }
+
+    func testGPUMADRejectsInvalidDependencySlot() throws {
+        let invalidMAD = SurfaceIntegrityOrderStatisticDescriptorGPU(
+            source: 0,
+            operation: SurfaceIntegrityOrderStatisticOperation.medianAbsoluteDeviation.rawValue,
+            percentile: 50,
+            dependencySlot: 99,
+            destinationFeatureSlot: 0
+        )
+        let base = try SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(
+            configuration: .init(featureGroups: [
+                .init(
+                    source: .normalDeviation, centralTendencyFeatures: [.median],
+                    percentileFeatures: [], tailFeatures: [], distributionShapeFeatures: []
+                )
+            ])
+        )
+        let plan = SurfaceIntegrityGPUOrderStatisticPlan(
+            primaryDescriptors: base.primaryDescriptors,
+            madDescriptors: [invalidMAD], featureStride: 6
+        )
+        let details = [MeshSurfaceDetail(
+            centroid: .zero, normal: SIMD3<Float>(0, 1, 0), area: 1,
+            angularDeviationDegrees: 1
+        )]
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: [.zero], gridOriginU: 0, gridOriginV: 0,
+            gridShape: SIMD2<Int32>(1, 1)
+        )
+        XCTAssertThrowsError(try processor.computeGPUWeightedSelections(
+            surfaceDetails: details, heightResiduals: [0],
+            signedTiltData: [SignedTiltData(
+                tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 0
+            )], membership: membership, plan: plan
+        ))
+    }
+
+    func testGPUFeatureMatrixMatchesCPUDefaultConfiguration() throws {
+        let values: [Float] = [1, 2, 4, 8]
+        let details = values.enumerated().map { index, value in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index), 0, 0), normal: SIMD3<Float>(0, 1, 0),
+                area: Float(index + 1) * 0.001, angularDeviationDegrees: value
+            )
+        }
+        let residuals: [Float] = [-0.02, -0.01, 0.01, 0.03]
+        let tilts = values.map {
+            SignedTiltData(tiltUDegrees: $0, tiltVDegrees: -$0, tiltMagnitudeDegrees: $0 * 0.5)
+        }
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: Array(repeating: .zero, count: values.count),
+            gridOriginU: 0, gridOriginV: 0, gridShape: SIMD2<Int32>(1, 1)
+        )
+        let result = try processor.computeCompleteGPUWindowFeatures(
+            surfaceDetails: details, heightResiduals: residuals, signedTiltData: tilts,
+            membership: membership, retainedWindowIndices: [0], heightFromGround: 1.2
+        )
+        let cpu = try SurfaceIntegrityProcessor.processWindowFeatures(
+            surfaceDetails: details, heightResiduals: residuals, signedTiltData: tilts,
+            heightFromGround: 1.2, polygonIndices: Array(values.indices)
+        )
+
+        XCTAssertEqual(result.featureStride, cpu.orderedValues.count)
+        for (gpu, expected) in zip(result.values, cpu.orderedValues) {
+            XCTAssertEqual(gpu, expected, accuracy: max(0.000_1, abs(expected) * 0.001))
+        }
+    }
+
     private func rectangle(minX: Float, minY: Float, maxX: Float, maxY: Float) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(minX, minY), SIMD2<Float>(maxX, minY),
             SIMD2<Float>(maxX, maxY), SIMD2<Float>(minX, maxY)
         ]
+    }
+
+    private func gpuNormalDeviationSelections(
+        values: [Float], weights: [Float], percentiles: [Int],
+        uvCoordinates: [SIMD2<Float>]? = nil
+    ) throws -> [Float] {
+        let details = values.enumerated().map { index, value in
+            MeshSurfaceDetail(
+                centroid: SIMD3<Float>(Float(index), 0, 0), normal: SIMD3<Float>(0, 1, 0),
+                area: weights[index], angularDeviationDegrees: value
+            )
+        }
+        let configuration = SurfaceIntegrityFeatureConfiguration(featureGroups: [
+            .init(
+                source: .normalDeviation, centralTendencyFeatures: [],
+                percentileFeatures: percentiles, tailFeatures: [], distributionShapeFeatures: []
+            )
+        ])
+        let processor = try SurfaceIntegrityProcessor()
+        let membership = try processor.computeSlidingWindowMembershipGPU(
+            uvCoordinates: uvCoordinates ?? Array(repeating: .zero, count: values.count),
+            gridOriginU: 0, gridOriginV: 0, gridShape: SIMD2<Int32>(1, 1)
+        )
+        return try processor.computeGPUWeightedSelections(
+            surfaceDetails: details,
+            heightResiduals: Array(repeating: 0, count: values.count),
+            signedTiltData: Array(
+                repeating: SignedTiltData(tiltUDegrees: 0, tiltVDegrees: 0, tiltMagnitudeDegrees: 0),
+                count: values.count
+            ),
+            membership: membership,
+            plan: SurfaceIntegrityProcessor.makeGPUOrderStatisticPlan(configuration: configuration)
+        ).primaryValues
     }
 
 
