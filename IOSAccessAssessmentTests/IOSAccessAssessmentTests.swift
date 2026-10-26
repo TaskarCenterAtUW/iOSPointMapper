@@ -14,6 +14,84 @@ import MapKit
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testOnlyConfiguredAttributesRequireNonNegativeNumericValues() {
+        let expectedNonNegativeAttributes: Set<AccessibilityFeatureAttribute> = [
+            .width,
+            .widthLegacy,
+            .widthFromImage,
+            .runningSlope,
+            .crossSlope,
+            .surfaceDisruption,
+            .heightFromGround,
+            .surfaceDisruptionArea,
+            .surfaceDisruptionLength,
+            .turningSpaceWidth,
+            .turningSpaceLength
+        ]
+
+        let actualNonNegativeAttributes = Set(
+            AccessibilityFeatureAttribute.allCases.filter {
+                $0.numericConstraints == .nonNegative
+            }
+        )
+
+        XCTAssertEqual(actualNonNegativeAttributes, expectedNonNegativeAttributes)
+    }
+
+    func testSetterRejectsNegativeValueForNonNegativeAttribute() throws {
+        let feature = try makeEditableFeature()
+
+        XCTAssertThrowsError(
+            try feature.setAttributeValue(
+                .length(Measurement(value: -1, unit: UnitLength.meters)),
+                for: .width
+            )
+        ) { error in
+            guard case AccessibilityFeatureError.attributeValueOutOfRange(
+                attribute: .width,
+                value: -1,
+                minimum: 0,
+                maximum: nil
+            ) = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        }
+
+        XCTAssertNil(feature.attributeValues[.width] ?? nil)
+    }
+
+    func testSetterAllowsZeroForNonNegativeAttribute() throws {
+        let feature = try makeEditableFeature()
+
+        try feature.setAttributeValue(
+            .length(Measurement(value: 0, unit: UnitLength.meters)),
+            for: .width
+        )
+
+        let storedValue = try XCTUnwrap(feature.attributeValues[.width] ?? nil)
+        XCTAssertEqual(storedValue.toDouble(), 0)
+    }
+
+    func testSetterAllowsNegativeValueForSignedAttribute() throws {
+        let feature = try makeEditableFeature()
+
+        try feature.setAttributeValue(
+            .length(Measurement(value: -1, unit: UnitLength.meters)),
+            for: .rampWidth
+        )
+
+        let storedValue = try XCTUnwrap(feature.attributeValues[.rampWidth] ?? nil)
+        XCTAssertEqual(storedValue.toDouble(), -1)
+    }
+
+    func testNegativeEstimateCannotBeRestoredForNonNegativeAttribute() {
+        XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            attribute: .width,
+            currentValue: .length(Measurement(value: 1, unit: UnitLength.meters)),
+            calculatedValue: .length(Measurement(value: -1, unit: UnitLength.meters))
+        ))
+    }
+
     func testFinalAttributeNumberRoundsToConfiguredPrecision() throws {
         let rounded = try XCTUnwrap(
             AccessibilityFeatureAttribute.Value.number(2.117257)
@@ -146,6 +224,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testNumericEstimateCanBeRestoredWhenCurrentValueIsMissing() {
         XCTAssertTrue(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: nil,
             calculatedValue: .number(2.2)
         ))
@@ -153,6 +232,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testNonnumericEstimateCannotBeRestored() {
         XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: .number(2.2),
             calculatedValue: .flag(true)
         ))
@@ -162,6 +242,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertNil(annotationFeatureDetailNumericEstimate(.number(.nan)))
         XCTAssertNil(annotationFeatureDetailNumericEstimate(.number(.infinity)))
         XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: .number(.nan),
             calculatedValue: .number(.nan)
         ))
@@ -169,6 +250,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testSelectedNumericEstimateCannotBeRestoredAgain() {
         XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: .number(2.2),
             calculatedValue: .number(2.2)
         ))
@@ -176,6 +258,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testRoundedCalculatedEstimateCannotBeRestoredAgain() {
         XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: .number(2.1173),
             calculatedValue: .number(2.117257)
         ))
@@ -183,6 +266,7 @@ final class IOSAccessAssessmentTests: XCTestCase {
 
     func testMateriallyDifferentCalculatedEstimateCanBeRestored() {
         XCTAssertTrue(annotationFeatureDetailCanUseEstimate(
+            attribute: .surfaceDisruption,
             currentValue: .number(2.1174),
             calculatedValue: .number(2.117257)
         ))
