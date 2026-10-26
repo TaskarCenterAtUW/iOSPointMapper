@@ -14,48 +14,126 @@ import MapKit
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
-    func testNumericAttributeIsNotEditedWhenCurrentValueMatchesEstimate() {
-        let estimate = AccessibilityFeatureAttribute.Value.length(
-            Measurement(value: 1, unit: UnitLength.meters)
-        )
-        let currentValue = AccessibilityFeatureAttribute.Value.length(
-            Measurement(value: 100, unit: UnitLength.centimeters)
+    func testFinalAttributeNumberRoundsToConfiguredPrecision() throws {
+        let rounded = try XCTUnwrap(
+            AccessibilityFeatureAttribute.Value.number(2.117257)
+                .roundedForFinalAttribute()
+                .toDouble()
         )
 
-        XCTAssertFalse(annotationFeatureDetailIsEdited(
-            currentValue: currentValue,
-            calculatedValue: estimate
-        ))
+        XCTAssertEqual(PointNMapConstants.finalAttributePrecision, 4)
+        XCTAssertEqual(rounded, 2.1173, accuracy: 0.000_000_1)
     }
 
-    func testNumericAttributeIsEditedWhenCurrentValueDiffersFromEstimate() {
-        let estimate = AccessibilityFeatureAttribute.Value.length(
-            Measurement(value: 1, unit: UnitLength.meters)
-        )
-        let currentValue = AccessibilityFeatureAttribute.Value.length(
-            Measurement(value: 110, unit: UnitLength.centimeters)
+    func testFinalAttributeNegativeNumberRoundsToNearestValue() throws {
+        let rounded = try XCTUnwrap(
+            AccessibilityFeatureAttribute.Value.number(-1.23459)
+                .roundedForFinalAttribute()
+                .toDouble()
         )
 
-        XCTAssertTrue(annotationFeatureDetailIsEdited(
-            currentValue: currentValue,
-            calculatedValue: estimate
-        ))
+        XCTAssertEqual(rounded, -1.2346, accuracy: 0.000_000_1)
     }
 
-    func testNumericAttributeIsEditedWhenCurrentValueExistsWithoutEstimate() {
-        XCTAssertTrue(annotationFeatureDetailIsEdited(
-            currentValue: .number(2.2),
-            calculatedValue: nil
-        ))
-        XCTAssertNil(annotationFeatureDetailNumericEstimate(nil))
+    func testFinalAttributeRoundingDoesNotOverflowFiniteValue() throws {
+        let rounded = try XCTUnwrap(
+            AccessibilityFeatureAttribute.Value.number(.greatestFiniteMagnitude)
+                .roundedForFinalAttribute()
+                .toDouble()
+        )
+
+        XCTAssertTrue(rounded.isFinite)
+        XCTAssertEqual(rounded, .greatestFiniteMagnitude)
     }
 
-    func testNumericAttributeIsNotEditedWhenCurrentValueAndEstimateAreMissing() {
-        XCTAssertFalse(annotationFeatureDetailIsEdited(
-            currentValue: nil,
-            calculatedValue: nil
-        ))
-        XCTAssertNil(annotationFeatureDetailNumericEstimate(nil))
+    func testFinalAttributeLengthAndAngleRoundInCanonicalUnits() throws {
+        let length = try XCTUnwrap(
+            AccessibilityFeatureAttribute.Value.length(
+                Measurement(value: 211.7257, unit: UnitLength.centimeters)
+            )
+            .roundedForFinalAttribute()
+            .toDouble()
+        )
+        let angle = try XCTUnwrap(
+            AccessibilityFeatureAttribute.Value.angle(
+                Measurement(value: 0.123456, unit: UnitAngle.radians)
+            )
+            .roundedForFinalAttribute()
+            .toDouble()
+        )
+
+        XCTAssertEqual(length, 2.1173, accuracy: 0.000_000_1)
+        XCTAssertEqual(angle, 7.0735, accuracy: 0.000_000_1)
+    }
+
+    func testFinalAttributeRoundingLeavesNonnumericValuesUnchanged() {
+        let flag = AccessibilityFeatureAttribute.Value.flag(true)
+        let category = AccessibilityFeatureAttribute.Value.categorical(
+            AnyCategoricalValue(SurfaceIntegrityStatus.moderate)
+        )
+
+        XCTAssertEqual(flag.roundedForFinalAttribute(), flag)
+        XCTAssertEqual(category.roundedForFinalAttribute(), category)
+    }
+
+    func testSetterPreservesCalculatedPrecisionAndRoundsFinalValue() throws {
+        let feature = try makeEditableFeature()
+        let rawValue = AccessibilityFeatureAttribute.Value.number(2.117257)
+
+        try feature.setAttributeValue(
+            rawValue,
+            for: .surfaceDisruption,
+            isCalculated: true,
+            isFinal: true
+        )
+
+        let calculated = try XCTUnwrap(
+            feature.calculatedAttributeValues[.surfaceDisruption] ?? nil
+        )
+        let final = try XCTUnwrap(
+            feature.attributeValues[.surfaceDisruption] ?? nil
+        )
+        XCTAssertEqual(calculated, rawValue)
+        XCTAssertEqual(final.toDouble(), 2.1173)
+    }
+
+    func testSetterAppliesPrecisionOnlyToRequestedStorage() throws {
+        let calculatedOnlyFeature = try makeEditableFeature()
+        let finalOnlyFeature = try makeEditableFeature()
+        let rawValue = AccessibilityFeatureAttribute.Value.number(2.117257)
+
+        try calculatedOnlyFeature.setAttributeValue(
+            rawValue,
+            for: .surfaceDisruption,
+            isCalculated: true,
+            isFinal: false
+        )
+        try finalOnlyFeature.setAttributeValue(
+            rawValue,
+            for: .surfaceDisruption,
+            isCalculated: false,
+            isFinal: true
+        )
+
+        XCTAssertEqual(
+            calculatedOnlyFeature.calculatedAttributeValues[.surfaceDisruption] ?? nil,
+            rawValue
+        )
+        XCTAssertNil(calculatedOnlyFeature.attributeValues[.surfaceDisruption] ?? nil)
+        XCTAssertNil(finalOnlyFeature.calculatedAttributeValues[.surfaceDisruption] ?? nil)
+        let finalOnlyValue = try XCTUnwrap(
+            finalOnlyFeature.attributeValues[.surfaceDisruption] ?? nil
+        )
+        XCTAssertEqual(finalOnlyValue.toDouble(), 2.1173)
+    }
+
+    func testReconstructionInitializerPreservesHistoricalFinalPrecision() throws {
+        let rawValue = AccessibilityFeatureAttribute.Value.number(2.117257)
+        let feature = try makeEditableFeature(
+            attributeValues: [.surfaceDisruption: rawValue]
+        )
+
+        XCTAssertEqual(feature.attributeValues[.surfaceDisruption] ?? nil, rawValue)
     }
 
     func testNumericEstimateExtractsNumericValue() throws {
@@ -80,10 +158,33 @@ final class IOSAccessAssessmentTests: XCTestCase {
         ))
     }
 
+    func testNonfiniteEstimateIsUnavailableAndCannotBeRestored() {
+        XCTAssertNil(annotationFeatureDetailNumericEstimate(.number(.nan)))
+        XCTAssertNil(annotationFeatureDetailNumericEstimate(.number(.infinity)))
+        XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            currentValue: .number(.nan),
+            calculatedValue: .number(.nan)
+        ))
+    }
+
     func testSelectedNumericEstimateCannotBeRestoredAgain() {
         XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
             currentValue: .number(2.2),
             calculatedValue: .number(2.2)
+        ))
+    }
+
+    func testRoundedCalculatedEstimateCannotBeRestoredAgain() {
+        XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            currentValue: .number(2.1173),
+            calculatedValue: .number(2.117257)
+        ))
+    }
+
+    func testMateriallyDifferentCalculatedEstimateCanBeRestored() {
+        XCTAssertTrue(annotationFeatureDetailCanUseEstimate(
+            currentValue: .number(2.1174),
+            calculatedValue: .number(2.117257)
         ))
     }
 
@@ -2116,6 +2217,25 @@ final class IOSAccessAssessmentTests: XCTestCase {
             throw XCTSkip("No configured accessibility feature class uses \(geometry) geometry.")
         }
         return featureClass
+    }
+
+    private func makeEditableFeature(
+        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?] = [:]
+    ) throws -> EditableAccessibilityFeature {
+        EditableAccessibilityFeature(
+            accessibilityFeatureClass: try featureClass(geometry: .linestring),
+            contourDetails: ContourDetails(
+                centroid: .zero,
+                boundingBox: .zero,
+                normalizedPoints: [],
+                area: 0,
+                perimeter: 0
+            ),
+            locationDetails: nil,
+            calculatedAttributeValues: [:],
+            attributeValues: attributeValues,
+            experimentalAttributeValues: [:]
+        )
     }
 
     private func makeMappedFeature(
