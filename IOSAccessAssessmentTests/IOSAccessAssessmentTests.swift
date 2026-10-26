@@ -14,6 +14,79 @@ import MapKit
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testNumericAttributeIsNotEditedWhenCurrentValueMatchesEstimate() {
+        let estimate = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 1, unit: UnitLength.meters)
+        )
+        let currentValue = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 100, unit: UnitLength.centimeters)
+        )
+
+        XCTAssertFalse(annotationFeatureDetailIsEdited(
+            currentValue: currentValue,
+            calculatedValue: estimate
+        ))
+    }
+
+    func testNumericAttributeIsEditedWhenCurrentValueDiffersFromEstimate() {
+        let estimate = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 1, unit: UnitLength.meters)
+        )
+        let currentValue = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 110, unit: UnitLength.centimeters)
+        )
+
+        XCTAssertTrue(annotationFeatureDetailIsEdited(
+            currentValue: currentValue,
+            calculatedValue: estimate
+        ))
+    }
+
+    func testNumericAttributeIsEditedWhenCurrentValueExistsWithoutEstimate() {
+        XCTAssertTrue(annotationFeatureDetailIsEdited(
+            currentValue: .number(2.2),
+            calculatedValue: nil
+        ))
+        XCTAssertNil(annotationFeatureDetailNumericEstimate(nil))
+    }
+
+    func testNumericAttributeIsNotEditedWhenCurrentValueAndEstimateAreMissing() {
+        XCTAssertFalse(annotationFeatureDetailIsEdited(
+            currentValue: nil,
+            calculatedValue: nil
+        ))
+        XCTAssertNil(annotationFeatureDetailNumericEstimate(nil))
+    }
+
+    func testNumericEstimateExtractsNumericValue() throws {
+        let estimate = try XCTUnwrap(
+            annotationFeatureDetailNumericEstimate(.number(2.117257))
+        )
+
+        XCTAssertEqual(estimate, 2.117257, accuracy: 0.000_000_1)
+    }
+
+    func testNumericEstimateCanBeRestoredWhenCurrentValueIsMissing() {
+        XCTAssertTrue(annotationFeatureDetailCanUseEstimate(
+            currentValue: nil,
+            calculatedValue: .number(2.2)
+        ))
+    }
+
+    func testNonnumericEstimateCannotBeRestored() {
+        XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            currentValue: .number(2.2),
+            calculatedValue: .flag(true)
+        ))
+    }
+
+    func testSelectedNumericEstimateCannotBeRestoredAgain() {
+        XCTAssertFalse(annotationFeatureDetailCanUseEstimate(
+            currentValue: .number(2.2),
+            calculatedValue: .number(2.2)
+        ))
+    }
+
     func testLineSelectionCoordinateUsesPathLengthMidpoint() throws {
         let coordinate = try XCTUnwrap(OSWElementMapSelectionGeometry.lineSelectionCoordinate(for: [
             CLLocationCoordinate2D(latitude: 0, longitude: 0),
