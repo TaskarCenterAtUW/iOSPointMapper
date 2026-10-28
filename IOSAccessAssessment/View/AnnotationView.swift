@@ -28,6 +28,8 @@ enum AnnotationViewConstants {
         static let fromGroupText = "Group"
         static let individualChoiceText = "Override"
         static let useGroupDecisionText = "Use group decision"
+        static let reviewRulePrefixText = "Review rule:"
+        static let sidewalkReviewRuleText = "Keep if the highlighted sidewalk mostly matches the real sidewalk. Small gaps are okay; large missing areas or major spillover are not."
         
         static let loadingPageText = "Loading. Please wait..."
         
@@ -536,6 +538,10 @@ struct AnnotationView: View {
 
             Divider()
 
+            if currentClass.kind == .sidewalk {
+                sidewalkReviewRuleView
+            }
+
             if !currentClass.kind.isUniquePerCapture {
                 reviewScopePicker(currentClass: currentClass)
             }
@@ -557,6 +563,27 @@ struct AnnotationView: View {
 
             decisionSummaryView(currentClass: currentClass)
         }
+    }
+
+    private var sidewalkReviewRuleView: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "info.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.blue)
+
+            (
+                Text("\(AnnotationViewConstants.Texts.reviewRulePrefixText) ")
+                    .fontWeight(.semibold)
+                + Text(AnnotationViewConstants.Texts.sidewalkReviewRuleText)
+            )
+            .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.blue.opacity(0.1))
+        )
     }
 
     private var confirmAnnotationButton: some View {
