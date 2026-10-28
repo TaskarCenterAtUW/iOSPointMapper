@@ -8,12 +8,66 @@
 import Foundation
 import XCTest
 import CoreLocation
+import CoreImage
 import MapKit
 @testable import IOSAccessAssessment
 @testable import PointNMapShared
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testSelectionSpotlightDimsOutsideAndClearsSelectedInterior() throws {
+        let feature = DetectedAccessibilityFeature(
+            accessibilityFeatureClass: try featureClass(isUniquePerCapture: true),
+            contourDetails: ContourDetails(normalizedPoints: [
+                SIMD2<Float>(0.25, 0.25),
+                SIMD2<Float>(0.75, 0.25),
+                SIMD2<Float>(0.75, 0.75),
+                SIMD2<Float>(0.25, 0.75)
+            ])
+        )
+
+        let image = try XCTUnwrap(
+            ContourFeatureRasterizer.rasterizeSelectionSpotlight(
+                detectedFeature: feature,
+                size: CGSize(width: 100, height: 100)
+            )
+        )
+        let pixels = rgbaPixels(from: image)
+
+        let outside = pixels(5, 5)
+        XCTAssertEqual(outside.red, 0)
+        XCTAssertEqual(outside.green, 0)
+        XCTAssertEqual(outside.blue, 0)
+        XCTAssertGreaterThan(outside.alpha, 40)
+        XCTAssertLessThan(outside.alpha, 90)
+
+        let interior = pixels(50, 50)
+        XCTAssertEqual(interior.alpha, 0)
+
+        let whiteBoundary = pixels(25, 50)
+        XCTAssertGreaterThan(whiteBoundary.red, 220)
+        XCTAssertGreaterThan(whiteBoundary.green, 220)
+        XCTAssertGreaterThan(whiteBoundary.blue, 220)
+        XCTAssertGreaterThan(whiteBoundary.alpha, 220)
+
+        let darkBacking = pixels(17, 50)
+        XCTAssertLessThan(darkBacking.red, 80)
+        XCTAssertLessThan(darkBacking.green, 80)
+        XCTAssertLessThan(darkBacking.blue, 80)
+        XCTAssertGreaterThan(darkBacking.alpha, 200)
+    }
+
+    func testAnnotationImageSelectionStoresFeatureAndZeroBasedIndex() throws {
+        let feature = makeMappedFeature(
+            featureClass: try featureClass(isUniquePerCapture: false)
+        )
+
+        let selection = AnnotationImageSelection(feature: feature, index: 2)
+
+        XCTAssertEqual(selection.feature.id, feature.id)
+        XCTAssertEqual(selection.index, 2)
+    }
+
     func testMultiInstanceFeatureDefaultsToGroupKeep() throws {
         let feature = makeEditableFeature(
             featureClass: try featureClass(isUniquePerCapture: false)
@@ -2516,6 +2570,27 @@ final class IOSAccessAssessmentTests: XCTestCase {
             throw XCTSkip("No configured accessibility feature class uses \(geometry) geometry.")
         }
         return featureClass
+    }
+
+    private func rgbaPixels(
+        from image: CGImage
+    ) -> (_ x: Int, _ y: Int) -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
+        let width = image.width
+        let height = image.height
+        let bytesPerRow = width * 4
+        var bytes = [UInt8](repeating: 0, count: bytesPerRow * height)
+        CIContext().render(
+            CIImage(cgImage: image),
+            toBitmap: &bytes,
+            rowBytes: bytesPerRow,
+            bounds: CGRect(x: 0, y: 0, width: width, height: height),
+            format: .RGBA8,
+            colorSpace: CGColorSpaceCreateDeviceRGB()
+        )
+        return { x, y in
+            let offset = y * bytesPerRow + x * 4
+            return (bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3])
+        }
     }
 
     private func featureClass(isUniquePerCapture: Bool) throws -> AccessibilityFeatureClass {
