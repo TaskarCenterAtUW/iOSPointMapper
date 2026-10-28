@@ -505,6 +505,7 @@ struct AnnotationView: View {
             confirmAnnotationButton
                 .frame(maxWidth: .infinity)
                 .background(.background)
+                .shadow(color: .black.opacity(0.08), radius: 4, y: -2)
         }
     }
 
@@ -559,14 +560,25 @@ struct AnnotationView: View {
     }
 
     private var confirmAnnotationButton: some View {
-        Button(action: {
+        let isLastClass = isCurrentIndexLast()
+
+        return Button(action: {
             confirmAnnotation()
         }) {
-            Text(isCurrentIndexLast()
-                 ? AnnotationViewConstants.Texts.finishText
-                 : AnnotationViewConstants.Texts.nextText)
-                .padding()
+            HStack(spacing: 8) {
+                Text(isLastClass
+                     ? AnnotationViewConstants.Texts.finishText
+                     : AnnotationViewConstants.Texts.nextText)
+                Image(systemName: isLastClass ? "checkmark.seal.fill" : "arrow.right")
+            }
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(.tint, in: RoundedRectangle(cornerRadius: 12))
         }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     private func reviewScopePicker(currentClass: AccessibilityFeatureClass) -> some View {
