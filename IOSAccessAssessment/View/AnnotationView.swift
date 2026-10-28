@@ -464,75 +464,108 @@ struct AnnotationView: View {
     }
     
     @ViewBuilder
-    private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        manager.interfaceOrientation.isLandscape ?
-        AnyLayout(HStackLayout())(content) :
-        AnyLayout(VStackLayout())(content)
-    }
-    
-    @ViewBuilder
     private func mainContent(currentClass: AccessibilityFeatureClass) -> some View {
-        orientationStack {
-            HostedAnnotationImageViewController<MappedEditableAccessibilityFeature>(annotationImageManager: manager)
-                .frame(maxHeight: .infinity)
-                .layoutPriority(0)
-            
-            VStack(spacing: 12) {
+        GeometryReader { geometry in
+            let isLandscape = manager.interfaceOrientation.isLandscape
+            let layout = isLandscape
+                ? AnyLayout(HStackLayout(spacing: 0))
+                : AnyLayout(VStackLayout(spacing: 0))
+
+            layout {
+                annotationImageView
+                    .frame(
+                        width: isLandscape ? geometry.size.width / 2 : geometry.size.width,
+                        height: isLandscape ? geometry.size.height : geometry.size.height / 2
+                    )
+
+                annotationPane(currentClass: currentClass)
+                    .frame(
+                        width: isLandscape ? geometry.size.width / 2 : geometry.size.width,
+                        height: isLandscape ? geometry.size.height : geometry.size.height / 2
+                    )
+            }
+        }
+    }
+
+    private var annotationImageView: some View {
+        HostedAnnotationImageViewController<MappedEditableAccessibilityFeature>(annotationImageManager: manager)
+            .clipped()
+    }
+
+    private func annotationPane(currentClass: AccessibilityFeatureClass) -> some View {
+        VStack(spacing: 0) {
+            ScrollView(.vertical) {
+                annotationControls(currentClass: currentClass)
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
+            }
+
+            Divider()
+
+            confirmAnnotationButton
+                .frame(maxWidth: .infinity)
+                .background(.background)
+        }
+    }
+
+    @ViewBuilder
+    private func annotationControls(currentClass: AccessibilityFeatureClass) -> some View {
+        VStack(spacing: 12) {
+            HStack {
+                Spacer()
+                Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
+                    .font(.headline)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 30)
+            .overlay(
                 HStack {
                     Spacer()
-                    Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
-                        .font(.headline)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 30)
-                .overlay(
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            showSelectFeatureLearnMoreSheet = true
-                        }) {
-                            Image(systemName: AnnotationViewConstants.Images.infoIcon)
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                        }
-                        .padding(.trailing, 10)
+                    Button(action: {
+                        showSelectFeatureLearnMoreSheet = true
+                    }) {
+                        Image(systemName: AnnotationViewConstants.Images.infoIcon)
+                            .resizable()
+                            .frame(width: 20, height: 20)
                     }
-                )
-                
-                Divider()
-                
-                if !currentClass.kind.isUniquePerCapture {
-                    reviewScopePicker(currentClass: currentClass)
+                    .padding(.trailing, 10)
                 }
+            )
 
-                if currentClass.kind.isUniquePerCapture
-                    || featureSelectionViewModel.reviewScope == .individual {
-                    individualSelectionView(currentClass: currentClass)
-                }
+            Divider()
 
-                if !currentClass.kind.isUniquePerCapture
-                    && featureSelectionViewModel.reviewScope == .individual {
-                    effectiveDecisionView()
-                    Text("Override for this \(currentClass.name.capitalized)")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                annotationOptionsView(currentClass: currentClass)
-
-                decisionSummaryView(currentClass: currentClass)
-                
-                Button(action: {
-                    confirmAnnotation()
-                }) {
-                    Text(isCurrentIndexLast() ? AnnotationViewConstants.Texts.finishText : AnnotationViewConstants.Texts.nextText)
-                        .padding()
-                }
+            if !currentClass.kind.isUniquePerCapture {
+                reviewScopePicker(currentClass: currentClass)
             }
-            .padding(.horizontal)
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
+
+            if currentClass.kind.isUniquePerCapture
+                || featureSelectionViewModel.reviewScope == .individual {
+                individualSelectionView(currentClass: currentClass)
+            }
+
+            if !currentClass.kind.isUniquePerCapture
+                && featureSelectionViewModel.reviewScope == .individual {
+                effectiveDecisionView()
+                Text("Override for this \(currentClass.name.capitalized)")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            annotationOptionsView(currentClass: currentClass)
+
+            decisionSummaryView(currentClass: currentClass)
+        }
+    }
+
+    private var confirmAnnotationButton: some View {
+        Button(action: {
+            confirmAnnotation()
+        }) {
+            Text(isCurrentIndexLast()
+                 ? AnnotationViewConstants.Texts.finishText
+                 : AnnotationViewConstants.Texts.nextText)
+                .padding()
         }
     }
 
