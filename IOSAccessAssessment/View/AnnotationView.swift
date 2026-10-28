@@ -209,7 +209,7 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
         lastSelectedFeatureID = instances.first?.id
         if (currentClass.kind.isUniquePerCapture) {
             reviewScope = .individual
-            try setIndex(index: 0)
+            try setIndex(index: instances.isEmpty ? nil : 0)
         } else {
             reviewScope = .all
             try setIndex(index: nil)
@@ -513,7 +513,10 @@ struct AnnotationView: View {
 
     @ViewBuilder
     private func annotationControls(currentClass: AccessibilityFeatureClass) -> some View {
-        VStack(spacing: 12) {
+        if featureSelectionViewModel.instances.isEmpty {
+            emptyInstancesView(currentClass: currentClass)
+        } else {
+            VStack(spacing: 12) {
             HStack {
                 Spacer()
                 Text("\(AnnotationViewConstants.Texts.currentClassPrefixText): \(currentClass.name)")
@@ -562,7 +565,23 @@ struct AnnotationView: View {
             annotationOptionsView(currentClass: currentClass)
 
             decisionSummaryView(currentClass: currentClass)
+            }
         }
+    }
+
+    private func emptyInstancesView(currentClass: AccessibilityFeatureClass) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "square.dashed")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+
+            Text("No instances of \(currentClass.name.capitalized) were present.")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     private var sidewalkReviewRuleView: some View {

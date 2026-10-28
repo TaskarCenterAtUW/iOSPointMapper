@@ -179,6 +179,32 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(viewModel.currentFeature?.id, feature.id)
     }
 
+    func testUniqueClassWithNoInstancesKeepsSelectionEmpty() throws {
+        let featureClass = try featureClass(isUniquePerCapture: true)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+
+        try viewModel.setInstances([], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .individual)
+        XCTAssertNil(viewModel.currentIndex)
+        XCTAssertNil(viewModel.currentFeature)
+    }
+
+    func testMultiInstanceClassWithNoInstancesStartsInAllWithEmptySelection() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+
+        try viewModel.setInstances([], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentIndex)
+        XCTAssertNil(viewModel.currentFeature)
+        XCTAssertEqual(
+            viewModel.decisionSummary,
+            AnnotationDecisionSummary(keptCount: 0, discardedCount: 0, exceptionCount: 0)
+        )
+    }
+
     func testGroupDecisionPreservesIndividualChoicesAndSummaryCountsExceptions() throws {
         let featureClass = try featureClass(isUniquePerCapture: false)
         let explicitKeep = makeMappedFeature(featureClass: featureClass)
