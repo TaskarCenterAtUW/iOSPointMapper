@@ -246,6 +246,126 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertFalse(feature.isAnnotationDecisionException)
     }
 
+    func testBaseMultiInstanceReviewStartsInAllAndSelectsFirstInstanceWhenRequested() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let firstFeature = makeEditableFeature(featureClass: featureClass)
+        let secondFeature = makeEditableFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+
+        try viewModel.setInstances([firstFeature, secondFeature], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentFeature)
+
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.currentFeature?.id, firstFeature.id)
+    }
+
+    func testBaseReviewScopeRestoresLastSelectedFeatureByID() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let firstFeature = makeEditableFeature(featureClass: featureClass)
+        let secondFeature = makeEditableFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+        try viewModel.setInstances([firstFeature, secondFeature], currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+        try viewModel.setIndex(index: 1)
+
+        try viewModel.setReviewScope(.all, currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.currentFeature?.id, secondFeature.id)
+    }
+
+    func testBaseOneDetectionMultiInstanceClassStillStartsInAll() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let feature = makeEditableFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+
+        try viewModel.setInstances([feature], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentFeature)
+    }
+
+    func testBaseUniqueClassWithNoInstancesKeepsSelectionEmpty() throws {
+        let featureClass = try featureClass(isUniquePerCapture: true)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+
+        try viewModel.setInstances([], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .individual)
+        XCTAssertNil(viewModel.currentIndex)
+        XCTAssertNil(viewModel.currentFeature)
+    }
+
+    func testBaseMultiInstanceClassWithNoInstancesHasZeroSummary() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+
+        try viewModel.setInstances([], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentIndex)
+        XCTAssertNil(viewModel.currentFeature)
+        XCTAssertEqual(
+            viewModel.decisionSummary,
+            AnnotationViewBaseDecisionSummary(keptCount: 0, discardedCount: 0, exceptionCount: 0)
+        )
+    }
+
+    func testBaseGroupDecisionPreservesIndividualChoicesAndCountsExceptions() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let explicitKeep = makeEditableFeature(featureClass: featureClass)
+        let inheritedDiscard = makeEditableFeature(featureClass: featureClass)
+        let explicitDiscard = makeEditableFeature(featureClass: featureClass)
+        explicitKeep.setIndividualAnnotationDecision(.keep)
+        explicitDiscard.setIndividualAnnotationDecision(.discard)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+        try viewModel.setInstances(
+            [explicitKeep, inheritedDiscard, explicitDiscard],
+            currentClass: featureClass
+        )
+
+        viewModel.setGroupDecision(.discard)
+
+        XCTAssertEqual(explicitKeep.individualAnnotationDecision, .keep)
+        XCTAssertEqual(explicitDiscard.individualAnnotationDecision, .discard)
+        XCTAssertEqual(viewModel.groupDecision, .discard)
+        XCTAssertEqual(
+            viewModel.decisionSummary,
+            AnnotationViewBaseDecisionSummary(keptCount: 1, discardedCount: 2, exceptionCount: 1)
+        )
+    }
+
+    func testBaseMatchingIndividualDecisionIsExplicitButNotException() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let feature = makeEditableFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+        try viewModel.setInstances([feature], currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+
+        viewModel.setIndividualDecision(.keep)
+
+        XCTAssertEqual(feature.individualAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
+    func testBaseClearIndividualDecisionRestoresGroupInheritance() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let feature = makeEditableFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewBaseModel()
+        try viewModel.setInstances([feature], currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+        viewModel.setIndividualDecision(.discard)
+
+        viewModel.clearIndividualDecision()
+
+        XCTAssertNil(feature.individualAnnotationDecision)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
     func testUploadSelectionKeepsAllInstancesForGroupKeep() throws {
         let featureClass = try featureClass(isUniquePerCapture: false)
         let features = [
