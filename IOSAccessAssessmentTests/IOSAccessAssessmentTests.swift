@@ -14,6 +14,204 @@ import MapKit
 import PointNMapShaderTypes
 
 final class IOSAccessAssessmentTests: XCTestCase {
+    func testMultiInstanceFeatureDefaultsToGroupKeep() throws {
+        let feature = makeEditableFeature(
+            featureClass: try featureClass(isUniquePerCapture: false)
+        )
+
+        XCTAssertEqual(feature.groupAnnotationDecision, .keep)
+        XCTAssertNil(feature.individualAnnotationDecision)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
+    func testUniqueFeatureDefaultsToDirectIndividualKeep() throws {
+        let feature = makeEditableFeature(
+            featureClass: try featureClass(isUniquePerCapture: true)
+        )
+
+        XCTAssertNil(feature.groupAnnotationDecision)
+        XCTAssertEqual(feature.individualAnnotationDecision, .keep)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
+    func testIndividualDiscardOverridesGroupKeepAndIsException() throws {
+        let feature = makeEditableFeature(
+            featureClass: try featureClass(isUniquePerCapture: false)
+        )
+
+        feature.setIndividualAnnotationDecision(.discard)
+
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .discard)
+        XCTAssertTrue(feature.isAnnotationDecisionException)
+    }
+
+    func testMatchingIndividualKeepIsExplicitButNotException() throws {
+        let feature = makeEditableFeature(
+            featureClass: try featureClass(isUniquePerCapture: false)
+        )
+
+        feature.setIndividualAnnotationDecision(.keep)
+
+        XCTAssertEqual(feature.individualAnnotationDecision, .keep)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
+    func testChangingGroupDecisionPreservesIndividualChoiceAndRecalculatesException() throws {
+        let feature = makeEditableFeature(
+            featureClass: try featureClass(isUniquePerCapture: false)
+        )
+        feature.setIndividualAnnotationDecision(.keep)
+
+        feature.setGroupAnnotationDecision(.discard)
+
+        XCTAssertEqual(feature.individualAnnotationDecision, .keep)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertTrue(feature.isAnnotationDecisionException)
+    }
+
+    func testMultiInstanceReviewStartsInAllAndSelectsFirstInstanceWhenRequested() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let firstFeature = makeMappedFeature(featureClass: featureClass)
+        let secondFeature = makeMappedFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+
+        try viewModel.setInstances([firstFeature, secondFeature], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentFeature)
+
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.currentFeature?.id, firstFeature.id)
+    }
+
+    func testReviewScopeRestoresLastSelectedFeatureByID() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let firstFeature = makeMappedFeature(featureClass: featureClass)
+        let secondFeature = makeMappedFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+        try viewModel.setInstances([firstFeature, secondFeature], currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+        try viewModel.setIndex(index: 1)
+
+        try viewModel.setReviewScope(.all, currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.currentFeature?.id, secondFeature.id)
+    }
+
+    func testOneDetectionMultiInstanceClassStillStartsInAll() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let feature = makeMappedFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+
+        try viewModel.setInstances([feature], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .all)
+        XCTAssertNil(viewModel.currentFeature)
+    }
+
+    func testUniqueClassUsesDirectIndividualReview() throws {
+        let featureClass = try featureClass(isUniquePerCapture: true)
+        let feature = makeMappedFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+
+        try viewModel.setInstances([feature], currentClass: featureClass)
+
+        XCTAssertEqual(viewModel.reviewScope, .individual)
+        XCTAssertEqual(viewModel.currentFeature?.id, feature.id)
+    }
+
+    func testGroupDecisionPreservesIndividualChoicesAndSummaryCountsExceptions() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let explicitKeep = makeMappedFeature(featureClass: featureClass)
+        let inheritedDiscard = makeMappedFeature(featureClass: featureClass)
+        let explicitDiscard = makeMappedFeature(featureClass: featureClass)
+        explicitKeep.setIndividualAnnotationDecision(.keep)
+        explicitDiscard.setIndividualAnnotationDecision(.discard)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+        try viewModel.setInstances(
+            [explicitKeep, inheritedDiscard, explicitDiscard],
+            currentClass: featureClass
+        )
+
+        viewModel.setGroupDecision(.discard)
+
+        XCTAssertEqual(explicitKeep.individualAnnotationDecision, .keep)
+        XCTAssertEqual(explicitDiscard.individualAnnotationDecision, .discard)
+        XCTAssertEqual(viewModel.groupDecision, .discard)
+        XCTAssertEqual(
+            viewModel.decisionSummary,
+            AnnotationDecisionSummary(keptCount: 1, discardedCount: 2, exceptionCount: 1)
+        )
+    }
+
+    func testUploadSelectionKeepsAllInstancesForGroupKeep() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let features = [
+            makeMappedFeature(featureClass: featureClass),
+            makeMappedFeature(featureClass: featureClass)
+        ]
+
+        XCTAssertEqual(featuresKeptForUpload(features, for: featureClass).count, 2)
+    }
+
+    func testUploadSelectionExcludesIndividualDiscardFromGroupKeep() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let kept = makeMappedFeature(featureClass: featureClass)
+        let discarded = makeMappedFeature(featureClass: featureClass)
+        discarded.setIndividualAnnotationDecision(.discard)
+
+        let result = featuresKeptForUpload([kept, discarded], for: featureClass)
+
+        XCTAssertEqual(result.map(\.id), [kept.id])
+    }
+
+    func testUploadSelectionKeepsNoneForGroupDiscardWithoutOverrides() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let features = [
+            makeMappedFeature(featureClass: featureClass),
+            makeMappedFeature(featureClass: featureClass)
+        ]
+        features.forEach { $0.setGroupAnnotationDecision(.discard) }
+
+        XCTAssertTrue(featuresKeptForUpload(features, for: featureClass).isEmpty)
+    }
+
+    func testUploadSelectionKeepsIndividualKeepExceptionFromGroupDiscard() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let exception = makeMappedFeature(featureClass: featureClass)
+        let discarded = makeMappedFeature(featureClass: featureClass)
+        [exception, discarded].forEach { $0.setGroupAnnotationDecision(.discard) }
+        exception.setIndividualAnnotationDecision(.keep)
+
+        let result = featuresKeptForUpload([exception, discarded], for: featureClass)
+
+        XCTAssertEqual(result.map(\.id), [exception.id])
+    }
+
+    func testUploadSelectionExcludesDiscardedUniqueInstance() throws {
+        let featureClass = try featureClass(isUniquePerCapture: true)
+        let feature = makeMappedFeature(featureClass: featureClass)
+        feature.setIndividualAnnotationDecision(.discard)
+
+        XCTAssertTrue(featuresKeptForUpload([feature], for: featureClass).isEmpty)
+    }
+
+    func testUploadSelectionExcludesFeaturesFromOtherClasses() throws {
+        let targetFeatureClass = try featureClass(isUniquePerCapture: false)
+        let otherFeatureClass = try featureClass(isUniquePerCapture: true)
+        let matching = makeMappedFeature(featureClass: targetFeatureClass)
+        let other = makeMappedFeature(featureClass: otherFeatureClass)
+
+        let result = featuresKeptForUpload([matching, other], for: targetFeatureClass)
+
+        XCTAssertEqual(result.map(\.id), [matching.id])
+    }
+
     func testOnlyConfiguredAttributesRequireNonNegativeNumericValues() {
         let expectedNonNegativeAttributes: Set<AccessibilityFeatureAttribute> = [
             .width,
@@ -2301,6 +2499,34 @@ final class IOSAccessAssessmentTests: XCTestCase {
             throw XCTSkip("No configured accessibility feature class uses \(geometry) geometry.")
         }
         return featureClass
+    }
+
+    private func featureClass(isUniquePerCapture: Bool) throws -> AccessibilityFeatureClass {
+        guard let featureClass = AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first(where: {
+            $0.kind.isUniquePerCapture == isUniquePerCapture
+        }) else {
+            throw XCTSkip("No configured accessibility feature class has isUniquePerCapture=\(isUniquePerCapture).")
+        }
+        return featureClass
+    }
+
+    private func makeEditableFeature(
+        featureClass: AccessibilityFeatureClass
+    ) -> EditableAccessibilityFeature {
+        EditableAccessibilityFeature(
+            accessibilityFeatureClass: featureClass,
+            contourDetails: ContourDetails(
+                centroid: .zero,
+                boundingBox: .zero,
+                normalizedPoints: [],
+                area: 0,
+                perimeter: 0
+            ),
+            locationDetails: nil,
+            calculatedAttributeValues: [:],
+            attributeValues: [:],
+            experimentalAttributeValues: [:]
+        )
     }
 
     private func makeEditableFeature(
