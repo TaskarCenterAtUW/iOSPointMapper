@@ -491,6 +491,8 @@ struct AnnotationView: View {
                     }
                 )
                 
+                Divider()
+                
                 if !currentClass.kind.isUniquePerCapture {
                     reviewScopePicker(currentClass: currentClass)
                 }
@@ -545,16 +547,26 @@ struct AnnotationView: View {
                 Text(instanceDisplayName(for: currentClass, index: 0))
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                CustomPicker(
-                    label: AnnotationViewConstants.Texts.selectObjectText,
-                    selection: $featureSelectionViewModel.currentIndex,
-                    isContainsAll: false
+//                CustomPicker(
+//                    label: AnnotationViewConstants.Texts.selectObjectText,
+//                    selection: $featureSelectionViewModel.currentIndex,
+//                    isContainsAll: false
+//                ) {
+//                    ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
+//                        Text(instanceDisplayName(for: currentClass, index: featureIndex))
+//                            .tag(featureIndex as Int?)
+//                    }
+//                }
+                Picker(
+                    AnnotationViewConstants.Texts.selectObjectText,
+                    selection: $featureSelectionViewModel.currentIndex
                 ) {
                     ForEach(featureSelectionViewModel.instances.indices, id: \.self) { featureIndex in
                         Text(instanceDisplayName(for: currentClass, index: featureIndex))
                             .tag(featureIndex as Int?)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Button {
@@ -596,7 +608,7 @@ struct AnnotationView: View {
         } else {
             HStack(spacing: 8) {
                 decisionButton(
-                    title: "\(AnnotationViewConstants.Texts.keepText) all instances",
+                    title: "\(AnnotationViewConstants.Texts.keepText) All",
                     systemImage: AnnotationViewConstants.Images.checkIcon,
                     decision: .keep,
                     selectedDecision: featureSelectionViewModel.groupDecision
@@ -604,7 +616,7 @@ struct AnnotationView: View {
                     featureSelectionViewModel.setGroupDecision(.keep)
                 }
                 decisionButton(
-                    title: "\(AnnotationViewConstants.Texts.discardText) all instances",
+                    title: "\(AnnotationViewConstants.Texts.discardText) All",
                     systemImage: "trash",
                     decision: .discard,
                     selectedDecision: featureSelectionViewModel.groupDecision
