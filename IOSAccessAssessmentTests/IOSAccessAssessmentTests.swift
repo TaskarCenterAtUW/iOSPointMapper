@@ -149,6 +149,23 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
     }
 
+    func testClearIndividualDecisionRestoresGroupInheritance() throws {
+        let featureClass = try featureClass(isUniquePerCapture: false)
+        let feature = makeMappedFeature(featureClass: featureClass)
+        let viewModel = AnnotationFeatureSelectionViewModel()
+        try viewModel.setInstances([feature], currentClass: featureClass)
+        try viewModel.setReviewScope(.individual, currentClass: featureClass)
+        viewModel.setIndividualDecision(.keep)
+
+        XCTAssertEqual(feature.individualAnnotationDecision, .keep)
+
+        viewModel.clearIndividualDecision()
+
+        XCTAssertNil(feature.individualAnnotationDecision)
+        XCTAssertEqual(feature.effectiveAnnotationDecision, .keep)
+        XCTAssertFalse(feature.isAnnotationDecisionException)
+    }
+
     func testUploadSelectionKeepsAllInstancesForGroupKeep() throws {
         let featureClass = try featureClass(isUniquePerCapture: false)
         let features = [

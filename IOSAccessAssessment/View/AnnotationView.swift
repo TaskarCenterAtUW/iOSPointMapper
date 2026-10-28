@@ -25,6 +25,9 @@ enum AnnotationViewConstants {
         static let detailsText = "Details"
         static let keepText = "Keep"
         static let discardText = "Discard"
+        static let fromGroupText = "Group"
+        static let individualChoiceText = "Override"
+        static let useGroupDecisionText = "Use group decision"
         
         static let loadingPageText = "Loading. Please wait..."
         
@@ -258,6 +261,12 @@ class AnnotationFeatureSelectionViewModel: ObservableObject {
         guard let currentFeature else { return }
         objectWillChange.send()
         currentFeature.setIndividualAnnotationDecision(decision)
+    }
+
+    func clearIndividualDecision() {
+        guard let currentFeature else { return }
+        objectWillChange.send()
+        currentFeature.setIndividualAnnotationDecision(nil)
     }
     
     func setCurrent(index: Int?, instances: [MappedEditableAccessibilityFeature], currentClass: AccessibilityFeatureClass) throws {
@@ -502,6 +511,14 @@ struct AnnotationView: View {
                     individualSelectionView(currentClass: currentClass)
                 }
 
+                if !currentClass.kind.isUniquePerCapture
+                    && featureSelectionViewModel.reviewScope == .individual {
+                    effectiveDecisionView()
+                    Text("Override for this \(currentClass.name.capitalized)")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 annotationOptionsView(currentClass: currentClass)
 
                 decisionSummaryView(currentClass: currentClass)
@@ -586,7 +603,9 @@ struct AnnotationView: View {
     private func annotationOptionsView(currentClass: AccessibilityFeatureClass) -> some View {
         if currentClass.kind.isUniquePerCapture
             || featureSelectionViewModel.reviewScope == .individual {
-            let selectedDecision = featureSelectionViewModel.currentFeature?.effectiveAnnotationDecision
+            let selectedDecision = currentClass.kind.isUniquePerCapture
+                ? featureSelectionViewModel.currentFeature?.effectiveAnnotationDecision
+                : featureSelectionViewModel.currentFeature?.individualAnnotationDecision
             HStack(spacing: 8) {
                 decisionButton(
                     title: AnnotationViewConstants.Texts.keepText,
@@ -634,14 +653,71 @@ struct AnnotationView: View {
         selectedDecision: AnnotationDecision?,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let isSelected = selectedDecision == decision
+        let decisionColor: Color = decision == .keep ? .green : .red
+
+        return Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(.subheadline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .foregroundStyle(decisionColor)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(decisionColor.opacity(isSelected ? 0.18 : 0.08))
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(
+                            decisionColor.opacity(isSelected ? 1 : 0.3),
+                            lineWidth: isSelected ? 2 : 1
+                        )
+                }
         }
-        .buttonStyle(.bordered)
-        .tint(selectedDecision == decision ? .blue : .gray)
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func effectiveDecisionView() -> some View {
+        if let currentFeature = featureSelectionViewModel.currentFeature {
+            let decision = currentFeature.effectiveAnnotationDecision
+            let decisionColor: Color = decision == .keep ? .green : .red
+            let sourceText = currentFeature.individualAnnotationDecision == nil
+                ? AnnotationViewConstants.Texts.fromGroupText
+                : AnnotationViewConstants.Texts.individualChoiceText
+
+            HStack(spacing: 12) {
+                Label {
+                    HStack(spacing: 4) {
+                        Text(decision == .keep
+                             ? AnnotationViewConstants.Texts.keepText
+                             : AnnotationViewConstants.Texts.discardText)
+                            .fontWeight(.semibold)
+                        Text("(\(sourceText))")
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: decision == .keep
+                          ? AnnotationViewConstants.Images.checkIcon
+                          : "trash")
+                }
+                .foregroundStyle(decisionColor)
+
+                Spacer(minLength: 0)
+
+                Button(AnnotationViewConstants.Texts.useGroupDecisionText) {
+                    featureSelectionViewModel.clearIndividualDecision()
+                }
+                .buttonStyle(.bordered)
+                .disabled(currentFeature.individualAnnotationDecision == nil)
+            }
+            .font(.subheadline)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(decisionColor.opacity(0.1))
+            )
+        }
     }
 
     private func decisionSummaryView(currentClass: AccessibilityFeatureClass) -> some View {
