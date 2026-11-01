@@ -453,6 +453,17 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(actualNonNegativeAttributes, expectedNonNegativeAttributes)
     }
 
+    func testOnlySidewalkSupportsSurfaceDisruptionOverlay() {
+        XCTAssertTrue(AccessibilityFeatureKind.sidewalk.hasSurfaceDisruption)
+
+        for featureKind in AccessibilityFeatureKind.allCases where featureKind != .sidewalk {
+            XCTAssertFalse(
+                featureKind.hasSurfaceDisruption,
+                "\(featureKind.rawValue) should not support the surface-disruption overlay"
+            )
+        }
+    }
+
     func testSetterRejectsNegativeValueForNonNegativeAttribute() throws {
         let feature = try makeEditableFeature()
 
