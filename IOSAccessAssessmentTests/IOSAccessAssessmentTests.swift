@@ -525,7 +525,8 @@ final class IOSAccessAssessmentTests: XCTestCase {
                 .individualChoicesTakePriority,
                 .viewOrEditDetails,
                 .inspectImage,
-                .checkResult
+                .checkResult,
+                .multiInstanceExamples
             ]
         )
     }
@@ -539,6 +540,9 @@ final class IOSAccessAssessmentTests: XCTestCase {
             "annotation_example_keep",
             "annotation_example_borderline",
             "annotation_example_discard",
+            "annotation_multi_example_keep",
+            "annotation_multi_example_incorrect",
+            "annotation_multi_example_duplicate",
             "annotation_help_surface_disruption"
         ]
 
