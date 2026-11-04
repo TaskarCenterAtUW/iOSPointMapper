@@ -153,7 +153,8 @@ struct ARCameraView: View {
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
-    @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
+    @State private var captureFailureExplanation: String?
+    @State private var isCaptureInProgress = false
     
     @StateObject private var locationManager: LocationManager = LocationManager()
 //    @State private var captureLocation: CLLocationCoordinate2D?
@@ -310,11 +311,14 @@ struct ARCameraView: View {
     }
     
     private var capturePresentationState: CapturePresentationState {
+        if isCaptureInProgress {
+            return .processing
+        }
         if mappingDataStatusViewModel.isInProgress {
             return .unavailable(explanation: "Waiting for mapping data.")
         }
-        if cameraHintText != ARCameraViewConstants.Texts.cameraHintPlaceholderText {
-            return .captureFailed(explanation: cameraHintText)
+        if let captureFailureExplanation {
+            return .captureFailed(explanation: captureFailureExplanation)
         }
         return manager.isCaptureReady ? .ready : .preparing
     }
@@ -340,7 +344,14 @@ struct ARCameraView: View {
     }
     
     private func cameraCapture() {
+        guard !isCaptureInProgress, !showAnnotationView else { return }
+
+        isCaptureInProgress = true
+        captureFailureExplanation = nil
+
         Task {
+            defer { isCaptureInProgress = false }
+
             do {
                 guard !mappingDataStatusViewModel.isInProgress else {
                     throw ARCameraViewError.mappingDataNotReady
@@ -370,18 +381,18 @@ struct ARCameraView: View {
                 )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
-                setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintNoMeshText)
             } catch ARCameraManagerError.finalSessionNoSegmentationClass,
                 ARCameraViewError.captureNoSegmentationAccessibilityFeatures {
-                setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch ARCameraManagerError.finalSessionNoSegmentationMesh {
-                setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
             } catch ARCameraViewError.mappingDataNotReady {
-                setHintText(ARCameraViewConstants.Texts.cameraHintMappingDataNotReadyText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintMappingDataNotReadyText)
             } catch _ as LocationManagerError {
-                setHintText(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
             } catch {
-                setHintText(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
             }
         }
     }
@@ -444,13 +455,8 @@ struct ARCameraView: View {
         }
     }
     
-    /// Set text for 2 seconds, and then fall back to placeholder
-    private func setHintText(_ text: String) {
-        cameraHintText = text
-        Task {
-            try await Task.sleep(for: .seconds(2))
-            cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
-        }
+    private func setCaptureFailure(_ text: String) {
+        captureFailureExplanation = text
     }
     
     func openAppSettings() {
