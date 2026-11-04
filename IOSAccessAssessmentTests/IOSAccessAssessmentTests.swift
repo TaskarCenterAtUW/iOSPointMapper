@@ -569,6 +569,22 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
     }
 
+    @available(iOS 17.0, *)
+    func testAnnotationReviewTipUsesUniqueClassGuidance() {
+        XCTAssertEqual(
+            AnnotationReviewInfoTip.messageText(isUniquePerCapture: true),
+            "Keep the highlighted detection if it represents the real feature. Small gaps are okay; discard it when substantial areas are missing or it covers the wrong area."
+        )
+    }
+
+    @available(iOS 17.0, *)
+    func testAnnotationReviewTipUsesMultiInstanceGuidance() {
+        XCTAssertEqual(
+            AnnotationReviewInfoTip.messageText(isUniquePerCapture: false),
+            "Use All to review the group, or Individual to correct one detection. Keep detections that represent real features; discard missing, substantially incomplete, or misplaced detections."
+        )
+    }
+
     func testSetterRejectsNegativeValueForNonNegativeAttribute() throws {
         let feature = try makeEditableFeature()
 
