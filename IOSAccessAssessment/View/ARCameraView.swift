@@ -64,15 +64,6 @@ enum ARCameraViewConstants {
         static let invalidContentViewTitle = "Invalid Capture"
         static let invalidContentViewMessage = "The captured data is invalid. Please try again."
         
-        /// ARCameraLearnMoreSheetView
-        static let arCameraLearnMoreSheetTitle = "About Capture"
-        static let arCameraLearnMoreSheetMessage = """
-        Use this screen to capture accessibility features in your environment. 
-        
-        Point your device's camera at the area you want to capture, and press the Camera Button to take a snapshot.
-        
-        After capturing, you will be prompted to validate the annotated features.
-        """
     }
     
     enum Images {
@@ -305,8 +296,8 @@ struct ARCameraView: View {
             handleLocationUpdate(oldLocation: oldLocation, newLocation: newLocation)
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
-            ARCameraLearnMoreSheetView()
-                .presentationDetents([.medium, .large])
+            CaptureHelpView()
+                .presentationDetents([.large])
         }
     }
     
@@ -469,25 +460,3 @@ struct ARCameraView: View {
     }
 }
 
-struct ARCameraLearnMoreSheetView: View {
-    @Environment(\.dismiss)
-    var dismiss
-    
-    var body: some View {
-        VStack(spacing: 20) {
-//            Image(systemName: "number")
-//                .resizable()
-//                .scaledToFit()
-//                .frame(width: 160)
-//                .foregroundStyle(.accentColor)
-            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetTitle)
-                .font(.headline)
-            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetMessage)
-            .foregroundStyle(.secondary)
-            Button("Dismiss") {
-                dismiss()
-            }
-        }
-        .padding(.horizontal, 40)
-    }
-}
