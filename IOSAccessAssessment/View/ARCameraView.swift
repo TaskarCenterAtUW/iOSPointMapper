@@ -167,54 +167,27 @@ struct ARCameraView: View {
     
     var body: some View {
         Group {
-            // Show the camera view once manager is initialized, otherwise a loading indicator
             if manager.isConfigured {
                 orientationStack {
                     HostedARCameraViewContainer(arSessionCameraProcessingDelegate: manager)
-                    VStack {
-                        /// Text for hinting user with status
-                        Text(cameraHintText)
-                            .padding()
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                            .frame(maxWidth: 300)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        
-                        reverseOrientationStack {
-                            Spacer()
-                            Button {
-                                cameraCapture()
-                            } label: {
-                                Image(
-                                    systemName: manager.isCaptureReady ? ARCameraViewConstants.Images.cameraIcon : ARCameraViewConstants.Images.inProgressIcon
-                                )
-                                    .resizable()
-                                    .frame(
-                                        width: manager.isCaptureReady ? ARCameraViewConstants.Constraints.cameraIconSize : ARCameraViewConstants.Constraints.inProgressIconSize,
-                                        height: ARCameraViewConstants.Constraints.cameraIconSize
-                                    )
-                            }
-                            .padding(.bottom, 20)
-                            Spacer()
-                        }
-                        .overlay(
-                            reverseOrientationStack {
-                                Spacer()
-                                Button(action: {
-                                    showARCameraLearnMoreSheet = true
-                                }) {
-                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
-                                        .resizable()
-                                        .frame(width: 20, height: 20)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-                            }
-                        )
-                    }
+                        .layoutPriority(1)
+
+                    CaptureControlPanel(
+                        state: capturePresentationState,
+                        captureAction: cameraCapture,
+                        helpAction: { showARCameraLearnMoreSheet = true }
+                    )
                 }
             } else {
-                ProgressView(ARCameraViewConstants.Texts.cameraInProgressText)
+                VStack {
+                    Spacer()
+
+                    CaptureControlPanel(
+                        state: .preparing,
+                        captureAction: cameraCapture,
+                        helpAction: { showARCameraLearnMoreSheet = true }
+                    )
+                }
             }
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
@@ -336,6 +309,16 @@ struct ARCameraView: View {
         }
     }
     
+    private var capturePresentationState: CapturePresentationState {
+        if mappingDataStatusViewModel.isInProgress {
+            return .unavailable(explanation: "Waiting for mapping data.")
+        }
+        if cameraHintText != ARCameraViewConstants.Texts.cameraHintPlaceholderText {
+            return .captureFailed(explanation: cameraHintText)
+        }
+        return manager.isCaptureReady ? .ready : .preparing
+    }
+
     @ViewBuilder
     private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         manager.interfaceOrientation.isLandscape ?
