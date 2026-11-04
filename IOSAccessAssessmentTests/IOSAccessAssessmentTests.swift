@@ -558,6 +558,27 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
     }
 
+    func testCaptureHelpPlaceholdersLoadFromSharedBundle() {
+        let assetNames = [
+            "capture_help_object_good",
+            "capture_help_object_adjust",
+            "capture_help_sidewalk_direction",
+            "capture_help_sidewalk_good",
+            "capture_help_sidewalk_adjust"
+        ]
+
+        for assetName in assetNames {
+            XCTAssertNotNil(
+                UIImage(
+                    named: assetName,
+                    in: PointNMapSharedResources.bundle,
+                    compatibleWith: nil
+                ),
+                "Missing shared capture-help asset: \(assetName)"
+            )
+        }
+    }
+
     func testOnlySidewalkSupportsSurfaceDisruptionOverlay() {
         XCTAssertTrue(AccessibilityFeatureKind.sidewalk.hasSurfaceDisruption)
 
