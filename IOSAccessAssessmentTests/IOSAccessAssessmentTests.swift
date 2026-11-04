@@ -10,6 +10,7 @@ import XCTest
 import CoreLocation
 import CoreImage
 import MapKit
+import UIKit
 @testable import IOSAccessAssessment
 @testable import PointNMapShared
 import PointNMapShaderTypes
@@ -451,6 +452,110 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
 
         XCTAssertEqual(actualNonNegativeAttributes, expectedNonNegativeAttributes)
+    }
+
+    func testAnnotationHelpConfigurationUsesSidewalkCapabilities() throws {
+        let featureClass = try XCTUnwrap(
+            AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first {
+                $0.kind == .sidewalk
+            }
+        )
+
+        let configuration = AnnotationHelpConfiguration(featureClass: featureClass)
+
+        XCTAssertEqual(configuration.featureClassName, featureClass.name)
+        XCTAssertTrue(configuration.isUniquePerCapture)
+        XCTAssertTrue(configuration.hasSurfaceDisruption)
+        XCTAssertEqual(
+            configuration.sections,
+            [
+                .overview,
+                .reviewThisInstance,
+                .viewOrEditDetails,
+                .inspectImage,
+                .checkResult,
+                .keepAndDiscardExamples,
+                .surfaceDisruption
+            ]
+        )
+    }
+
+    func testAnnotationHelpConfigurationUsesCurbRampCapabilities() throws {
+        let featureClass = try XCTUnwrap(
+            AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first {
+                $0.kind == .curbRamp
+            }
+        )
+
+        let configuration = AnnotationHelpConfiguration(featureClass: featureClass)
+
+        XCTAssertEqual(configuration.featureClassName, featureClass.name)
+        XCTAssertTrue(configuration.isUniquePerCapture)
+        XCTAssertFalse(configuration.hasSurfaceDisruption)
+        XCTAssertEqual(
+            configuration.sections,
+            [
+                .overview,
+                .reviewThisInstance,
+                .viewOrEditDetails,
+                .inspectImage,
+                .checkResult,
+                .keepAndDiscardExamples
+            ]
+        )
+    }
+
+    func testAnnotationHelpConfigurationUsesClassCapabilityForMultiInstanceHelp() throws {
+        let featureClass = try XCTUnwrap(
+            AccessibilityFeatureConfig.mapillaryCustom12Config.classes.first {
+                $0.kind == .pole
+            }
+        )
+
+        let configuration = AnnotationHelpConfiguration(featureClass: featureClass)
+
+        XCTAssertEqual(configuration.featureClassName, featureClass.name)
+        XCTAssertFalse(configuration.isUniquePerCapture)
+        XCTAssertFalse(configuration.hasSurfaceDisruption)
+        XCTAssertEqual(
+            configuration.sections,
+            [
+                .overview,
+                .chooseWhatToReview,
+                .individualChoicesTakePriority,
+                .viewOrEditDetails,
+                .inspectImage,
+                .checkResult,
+                .multiInstanceExamples
+            ]
+        )
+    }
+
+    func testAnnotationHelpIllustrationsLoadFromSharedBundle() {
+        let assetNames = [
+            "annotation_help_unique_review",
+            "annotation_help_scope",
+            "annotation_help_exceptions",
+            "annotation_help_overlays",
+            "annotation_example_keep",
+            "annotation_example_borderline",
+            "annotation_example_discard",
+            "annotation_multi_example_keep",
+            "annotation_multi_example_incorrect",
+            "annotation_multi_example_duplicate",
+            "annotation_help_surface_disruption"
+        ]
+
+        for assetName in assetNames {
+            XCTAssertNotNil(
+                UIImage(
+                    named: assetName,
+                    in: PointNMapSharedResources.bundle,
+                    compatibleWith: nil
+                ),
+                "Missing shared annotation-help asset: \(assetName)"
+            )
+        }
     }
 
     func testOnlySidewalkSupportsSurfaceDisruptionOverlay() {
