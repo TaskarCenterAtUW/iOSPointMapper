@@ -23,15 +23,6 @@ enum TestCameraViewConstants {
         /// Camera Hint Texts
         static let cameraHintPlaceholderText = "..."
         
-        /// ARCameraLearnMoreSheetView
-        static let testCameraLearnMoreSheetTitle = "About Capture"
-        static let testCameraLearnMoreSheetMessage = """
-        Use this screen to simulate capturing of accessibility features in your environment using local data. 
-        
-        Select the desired image, and press the Camera Button to take a snapshot.
-        
-        After capturing, you will be prompted to validate the annotated features.
-        """
     }
     
     enum Images {
@@ -338,8 +329,8 @@ struct TestCameraView: View {
             }
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
-            ARCameraLearnMoreSheetView()
-                .presentationDetents([.medium, .large])
+            CaptureHelpView()
+                .presentationDetents([.large])
         }
     }
     

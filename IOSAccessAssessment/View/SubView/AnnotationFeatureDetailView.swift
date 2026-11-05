@@ -223,8 +223,7 @@ private struct AnnotationFeatureSelectionRow: View {
         .contentShape(Rectangle())
         .highPriorityGesture(TapGesture().onEnded(onSelect))
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { onSelect() }
     }
 }
