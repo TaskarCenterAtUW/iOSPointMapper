@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TipKit
 import CoreLocation
 import simd
 import PointNMapShared
@@ -27,8 +28,6 @@ enum AnnotationViewConstants {
         static let fromGroupText = "Group"
         static let individualChoiceText = "Override"
         static let useGroupDecisionText = "Use group decision"
-        static let reviewRulePrefixText = "Review rule:"
-        static let sidewalkReviewRuleText = "Keep if the highlighted sidewalk mostly matches the real sidewalk. Small gaps are okay; large missing areas or major spillover are not."
         
         static let loadingPageText = "Loading. Please wait..."
         
@@ -356,6 +355,7 @@ struct AnnotationView: View {
                     } label: {
                         Image(systemName: AnnotationViewConstants.Images.closeIcon)
                     }
+                    .accessibilityLabel("Close annotation")
                 }
             }
         }
@@ -522,11 +522,20 @@ struct AnnotationView: View {
                 }
             )
 
-            Divider()
-
-            if currentClass.kind == .sidewalk {
-                sidewalkReviewRuleView
+            if #available(iOS 17.0, *) {
+                TipView(
+                    AnnotationReviewInfoTip(
+                        isUniquePerCapture: currentClass.kind.isUniquePerCapture
+                    ),
+                    arrowEdge: .top
+                ) { action in
+                    if action.id == AnnotationReviewInfoTip.viewHelpActionID {
+                        isShowingAnnotationHelp = true
+                    }
+                }
             }
+
+            Divider()
 
             if !currentClass.kind.isUniquePerCapture {
                 reviewScopePicker(currentClass: currentClass)
@@ -557,6 +566,7 @@ struct AnnotationView: View {
             Image(systemName: "square.dashed")
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
 
             Text("No instances of \(currentClass.name.capitalized) were present.")
                 .font(.headline)
@@ -565,27 +575,6 @@ struct AnnotationView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-    }
-
-    private var sidewalkReviewRuleView: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "info.circle.fill")
-                .font(.title2)
-                .foregroundStyle(.blue)
-
-            (
-                Text("\(AnnotationViewConstants.Texts.reviewRulePrefixText) ")
-                    .fontWeight(.semibold)
-                + Text(AnnotationViewConstants.Texts.sidewalkReviewRuleText)
-            )
-            .font(.subheadline)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.blue.opacity(0.1))
-        )
     }
 
     private var confirmAnnotationButton: some View {
@@ -749,6 +738,7 @@ struct AnnotationView: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     @ViewBuilder
@@ -800,10 +790,12 @@ struct AnnotationView: View {
             Text("\(summary.keptCount) kept")
                 .foregroundStyle(.green)
             Text("·")
+                .accessibilityHidden(true)
             Text("\(summary.discardedCount) discarded")
                 .foregroundStyle(.red)
             if !currentClass.kind.isUniquePerCapture {
                 Text("·")
+                    .accessibilityHidden(true)
                 Text("\(summary.exceptionCount) exceptions")
                     .foregroundStyle(.secondary)
             }
@@ -1132,4 +1124,3 @@ struct AnnotationView: View {
         }
     }
 }
-

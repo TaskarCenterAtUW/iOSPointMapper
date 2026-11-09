@@ -558,6 +558,27 @@ final class IOSAccessAssessmentTests: XCTestCase {
         }
     }
 
+    func testCaptureHelpPlaceholdersLoadFromSharedBundle() {
+        let assetNames = [
+            "capture_help_object_good",
+            "capture_help_object_adjust",
+            "capture_help_sidewalk_direction",
+            "capture_help_sidewalk_good",
+            "capture_help_sidewalk_adjust"
+        ]
+
+        for assetName in assetNames {
+            XCTAssertNotNil(
+                UIImage(
+                    named: assetName,
+                    in: PointNMapSharedResources.bundle,
+                    compatibleWith: nil
+                ),
+                "Missing shared capture-help asset: \(assetName)"
+            )
+        }
+    }
+
     func testOnlySidewalkSupportsSurfaceDisruptionOverlay() {
         XCTAssertTrue(AccessibilityFeatureKind.sidewalk.hasSurfaceDisruption)
 
@@ -567,6 +588,22 @@ final class IOSAccessAssessmentTests: XCTestCase {
                 "\(featureKind.rawValue) should not support the surface-disruption overlay"
             )
         }
+    }
+
+    @available(iOS 17.0, *)
+    func testAnnotationReviewTipUsesUniqueClassGuidance() {
+        XCTAssertEqual(
+            AnnotationReviewInfoTip.messageText(isUniquePerCapture: true),
+            "Keep the highlighted detection if it represents the real feature. Small gaps are okay; discard it when substantial areas are missing or it covers the wrong area."
+        )
+    }
+
+    @available(iOS 17.0, *)
+    func testAnnotationReviewTipUsesMultiInstanceGuidance() {
+        XCTAssertEqual(
+            AnnotationReviewInfoTip.messageText(isUniquePerCapture: false),
+            "Use All to review the group, or Individual to correct one detection. Keep detections that represent real features; discard missing, substantially incomplete, or misplaced detections."
+        )
     }
 
     func testSetterRejectsNegativeValueForNonNegativeAttribute() throws {

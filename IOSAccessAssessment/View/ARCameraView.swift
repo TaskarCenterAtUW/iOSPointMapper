@@ -64,15 +64,6 @@ enum ARCameraViewConstants {
         static let invalidContentViewTitle = "Invalid Capture"
         static let invalidContentViewMessage = "The captured data is invalid. Please try again."
         
-        /// ARCameraLearnMoreSheetView
-        static let arCameraLearnMoreSheetTitle = "About Capture"
-        static let arCameraLearnMoreSheetMessage = """
-        Use this screen to capture accessibility features in your environment. 
-        
-        Point your device's camera at the area you want to capture, and press the Camera Button to take a snapshot.
-        
-        After capturing, you will be prompted to validate the annotated features.
-        """
     }
     
     enum Images {
@@ -153,7 +144,8 @@ struct ARCameraView: View {
 
     @StateObject private var manager: ARCameraManager = ARCameraManager()
     @StateObject private var managerConfigureStatusViewModel = ARCameraManagerStatusViewModel()
-    @State private var cameraHintText: String = ARCameraViewConstants.Texts.cameraHintPlaceholderText
+    @State private var captureFailureExplanation: String?
+    @State private var isCaptureInProgress = false
     
     @StateObject private var locationManager: LocationManager = LocationManager()
 //    @State private var captureLocation: CLLocationCoordinate2D?
@@ -167,54 +159,27 @@ struct ARCameraView: View {
     
     var body: some View {
         Group {
-            // Show the camera view once manager is initialized, otherwise a loading indicator
             if manager.isConfigured {
                 orientationStack {
                     HostedARCameraViewContainer(arSessionCameraProcessingDelegate: manager)
-                    VStack {
-                        /// Text for hinting user with status
-                        Text(cameraHintText)
-                            .padding()
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                            .frame(maxWidth: 300)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        
-                        reverseOrientationStack {
-                            Spacer()
-                            Button {
-                                cameraCapture()
-                            } label: {
-                                Image(
-                                    systemName: manager.isCaptureReady ? ARCameraViewConstants.Images.cameraIcon : ARCameraViewConstants.Images.inProgressIcon
-                                )
-                                    .resizable()
-                                    .frame(
-                                        width: manager.isCaptureReady ? ARCameraViewConstants.Constraints.cameraIconSize : ARCameraViewConstants.Constraints.inProgressIconSize,
-                                        height: ARCameraViewConstants.Constraints.cameraIconSize
-                                    )
-                            }
-                            .padding(.bottom, 20)
-                            Spacer()
-                        }
-                        .overlay(
-                            reverseOrientationStack {
-                                Spacer()
-                                Button(action: {
-                                    showARCameraLearnMoreSheet = true
-                                }) {
-                                    Image(systemName: ARCameraViewConstants.Images.infoIcon)
-                                        .resizable()
-                                        .frame(width: 20, height: 20)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-                            }
-                        )
-                    }
+                        .layoutPriority(1)
+
+                    CaptureControlPanel(
+                        state: capturePresentationState,
+                        captureAction: cameraCapture,
+                        helpAction: { showARCameraLearnMoreSheet = true }
+                    )
                 }
             } else {
-                ProgressView(ARCameraViewConstants.Texts.cameraInProgressText)
+                VStack {
+                    Spacer()
+
+                    CaptureControlPanel(
+                        state: .preparing,
+                        captureAction: cameraCapture,
+                        helpAction: { showARCameraLearnMoreSheet = true }
+                    )
+                }
             }
         }
         .navigationBarTitle(ARCameraViewConstants.Texts.contentViewTitle, displayMode: .inline)
@@ -331,11 +296,24 @@ struct ARCameraView: View {
             handleLocationUpdate(oldLocation: oldLocation, newLocation: newLocation)
         }
         .sheet(isPresented: $showARCameraLearnMoreSheet) {
-            ARCameraLearnMoreSheetView()
-                .presentationDetents([.medium, .large])
+            CaptureHelpView()
+                .presentationDetents([.large])
         }
     }
     
+    private var capturePresentationState: CapturePresentationState {
+        if isCaptureInProgress {
+            return .processing
+        }
+        if mappingDataStatusViewModel.isInProgress {
+            return .unavailable(explanation: "Waiting for mapping data.")
+        }
+        if let captureFailureExplanation {
+            return .captureFailed(explanation: captureFailureExplanation)
+        }
+        return manager.isCaptureReady ? .ready : .preparing
+    }
+
     @ViewBuilder
     private func orientationStack<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         manager.interfaceOrientation.isLandscape ?
@@ -357,7 +335,14 @@ struct ARCameraView: View {
     }
     
     private func cameraCapture() {
+        guard !isCaptureInProgress, !showAnnotationView else { return }
+
+        isCaptureInProgress = true
+        captureFailureExplanation = nil
+
         Task {
+            defer { isCaptureInProgress = false }
+
             do {
                 guard !mappingDataStatusViewModel.isInProgress else {
                     throw ARCameraViewError.mappingDataNotReady
@@ -387,18 +372,18 @@ struct ARCameraView: View {
                 )
                 showAnnotationView = true
             } catch ARCameraManagerError.finalSessionMeshUnavailable {
-                setHintText(ARCameraViewConstants.Texts.cameraHintNoMeshText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintNoMeshText)
             } catch ARCameraManagerError.finalSessionNoSegmentationClass,
                 ARCameraViewError.captureNoSegmentationAccessibilityFeatures {
-                setHintText(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintNoSegmentationText)
             } catch ARCameraManagerError.finalSessionNoSegmentationMesh {
-                setHintText(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintMeshNotProcessedText)
             } catch ARCameraViewError.mappingDataNotReady {
-                setHintText(ARCameraViewConstants.Texts.cameraHintMappingDataNotReadyText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintMappingDataNotReadyText)
             } catch _ as LocationManagerError {
-                setHintText(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintLocationErrorText)
             } catch {
-                setHintText(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
+                setCaptureFailure(ARCameraViewConstants.Texts.cameraHintUnknownErrorText)
             }
         }
     }
@@ -461,13 +446,8 @@ struct ARCameraView: View {
         }
     }
     
-    /// Set text for 2 seconds, and then fall back to placeholder
-    private func setHintText(_ text: String) {
-        cameraHintText = text
-        Task {
-            try await Task.sleep(for: .seconds(2))
-            cameraHintText = ARCameraViewConstants.Texts.cameraHintPlaceholderText
-        }
+    private func setCaptureFailure(_ text: String) {
+        captureFailureExplanation = text
     }
     
     func openAppSettings() {
@@ -480,25 +460,3 @@ struct ARCameraView: View {
     }
 }
 
-struct ARCameraLearnMoreSheetView: View {
-    @Environment(\.dismiss)
-    var dismiss
-    
-    var body: some View {
-        VStack(spacing: 20) {
-//            Image(systemName: "number")
-//                .resizable()
-//                .scaledToFit()
-//                .frame(width: 160)
-//                .foregroundStyle(.accentColor)
-            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetTitle)
-                .font(.headline)
-            Text(ARCameraViewConstants.Texts.arCameraLearnMoreSheetMessage)
-            .foregroundStyle(.secondary)
-            Button("Dismiss") {
-                dismiss()
-            }
-        }
-        .padding(.horizontal, 40)
-    }
-}
