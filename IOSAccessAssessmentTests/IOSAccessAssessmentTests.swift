@@ -1108,12 +1108,63 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(feature.attributeValues[.surfaceDisruption] ?? nil, rawValue)
     }
 
-    func testNumericEstimateExtractsNumericValue() throws {
-        let estimate = try XCTUnwrap(
-            annotationFeatureDetailNumericEstimate(.number(2.117257))
+    func testNumericEstimateUsesSelectedDisplayUnitWithoutMutatingMeasurement() throws {
+        let original = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 1, unit: UnitLength.meters)
+        )
+        let preferences = MeasurementUnitPreferences(
+            length: .feet,
+            area: .squareMeters,
+            angle: .degrees
         )
 
-        XCTAssertEqual(estimate, 2.117257, accuracy: 0.000_000_1)
+        let estimate = try XCTUnwrap(
+            annotationFeatureDetailNumericEstimate(
+                original,
+                using: preferences
+            )
+        )
+
+        XCTAssertEqual(estimate, 3.280_839_895, accuracy: 0.000_000_1)
+        XCTAssertEqual(
+            try XCTUnwrap(original.canonicalNumericValue),
+            1,
+            accuracy: 0.000_000_1
+        )
+    }
+
+    func testEditorInputUsesSelectedDisplayUnit() throws {
+        let preferences = MeasurementUnitPreferences(
+            length: .inches,
+            area: .squareFeet,
+            angle: .radians
+        )
+
+        let length = try XCTUnwrap(
+            annotationFeatureDetailValue(
+                39.370_078_74,
+                for: .width,
+                using: preferences
+            )
+        )
+        let area = try XCTUnwrap(
+            annotationFeatureDetailValue(
+                10.763_910_416_7,
+                for: .surfaceDisruptionArea,
+                using: preferences
+            )
+        )
+        let angle = try XCTUnwrap(
+            annotationFeatureDetailValue(
+                .pi,
+                for: .runningSlope,
+                using: preferences
+            )
+        )
+
+        XCTAssertEqual(try XCTUnwrap(length.canonicalNumericValue), 1, accuracy: 0.000_000_1)
+        XCTAssertEqual(try XCTUnwrap(area.canonicalNumericValue), 1, accuracy: 0.000_000_1)
+        XCTAssertEqual(try XCTUnwrap(angle.canonicalNumericValue), 180, accuracy: 0.000_000_1)
     }
 
     func testNumericEstimateCanBeRestoredWhenCurrentValueIsMissing() {
