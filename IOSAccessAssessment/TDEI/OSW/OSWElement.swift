@@ -8,6 +8,26 @@ import Foundation
 import CoreLocation
 import PointNMapShared
 
+enum OSWAttributeTagSerializer {
+    static func tags(
+        from attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
+        isCalculated: Bool = false
+    ) -> [String: String] {
+        attributeValues.reduce(into: [:]) { tags, entry in
+            guard let value = entry.value,
+                  let tagValue = value.primitiveValue.oswTagValue else {
+                return
+            }
+
+            let baseKey = entry.key.osmTagKey
+            let tagKey = isCalculated
+                ? "\(APIConstants.TagKeys.calculatedTagPrefix):\(baseKey)"
+                : baseKey
+            tags[tagKey] = tagValue
+        }
+    }
+}
+
 protocol OSWElement: Sendable, CustomStringConvertible {
     var osmElementType: OSMElementType { get }
     

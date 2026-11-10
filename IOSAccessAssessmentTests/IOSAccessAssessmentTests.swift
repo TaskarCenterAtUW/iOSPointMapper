@@ -841,6 +841,39 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertNil(AccessibilityFeatureAttribute.PrimitiveValue.number(.infinity).oswTagValue)
     }
 
+    func testSharedOSWAttributeTagSerializerUsesCanonicalUnits() {
+        let tags = OSWAttributeTagSerializer.tags(
+            from: [
+                .width: .length(Measurement(value: 3.280_839_895, unit: UnitLength.feet)),
+                .surfaceDisruptionArea: .area(
+                    Measurement(value: 10.763_910_416_7, unit: UnitArea.squareFeet)
+                ),
+                .runningSlope: .angle(Measurement(value: .pi, unit: UnitAngle.radians)),
+                .surfaceDisruption: nil,
+                .heightFromGround: .number(.nan)
+            ]
+        )
+
+        XCTAssertEqual(tags[AccessibilityFeatureAttribute.width.osmTagKey], "1.00")
+        XCTAssertEqual(tags[AccessibilityFeatureAttribute.surfaceDisruptionArea.osmTagKey], "1.00")
+        XCTAssertEqual(tags[AccessibilityFeatureAttribute.runningSlope.osmTagKey], "180.00")
+        XCTAssertNil(tags[AccessibilityFeatureAttribute.surfaceDisruption.osmTagKey])
+        XCTAssertNil(tags[AccessibilityFeatureAttribute.heightFromGround.osmTagKey])
+    }
+
+    func testSharedOSWAttributeTagSerializerPrefixesCalculatedTags() {
+        let tags = OSWAttributeTagSerializer.tags(
+            from: [.width: .length(Measurement(value: 39.370_078_74, unit: UnitLength.inches))],
+            isCalculated: true
+        )
+
+        XCTAssertEqual(
+            tags["\(APIConstants.TagKeys.calculatedTagPrefix):\(AccessibilityFeatureAttribute.width.osmTagKey)"],
+            "1.00"
+        )
+        XCTAssertNil(tags[AccessibilityFeatureAttribute.width.osmTagKey])
+    }
+
     func testOSWPointTagsUseCanonicalValuesAndOmitInvalidValues() {
         let point = OSWPoint(
             id: "test", version: "1", oswElementClass: .BareNode,
