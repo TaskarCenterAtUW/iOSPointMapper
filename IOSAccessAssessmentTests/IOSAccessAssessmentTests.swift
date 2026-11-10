@@ -898,6 +898,146 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
     }
 
+    func testMeasurementUnitChoicesMapToFoundationUnits() {
+        XCTAssertEqual(LengthUnitChoice.allCases.map(\.unit), [.meters, .feet, .inches])
+        XCTAssertEqual(
+            AreaUnitChoice.allCases.map(\.unit),
+            [.squareMeters, .squareFeet, .squareInches]
+        )
+        XCTAssertEqual(AngleUnitChoice.allCases.map(\.unit), [.degrees, .radians])
+    }
+
+    func testMeasurementUnitChoicesHaveStablePersistenceIdentifiers() throws {
+        XCTAssertEqual(LengthUnitChoice.allCases.map(\.rawValue), ["meters", "feet", "inches"])
+        XCTAssertEqual(
+            AreaUnitChoice.allCases.map(\.rawValue),
+            ["squareMeters", "squareFeet", "squareInches"]
+        )
+        XCTAssertEqual(AngleUnitChoice.allCases.map(\.rawValue), ["degrees", "radians"])
+
+        let preferences = MeasurementUnitPreferences(
+            length: .feet,
+            area: .squareInches,
+            angle: .radians
+        )
+        let encoded = try JSONEncoder().encode(preferences)
+        XCTAssertEqual(
+            try JSONDecoder().decode(MeasurementUnitPreferences.self, from: encoded),
+            preferences
+        )
+    }
+
+    func testMeasurementUnitDefaultsAndCanonicalUnits() {
+        XCTAssertEqual(MeasurementUnitPreferences.default, MeasurementUnitPreferences(
+            length: .meters,
+            area: .squareMeters,
+            angle: .degrees
+        ))
+        XCTAssertEqual(PointNMapConstants.MeasurementUnits.canonicalLengthUnit, .meters)
+        XCTAssertEqual(PointNMapConstants.MeasurementUnits.canonicalAreaUnit, .squareMeters)
+        XCTAssertEqual(PointNMapConstants.MeasurementUnits.canonicalAngleUnit, .degrees)
+    }
+
+    func testAttributeResolvesSelectedUnitAndDisplayName() {
+        let preferences = MeasurementUnitPreferences(
+            length: .feet,
+            area: .squareInches,
+            angle: .radians
+        )
+
+        XCTAssertEqual(AccessibilityFeatureAttribute.width.unit(using: preferences)?.symbol, "ft")
+        XCTAssertEqual(
+            AccessibilityFeatureAttribute.surfaceDisruptionArea.unit(using: preferences)?.symbol,
+            UnitArea.squareInches.symbol
+        )
+        XCTAssertEqual(AccessibilityFeatureAttribute.runningSlope.unit(using: preferences)?.symbol, "rad")
+        XCTAssertNil(AccessibilityFeatureAttribute.surfaceDisruption.unit(using: preferences))
+        XCTAssertEqual(AccessibilityFeatureAttribute.width.displayName(using: preferences), "Width (ft)")
+        XCTAssertEqual(AccessibilityFeatureAttribute.surfaceDisruption.displayName(using: preferences), "Surface Disruption")
+    }
+
+    func testMeasurementValuesConvertForDisplayWithoutMutatingOriginal() throws {
+        let preferences = MeasurementUnitPreferences(
+            length: .feet,
+            area: .squareFeet,
+            angle: .radians
+        )
+        let original = AccessibilityFeatureAttribute.Value.length(
+            Measurement(value: 1, unit: UnitLength.meters)
+        )
+        let displayed = original.convertedForDisplay(using: preferences)
+
+        guard case .length(let originalMeasurement) = original,
+              case .length(let displayedMeasurement) = displayed else {
+            return XCTFail("Expected length measurements")
+        }
+        XCTAssertEqual(originalMeasurement.unit, .meters)
+        XCTAssertEqual(originalMeasurement.value, 1, accuracy: 0.000_000_1)
+        XCTAssertEqual(displayedMeasurement.unit, .feet)
+        XCTAssertEqual(displayedMeasurement.value, 3.280_839_895, accuracy: 0.000_000_1)
+        XCTAssertEqual(
+            try XCTUnwrap(original.displayNumericValue(using: preferences)),
+            3.280_839_895,
+            accuracy: 0.000_000_1
+        )
+    }
+
+    func testPreferenceAwareNumericInputPreservesPhysicalQuantities() throws {
+        let preferences = MeasurementUnitPreferences(
+            length: .inches,
+            area: .squareFeet,
+            angle: .radians
+        )
+        let length = try XCTUnwrap(
+            AccessibilityFeatureAttribute.width.value(from: 39.370_078_74, using: preferences)
+        )
+        let area = try XCTUnwrap(
+            AccessibilityFeatureAttribute.surfaceDisruptionArea.value(
+                from: 10.763_910_416_7,
+                using: preferences
+            )
+        )
+        let angle = try XCTUnwrap(
+            AccessibilityFeatureAttribute.runningSlope.value(from: .pi, using: preferences)
+        )
+
+        XCTAssertEqual(try XCTUnwrap(length.canonicalNumericValue), 1, accuracy: 0.000_000_1)
+        XCTAssertEqual(try XCTUnwrap(area.canonicalNumericValue), 1, accuracy: 0.000_000_1)
+        XCTAssertEqual(try XCTUnwrap(angle.canonicalNumericValue), 180, accuracy: 0.000_000_1)
+        XCTAssertEqual(
+            try XCTUnwrap(length.displayNumericValue(using: preferences)),
+            39.370_078_74,
+            accuracy: 0.000_000_1
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(area.displayNumericValue(using: preferences)),
+            10.763_910_416_7,
+            accuracy: 0.000_000_1
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(angle.displayNumericValue(using: preferences)),
+            .pi,
+            accuracy: 0.000_000_1
+        )
+        XCTAssertEqual(
+            AccessibilityFeatureAttribute.surfaceDisruption.value(from: 4.5, using: preferences),
+            .number(4.5)
+        )
+        XCTAssertNil(AccessibilityFeatureAttribute.surfaceIntegrity.value(from: 1, using: preferences))
+    }
+
+    func testDefaultNumericInputRetainsCanonicalBehavior() throws {
+        let length = try XCTUnwrap(AccessibilityFeatureAttribute.width.value(from: 1.25))
+        let area = try XCTUnwrap(
+            AccessibilityFeatureAttribute.surfaceDisruptionArea.value(from: 2.5)
+        )
+        let angle = try XCTUnwrap(AccessibilityFeatureAttribute.runningSlope.value(from: 90))
+
+        XCTAssertEqual(try XCTUnwrap(length.canonicalNumericValue), 1.25)
+        XCTAssertEqual(try XCTUnwrap(area.canonicalNumericValue), 2.5)
+        XCTAssertEqual(try XCTUnwrap(angle.canonicalNumericValue), 90)
+    }
+
     func testFinalAttributeRoundingLeavesNonnumericValuesUnchanged() {
         let flag = AccessibilityFeatureAttribute.Value.flag(true)
         let category = AccessibilityFeatureAttribute.Value.categorical(
