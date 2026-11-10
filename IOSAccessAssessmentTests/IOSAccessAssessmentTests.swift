@@ -927,6 +927,19 @@ final class IOSAccessAssessmentTests: XCTestCase {
         )
     }
 
+    func testMeasurementUnitChoicesProvideReadableSettingsLabels() {
+        XCTAssertEqual(LengthUnitChoice.meters.settingsLabel, "Meters (m)")
+        XCTAssertEqual(LengthUnitChoice.feet.settingsLabel, "Feet (ft)")
+        XCTAssertEqual(LengthUnitChoice.inches.settingsLabel, "Inches (in)")
+
+        XCTAssertEqual(AreaUnitChoice.squareMeters.settingsLabel, "Square meters (m²)")
+        XCTAssertEqual(AreaUnitChoice.squareFeet.settingsLabel, "Square feet (ft²)")
+        XCTAssertEqual(AreaUnitChoice.squareInches.settingsLabel, "Square inches (in²)")
+
+        XCTAssertEqual(AngleUnitChoice.degrees.settingsLabel, "Degrees (°)")
+        XCTAssertEqual(AngleUnitChoice.radians.settingsLabel, "Radians (rad)")
+    }
+
     func testMeasurementUnitDefaultsAndCanonicalUnits() {
         XCTAssertEqual(MeasurementUnitPreferences.default, MeasurementUnitPreferences(
             length: .meters,

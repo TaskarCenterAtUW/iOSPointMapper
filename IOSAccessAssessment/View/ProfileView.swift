@@ -7,6 +7,25 @@
 
 import SwiftUI
 import TipKit
+import PointNMapShared
+
+extension LengthUnitChoice {
+    var settingsLabel: String {
+        "\(displayName) (\(symbol))"
+    }
+}
+
+extension AreaUnitChoice {
+    var settingsLabel: String {
+        "\(displayName) (\(symbol))"
+    }
+}
+
+extension AngleUnitChoice {
+    var settingsLabel: String {
+        "\(displayName) (\(symbol))"
+    }
+}
 
 enum ProfileViewConstants {
     enum Texts {
@@ -23,6 +42,14 @@ enum ProfileViewConstants {
         
         /// Advanced Settings
         static let advancedSettingsTitle = "Advanced Settings"
+        /// Measurement Units
+        static let measurementUnitsTitle = "Measurement Units"
+        static let lengthUnitLabel = "Length"
+        static let areaUnitLabel = "Area"
+        static let angleUnitLabel = "Angle"
+        static let lengthUnitAccessibilityLabel = "Length unit"
+        static let areaUnitAccessibilityLabel = "Area unit"
+        static let angleUnitAccessibilityLabel = "Angle unit"
         /// Enhanced Analysis
         static let enhancedAnalysisLabel = "Enhanced Analysis"
         static let enhancedAnalysisDescription = "Enable enhanced analysis features for better localization and attribute estimations."
@@ -253,6 +280,12 @@ struct ProfileView: View {
                 
                 Divider()
                 
+                MeasurementUnitSettingsView(
+                    lengthUnitChoice: $userState.lengthUnitChoice,
+                    areaUnitChoice: $userState.areaUnitChoice,
+                    angleUnitChoice: $userState.angleUnitChoice
+                )
+
                 Divider()
                 
                 Button(action: {
@@ -309,6 +342,77 @@ struct ProfileView: View {
     }
 }
 
+private struct MeasurementUnitSettingsView: View {
+    @Binding var lengthUnitChoice: LengthUnitChoice
+    @Binding var areaUnitChoice: AreaUnitChoice
+    @Binding var angleUnitChoice: AngleUnitChoice
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(ProfileViewConstants.Texts.measurementUnitsTitle)
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+            }
+
+            HStack {
+                Text(ProfileViewConstants.Texts.lengthUnitLabel)
+                    .font(.subheadline)
+                Spacer()
+                Picker(
+                    ProfileViewConstants.Texts.lengthUnitLabel,
+                    selection: $lengthUnitChoice
+                ) {
+                    ForEach(LengthUnitChoice.allCases) { choice in
+                        Text(choice.settingsLabel).tag(choice)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel(ProfileViewConstants.Texts.lengthUnitAccessibilityLabel)
+                .accessibilityValue(lengthUnitChoice.settingsLabel)
+            }
+            .padding(.vertical, 20)
+
+            HStack {
+                Text(ProfileViewConstants.Texts.areaUnitLabel)
+                    .font(.subheadline)
+                Spacer()
+                Picker(
+                    ProfileViewConstants.Texts.areaUnitLabel,
+                    selection: $areaUnitChoice
+                ) {
+                    ForEach(AreaUnitChoice.allCases) { choice in
+                        Text(choice.settingsLabel).tag(choice)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel(ProfileViewConstants.Texts.areaUnitAccessibilityLabel)
+                .accessibilityValue(areaUnitChoice.settingsLabel)
+            }
+            .padding(.vertical, 20)
+
+            HStack {
+                Text(ProfileViewConstants.Texts.angleUnitLabel)
+                    .font(.subheadline)
+                Spacer()
+                Picker(
+                    ProfileViewConstants.Texts.angleUnitLabel,
+                    selection: $angleUnitChoice
+                ) {
+                    ForEach(AngleUnitChoice.allCases) { choice in
+                        Text(choice.settingsLabel).tag(choice)
+                    }
+                }
+                .pickerStyle(.menu)
+                .accessibilityLabel(ProfileViewConstants.Texts.angleUnitAccessibilityLabel)
+                .accessibilityValue(angleUnitChoice.settingsLabel)
+            }
+            .padding(.vertical, 20)
+        }
+    }
+}
+
 struct EnhancedAnalysisLearnMoreSheetView: View {
     @Environment(\.dismiss)
     var dismiss
@@ -349,4 +453,3 @@ struct AppModeLearnMoreSheetView: View {
         .padding(.horizontal, 40)
     }
 }
-
