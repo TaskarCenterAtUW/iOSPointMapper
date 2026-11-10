@@ -712,6 +712,61 @@ final class IOSAccessAssessmentTests: XCTestCase {
         XCTAssertEqual(angle, 7.0735, accuracy: 0.000_000_1)
     }
 
+    func testSurfaceDisruptionAreaUsesCanonicalSquareMeters() throws {
+        XCTAssertEqual(AccessibilityFeatureAttribute.surfaceDisruptionArea.valueType, .area)
+        XCTAssertEqual(
+            AccessibilityFeatureAttribute.surfaceDisruptionArea.canonicalUnit?.symbol,
+            UnitArea.squareMeters.symbol
+        )
+
+        let value = try XCTUnwrap(
+            AccessibilityFeatureAttribute.surfaceDisruptionArea.value(from: 1.25)
+        )
+        guard case .area(let measurement) = value else {
+            return XCTFail("Expected an area value, got \(value)")
+        }
+        XCTAssertEqual(measurement.unit, .squareMeters)
+        XCTAssertEqual(measurement.value, 1.25, accuracy: 0.000_000_1)
+    }
+
+    func testFinalAttributeAreaRoundsInCanonicalSquareMeters() throws {
+        let rounded = AccessibilityFeatureAttribute.Value.area(
+            Measurement(value: 10.763_921_501, unit: UnitArea.squareFeet)
+        ).roundedForFinalAttribute()
+
+        guard case .area(let measurement) = rounded else {
+            return XCTFail("Expected rounded area value, got \(rounded)")
+        }
+        XCTAssertEqual(measurement.unit, .squareMeters)
+        XCTAssertEqual(measurement.value, 1.0, accuracy: 0.000_000_1)
+    }
+
+    func testAreaValueCodableRoundTripPreservesMeasurement() throws {
+        let value = AccessibilityFeatureAttribute.Value.area(
+            Measurement(value: 2.75, unit: UnitArea.squareMeters)
+        )
+
+        let data = try JSONEncoder().encode(value)
+        let decoded = try JSONDecoder().decode(
+            AccessibilityFeatureAttribute.Value.self,
+            from: data
+        )
+
+        XCTAssertEqual(decoded, value)
+    }
+
+    func testSetterRejectsNegativeSurfaceDisruptionArea() throws {
+        let feature = try makeEditableFeature()
+
+        XCTAssertThrowsError(
+            try feature.setAttributeValue(
+                .area(Measurement(value: -0.01, unit: UnitArea.squareMeters)),
+                for: .surfaceDisruptionArea
+            )
+        )
+        XCTAssertNil(feature.attributeValues[.surfaceDisruptionArea] ?? nil)
+    }
+
     func testFinalAttributeRoundingLeavesNonnumericValuesUnchanged() {
         let flag = AccessibilityFeatureAttribute.Value.flag(true)
         let category = AccessibilityFeatureAttribute.Value.categorical(
