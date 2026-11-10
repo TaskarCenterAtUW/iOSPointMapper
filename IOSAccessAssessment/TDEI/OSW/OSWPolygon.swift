@@ -130,10 +130,9 @@ struct OSWPolygon: OSWElement {
             if isCalculated {
                 attributeTagKey = "\(APIConstants.TagKeys.calculatedTagPrefix):\(attributeTagKey)"
             }
-            let attributeValue = attributeKeyValuePair.value
-            let attributeTagValue = attributeKey.getValueDescription(attributeValue: attributeValue)
-            guard let attributeTagValue else { return }
-            attributeTags[attributeTagKey] = attributeTagValue
+            guard let attributeValue = attributeKeyValuePair.value else { return }
+            guard let tagValue = attributeValue.primitiveValue.oswTagValue else { return }
+            attributeTags[attributeTagKey] = tagValue
         }
         return attributeTags
     }
