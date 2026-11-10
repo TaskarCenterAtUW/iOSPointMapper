@@ -6,9 +6,12 @@
 //
 
 import Foundation
+import PointNMapShared
 
 @MainActor
 class UserStateViewModel: ObservableObject {
+    private let userDefaults: UserDefaults
+
     @Published var selectedEnvironment: APIEnvironment = .staging {
         didSet {
             environmentService.environment = selectedEnvironment
@@ -30,7 +33,7 @@ class UserStateViewModel: ObservableObject {
      */
     @Published var isEnhancedAnalysisEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(isEnhancedAnalysisEnabled, forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
+            userDefaults.set(isEnhancedAnalysisEnabled, forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
         }
     }
     
@@ -43,20 +46,76 @@ class UserStateViewModel: ObservableObject {
      */
     @Published var appMode: AppMode {
         didSet {
-            UserDefaults.standard.set(appMode.rawValue, forKey: SharedAppConstants.UserDefaultsKeys.appModeKey)
+            userDefaults.set(appMode.rawValue, forKey: SharedAppConstants.UserDefaultsKeys.appModeKey)
         }
     }
+
+    @Published var lengthUnitChoice: LengthUnitChoice {
+        didSet {
+            userDefaults.set(
+                lengthUnitChoice.rawValue,
+                forKey: SharedAppConstants.UserDefaultsKeys.lengthUnitChoiceKey
+            )
+        }
+    }
+
+    @Published var areaUnitChoice: AreaUnitChoice {
+        didSet {
+            userDefaults.set(
+                areaUnitChoice.rawValue,
+                forKey: SharedAppConstants.UserDefaultsKeys.areaUnitChoiceKey
+            )
+        }
+    }
+
+    @Published var angleUnitChoice: AngleUnitChoice {
+        didSet {
+            userDefaults.set(
+                angleUnitChoice.rawValue,
+                forKey: SharedAppConstants.UserDefaultsKeys.angleUnitChoiceKey
+            )
+        }
+    }
+
+    var measurementUnitPreferences: MeasurementUnitPreferences {
+        MeasurementUnitPreferences(
+            length: lengthUnitChoice,
+            area: areaUnitChoice,
+            angle: angleUnitChoice
+        )
+    }
     
-    init() {
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
         self.selectedEnvironment = environmentService.environment
         self.isAuthenticated = authService.checkTokenValid()
-        self.isEnhancedAnalysisEnabled = UserDefaults.standard.bool(forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey)
-        if let savedAppModeRawValue = UserDefaults.standard.string(forKey: SharedAppConstants.UserDefaultsKeys.appModeKey),
+        self.isEnhancedAnalysisEnabled = userDefaults.bool(
+            forKey: SharedAppConstants.UserDefaultsKeys.isEnhancedAnalysisEnabledKey
+        )
+        if let savedAppModeRawValue = userDefaults.string(
+            forKey: SharedAppConstants.UserDefaultsKeys.appModeKey
+        ),
            let savedAppMode = AppMode(rawValue: savedAppModeRawValue) {
             self.appMode = savedAppMode
         } else {
             self.appMode = .standard
         }
+
+        self.lengthUnitChoice = LengthUnitChoice(
+            rawValue: userDefaults.string(
+                forKey: SharedAppConstants.UserDefaultsKeys.lengthUnitChoiceKey
+            ) ?? ""
+        ) ?? MeasurementUnitPreferences.default.length
+        self.areaUnitChoice = AreaUnitChoice(
+            rawValue: userDefaults.string(
+                forKey: SharedAppConstants.UserDefaultsKeys.areaUnitChoiceKey
+            ) ?? ""
+        ) ?? MeasurementUnitPreferences.default.area
+        self.angleUnitChoice = AngleUnitChoice(
+            rawValue: userDefaults.string(
+                forKey: SharedAppConstants.UserDefaultsKeys.angleUnitChoiceKey
+            ) ?? ""
+        ) ?? MeasurementUnitPreferences.default.angle
     }
     
     func updateEnvironment(to newEnvironment: APIEnvironment) {

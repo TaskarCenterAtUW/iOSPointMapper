@@ -70,5 +70,8 @@ struct SharedAppConstants {
         /// User settings
         static let isEnhancedAnalysisEnabledKey = "isEnhancedAnalysisEnabled"
         static let appModeKey = "appMode"
+        static let lengthUnitChoiceKey = "lengthUnitChoice"
+        static let areaUnitChoiceKey = "areaUnitChoice"
+        static let angleUnitChoiceKey = "angleUnitChoice"
     }
 }

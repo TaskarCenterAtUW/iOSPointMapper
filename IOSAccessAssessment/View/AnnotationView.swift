@@ -380,7 +380,8 @@ struct AnnotationView: View {
                     title: instanceDisplayName(
                         for: currentFeature.accessibilityFeatureClass,
                         index: currentFeatureIndex
-                    )
+                    ),
+                    measurementUnitPreferences: userStateViewModel.measurementUnitPreferences
                 )
                     .presentationDetents([.medium, .large])
             } else {

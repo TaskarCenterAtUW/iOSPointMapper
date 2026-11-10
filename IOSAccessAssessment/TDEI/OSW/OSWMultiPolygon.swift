@@ -188,11 +188,11 @@ struct OSWMultiPolygon: OSWElement {
         if oswElementClass.geometry == .polygon {
             identifyingFieldTags = oswElementClass.identifyingFieldTags
         }
-        let attributeTags = getTagsFromAttributeValues(attributeValues: attributeValues)
-        let experimentalAttributeTags = getTagsFromAttributeValues(attributeValues: experimentalAttributeValues)
+        let attributeTags = OSWAttributeTagSerializer.tags(from: attributeValues)
+        let experimentalAttributeTags = OSWAttributeTagSerializer.tags(from: experimentalAttributeValues)
         var calculatedAttributeTags: [String: String] = [:]
         if let calculatedAttributeValues {
-            calculatedAttributeTags = getTagsFromAttributeValues(attributeValues: calculatedAttributeValues, isCalculated: true)
+            calculatedAttributeTags = OSWAttributeTagSerializer.tags(from: calculatedAttributeValues, isCalculated: true)
         }
         let tags = identifyingFieldTags.merging(attributeTags) { old, new in
             return old
@@ -204,25 +204,6 @@ struct OSWMultiPolygon: OSWElement {
             return old
         }
         return tags
-    }
-    
-    private func getTagsFromAttributeValues(
-        attributeValues: [AccessibilityFeatureAttribute: AccessibilityFeatureAttribute.Value?],
-        isCalculated: Bool = false
-    ) -> [String: String] {
-        var attributeTags: [String: String] = [:]
-        attributeValues.forEach { attributeKeyValuePair in
-            let attributeKey = attributeKeyValuePair.key
-            var attributeTagKey = attributeKey.osmTagKey
-            if isCalculated {
-                attributeTagKey = "\(APIConstants.TagKeys.calculatedTagPrefix):\(attributeTagKey)"
-            }
-            let attributeValue = attributeKeyValuePair.value
-            let attributeTagValue = attributeKey.getValueDescription(attributeValue: attributeValue)
-            guard let attributeTagValue else { return }
-            attributeTags[attributeTagKey] = attributeTagValue
-        }
-        return attributeTags
     }
     
     /**

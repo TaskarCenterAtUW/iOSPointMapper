@@ -29,17 +29,20 @@ enum AnnotationMappedFeatureDetailViewConstants {
 @ViewBuilder
 func AnnotationFeatureDetailView(
     accessibilityFeature: MappedEditableAccessibilityFeature,
-    title: String
+    title: String,
+    measurementUnitPreferences: MeasurementUnitPreferences
 ) -> some View {
     AnnotationFeatureDetailContainer(
         accessibilityFeature: accessibilityFeature,
-        title: title
+        title: title,
+        measurementUnitPreferences: measurementUnitPreferences
     )
 }
 
 private struct AnnotationFeatureDetailContainer: View {
     let accessibilityFeature: MappedEditableAccessibilityFeature
     let title: String
+    let measurementUnitPreferences: MeasurementUnitPreferences
 
     @State private var selectedElementId: String?
     @State private var mapPresentation: OSWElementMapPresentation?
@@ -47,10 +50,12 @@ private struct AnnotationFeatureDetailContainer: View {
 
     init(
         accessibilityFeature: MappedEditableAccessibilityFeature,
-        title: String
+        title: String,
+        measurementUnitPreferences: MeasurementUnitPreferences
     ) {
         self.accessibilityFeature = accessibilityFeature
         self.title = title
+        self.measurementUnitPreferences = measurementUnitPreferences
         _selectedElementId = State(
             initialValue: accessibilityFeature.isExisting
                 ? accessibilityFeature.oswElement?.id
@@ -61,7 +66,8 @@ private struct AnnotationFeatureDetailContainer: View {
     var body: some View {
         AnnotationFeatureDetailViewBase(
             accessibilityFeature: accessibilityFeature,
-            title: title
+            title: title,
+            measurementUnitPreferences: measurementUnitPreferences
         ) { feature in
             AnnotationFeatureLocationSection(
                 accessibilityFeature: feature,
